@@ -9,6 +9,7 @@ import Products from "@/components/Products";
 import History from "@/components/History";
 import Cash from "@/components/Cash";
 import SettingsPage from "@/components/Settings";
+import RekeningKoran from "@/components/RekeningKoran";
 
 export default function Home() {
   const [page, setPage] = useState("dashboard");
@@ -38,6 +39,7 @@ export default function Home() {
       case "brilink": return <BRILink />;
       case "products": return <Products />;
       case "history": return <History />;
+      case "rekeningKoran": return <RekeningKoran />;
       case "cash": return <Cash />;
       case "settings": return <SettingsPage />;
       default: return <Dashboard />;

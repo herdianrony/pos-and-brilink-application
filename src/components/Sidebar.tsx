@@ -19,6 +19,7 @@ import {
   Info,
   Heart,
   Clock,
+  ScrollText,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { useSettings } from "@/lib/use-settings";
@@ -36,6 +37,7 @@ const nav = [
   { id: "brilink", label: "__SERVICES__", icon: Landmark },
   { id: "products", label: "Produk", icon: Package },
   { id: "history", label: "Transaksi", icon: ClipboardList },
+  { id: "rekeningKoran", label: "Rekening Koran", icon: ScrollText },
   { id: "cash", label: "Kas & Saldo", icon: Wallet },
   { id: "settings", label: "Pengaturan", icon: Settings },
 ];

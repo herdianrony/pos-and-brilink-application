@@ -14,7 +14,7 @@
     "incremental": false,
     "outDir": "./electron/dist",
     "rootDir": "./electron",
-    "sourceMap": true,
+    "sourceMap": false,
     "types": ["node", "electron"]
   },
   "include": [
