@@ -188,3 +188,68 @@ h1, h2, h3, h4, h5, h6 {
   .no-print { display: none !important; }
   body { background: white !important; }
 }
+
+/* ── Electron 22 / Chromium 108 fallback ──────────
+   Tailwind CSS 4 menggunakan color-mix() dan oklch() untuk gradient
+   yang tidak didukung oleh Chromium 108 (Electron 22 untuk Win 7/8).
+   Saat color-mix tidak support, gradient gagal render → background transparan.
+   Fallback: set solid background color untuk elemen dengan gradient.
+*/
+@supports not (background-color: color-mix(in oklab, red, blue)) {
+  /* Sidebar — gradient primary-darker → primary-dark */
+  aside[class*="bg-gradient-to-b"] {
+    background-color: #3730a3 !important;
+    background-image: none !important;
+  }
+  /* Login/setup loading screen — gradient primary */
+  div[class*="bg-gradient-to-br"][class*="from-primary"]:not([class*="rounded"]):not([class*="w-"]):not([class*="h-"]) {
+    background-color: #4f46e5 !important;
+    background-image: none !important;
+  }
+  /* Icon containers with gradient — solid primary/accent fallback */
+  div[class*="bg-gradient-to-br"][class*="from-accent"] {
+    background-color: #f97316 !important;
+    background-image: none !important;
+  }
+  div[class*="bg-gradient-to-br"][class*="from-primary"][class*="rounded"] {
+    background-color: #4f46e5 !important;
+    background-image: none !important;
+  }
+  div[class*="bg-gradient-to-br"][class*="from-emerald"] {
+    background-color: #10b981 !important;
+    background-image: none !important;
+  }
+  /* Buttons with gradient — solid fallback */
+  button[class*="bg-gradient-to-r"][class*="from-primary"] {
+    background-color: #4f46e5 !important;
+    background-image: none !important;
+  }
+  button[class*="bg-gradient-to-r"][class*="from-emerald"] {
+    background-color: #10b981 !important;
+    background-image: none !important;
+  }
+  button[class*="bg-gradient-to-r"][class*="from-accent"] {
+    background-color: #f97316 !important;
+    background-image: none !important;
+  }
+  /* Progress bar gradient */
+  div[class*="bg-gradient-to-r"][class*="from-primary"][class*="to-accent"] {
+    background-color: #4f46e5 !important;
+    background-image: none !important;
+  }
+  /* Card with gradient (Dashboard profit hero) */
+  div[class*="bg-gradient-to-br"][class*="from-primary"][class*="via-primary-light"] {
+    background-color: #4f46e5 !important;
+    background-image: none !important;
+  }
+  /* Body background fallback */
+  body {
+    background: #fafafa !important;
+  }
+  /* Light gradient backgrounds (about page, setup wizard body) */
+  div[class*="bg-gradient-to-br"][class*="from-slate-50"],
+  div[class*="bg-gradient-to-br"][class*="from-zinc-50"] {
+    background-color: #fafafa !important;
+    background-image: none !important;
+  }
+}

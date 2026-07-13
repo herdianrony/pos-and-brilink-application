@@ -125,6 +125,7 @@ export default function Sidebar({
           "bg-gradient-to-b from-primary-darker via-primary to-primary-dark",
           open ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ backgroundColor: "#3730a3" }}
       >
         {/* Decorative gradient overlay */}
         <div className="absolute inset-0 opacity-30 pointer-events-none"

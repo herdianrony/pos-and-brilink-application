@@ -208,7 +208,7 @@ function SetupWizardForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark" style={{ backgroundColor: "#4f46e5" }}>
         <Loader2 className="w-10 h-10 text-accent animate-spin" />
       </div>
     );
@@ -223,7 +223,7 @@ function SetupWizardForm() {
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#4f46e5" }}>
               <Landmark size={20} className="text-white" />
             </div>
             <div>
@@ -419,7 +419,7 @@ function SetupWizardForm() {
 function WelcomeStep() {
   return (
     <div className="text-center py-6">
-      <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-2xl shadow-primary/30 mb-6">
+      <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-2xl shadow-primary/30 mb-6" style={{ backgroundColor: "#4f46e5" }}>
         <Landmark size={40} className="text-white" />
       </div>
       <h2 className="text-3xl font-extrabold text-zinc-800 mb-2">
@@ -917,7 +917,7 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
 function StepHeader({ icon: Icon, title, desc }: { icon: typeof Store; title: string; desc: string }) {
   return (
     <div className="flex items-start gap-4 mb-2">
-      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md shrink-0">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md shrink-0" style={{ backgroundColor: "#4f46e5" }}>
         <Icon size={22} className="text-white" />
       </div>
       <div>
@@ -955,7 +955,7 @@ export default function SetupWizardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark" style={{ backgroundColor: "#4f46e5" }}>
           <Loader2 className="w-10 h-10 text-accent animate-spin" />
         </div>
       }

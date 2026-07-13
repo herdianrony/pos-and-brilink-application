@@ -83,7 +83,7 @@ export default function Dashboard() {
       </div>
 
       {/* Profit Hero Card — Modern Gradient */}
-      <Card className="p-6 bg-gradient-to-br from-primary via-primary-light to-primary-darker text-white relative overflow-hidden border-0">
+      <Card className="p-6 bg-gradient-to-br from-primary via-primary-light to-primary-darker text-white relative overflow-hidden border-0" style={{ backgroundColor: "#4f46e5" }}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
         <div className="relative">

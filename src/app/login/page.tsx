@@ -73,7 +73,7 @@ function LoginForm() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark" style={{ backgroundColor: "#3730a3" }}>
         <Loader2 className="w-10 h-10 text-accent animate-spin" />
       </div>
     );
@@ -82,7 +82,10 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex">
       {/* ── Kiri: Brand panel ─────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-darker via-primary to-primary-dark relative overflow-hidden items-center justify-center p-12">
+      <div
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-darker via-primary to-primary-dark relative overflow-hidden items-center justify-center p-12"
+        style={{ backgroundColor: "#3730a3" }}
+      >
         {/* Decorative shapes */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary-light/40 rounded-full blur-3xl -ml-24 -mb-24" />
@@ -233,7 +236,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark" style={{ backgroundColor: "#3730a3" }}>
           <Loader2 className="w-10 h-10 text-accent animate-spin" />
         </div>
       }

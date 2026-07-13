@@ -38,11 +38,13 @@ export default function Cash() {
   const [accForm, setAccForm] = useState({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" });
 
   async function load() {
-    const [accs, muts] = await Promise.all([
+    const [accs, mutsRes] = await Promise.all([
       fetch("/api/accounts").then(r => r.json()),
       fetch("/api/accounts/mutations?limit=100").then(r => r.json()),
     ]);
     setAccounts(accs);
+    // API sekarang return { mutations, summary } — extract array
+    const muts = Array.isArray(mutsRes) ? mutsRes : (mutsRes.mutations || []);
     setMutations(muts);
     setLoading(false);
   }

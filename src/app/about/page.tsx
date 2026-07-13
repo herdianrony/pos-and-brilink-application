@@ -50,7 +50,7 @@ export default function AboutPage() {
             <ArrowLeft size={18} /> Kembali
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#4f46e5" }}>
               <Landmark size={18} className="text-white" />
             </div>
             <div>
@@ -63,7 +63,7 @@ export default function AboutPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* ── Hero ─────────────────────────────── */}
-        <div className="bg-gradient-to-br from-primary via-primary to-primary-dark rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+        <div className="bg-gradient-to-br from-primary via-primary to-primary-dark rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#4f46e5" }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -mr-20 -mt-20" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary-light/30 rounded-full blur-3xl -ml-16 -mb-16" />
 
@@ -112,7 +112,7 @@ export default function AboutPage() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#4f46e5" }}>
               <span className="text-white text-2xl font-bold">HR</span>
             </div>
 

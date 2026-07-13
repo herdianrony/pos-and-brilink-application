@@ -204,7 +204,7 @@ export function SectionTitle({ icon, title, desc, action }: {
     <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary shrink-0" style={{ backgroundColor: "#4f46e5" }}>
             {icon}
           </div>
         )}
