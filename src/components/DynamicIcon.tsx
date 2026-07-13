@@ -164,7 +164,7 @@ export interface DynamicIconProps extends Omit<LucideProps, "ref" | "name"> {
  * Render Lucide icon dari string name.
  *
  * Pemakaian:
- *   <DynamicIcon name="package" size={20} className="text-blue-500" />
+ *   <DynamicIcon name="package" size={20} className="text-indigo-500" />
  *   <DynamicIcon name={category.icon} fallback="package" />
  *
  * Jika name tidak dikenal, gunakan fallback (default: "package").

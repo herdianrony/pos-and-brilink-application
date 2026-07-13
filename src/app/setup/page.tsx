@@ -213,23 +213,23 @@ function SetupWizardForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
       {/* ── Header ─────────────────────────────── */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md">
               <Landmark size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-gray-800">BRILink POS</h1>
-              <p className="text-[11px] text-gray-400">Setup Awal Aplikasi</p>
+              <h1 className="text-sm font-bold text-zinc-800">BRILink POS</h1>
+              <p className="text-[11px] text-zinc-400">Setup Awal Aplikasi</p>
             </div>
           </div>
-          <div className="text-xs text-gray-400 hidden sm:block">
+          <div className="text-xs text-zinc-400 hidden sm:block">
             Langkah {currentIdx + 1} dari {STEPS.length}
           </div>
         </div>
         {/* Progress bar */}
-        <div className="h-1 bg-gray-100">
+        <div className="h-1 bg-zinc-100">
           <div
             className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -253,17 +253,17 @@ function SetupWizardForm() {
                         ? "bg-primary text-white shadow-lg shadow-primary/30 scale-110"
                         : isDone
                           ? "bg-emerald-500 text-white"
-                          : "bg-gray-200 text-gray-400"
+                          : "bg-zinc-200 text-zinc-400"
                     }`}
                   >
                     {isDone ? <CheckCircle2 size={18} /> : <Icon size={18} />}
                   </div>
-                  <p className={`text-[11px] mt-1.5 font-medium ${isActive ? "text-primary" : isDone ? "text-emerald-600" : "text-gray-400"}`}>
+                  <p className={`text-[11px] mt-1.5 font-medium ${isActive ? "text-primary" : isDone ? "text-emerald-600" : "text-zinc-400"}`}>
                     {s.label}
                   </p>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-2 mb-5 transition-all ${i < currentIdx ? "bg-emerald-500" : "bg-gray-200"}`} />
+                  <div className={`flex-1 h-0.5 mx-2 mb-5 transition-all ${i < currentIdx ? "bg-emerald-500" : "bg-zinc-200"}`} />
                 )}
               </div>
             );
@@ -273,7 +273,7 @@ function SetupWizardForm() {
 
       {/* ── Main content ──────────────────────── */}
       <main className="max-w-3xl mx-auto px-4 pb-32">
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 animate-fadeIn min-h-[400px]">
+        <div className="bg-white rounded-3xl shadow-xl border border-zinc-100 p-6 sm:p-8 animate-fadeIn min-h-[400px]">
           {step === "welcome" && <WelcomeStep />}
           {step === "store" && (
             <StoreStep
@@ -330,11 +330,11 @@ function SetupWizardForm() {
 
       {/* ── Footer navigation ─────────────────── */}
       {step !== "welcome" && step !== "done" && (
-        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-10">
+        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 p-4 z-10">
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
             <button
               onClick={prev}
-              className="px-5 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium text-sm flex items-center gap-2 transition-colors"
+              className="px-5 py-2.5 rounded-xl text-zinc-600 hover:bg-zinc-100 font-medium text-sm flex items-center gap-2 transition-colors"
             >
               <ArrowLeft size={16} /> Kembali
             </button>
@@ -368,7 +368,7 @@ function SetupWizardForm() {
       )}
 
       {step === "done" && (
-        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-10">
+        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 p-4 z-10">
           <div className="max-w-3xl mx-auto flex items-center justify-center">
             <button
               onClick={() => {
@@ -386,7 +386,7 @@ function SetupWizardForm() {
 
       {/* Hidden button for welcome step — show "Mulai" instead of "Lanjut" */}
       {step === "welcome" && (
-        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-10">
+        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 p-4 z-10">
           <div className="max-w-3xl mx-auto flex items-center justify-end gap-3">
             <button
               onClick={next}
@@ -409,10 +409,10 @@ function WelcomeStep() {
       <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-2xl shadow-primary/30 mb-6">
         <Landmark size={40} className="text-white" />
       </div>
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-2">
+      <h2 className="text-3xl font-extrabold text-zinc-800 mb-2">
         Selamat Datang di BRILink POS
       </h2>
-      <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
+      <p className="text-zinc-500 mb-8 max-w-md mx-auto leading-relaxed">
         Aplikasi Point of Sale & agen BRILink lengkap dengan manajemen produk,
         kas, dan transaksi. Mari setup aplikasi Anda dalam beberapa langkah.
       </p>
@@ -423,17 +423,17 @@ function WelcomeStep() {
           { icon: ShieldCheck, title: "Akun Aman", desc: "Login & otoritas" },
           { icon: Wallet, title: "Kas Siap", desc: "Saldo awal" },
         ].map((f, i) => (
-          <div key={i} className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+          <div key={i} className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
             <div className="w-10 h-10 mx-auto rounded-xl bg-white flex items-center justify-center shadow-sm mb-2">
               <f.icon size={18} className="text-primary" />
             </div>
-            <p className="text-sm font-semibold text-gray-700">{f.title}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{f.desc}</p>
+            <p className="text-sm font-semibold text-zinc-700">{f.title}</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">{f.desc}</p>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 mt-8">Setup membutuhkan sekitar 2-3 menit
+      <p className="text-xs text-zinc-400 mt-8">Setup membutuhkan sekitar 2-3 menit
       </p>
     </div>
   );
@@ -567,7 +567,7 @@ function AdminStep({
             <button
               type="button"
               onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
             >
               {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -618,7 +618,7 @@ function CashStep({
       />
       <div className="space-y-5 mt-6">
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-sm">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-sm">
             Rp
           </span>
           <input
@@ -632,7 +632,7 @@ function CashStep({
         </div>
 
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Pilih nominal cepat:</p>
+          <p className="text-xs font-medium text-zinc-500 mb-2">Pilih nominal cepat:</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {presetOptions.map((opt) => (
               <button
@@ -641,7 +641,7 @@ function CashStep({
                 className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${
                   openingBalance === opt.value
                     ? "border-primary bg-primary/5 text-primary"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                 }`}
               >
                 {opt.label}
@@ -650,7 +650,7 @@ function CashStep({
           </div>
         </div>
 
-        <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-xs">
+        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs">
           <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
           akan otomatis dibuat dengan saldo Rp 0. Anda bisa top-up nanti di menu
           "Kas & Saldo".
@@ -696,20 +696,20 @@ function PrinterStep({
               className={`p-4 rounded-2xl border-2 text-left transition-all ${
                 isActive
                   ? "border-primary bg-primary/5 shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
+                  : "border-zinc-200 hover:border-zinc-300"
               }`}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-500"
+                  isActive ? "bg-primary text-white" : "bg-zinc-100 text-zinc-500"
                 }`}>
                   <Icon size={18} />
                 </div>
                 <div className="flex-1">
-                  <p className={`font-semibold text-sm ${isActive ? "text-primary" : "text-gray-700"}`}>
+                  <p className={`font-semibold text-sm ${isActive ? "text-primary" : "text-zinc-700"}`}>
                     {opt.label}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{opt.desc}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">{opt.desc}</p>
                 </div>
                 {isActive && <CheckCircle2 size={16} className="text-primary shrink-0" />}
               </div>
@@ -750,7 +750,7 @@ function PrinterStep({
               <button
                 onClick={() => setPrinterWidth("32")}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  printerWidth === "32" ? "border-primary bg-primary/5 text-primary" : "border-gray-200 text-gray-600"
+                  printerWidth === "32" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-600"
                 }`}
               >
                 58mm (32 char)
@@ -758,7 +758,7 @@ function PrinterStep({
               <button
                 onClick={() => setPrinterWidth("48")}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  printerWidth === "48" ? "border-primary bg-primary/5 text-primary" : "border-gray-200 text-gray-600"
+                  printerWidth === "48" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-600"
                 }`}
               >
                 80mm (48 char)
@@ -769,7 +769,7 @@ function PrinterStep({
       )}
 
       {printerType === "skip" && (
-        <div className="mt-5 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs">Anda bisa setup printer nanti di menu <strong>Pengaturan → Printer Thermal</strong>
+        <div className="mt-5 px-4 py-3 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-600 text-xs">Anda bisa setup printer nanti di menu <strong>Pengaturan → Printer Thermal</strong>
         </div>
       )}
     </div>
@@ -782,10 +782,10 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
       <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-6 animate-scaleIn">
         <PartyPopper size={42} className="text-white" />
       </div>
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-2">
+      <h2 className="text-3xl font-extrabold text-zinc-800 mb-2">
         Setup Selesai! party-popper
       </h2>
-      <p className="text-gray-500 mb-8 max-w-md mx-auto">
+      <p className="text-zinc-500 mb-8 max-w-md mx-auto">
         Selamat! Aplikasi BRILink POS siap digunakan. Anda sudah login sebagai
         admin dan dapat mulai bertransaksi.
       </p>
@@ -798,11 +798,11 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
             <p className="text-xs text-emerald-600">Identitas usaha tersimpan</p>
           </div>
         </div>
-        <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-3">
-          <ShieldCheck size={20} className="text-blue-600 shrink-0" />
+        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center gap-3">
+          <ShieldCheck size={20} className="text-indigo-600 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-blue-800">Admin: {adminName || "—"}</p>
-            <p className="text-xs text-blue-600">Akun siap, Anda sudah login</p>
+            <p className="text-sm font-semibold text-indigo-800">Admin: {adminName || "—"}</p>
+            <p className="text-xs text-indigo-600">Akun siap, Anda sudah login</p>
           </div>
         </div>
         <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-3">
@@ -814,7 +814,7 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mt-8">
+      <p className="text-xs text-zinc-400 mt-8">
         Klik tombol di bawah untuk masuk ke Dashboard
       </p>
     </div>
@@ -830,8 +830,8 @@ function StepHeader({ icon: Icon, title, desc }: { icon: typeof Store; title: st
         <Icon size={22} className="text-white" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{desc}</p>
+        <h2 className="text-2xl font-bold text-zinc-800">{title}</h2>
+        <p className="text-sm text-zinc-500 mt-0.5">{desc}</p>
       </div>
     </div>
   );
@@ -850,10 +850,10 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-gray-600 flex items-center gap-1">
+      <label className="text-sm font-medium text-zinc-600 flex items-center gap-1">
         {label}
         {required && <span className="text-red-500">*</span>}
-        {hint && <span className="text-xs text-gray-400 font-normal ml-auto">{hint}</span>}
+        {hint && <span className="text-xs text-zinc-400 font-normal ml-auto">{hint}</span>}
       </label>
       {children}
     </div>

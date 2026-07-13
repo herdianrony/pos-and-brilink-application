@@ -66,7 +66,7 @@ export default function PrinterSettings() {
 
   return (
     <Card className="p-6 space-y-5">
-      <h3 className="font-semibold text-gray-700 flex items-center gap-2 border-b border-gray-100 pb-3">
+      <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
         <Printer size={18} className="text-purple-500" /> Pengaturan Printer Thermal
       </h3>
 
@@ -140,13 +140,13 @@ export default function PrinterSettings() {
       )}
 
       {config.type === "usb" && (
-        <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-xs animate-fadeIn">Pastikan driver printer USB sudah terinstall di Windows. Interface
+        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs animate-fadeIn">Pastikan driver printer USB sudah terinstall di Windows. Interface
           default USB akan dideteksi otomatis oleh sistem.
         </div>
       )}
 
       {/* Action buttons */}
-      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-100">
+      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-zinc-100">
         <Button onClick={save} disabled={saving} variant="primary">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
           {saving ? "Menyimpan..." : "Simpan"}
@@ -208,8 +208,8 @@ export default function PrinterSettings() {
       )}
 
       {/* Panduan koneksi */}
-      <div className="text-xs text-gray-400 space-y-1.5 pt-3 border-t border-gray-100">
-        <p className="font-semibold text-gray-500">Panduan:</p>
+      <div className="text-xs text-zinc-400 space-y-1.5 pt-3 border-t border-zinc-100">
+        <p className="font-semibold text-zinc-500">Panduan:</p>
         <p>• <strong>Network</strong>: Hubungkan printer ke WiFi/router, set IP static, masukkan IP di atas.</p>
         <p>• <strong>USB</strong>: Sambungkan kabel USB, install driver dari pabrikan.</p>
         <p>• <strong>Serial</strong>: Pilih COM port yang sesuai (cek di Device Manager).</p>

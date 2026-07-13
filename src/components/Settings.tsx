@@ -33,15 +33,15 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5 animate-fadeIn max-w-2xl">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <SettingsIcon size={24} className="text-gray-500" /> Pengaturan
+        <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
+          <SettingsIcon size={24} className="text-zinc-500" /> Pengaturan
         </h2>
-        <p className="text-sm text-gray-400">Konfigurasi toko dan agen BRILink</p>
+        <p className="text-sm text-zinc-400">Konfigurasi toko dan agen BRILink</p>
       </div>
 
       <Card className="p-6 space-y-5">
-        <h3 className="font-semibold text-gray-700 flex items-center gap-2 border-b border-gray-100 pb-3">
-          <Store size={18} className="text-blue-500" /> Informasi Toko
+        <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
+          <Store size={18} className="text-indigo-500" /> Informasi Toko
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -80,7 +80,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="p-6 space-y-5">
-        <h3 className="font-semibold text-gray-700 flex items-center gap-2 border-b border-gray-100 pb-3">
+        <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
           <CreditCard size={18} className="text-emerald-500" /> Pengaturan Kas
         </h3>
         <Input
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           onChange={e => setData({ ...data, opening_balance: e.target.value })}
           placeholder="500000"
         />
-        <p className="text-xs text-gray-400">Saldo awal yang digunakan sebagai referensi pembukaan kas harian.</p>
+        <p className="text-xs text-zinc-400">Saldo awal yang digunakan sebagai referensi pembukaan kas harian.</p>
       </Card>
 
       <PrinterSettings />

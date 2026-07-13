@@ -173,10 +173,10 @@ export default function BRILink() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
           <Landmark size={24} className="text-purple-500" /> Layanan BRILink
         </h2>
-        <p className="text-sm text-gray-400">Pilih layanan dan proses transaksi nasabah</p>
+        <p className="text-sm text-zinc-400">Pilih layanan dan proses transaksi nasabah</p>
       </div>
 
       {/* Account Balance Summary */}
@@ -188,16 +188,16 @@ export default function BRILink() {
               key={acc.id} 
               className={cn(
                 "p-3 rounded-xl border-2 transition-all",
-                acc.code === "cash" ? "bg-emerald-50 border-emerald-200" : "bg-blue-50 border-blue-200",
+                acc.code === "cash" ? "bg-emerald-50 border-emerald-200" : "bg-indigo-50 border-indigo-200",
                 isLow && "ring-2 ring-amber-400"
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-white" />
-                <span className="text-xs font-medium text-gray-600 truncate">{acc.name}</span>
+                <span className="text-xs font-medium text-zinc-600 truncate">{acc.name}</span>
                 {isLow && <AlertTriangle size={10} className="text-amber-500" />}
               </div>
-              <p className={cn("text-sm font-bold", acc.code === "cash" ? "text-emerald-700" : "text-blue-700")}>
+              <p className={cn("text-sm font-bold", acc.code === "cash" ? "text-emerald-700" : "text-indigo-700")}>
                 {formatRupiah(acc.balance)}
               </p>
             </div>
@@ -208,20 +208,20 @@ export default function BRILink() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input type="text" placeholder="Cari layanan..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button onClick={() => setCatFilter("all")}
             className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              catFilter === "all" ? "bg-primary text-white shadow-md" : "bg-white text-gray-600 border border-gray-200")}>
+              catFilter === "all" ? "bg-primary text-white shadow-md" : "bg-white text-zinc-600 border border-zinc-200")}>
             Semua
           </button>
           {cats.map(c => (
             <button key={c.id} onClick={() => setCatFilter(c.id.toString())}
               className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
-                catFilter === c.id.toString() ? "bg-primary text-white shadow-md" : "bg-white text-gray-600 border border-gray-200")}>
+                catFilter === c.id.toString() ? "bg-primary text-white shadow-md" : "bg-white text-zinc-600 border border-zinc-200")}>
               <DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}
             </button>
           ))}
@@ -234,16 +234,16 @@ export default function BRILink() {
       ) : (
         Object.entries(grouped).map(([cat, svcs]) => (
           <div key={cat}>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 ml-1">{cat}</h3>
+            <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-2 ml-1">{cat}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {svcs.map(s => (
                 <button key={s.id} onClick={() => setSel(s)}
                   className={cn(
                     "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg",
-                    sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-gray-200"
+                    sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-zinc-200"
                   )}>
                   <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
-                  <p className="font-semibold text-sm text-gray-800 leading-tight mb-1">{s.name}</p>
+                  <p className="font-semibold text-sm text-zinc-800 leading-tight mb-1">{s.name}</p>
                   <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     {s.useTieredFee ? (
                       <Badge variant="purple">
@@ -279,16 +279,16 @@ export default function BRILink() {
               <div className="flex items-center gap-3">
                 <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">{sel.name}</h3>
+                  <h3 className="text-lg font-bold text-zinc-800">{sel.name}</h3>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm text-gray-400">{sel.categoryName}</p>
+                    <p className="text-sm text-zinc-400">{sel.categoryName}</p>
                     {sel.useTieredFee && (
                       <Badge variant="purple"><Layers size={10} /> Fee Berjenjang</Badge>
                     )}
                   </div>
                 </div>
               </div>
-              <button onClick={() => setSel(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => setSel(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
             </div>
 
             {/* Fee Tiers Info */}
@@ -308,7 +308,7 @@ export default function BRILink() {
                           : "bg-white border-purple-100"
                       )}
                     >
-                      <p className="text-gray-600">
+                      <p className="text-zinc-600">
                         {formatRupiah(tier.minAmount)} - {tier.maxAmount ? formatRupiah(tier.maxAmount) : "∞"}
                       </p>
                       <p className="font-bold text-purple-700">Admin: {formatRupiah(tier.adminFee)}</p>
@@ -322,8 +322,8 @@ export default function BRILink() {
             {/* Bank Account Selection */}
             {sel.bankEffect !== "none" && bankAccounts.length > 0 && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Wallet size={16} className="text-blue-500" />
+                <label className="text-sm font-medium text-zinc-700 flex items-center gap-2">
+                  <Wallet size={16} className="text-indigo-500" />
                   Pilih Rekening untuk Transaksi Ini
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -339,16 +339,16 @@ export default function BRILink() {
                         className={cn(
                           "p-3 rounded-xl border-2 text-left transition-all",
                           isSelected 
-                            ? "bg-blue-50 border-blue-500 ring-2 ring-blue-200" 
-                            : "bg-gray-50 border-gray-200 hover:border-gray-300",
+                            ? "bg-indigo-50 border-blue-500 ring-2 ring-blue-200" 
+                            : "bg-zinc-50 border-zinc-200 hover:border-zinc-300",
                           needsBalance && !hasBalance && form.amount && "opacity-50"
                         )}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-gray-500" />
-                          <span className="text-xs font-medium text-gray-700 truncate">{acc.name}</span>
+                          <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-zinc-500" />
+                          <span className="text-xs font-medium text-zinc-700 truncate">{acc.name}</span>
                         </div>
-                        <p className={cn("text-sm font-bold", isLow ? "text-amber-600" : "text-gray-800")}>
+                        <p className={cn("text-sm font-bold", isLow ? "text-amber-600" : "text-zinc-800")}>
                           {formatRupiah(acc.balance)}
                         </p>
                         {needsBalance && !hasBalance && form.amount && (
@@ -362,18 +362,18 @@ export default function BRILink() {
             )}
 
             {/* Cash/Bank Effect Info */}
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs">
-              <p className="text-gray-700 font-medium mb-2">bar-chart-3 Efek ke Saldo:</p>
+            <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs">
+              <p className="text-zinc-700 font-medium mb-2">bar-chart-3 Efek ke Saldo:</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-gray-100")}>
-                  <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-gray-400"} />
-                  <span className={sel.cashEffect === "in" ? "text-emerald-700" : sel.cashEffect === "out" ? "text-red-600" : "text-gray-500"}>
+                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-zinc-100")}>
+                  <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-zinc-400"} />
+                  <span className={sel.cashEffect === "in" ? "text-emerald-700" : sel.cashEffect === "out" ? "text-red-600" : "text-zinc-500"}>
                     Kas: {sel.cashEffect === "in" ? "plus Masuk" : sel.cashEffect === "out" ? "minus Keluar" : "—"}
                   </span>
                 </div>
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-gray-100")}>
-                  <Building2 size={14} className={sel.bankEffect === "in" ? "text-emerald-600" : sel.bankEffect === "out" ? "text-red-500" : "text-gray-400"} />
-                  <span className={sel.bankEffect === "in" ? "text-emerald-700" : sel.bankEffect === "out" ? "text-red-600" : "text-gray-500"}>
+                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-zinc-100")}>
+                  <Building2 size={14} className={sel.bankEffect === "in" ? "text-emerald-600" : sel.bankEffect === "out" ? "text-red-500" : "text-zinc-400"} />
+                  <span className={sel.bankEffect === "in" ? "text-emerald-700" : sel.bankEffect === "out" ? "text-red-600" : "text-zinc-500"}>
                     {selectedBank?.name || "M-Banking"}: {sel.bankEffect === "in" ? "plus Masuk" : sel.bankEffect === "out" ? "minus Keluar" : "—"}
                   </span>
                 </div>
@@ -406,11 +406,11 @@ export default function BRILink() {
 
             <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-100 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Nominal Transaksi</span>
+                <span className="text-zinc-500">Nominal Transaksi</span>
                 <span className="font-semibold">{formatRupiah(form.amount || "0")}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
+                <span className="text-zinc-500">
                   Biaya Admin (dari Nasabah)
                   {sel.useTieredFee && <span className="text-purple-500 text-xs ml-1">(auto)</span>}
                 </span>
@@ -431,11 +431,11 @@ export default function BRILink() {
                 </div>
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Biaya Admin dari Nasabah</span>
+                    <span className="text-zinc-600">Biaya Admin dari Nasabah</span>
                     <span className="font-semibold">{formatRupiah(adminFee)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Biaya ke Bank (sesama bank)</span>
+                    <span className="text-zinc-600">Biaya ke Bank (sesama bank)</span>
                     <span className="font-semibold text-emerald-600">Rp 0 check</span>
                   </div>
                   <div className="flex justify-between pt-1.5 border-t border-emerald-200">
@@ -480,12 +480,12 @@ export default function BRILink() {
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800">Transaksi BRILink Berhasil!</h3>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-400">No. Invoice</p>
+          <h3 className="text-xl font-bold text-zinc-800">Transaksi BRILink Berhasil!</h3>
+          <div className="bg-zinc-50 rounded-xl p-3">
+            <p className="text-xs text-zinc-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
           </div>
-          <p className="text-xs text-gray-400">Saldo kas & rekening telah diperbarui otomatis</p>
+          <p className="text-xs text-zinc-400">Saldo kas & rekening telah diperbarui otomatis</p>
           <Button variant="primary" size="lg" className="w-full" onClick={() => setShowDone(false)}>OK</Button>
         </div>
       </Modal>

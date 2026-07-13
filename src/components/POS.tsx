@@ -101,20 +101,20 @@ export default function POS() {
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Kasir POS</h2>
-            <p className="text-sm text-gray-400">Pilih produk untuk ditambahkan</p>
+            <h2 className="text-2xl font-bold text-zinc-800">Kasir POS</h2>
+            <p className="text-sm text-zinc-400">Pilih produk untuk ditambahkan</p>
           </div>
         </div>
 
         {/* Search bar */}
         <div className="relative mb-3">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
             placeholder="Cari produk atau scan barcode..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm shadow-sm"
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm shadow-sm"
           />
         </div>
 
@@ -124,7 +124,7 @@ export default function POS() {
             onClick={() => setCatFilter("all")}
             className={cn(
               "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              catFilter === "all" ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-gray-600 border border-gray-200 hover:border-primary/30"
+              catFilter === "all" ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-zinc-600 border border-zinc-200 hover:border-primary/30"
             )}
           >Semua</button>
           {categories.map(c => (
@@ -133,7 +133,7 @@ export default function POS() {
               onClick={() => setCatFilter(c.id.toString())}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
-                catFilter === c.id.toString() ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-gray-600 border border-gray-200 hover:border-primary/30"
+                catFilter === c.id.toString() ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-zinc-600 border border-zinc-200 hover:border-primary/30"
               )}
             ><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</button>
           ))}
@@ -154,7 +154,7 @@ export default function POS() {
                     disabled={p.stock <= 0}
                     className={cn(
                       "p-3.5 rounded-2xl text-left transition-all duration-200 border-2 group relative overflow-hidden",
-                      inCart ? "bg-primary/5 border-primary shadow-md shadow-primary/10" : "bg-white border-transparent hover:border-gray-200 hover:shadow-lg",
+                      inCart ? "bg-primary/5 border-primary shadow-md shadow-primary/10" : "bg-white border-transparent hover:border-zinc-200 hover:shadow-lg",
                       p.stock <= 0 && "opacity-40 cursor-not-allowed"
                     )}
                   >
@@ -166,12 +166,12 @@ export default function POS() {
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
                       <DynamicIcon name={p.categoryIcon} fallback="package" size={20} className="text-primary" />
                     </div>
-                    <p className="font-semibold text-sm text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</p>
+                    <p className="font-semibold text-sm text-zinc-800 leading-tight line-clamp-2 mb-1">{p.name}</p>
                     <p className="text-primary font-bold text-base">{formatRupiah(p.sellPrice)}</p>
                     <div className="flex items-center justify-between mt-1.5">
                       <span className={cn(
                         "text-[11px] font-medium px-2 py-0.5 rounded-full",
-                        p.stock <= 5 ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
+                        p.stock <= 5 ? "bg-red-100 text-red-600" : "bg-zinc-100 text-zinc-500"
                       )}>
                         {p.stock} {p.unit}
                       </span>
@@ -185,9 +185,9 @@ export default function POS() {
       </div>
 
       {/* Right: Cart */}
-      <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-bold text-gray-800 flex items-center gap-2">
+      <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-lg border border-zinc-100 flex flex-col">
+        <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+          <h3 className="font-bold text-zinc-800 flex items-center gap-2">
             <ShoppingBag size={18} className="text-primary" />
             Keranjang
           </h3>
@@ -200,24 +200,24 @@ export default function POS() {
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-300">
               <ShoppingBag size={48} strokeWidth={1} />
-              <p className="text-sm mt-3 text-gray-400">Keranjang masih kosong</p>
+              <p className="text-sm mt-3 text-zinc-400">Keranjang masih kosong</p>
               <p className="text-xs text-gray-300">Klik produk untuk menambahkan</p>
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.productId} className="flex items-center gap-3 p-3 bg-gray-50/80 rounded-xl border border-gray-100 group animate-fadeIn">
+              <div key={item.productId} className="flex items-center gap-3 p-3 bg-zinc-50/80 rounded-xl border border-zinc-100 group animate-fadeIn">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-700 truncate">{item.productName}</p>
-                  <p className="text-xs text-gray-400">{formatRupiah(item.unitPrice)} / {item.unit}</p>
+                  <p className="text-sm font-semibold text-zinc-700 truncate">{item.productName}</p>
+                  <p className="text-xs text-zinc-400">{formatRupiah(item.unitPrice)} / {item.unit}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => updateQty(item.productId, -1)}
-                    className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors">
+                    className="w-7 h-7 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors">
                     <Minus size={13} />
                   </button>
-                  <span className="w-8 text-center text-sm font-bold text-gray-700">{item.quantity}</span>
+                  <span className="w-8 text-center text-sm font-bold text-zinc-700">{item.quantity}</span>
                   <button onClick={() => updateQty(item.productId, 1)}
-                    className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-500 transition-colors">
+                    className="w-7 h-7 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-500 transition-colors">
                     <Plus size={13} />
                   </button>
                 </div>
@@ -231,9 +231,9 @@ export default function POS() {
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-100 space-y-3 bg-gray-50/30">
+        <div className="p-4 border-t border-zinc-100 space-y-3 bg-zinc-50/30">
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 font-medium">Total Pembayaran</span>
+            <span className="text-zinc-500 font-medium">Total Pembayaran</span>
             <span className="text-2xl font-bold text-primary">{formatRupiah(total)}</span>
           </div>
           <Button variant="accent" size="lg" className="w-full" disabled={!cart.length} onClick={() => setShowPay(true)}>
@@ -246,12 +246,12 @@ export default function POS() {
       <Modal open={showPay} onClose={() => setShowPay(false)}>
         <div className="p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-800">Pembayaran</h3>
-            <button onClick={() => setShowPay(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <h3 className="text-xl font-bold text-zinc-800">Pembayaran</h3>
+            <button onClick={() => setShowPay(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
           </div>
           <Input label="Nama Pelanggan (opsional)" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nama pelanggan" />
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-600">Metode Pembayaran</label>
+            <label className="text-sm font-medium text-zinc-600">Metode Pembayaran</label>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { m: "cash", icon: "banknote", label: "Tunai" },
@@ -261,9 +261,9 @@ export default function POS() {
                 <button key={m} onClick={() => setPayMethod(m)}
                   className={cn(
                     "py-3 rounded-xl text-sm font-semibold border-2 transition-all flex flex-col items-center gap-1.5",
-                    payMethod === m ? "bg-primary/5 border-primary text-primary" : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                    payMethod === m ? "bg-primary/5 border-primary text-primary" : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                   )}>
-                  <DynamicIcon name={icon} size={20} className={payMethod === m ? "text-primary" : "text-gray-500"} />
+                  <DynamicIcon name={icon} size={20} className={payMethod === m ? "text-primary" : "text-zinc-500"} />
                   {label}
                 </button>
               ))}
@@ -271,7 +271,7 @@ export default function POS() {
           </div>
           <Card className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/10">
             <div className="flex justify-between text-lg font-bold">
-              <span className="text-gray-600">Total</span>
+              <span className="text-zinc-600">Total</span>
               <span className="text-primary">{formatRupiah(total)}</span>
             </div>
           </Card>
@@ -301,9 +301,9 @@ export default function POS() {
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800">Transaksi Berhasil!</h3>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-400">No. Invoice</p>
+          <h3 className="text-xl font-bold text-zinc-800">Transaksi Berhasil!</h3>
+          <div className="bg-zinc-50 rounded-xl p-3">
+            <p className="text-xs text-zinc-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
           </div>
           <Button variant="primary" size="lg" className="w-full" onClick={() => setShowDone(false)}>

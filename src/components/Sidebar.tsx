@@ -30,13 +30,13 @@ interface UserInfo {
 }
 
 const nav = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500" },
-  { id: "pos", label: "Kasir POS", icon: ShoppingCart, color: "text-emerald-500" },
-  { id: "brilink", label: "BRILink", icon: Landmark, color: "text-purple-500" },
-  { id: "products", label: "Produk", icon: Package, color: "text-amber-500" },
-  { id: "history", label: "Transaksi", icon: ClipboardList, color: "text-cyan-500" },
-  { id: "cash", label: "Kas & Saldo", icon: Wallet, color: "text-green-500" },
-  { id: "settings", label: "Pengaturan", icon: Settings, color: "text-gray-500" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "pos", label: "Kasir POS", icon: ShoppingCart },
+  { id: "brilink", label: "BRILink", icon: Landmark },
+  { id: "products", label: "Produk", icon: Package },
+  { id: "history", label: "Transaksi", icon: ClipboardList },
+  { id: "cash", label: "Kas & Saldo", icon: Wallet },
+  { id: "settings", label: "Pengaturan", icon: Settings },
 ];
 
 export default function Sidebar({
@@ -98,7 +98,7 @@ export default function Sidebar({
       {/* Mobile hamburger */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-3 left-3 z-50 p-2.5 bg-white rounded-xl shadow-lg border border-gray-100 text-gray-700"
+        className="lg:hidden fixed top-3 left-3 z-50 p-2.5 bg-white rounded-xl shadow-card border border-zinc-200/70 text-zinc-700"
       >
         <Menu size={20} />
       </button>
@@ -106,7 +106,7 @@ export default function Sidebar({
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[55] lg:hidden"
+          className="fixed inset-0 bg-zinc-950/40 backdrop-blur-sm z-[55] lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -115,32 +115,38 @@ export default function Sidebar({
       <aside
         className={cn(
           "fixed lg:sticky top-0 left-0 h-screen w-72 z-[56] flex flex-col transition-transform duration-300 lg:translate-x-0",
-          "bg-gradient-to-b from-primary via-primary to-primary-dark",
+          "bg-gradient-to-b from-primary-darker via-primary to-primary-dark",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
+        {/* Decorative gradient overlay */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 0% 0%, rgba(99,102,241,0.4) 0%, transparent 50%)",
+          }}
+        />
+
         {/* Header */}
-        <div className="p-5 flex items-center justify-between">
+        <div className="relative p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-lg shadow-accent/30">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent">
               <Landmark size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-white font-bold text-base">BRILink POS</h1>
-              <p className="text-blue-200 text-[11px]">Point of Sale System</p>
+              <h1 className="text-white font-bold text-base tracking-tight">BRILink POS</h1>
+              <p className="text-indigo-200 text-[11px]">Point of Sale System</p>
             </div>
           </div>
-          <button onClick={() => setOpen(false)} className="lg:hidden text-blue-200 hover:text-white">
+          <button onClick={() => setOpen(false)} className="lg:hidden text-indigo-200 hover:text-white">
             <X size={20} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        <nav className="relative flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {nav.map((item) => {
             const Icon = item.icon;
             const isActive = active === item.id;
-            // Batasi menu untuk kasir (jika diperlukan)
             const restrictedForKasir = ["settings"];
             const isDisabled = user?.role === "kasir" && restrictedForKasir.includes(item.id);
 
@@ -154,36 +160,37 @@ export default function Sidebar({
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group",
+                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left transition-all duration-200 group relative",
                   isActive
-                    ? "bg-white/15 text-white shadow-lg shadow-black/10"
+                    ? "bg-white text-primary shadow-lg"
                     : isDisabled
-                      ? "text-blue-300/40 cursor-not-allowed"
-                      : "text-blue-200 hover:bg-white/8 hover:text-white"
+                      ? "text-indigo-300/40 cursor-not-allowed"
+                      : "text-indigo-100 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <Icon size={19} className={cn(isActive ? "text-accent" : isDisabled ? "text-blue-300/40" : "text-blue-300 group-hover:text-blue-100")} />
+                <Icon size={18} className={cn(
+                  isActive ? "text-primary" : isDisabled ? "text-indigo-300/40" : "text-indigo-200 group-hover:text-white"
+                )} />
                 <span className="text-sm font-medium flex-1">{item.label}</span>
-                {isActive && <ChevronRight size={14} className="text-accent" />}
+                {isActive && <ChevronRight size={14} className="text-primary" />}
               </button>
             );
           })}
         </nav>
 
-        {/* User + Logout (di atas footer) */}
+        {/* User + Actions (di atas footer) */}
         {user && (
-          <div className="px-3 pb-2 space-y-2">
+          <div className="relative px-3 pb-2 space-y-2">
             {/* About & Support buttons */}
             <div className="grid grid-cols-2 gap-2">
               <a
                 href="/about"
                 onClick={(e) => {
-                  // Buka di tab baru untuk tidak ganggu session
                   e.preventDefault();
                   window.open("/about", "_blank");
                   setOpen(false);
                 }}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-blue-100 hover:text-white text-[11px] font-medium transition-colors"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-indigo-100 hover:text-white text-[11px] font-medium transition-colors"
                 title="Tentang Aplikasi & Developer"
               >
                 <Info size={13} />
@@ -209,10 +216,10 @@ export default function Sidebar({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{user.name}</p>
-                <div className="flex items-center gap-1.5 text-blue-200 text-[11px]">
+                <div className="flex items-center gap-1.5 text-indigo-200 text-[11px]">
                   {user.role === "admin" ? (
                     <>
-                      <Shield size={11} className="text-accent" />
+                      <Shield size={11} className="text-accent-light" />
                       <span>Administrator</span>
                     </>
                   ) : (
@@ -227,7 +234,7 @@ export default function Sidebar({
                 onClick={handleLogout}
                 disabled={loggingOut}
                 title="Keluar"
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-blue-100 hover:text-white transition-colors disabled:opacity-50"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-indigo-100 hover:text-white transition-colors disabled:opacity-50"
               >
                 <LogOut size={15} />
               </button>
@@ -236,14 +243,14 @@ export default function Sidebar({
         )}
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10">
+        <div className="relative p-4 border-t border-white/10">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
-              <Clock size={16} className="text-blue-100" />
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <Clock size={16} className="text-indigo-100" />
             </div>
             <div>
               <p className="text-white text-sm font-semibold">{time}</p>
-              <p className="text-blue-300 text-[11px]">
+              <p className="text-indigo-200 text-[11px]">
                 {new Date().toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",

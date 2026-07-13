@@ -176,10 +176,10 @@ export default function Cash() {
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
             <Wallet size={24} className="text-emerald-500" /> Manajemen Saldo
           </h2>
-          <p className="text-sm text-gray-400">Kelola kas tunai dan rekening M-Banking</p>
+          <p className="text-sm text-zinc-400">Kelola kas tunai dan rekening M-Banking</p>
         </div>
         <Button onClick={() => { setAccForm({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" }); setModal("add_account"); }}>
           <Plus size={16} /> Tambah Rekening
@@ -222,9 +222,9 @@ export default function Cash() {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm">
-        <p className="text-blue-800 font-medium mb-2">Tips Multi-Rekening:</p>
-        <ul className="text-blue-700 text-xs space-y-1 list-disc ml-4">
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm">
+        <p className="text-indigo-800 font-medium mb-2">Tips Multi-Rekening:</p>
+        <ul className="text-indigo-700 text-xs space-y-1 list-disc ml-4">
           <li><strong>Hemat Biaya Transfer:</strong> Gunakan rekening yang sama dengan bank tujuan nasabah</li>
           <li><strong>Transfer Sesama Bank = Gratis/Murah:</strong> BRI→BRI, Mandiri→Mandiri, dll</li>
           <li><strong>Balancing:</strong> Gunakan "Transfer" untuk pindah saldo antar rekening (simulasi setor/tarik ATM)</li>
@@ -233,14 +233,14 @@ export default function Cash() {
 
       {/* Mutation History */}
       <Card className="overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
-          <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-            <Clock size={16} className="text-gray-400" /> Riwayat Mutasi
+        <div className="p-4 border-b border-zinc-50 flex items-center justify-between flex-wrap gap-3">
+          <h3 className="font-semibold text-zinc-700 flex items-center gap-2">
+            <Clock size={16} className="text-zinc-400" /> Riwayat Mutasi
           </h3>
           <div className="flex gap-1 flex-wrap">
             <button 
               onClick={() => setActiveTab("all")}
-              className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === "all" ? "bg-primary text-white" : "bg-gray-100 text-gray-600")}
+              className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === "all" ? "bg-primary text-white" : "bg-zinc-100 text-zinc-600")}
             >
               Semua
             </button>
@@ -248,7 +248,7 @@ export default function Cash() {
               <button
                 key={a.id}
                 onClick={() => setActiveTab(a.id.toString())}
-                className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-gray-100 text-gray-600")}
+                className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-zinc-100 text-zinc-600")}
               >
                 <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{a.name.split(" ")[0]}
               </button>
@@ -258,7 +258,7 @@ export default function Cash() {
         {filteredMutations.length === 0 ? <EmptyState icon="clipboard-list" title="Belum ada mutasi" /> : (
           <div className="overflow-x-auto max-h-96">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white"><tr className="text-xs text-gray-400 uppercase tracking-wider bg-gray-50/80">
+              <thead className="sticky top-0 bg-white"><tr className="text-xs text-zinc-400 uppercase tracking-wider bg-zinc-50/80">
                 <th className="text-left p-3 font-medium">Waktu</th>
                 <th className="text-left p-3 font-medium">Akun</th>
                 <th className="text-left p-3 font-medium">Tipe</th>
@@ -271,10 +271,10 @@ export default function Cash() {
                   const tl = typeLabels[m.type] || { label: m.type, color: "default" as const };
                   const isPositive = parseFloat(m.amount) >= 0;
                   return (
-                    <tr key={m.id} className="border-t border-gray-50 hover:bg-blue-50/30">
-                      <td className="p-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
+                    <tr key={m.id} className="border-t border-zinc-50 hover:bg-indigo-50/30">
+                      <td className="p-3 text-zinc-400 text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
                       <td className="p-3">
-                        <span className="flex items-center gap-1.5 text-gray-600">
+                        <span className="flex items-center gap-1.5 text-zinc-600">
                           <span>{m.accountIcon}</span>
                           <span className="text-xs truncate max-w-[80px]">{m.accountName}</span>
                         </span>
@@ -283,8 +283,8 @@ export default function Cash() {
                       <td className={cn("p-3 text-right font-semibold", isPositive ? "text-emerald-600" : "text-red-500")}>
                         {isPositive ? "+" : ""}{formatRupiah(m.amount)}
                       </td>
-                      <td className="p-3 text-right font-semibold text-gray-700">{formatRupiah(m.balanceAfter)}</td>
-                      <td className="p-3 text-gray-500 text-xs max-w-xs truncate">{m.notes || "—"}</td>
+                      <td className="p-3 text-right font-semibold text-zinc-700">{formatRupiah(m.balanceAfter)}</td>
+                      <td className="p-3 text-zinc-500 text-xs max-w-xs truncate">{m.notes || "—"}</td>
                     </tr>
                   );
                 })}
@@ -299,13 +299,13 @@ export default function Cash() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">Sesuaikan Saldo</h3>
-            <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <button onClick={() => setModal(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
           </div>
           {selAccount && (
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400">Akun</p>
+            <div className="bg-zinc-50 rounded-xl p-3">
+              <p className="text-xs text-zinc-400">Akun</p>
               <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
-              <p className="text-sm text-gray-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
+              <p className="text-sm text-zinc-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
           <Input label="Jumlah (+/-)" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Positif untuk tambah, negatif untuk kurang" className="text-lg font-bold" />
@@ -322,13 +322,13 @@ export default function Cash() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">Transfer Antar Saldo</h3>
-            <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <button onClick={() => setModal(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
           </div>
           {selAccount && (
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400">Dari Akun</p>
+            <div className="bg-zinc-50 rounded-xl p-3">
+              <p className="text-xs text-zinc-400">Dari Akun</p>
               <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
-              <p className="text-sm text-gray-500">Saldo: {formatRupiah(selAccount.balance)}</p>
+              <p className="text-sm text-zinc-500">Saldo: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
           <Select label="Ke Akun" value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
@@ -351,23 +351,23 @@ export default function Cash() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">Tambah Rekening Baru</h3>
-            <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <button onClick={() => setModal(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
           </div>
           <Input label="Nama Rekening" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Contoh: M-Banking BCA" />
           <div>
-            <label className="text-sm font-medium text-gray-600 mb-1.5 block">Ikon</label>
+            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Ikon</label>
             <div className="flex flex-wrap gap-2">
               {bankIcons.map(icon => (
                 <button
                   key={icon}
                   onClick={() => setAccForm({ ...accForm, icon })}
-                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-gray-100 hover:bg-gray-200")}
-                ><DynamicIcon name={icon} size={18} className="text-gray-700" /></button>
+                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-zinc-100 hover:bg-zinc-200")}
+                ><DynamicIcon name={icon} size={18} className="text-zinc-700" /></button>
               ))}
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-600 mb-1.5 block">Warna</label>
+            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Warna</label>
             <div className="flex flex-wrap gap-2">
               {bankColors.map(color => (
                 <button
@@ -393,23 +393,23 @@ export default function Cash() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">Edit Rekening</h3>
-            <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <button onClick={() => setModal(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
           </div>
           <Input label="Nama Rekening" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Contoh: M-Banking BCA" />
           <div>
-            <label className="text-sm font-medium text-gray-600 mb-1.5 block">Ikon</label>
+            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Ikon</label>
             <div className="flex flex-wrap gap-2">
               {bankIcons.map(icon => (
                 <button
                   key={icon}
                   onClick={() => setAccForm({ ...accForm, icon })}
-                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-gray-100 hover:bg-gray-200")}
-                ><DynamicIcon name={icon} size={18} className="text-gray-700" /></button>
+                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-zinc-100 hover:bg-zinc-200")}
+                ><DynamicIcon name={icon} size={18} className="text-zinc-700" /></button>
               ))}
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-600 mb-1.5 block">Warna</label>
+            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Warna</label>
             <div className="flex flex-wrap gap-2">
               {bankColors.map(color => (
                 <button
@@ -422,7 +422,7 @@ export default function Cash() {
             </div>
           </div>
           <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
-          <p className="text-xs text-gray-400">* Untuk mengubah saldo, gunakan fitur "Sesuaikan" pada kartu rekening</p>
+          <p className="text-xs text-zinc-400">* Untuk mengubah saldo, gunakan fitur "Sesuaikan" pada kartu rekening</p>
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
             <Button variant="primary" className="flex-1" onClick={handleEditAccount} disabled={saving || !accForm.name}>{saving ? "..." : "Simpan"}</Button>
