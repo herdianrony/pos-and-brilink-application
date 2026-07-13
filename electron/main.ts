@@ -162,7 +162,7 @@ function createWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 680,
-    backgroundColor: "#4f46e5",
+    backgroundColor: "#0f172a",
     show: false,
     title: "POS & Agen Bisnis",
     icon: path.join(__dirname, "build", "icon.png"),

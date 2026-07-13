@@ -208,8 +208,8 @@ function SetupWizardForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark" style={{ backgroundColor: "#4f46e5" }}>
-        <Loader2 className="w-10 h-10 text-accent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -223,7 +223,7 @@ function SetupWizardForm() {
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#4f46e5" }}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#10b981" }}>
               <Landmark size={20} className="text-white" />
             </div>
             <div>
@@ -419,7 +419,7 @@ function SetupWizardForm() {
 function WelcomeStep() {
   return (
     <div className="text-center py-6">
-      <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-2xl shadow-primary/30 mb-6" style={{ backgroundColor: "#4f46e5" }}>
+      <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-2xl shadow-primary/30 mb-6" style={{ backgroundColor: "#10b981" }}>
         <Landmark size={40} className="text-white" />
       </div>
       <h2 className="text-3xl font-extrabold text-zinc-800 mb-2">
@@ -741,7 +741,7 @@ function CashStep({
           </div>
         </div>
 
-        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs">
+        <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs">
           <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
           akan otomatis dibuat dengan saldo Rp 0. Anda bisa top-up nanti di menu
           "Kas & Saldo".
@@ -889,11 +889,11 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
             <p className="text-xs text-emerald-600">Identitas usaha tersimpan</p>
           </div>
         </div>
-        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center gap-3">
-          <ShieldCheck size={20} className="text-indigo-600 shrink-0" />
+        <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+          <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-indigo-800">Admin: {adminName || "—"}</p>
-            <p className="text-xs text-indigo-600">Akun siap, Anda sudah login</p>
+            <p className="text-sm font-semibold text-emerald-800">Admin: {adminName || "—"}</p>
+            <p className="text-xs text-emerald-600">Akun siap, Anda sudah login</p>
           </div>
         </div>
         <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-3">
@@ -917,7 +917,7 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
 function StepHeader({ icon: Icon, title, desc }: { icon: typeof Store; title: string; desc: string }) {
   return (
     <div className="flex items-start gap-4 mb-2">
-      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md shrink-0" style={{ backgroundColor: "#4f46e5" }}>
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md shrink-0" style={{ backgroundColor: "#10b981" }}>
         <Icon size={22} className="text-white" />
       </div>
       <div>
@@ -955,8 +955,8 @@ export default function SetupWizardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark" style={{ backgroundColor: "#4f46e5" }}>
-          <Loader2 className="w-10 h-10 text-accent animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
         </div>
       }
     >

@@ -140,7 +140,7 @@ export default function PrinterSettings() {
       )}
 
       {config.type === "usb" && (
-        <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs animate-fadeIn">Pastikan driver printer USB sudah terinstall di Windows. Interface
+        <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs animate-fadeIn">Pastikan driver printer USB sudah terinstall di Windows. Interface
           default USB akan dideteksi otomatis oleh sistem.
         </div>
       )}

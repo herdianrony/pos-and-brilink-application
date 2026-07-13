@@ -191,7 +191,7 @@ export default function BRILink() {
               key={acc.id} 
               className={cn(
                 "p-3 rounded-xl border-2 transition-all",
-                acc.code === "cash" ? "bg-emerald-50 border-emerald-200" : "bg-indigo-50 border-indigo-200",
+                acc.code === "cash" ? "bg-emerald-50 border-emerald-200" : "bg-emerald-50 border-emerald-200",
                 isLow && "ring-2 ring-amber-400"
               )}
             >
@@ -200,7 +200,7 @@ export default function BRILink() {
                 <span className="text-xs font-medium text-zinc-600 truncate">{acc.name}</span>
                 {isLow && <AlertTriangle size={10} className="text-amber-500" />}
               </div>
-              <p className={cn("text-sm font-bold", acc.code === "cash" ? "text-emerald-700" : "text-indigo-700")}>
+              <p className={cn("text-sm font-bold", acc.code === "cash" ? "text-emerald-700" : "text-emerald-700")}>
                 {formatRupiah(acc.balance)}
               </p>
             </div>
@@ -326,7 +326,7 @@ export default function BRILink() {
             {sel.bankEffect !== "none" && bankAccounts.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-700 flex items-center gap-2">
-                  <Wallet size={16} className="text-indigo-500" />
+                  <Wallet size={16} className="text-emerald-500" />
                   Pilih Rekening untuk Transaksi Ini
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -342,7 +342,7 @@ export default function BRILink() {
                         className={cn(
                           "p-3 rounded-xl border-2 text-left transition-all",
                           isSelected 
-                            ? "bg-indigo-50 border-blue-500 ring-2 ring-blue-200" 
+                            ? "bg-emerald-50 border-blue-500 ring-2 ring-blue-200" 
                             : "bg-zinc-50 border-zinc-200 hover:border-zinc-300",
                           needsBalance && !hasBalance && form.amount && "opacity-50"
                         )}

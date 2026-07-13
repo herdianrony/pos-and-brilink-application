@@ -48,7 +48,7 @@ export function Badge({ children, variant = "default" }: {
     success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60",
     danger: "bg-red-50 text-red-700 ring-1 ring-red-200/60",
     warning: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60",
-    primary: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200/60",
+    primary: "bg-emerald-50 text-emerald-700 ring-1 ring-indigo-200/60",
     purple: "bg-purple-50 text-purple-700 ring-1 ring-purple-200/60",
   };
   return (
@@ -204,7 +204,7 @@ export function SectionTitle({ icon, title, desc, action }: {
     <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary shrink-0" style={{ backgroundColor: "#4f46e5" }}>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary shrink-0" style={{ backgroundColor: "#10b981" }}>
             {icon}
           </div>
         )}

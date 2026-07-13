@@ -123,7 +123,7 @@ export default function SettingsPage() {
             placeholder="Mis. Layanan BRILink"
           />
         </div>
-        <div className="px-4 py-3 rounded-xl bg-indigo-50/50 border border-indigo-100 text-xs text-indigo-700">
+        <div className="px-4 py-3 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-700">
           <strong>Contoh:</strong> Untuk counter HP, set "Tipe Bisnis: Counter HP",
           "Nama Aplikasi: Counter HP POS", "Label Menu: Layanan Counter".
           Branding akan tampil di sidebar, judul, dan struk.
@@ -132,7 +132,7 @@ export default function SettingsPage() {
 
       <Card className="p-6 space-y-5">
         <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
-          <Store size={18} className="text-indigo-500" /> Informasi Toko
+          <Store size={18} className="text-emerald-500" /> Informasi Toko
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input

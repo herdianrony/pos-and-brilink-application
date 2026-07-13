@@ -50,7 +50,7 @@ export default function AboutPage() {
             <ArrowLeft size={18} /> Kembali
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#4f46e5" }}>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#10b981" }}>
               <Landmark size={18} className="text-white" />
             </div>
             <div>
@@ -63,23 +63,23 @@ export default function AboutPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* ── Hero ─────────────────────────────── */}
-        <div className="bg-gradient-to-br from-primary via-primary to-primary-dark rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#4f46e5" }}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary-light/30 rounded-full blur-3xl -ml-16 -mb-16" />
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#0f172a" }}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl -ml-16 -mb-16" />
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-lg shadow-accent/30">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
                 <Landmark size={28} className="text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold">{appName}</h1>
-                <p className="text-indigo-200 text-xs">
+                <p className="text-emerald-200 text-xs">
                   Point of Sale & {businessType} System
                 </p>
               </div>
             </div>
-            <p className="text-indigo-100 text-sm leading-relaxed max-w-md">
+            <p className="text-emerald-100 text-sm leading-relaxed max-w-md">
               Aplikasi kasir & layanan agen bisnis yang lengkap dengan manajemen
               produk, transaksi, multi-rekening, dan laporan keuangan — dirancang
               untuk berbagai jenis bisnis seperti BRILink, counter HP, agen pulsa,
@@ -88,15 +88,15 @@ export default function AboutPage() {
 
             <div className="grid grid-cols-3 gap-3 mt-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Versi</p>
+                <p className="text-[10px] text-emerald-200 uppercase tracking-wider">Versi</p>
                 <p className="text-sm font-bold mt-0.5">{version}</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Mode</p>
+                <p className="text-[10px] text-emerald-200 uppercase tracking-wider">Mode</p>
                 <p className="text-sm font-bold mt-0.5">{electron ? "Desktop" : "Web"}</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Build</p>
+                <p className="text-[10px] text-emerald-200 uppercase tracking-wider">Build</p>
                 <p className="text-sm font-bold mt-0.5">{packaged ? "Release" : "Dev"}</p>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function AboutPage() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#4f46e5" }}>
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#10b981" }}>
               <span className="text-white text-2xl font-bold">HR</span>
             </div>
 

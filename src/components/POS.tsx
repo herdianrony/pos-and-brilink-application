@@ -217,7 +217,7 @@ export default function POS() {
                   </button>
                   <span className="w-8 text-center text-sm font-bold text-zinc-700">{item.quantity}</span>
                   <button onClick={() => updateQty(item.productId, 1)}
-                    className="w-7 h-7 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-500 transition-colors">
+                    className="w-7 h-7 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-colors">
                     <Plus size={13} />
                   </button>
                 </div>

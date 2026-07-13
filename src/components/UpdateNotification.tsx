@@ -100,9 +100,9 @@ export default function UpdateNotification() {
   if (progress) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-indigo-200 p-5">
+        <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-5">
           <div className="flex items-center gap-3 mb-3">
-            <RefreshCw size={18} className="text-indigo-500 animate-spin" />
+            <RefreshCw size={18} className="text-emerald-500 animate-spin" />
             <div>
               <h4 className="font-bold text-zinc-800 text-sm">Mengunduh Update...</h4>
               <p className="text-xs text-zinc-500">
@@ -125,10 +125,10 @@ export default function UpdateNotification() {
   if (available && !dismissed) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-indigo-200 p-5">
+        <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-5">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
-              <DownloadCloud size={20} className="text-indigo-600" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <DownloadCloud size={20} className="text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-zinc-800 text-sm">

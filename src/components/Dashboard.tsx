@@ -82,16 +82,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Profit Hero Card — Modern Gradient */}
-      <Card className="p-6 bg-gradient-to-br from-primary via-primary-light to-primary-darker text-white relative overflow-hidden border-0" style={{ backgroundColor: "#4f46e5" }}>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
+      {/* Profit Hero Card — Dark Premium */}
+      <Card className="p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden border-0" style={{ backgroundColor: "#0f172a" }}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
               <Wallet size={18} className="text-white" />
             </div>
-            <span className="text-indigo-100 text-sm font-medium">Keuntungan Hari Ini</span>
+            <span className="text-slate-200 text-sm font-medium">Keuntungan Hari Ini</span>
           </div>
           <p className="text-4xl font-bold tracking-tight">{formatRupiah(d.today.profit)}</p>
           <div className="flex items-center gap-3 mt-4">
@@ -107,22 +107,22 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Stats Grid — Modern Cards */}
+      {/* Stats Grid — Vibrant Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={d.today.count.toString()} sub="hari ini" color="bg-indigo-50 text-indigo-600" />
-        <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos.total)} sub={`${d.today.pos.count} trx`} color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-purple-50 text-purple-600" />
+        <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={d.today.count.toString()} sub="hari ini" color="bg-emerald-50 text-emerald-600" />
+        <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos.total)} sub={`${d.today.pos.count} trx`} color="bg-cyan-50 text-cyan-600" />
+        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-violet-50 text-violet-600" />
         <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
 
       {/* POS vs Layanan Agen — Modern Split Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                <ShoppingCart size={18} className="text-indigo-600" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <ShoppingCart size={18} className="text-emerald-600" />
               </div>
               <span className="font-semibold text-zinc-700">Penjualan Toko (POS)</span>
             </div>
@@ -132,18 +132,18 @@ export default function Dashboard() {
                 <p className="text-xs text-zinc-400">transaksi</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-indigo-600">{formatRupiah(d.today.pos.total)}</p>
+                <p className="text-lg font-bold text-emerald-600">{formatRupiah(d.today.pos.total)}</p>
                 <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.pos.profit)} profit</p>
               </div>
             </div>
           </div>
         </Card>
         <Card className="p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Landmark size={18} className="text-purple-600" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+                <Landmark size={18} className="text-cyan-600" />
               </div>
               <span className="font-semibold text-zinc-700">{servicesLabel}</span>
             </div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
                 <p className="text-xs text-zinc-400">transaksi</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-purple-600">{formatRupiah(d.today.brilink.total)}</p>
+                <p className="text-lg font-bold text-cyan-600">{formatRupiah(d.today.brilink.total)}</p>
                 <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.brilink.profit)} fee</p>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {d.recent.map(t => (
-                  <tr key={t.id} className="border-b border-zinc-50/50 hover:bg-indigo-50/30 transition-colors">
+                  <tr key={t.id} className="border-b border-zinc-50/50 hover:bg-emerald-50/30 transition-colors">
                     <td className="p-3 font-mono text-xs text-zinc-500">{t.invoiceNo}</td>
                     <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-zinc-600">{t.customerName || "—"}</td>

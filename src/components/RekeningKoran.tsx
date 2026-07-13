@@ -266,7 +266,7 @@ export default function RekeningKoran() {
             label="Saldo Awal"
             value={formatRupiah(summary.openingBalance)}
             sub={startDate}
-            color="bg-indigo-50 text-indigo-600"
+            color="bg-emerald-50 text-emerald-600"
           />
           <StatCard
             icon={<ArrowDownLeft size={20} />}
@@ -371,7 +371,7 @@ export default function RekeningKoran() {
                     <tr
                       key={m.id}
                       className={cn(
-                        "border-b border-zinc-50 hover:bg-indigo-50/30 transition-colors",
+                        "border-b border-zinc-50 hover:bg-emerald-50/30 transition-colors",
                         idx === 0 && "bg-amber-50/30"
                       )}
                     >

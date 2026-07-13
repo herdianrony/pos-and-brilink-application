@@ -134,7 +134,7 @@ function ProductsTab() {
               </tr></thead>
               <tbody>
                 {products.map(p => (
-                  <tr key={p.id} className="border-t border-zinc-50 hover:bg-indigo-50/30 transition-colors">
+                  <tr key={p.id} className="border-t border-zinc-50 hover:bg-emerald-50/30 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-zinc-600" />
@@ -155,7 +155,7 @@ function ProductsTab() {
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => openEdit(p)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Pencil size={14} /></button>
+                        <button onClick={() => openEdit(p)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
                         <button onClick={() => del(p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     </td>
@@ -244,7 +244,7 @@ function CategoriesTab() {
                 <p className="font-semibold text-zinc-800 truncate">{c.name}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(c)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Pencil size={14} /></button>
+                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
                 <button onClick={() => del(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
               </div>
             </Card>
@@ -382,7 +382,7 @@ function BLServicesTab() {
               </tr></thead>
               <tbody>
                 {svcs.map(s => (
-                  <tr key={s.id} className="border-t border-zinc-50 hover:bg-indigo-50/30">
+                  <tr key={s.id} className="border-t border-zinc-50 hover:bg-emerald-50/30">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <DynamicIcon name={s.icon} fallback="package" size={18} className="text-zinc-600" />
@@ -406,7 +406,7 @@ function BLServicesTab() {
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => openTiers(s)} className="p-1.5 text-purple-500 hover:bg-purple-50 rounded-lg" title="Atur Fee Berjenjang"><Layers size={14} /></button>
-                        <button onClick={() => openEdit(s)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Pencil size={14} /></button>
+                        <button onClick={() => openEdit(s)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
                         <button onClick={() => del(s.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     </td>
@@ -496,7 +496,7 @@ function BLServicesTab() {
               <option value="none">— Tidak ada efek</option>
             </Select>
           </div>
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700">
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-700">
             <p className="font-medium mb-1">Panduan Efek Saldo:</p>
             <ul className="list-disc ml-4 space-y-0.5">
               <li><strong>Tarik Tunai:</strong> Cash minus keluar, M-Banking plus masuk</li>
@@ -660,7 +660,7 @@ function BLCategoriesTab() {
                 <p className="text-xs text-zinc-400">Urutan: {c.sortOrder}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(c)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Pencil size={14} /></button>
+                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
                 <button onClick={() => del(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
               </div>
             </Card>

@@ -73,8 +73,8 @@ function LoginForm() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark" style={{ backgroundColor: "#3730a3" }}>
-        <Loader2 className="w-10 h-10 text-accent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -83,12 +83,12 @@ function LoginForm() {
     <div className="min-h-screen flex">
       {/* ── Kiri: Brand panel ─────────────────────── */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-darker via-primary to-primary-dark relative overflow-hidden items-center justify-center p-12"
-        style={{ backgroundColor: "#3730a3" }}
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden items-center justify-center p-12"
+        style={{ backgroundColor: "#0f172a" }}
       >
         {/* Decorative shapes */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary-light/40 rounded-full blur-3xl -ml-24 -mb-24" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl -mr-32 -mt-32" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl -ml-24 -mb-24" />
         <div className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
@@ -98,19 +98,19 @@ function LoginForm() {
 
         <div className="relative z-10 text-white max-w-md">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
               <Landmark size={28} className="text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight">POS & Agen Bisnis</h1>
-              <p className="text-indigo-200 text-sm">Point of Sale & Layanan Agen</p>
+              <p className="text-slate-300 text-sm">Point of Sale & Layanan Agen</p>
             </div>
           </div>
 
           <h2 className="text-4xl font-extrabold leading-tight mb-4">
             Selamat datang kembali
           </h2>
-          <p className="text-indigo-100 text-base leading-relaxed mb-10">
+          <p className="text-slate-200 text-base leading-relaxed mb-10">
             Masuk untuk mengelola transaksi kasir, layanan agen, stok produk, dan laporan keuangan toko Anda dalam satu sistem terintegrasi.
           </p>
 
@@ -120,9 +120,9 @@ function LoginForm() {
               { icon: Store, text: "Manajemen toko lengkap" },
               { icon: Landmark, text: "Layanan agen terintegrasi" },
             ].map((f, i) => (
-              <div key={i} className="flex items-center gap-3 text-indigo-50">
+              <div key={i} className="flex items-center gap-3 text-slate-100">
                 <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                  <f.icon size={18} className="text-accent-light" />
+                  <f.icon size={18} className="text-primary-light" />
                 </div>
                 <span className="text-sm font-medium">{f.text}</span>
               </div>
@@ -136,7 +136,7 @@ function LoginForm() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
               <Landmark size={24} className="text-white" />
             </div>
             <div>
@@ -200,6 +200,7 @@ function LoginForm() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#10b981" }}
               >
                 {loading ? (
                   <>
@@ -236,8 +237,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-darker via-primary to-primary-dark" style={{ backgroundColor: "#3730a3" }}>
-          <Loader2 className="w-10 h-10 text-accent animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
         </div>
       }
     >

@@ -1,15 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Brand Colors (Modern Fintech Palette) ────── */
-  --color-primary: #4f46e5;
-  --color-primary-light: #6366f1;
-  --color-primary-dark: #4338ca;
-  --color-primary-darker: #3730a3;
+  /* ── Brand Colors (Dark Premium + Energetic Startup) ── */
+  /* Primary = Emerald (vibrant, energetic) */
+  --color-primary: #10b981;
+  --color-primary-light: #34d399;
+  --color-primary-dark: #059669;
+  --color-primary-darker: #047857;
 
-  --color-accent: #f97316;
-  --color-accent-light: #fb923c;
-  --color-accent-dark: #ea580c;
+  /* Accent = Cyan (modern, fresh) */
+  --color-accent: #06b6d4;
+  --color-accent-light: #22d3ee;
+  --color-accent-dark: #0891b2;
+
+  /* Dark surface (untuk sidebar, hero) = Slate */
+  --color-dark: #0f172a;
+  --color-dark-light: #1e293b;
+  --color-dark-dark: #020617;
 
   /* ── Status Colors ─────────────────────────────── */
   --color-success: #10b981;
@@ -20,26 +27,26 @@
   --color-warning-light: #fbbf24;
   --color-info: #3b82f6;
 
-  /* ── Surface (Modern Layered) ──────────────────── */
+  /* ── Surface (Light Body) ──────────────────────── */
   --color-surface: #ffffff;
   --color-surface-alt: #fafafa;
   --color-surface-elevated: #ffffff;
-  --color-surface-sunken: #f4f4f5;
+  --color-surface-sunken: #f5f5f5;
 
   /* ── Background ────────────────────────────────── */
   --color-bg: #fafafa;
-  --color-bg-soft: #f4f4f5;
+  --color-bg-soft: #f5f5f5;
 
-  /* ── Text ──────────────────────────────────────── */
-  --color-ink: #09090b;
-  --color-ink-soft: #3f3f46;
-  --color-ink-muted: #71717a;
-  --color-ink-subtle: #a1a1aa;
+  /* ── Text (Neutral balanced) ───────────────────── */
+  --color-ink: #171717;
+  --color-ink-soft: #404040;
+  --color-ink-muted: #737373;
+  --color-ink-subtle: #a3a3a3;
 
   /* ── Border ────────────────────────────────────── */
-  --color-border: #e4e4e7;
-  --color-border-soft: #f4f4f5;
-  --color-border-strong: #d4d4d8;
+  --color-border: #e5e5e5;
+  --color-border-soft: #f5f5f5;
+  --color-border-strong: #d4d4d4;
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
@@ -74,7 +81,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Selection ──────────────────────────────────── */
 ::selection {
-  background: rgba(79, 70, 229, 0.15);
+  background: rgba(16, 185, 129, 0.18);
   color: var(--color-primary-darker);
 }
 
@@ -160,7 +167,7 @@ h1, h2, h3, h4, h5, h6 {
 .wizard-input:focus {
   background: white;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgb(79 70 229 / 0.1);
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 0.12);
 }
 .wizard-input::placeholder {
   color: #a1a1aa;
@@ -177,10 +184,10 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 10px 15px -3px rgba(0,0,0,0.08);
 }
 .shadow-glow-primary {
-  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.35);
 }
 .shadow-glow-accent {
-  box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.35);
 }
 
 /* ── Print styles ───────────────────────────────── */

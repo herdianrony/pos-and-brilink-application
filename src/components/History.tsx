@@ -53,7 +53,7 @@ export default function History() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <StatCard icon={<ShoppingCart size={18} />} label="Total" value={trxs.length.toString()} sub="transaksi" color="bg-indigo-50 text-indigo-500" />
+        <StatCard icon={<ShoppingCart size={18} />} label="Total" value={trxs.length.toString()} sub="transaksi" color="bg-emerald-50 text-emerald-500" />
         <StatCard icon={<TrendingUp size={18} />} label="Pendapatan" value={formatRupiah(totalRev)} color="bg-emerald-50 text-emerald-500" />
         <StatCard icon={<Landmark size={18} />} label="Keuntungan" value={formatRupiah(totalProfit)} color="bg-amber-50 text-amber-500" />
       </div>
@@ -85,7 +85,7 @@ export default function History() {
               </tr></thead>
               <tbody>
                 {trxs.map(t => (
-                  <tr key={t.id} className="border-t border-zinc-50 hover:bg-indigo-50/30 transition-colors">
+                  <tr key={t.id} className="border-t border-zinc-50 hover:bg-emerald-50/30 transition-colors">
                     <td className="p-3 font-mono text-xs text-zinc-500">{t.invoiceNo}</td>
                     <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-zinc-500 text-xs">{t.subType || "Penjualan"}</td>
@@ -95,7 +95,7 @@ export default function History() {
                     <td className="p-3 text-xs text-zinc-500">{t.paymentMethod === "cash" ? "Tunai" : t.paymentMethod === "transfer" ? "Transfer" : "QRIS"}</td>
                     <td className="p-3 text-zinc-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
                     <td className="p-3 text-center">
-                      <button onClick={() => viewDetail(t.id)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Eye size={14} /></button>
+                      <button onClick={() => viewDetail(t.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Eye size={14} /></button>
                     </td>
                   </tr>
                 ))}

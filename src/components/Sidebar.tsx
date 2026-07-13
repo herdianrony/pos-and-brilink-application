@@ -122,30 +122,30 @@ export default function Sidebar({
       <aside
         className={cn(
           "fixed lg:sticky top-0 left-0 h-screen w-72 z-[56] flex flex-col transition-transform duration-300 lg:translate-x-0",
-          "bg-gradient-to-b from-primary-darker via-primary to-primary-dark",
+          "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950",
           open ? "translate-x-0" : "-translate-x-full"
         )}
-        style={{ backgroundColor: "#3730a3" }}
+        style={{ backgroundColor: "#0f172a" }}
       >
         {/* Decorative gradient overlay */}
-        <div className="absolute inset-0 opacity-30 pointer-events-none"
+        <div className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
-            background: "radial-gradient(circle at 0% 0%, rgba(99,102,241,0.4) 0%, transparent 50%)",
+            background: "radial-gradient(circle at 0% 0%, rgba(16,185,129,0.25) 0%, transparent 50%)",
           }}
         />
 
         {/* Header */}
         <div className="relative p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
               <Landmark size={20} className="text-white" />
             </div>
             <div className="min-w-0">
               <h1 className="text-white font-bold text-base tracking-tight truncate">{appName}</h1>
-              <p className="text-indigo-200 text-[11px]">{settings.business_type || "Agen Bisnis"}</p>
+              <p className="text-slate-300 text-[11px]">{settings.business_type || "Agen Bisnis"}</p>
             </div>
           </div>
-          <button onClick={() => setOpen(false)} className="lg:hidden text-indigo-200 hover:text-white">
+          <button onClick={() => setOpen(false)} className="lg:hidden text-slate-300 hover:text-white">
             <X size={20} />
           </button>
         </div>
@@ -174,12 +174,12 @@ export default function Sidebar({
                   isActive
                     ? "bg-white text-primary shadow-lg"
                     : isDisabled
-                      ? "text-indigo-300/40 cursor-not-allowed"
-                      : "text-indigo-100 hover:bg-white/10 hover:text-white"
+                      ? "text-slate-500/60 cursor-not-allowed"
+                      : "text-slate-200 hover:bg-white/10 hover:text-white"
                 )}
               >
                 <Icon size={18} className={cn(
-                  isActive ? "text-primary" : isDisabled ? "text-indigo-300/40" : "text-indigo-200 group-hover:text-white"
+                  isActive ? "text-primary" : isDisabled ? "text-slate-500/60" : "text-slate-300 group-hover:text-white"
                 )} />
                 <span className="text-sm font-medium flex-1">{label}</span>
                 {isActive && <ChevronRight size={14} className="text-primary" />}
@@ -200,7 +200,7 @@ export default function Sidebar({
                   window.open("/about", "_blank");
                   setOpen(false);
                 }}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-indigo-100 hover:text-white text-[11px] font-medium transition-colors"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-[11px] font-medium transition-colors"
                 title="Tentang Aplikasi & Developer"
               >
                 <Info size={13} />
@@ -221,15 +221,15 @@ export default function Sidebar({
 
             {/* User card */}
             <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-3 flex items-center gap-3 border border-white/10">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-sm font-bold text-white shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: "#10b981" }}>
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{user.name}</p>
-                <div className="flex items-center gap-1.5 text-indigo-200 text-[11px]">
+                <div className="flex items-center gap-1.5 text-slate-300 text-[11px]">
                   {user.role === "admin" ? (
                     <>
-                      <Shield size={11} className="text-accent-light" />
+                      <Shield size={11} className="text-primary-light" />
                       <span>Administrator</span>
                     </>
                   ) : (
@@ -244,7 +244,7 @@ export default function Sidebar({
                 onClick={handleLogout}
                 disabled={loggingOut}
                 title="Keluar"
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-indigo-100 hover:text-white transition-colors disabled:opacity-50"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-slate-200 hover:text-white transition-colors disabled:opacity-50"
               >
                 <LogOut size={15} />
               </button>
@@ -256,11 +256,11 @@ export default function Sidebar({
         <div className="relative p-4 border-t border-white/10">
           <div className="flex items-center gap-3 px-2">
             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-              <Clock size={16} className="text-indigo-100" />
+              <Clock size={16} className="text-slate-200" />
             </div>
             <div>
               <p className="text-white text-sm font-semibold">{time}</p>
-              <p className="text-indigo-200 text-[11px]">
+              <p className="text-slate-300 text-[11px]">
                 {new Date().toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",

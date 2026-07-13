@@ -224,9 +224,9 @@ export default function Cash() {
       </div>
 
       {/* Info Box */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm">
-        <p className="text-indigo-800 font-medium mb-2">Tips Multi-Rekening:</p>
-        <ul className="text-indigo-700 text-xs space-y-1 list-disc ml-4">
+      <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-sm">
+        <p className="text-emerald-800 font-medium mb-2">Tips Multi-Rekening:</p>
+        <ul className="text-emerald-700 text-xs space-y-1 list-disc ml-4">
           <li><strong>Hemat Biaya Transfer:</strong> Gunakan rekening yang sama dengan bank tujuan nasabah</li>
           <li><strong>Transfer Sesama Bank = Gratis/Murah:</strong> BRI→BRI, Mandiri→Mandiri, dll</li>
           <li><strong>Balancing:</strong> Gunakan "Transfer" untuk pindah saldo antar rekening (simulasi setor/tarik ATM)</li>
@@ -273,7 +273,7 @@ export default function Cash() {
                   const tl = typeLabels[m.type] || { label: m.type, color: "default" as const };
                   const isPositive = parseFloat(m.amount) >= 0;
                   return (
-                    <tr key={m.id} className="border-t border-zinc-50 hover:bg-indigo-50/30">
+                    <tr key={m.id} className="border-t border-zinc-50 hover:bg-emerald-50/30">
                       <td className="p-3 text-zinc-400 text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
                       <td className="p-3">
                         <span className="flex items-center gap-1.5 text-zinc-600">
