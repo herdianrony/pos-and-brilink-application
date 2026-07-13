@@ -1,0 +1,8 @@
+{
+  "dialect": "sqlite",
+  "driver": "durable-sqlite",
+  "schema": "./src/db/schema.ts",
+  "dbCredentials": {
+    "url": "file:./data.db"
+  }
+}

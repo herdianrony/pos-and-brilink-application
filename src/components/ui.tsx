@@ -1,0 +1,207 @@
+"use client";
+
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+
+// ── Modal ─────────────────────────────────────────
+export function Modal({ open, onClose, children, size = "md" }: {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
+  if (!open) return null;
+  const w = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${w} max-h-[90vh] overflow-y-auto animate-scaleIn`}
+        onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Card ──────────────────────────────────────────
+export function Card({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("bg-white rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-shadow", className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+// ── Badge ─────────────────────────────────────────
+export function Badge({ children, variant = "default" }: {
+  children: ReactNode;
+  variant?: "default" | "success" | "danger" | "warning" | "primary" | "purple";
+}) {
+  const colors = {
+    default: "bg-gray-100 text-gray-700",
+    success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+    danger: "bg-red-50 text-red-700 ring-1 ring-red-200",
+    warning: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    primary: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+    purple: "bg-purple-50 text-purple-700 ring-1 ring-purple-200",
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${colors[variant]}`}>
+      {children}
+    </span>
+  );
+}
+
+// ── Button ────────────────────────────────────────
+export function Button({ children, variant = "primary", size = "md", className, disabled, ...props }: {
+  children: ReactNode;
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "success" | "accent";
+  size?: "sm" | "md" | "lg";
+  className?: string;
+  disabled?: boolean;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const variants = {
+    primary: "bg-primary text-white hover:bg-primary-light shadow-lg shadow-primary/20",
+    secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm",
+    ghost: "text-gray-600 hover:bg-gray-100",
+    danger: "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20",
+    success: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20",
+    accent: "bg-gradient-to-r from-accent to-accent-light text-white shadow-lg shadow-accent/30",
+  };
+  const sizes = {
+    sm: "px-3 py-1.5 text-xs rounded-lg",
+    md: "px-4 py-2.5 text-sm rounded-xl",
+    lg: "px-6 py-3 text-base rounded-xl",
+  };
+  return (
+    <button
+      className={cn(
+        "font-semibold transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none inline-flex items-center justify-center gap-2",
+        variants[variant],
+        sizes[size],
+        className
+      )}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Input ─────────────────────────────────────────
+export function Input({ label, className, ...props }: {
+  label?: string;
+  className?: string;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="space-y-1.5">
+      {label && <label className="text-sm font-medium text-gray-600">{label}</label>}
+      <input
+        className={cn(
+          "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm",
+          className
+        )}
+        {...props}
+      />
+    </div>
+  );
+}
+
+// ── Select ────────────────────────────────────────
+export function Select({ label, children, className, ...props }: {
+  label?: string;
+  children: ReactNode;
+  className?: string;
+} & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="space-y-1.5">
+      {label && <label className="text-sm font-medium text-gray-600">{label}</label>}
+      <select
+        className={cn(
+          "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+// ── Empty State ───────────────────────────────────
+export function EmptyState({ icon, title, subtitle }: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+      <span className="text-5xl mb-3">{icon}</span>
+      <p className="font-medium text-gray-500">{title}</p>
+      {subtitle && <p className="text-sm mt-1">{subtitle}</p>}
+    </div>
+  );
+}
+
+// ── Spinner ───────────────────────────────────────
+export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const s = { sm: "w-5 h-5", md: "w-8 h-8", lg: "w-12 h-12" }[size];
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className={`${s} border-[3px] border-primary/20 border-t-primary rounded-full animate-spin`} />
+    </div>
+  );
+}
+
+// ── Stat Card ─────────────────────────────────────
+export function StatCard({ icon, label, value, sub, color }: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  sub?: string;
+  color: string;
+}) {
+  return (
+    <Card className="p-5 animate-fadeIn">
+      <div className="flex items-start gap-4">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${color}`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</p>
+          <p className="text-xl font-bold text-gray-800 mt-0.5 truncate">{value}</p>
+          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ── Tabs ──────────────────────────────────────────
+export function Tabs({ tabs, active, onChange }: {
+  tabs: Array<{ id: string; label: string; icon?: string }>;
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
+            active === t.id
+              ? "bg-white text-primary shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          )}
+        >
+          {t.icon && <span className="mr-1.5">{t.icon}</span>}
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
