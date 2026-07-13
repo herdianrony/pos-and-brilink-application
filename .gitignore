@@ -46,3 +46,14 @@ data.db-*
 
 # OS
 Thumbs.db
+
+# Electron build outputs
+dist-electron/
+electron/dist/
+out-electron/
+
+# Next.js standalone (hasil build, di-bundle oleh electron-builder)
+.next/standalone/
+
+# Electron testing
+electron-builder-debug.log

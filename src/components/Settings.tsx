@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, Button, Input, Spinner } from "@/components/ui";
 import { Settings as SettingsIcon, Save, Store, User, Phone, MapPin, CreditCard } from "lucide-react";
+import PrinterSettings from "@/components/PrinterSettings";
 
 export default function SettingsPage() {
   const [data, setData] = useState<Record<string, string>>({});
@@ -90,6 +91,8 @@ export default function SettingsPage() {
         />
         <p className="text-xs text-gray-400">Saldo awal yang digunakan sebagai referensi pembukaan kas harian.</p>
       </Card>
+
+      <PrinterSettings />
 
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={saving} size="lg">

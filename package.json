@@ -1,12 +1,30 @@
 {
   "name": "pos-and-brilink-application",
   "private": true,
+  "version": "1.0.0",
+  "description": "Aplikasi POS dan BRILink dengan dukungan printer thermal, scanner barcode, dan auto-update",
+  "author": {
+    "name": "herdianrony",
+    "email": "herdianrony@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:electron": "tsc --noEmit -p tsconfig.electron.json",
+    "compile:electron": "tsc -p tsconfig.electron.json && node scripts/copy-preload.js",
+    "dev:web": "next dev",
+    "dev:electron": "npm run compile:electron && cross-env ELECTRON_DEV=1 concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "build:web": "next build",
+    "build:electron": "npm run build:web && npm run compile:electron && electron-builder --win",
+    "build:electron:portable": "npm run build:web && npm run compile:electron && electron-builder --win portable",
+    "build:electron:publish": "npm run build:web && npm run compile:electron && electron-builder --win -p always",
+    "dist": "npm run build:electron",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@libsql/client": "^0.15.0",
@@ -14,9 +32,13 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "17.3.1",
     "drizzle-orm": "0.45.2",
+    "electron-updater": "^6.8.9",
+    "escpos": "^3.0.0-alpha.6",
+    "escpos-xml": "^1.0.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.24.0",
     "next": "16.2.6",
+    "node-thermal-printer": "^4.6.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "recharts": "^3.9.2",
@@ -25,15 +47,24 @@
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
     "@types/bcryptjs": "^2.4.6",
+    "@types/electron": "^1.4.38",
     "@types/node": "22.19.15",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^1.0.0-rc.4",
+    "electron": "^22.3.27",
+    "electron-builder": "^26.15.3",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "postcss": "8.5.8",
     "tailwindcss": "4.1.17",
     "tsx": "^4.23.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "extends": "./electron-builder.yml"
   }
 }
