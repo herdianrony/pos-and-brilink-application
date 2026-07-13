@@ -2,10 +2,19 @@
  * electron/main.ts
  *
  * Main process Electron.
- * - Spawn Next.js standalone server sebagai child process
- * - Buat BrowserWindow yang load http://localhost:PORT
- * - Register IPC untuk printer, window controls, auto-update
- * - Apply DATABASE_URL dari userData path sebelum spawn server
+ *
+ * Mode operasi:
+ * 1. DEV (ELECTRON_DEV=1): Electron load http://localhost:3000
+ *    - Next.js dev server dijalankan terpisah (via `npm run dev:electron` → `next dev`)
+ *    - Tidak spawn standalone server
+ *    - Hot reload berfungsi penuh
+ *
+ * 2. PRODUCTION (app.isPackaged): Spawn Next.js standalone server di port 43219
+ *    - Load http://127.0.0.1:43219
+ *    - Database: %APPDATA%/BRILink POS/pos-brilink.db (persistent)
+ *
+ * 3. FALLBACK (electron . tanpa dev server & tanpa build):
+ *    - Tampilkan pesan error yang informatif
  *
  * Build pipeline:
  *   1. next build           → .next/standalone/ (self-contained server)
@@ -19,13 +28,23 @@ import { applyDatabaseUrl } from "./db-path";
 import { registerPrinterIpc, loadPrinterConfig } from "./printer";
 import { initAutoUpdater, startUpdateCheck, quitAndInstall } from "./updater";
 
-// Port internal untuk Next.js server (acak untuk hindari konflik)
+// Port internal untuk Next.js standalone server (production only)
 const INTERNAL_PORT = 43219;
+// Port Next.js dev server (development)
+const DEV_PORT = 3000;
+
 let nextServer: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
 
+// ── Mode detection ───────────────────────────────
+const isDevMode = process.env.ELECTRON_DEV === "1";
+const isPackaged = app.isPackaged;
+
 // ── Setup DATABASE_URL SEBELUM spawn Next.js ─────
-applyDatabaseUrl();
+// Hanya apply di production (di dev, Next.js pakai .env.local atau default)
+if (isPackaged) {
+  applyDatabaseUrl();
+}
 
 // ── Single instance lock ─────────────────────────
 const gotLock = app.requestSingleInstanceLock();
@@ -41,25 +60,19 @@ app.on("second-instance", () => {
   }
 });
 
-// ── Spawn Next.js standalone server ──────────────
+// ── Spawn Next.js standalone server (production only) ──
 async function startNextServer(): Promise<void> {
   return new Promise((resolve, reject) => {
-    let serverPath: string;
-    let cwd: string;
-
-    if (app.isPackaged) {
-      // Production: standalone server ada di resources/app/standalone/server.js
-      const resourcesPath = process.resourcesPath;
-      serverPath = path.join(resourcesPath, "standalone", "server.js");
-      cwd = path.join(resourcesPath, "standalone");
-    } else {
-      // Development: standalone server di .next/standalone/server.js
-      serverPath = path.join(__dirname, "..", ".next", "standalone", "server.js");
-      cwd = path.join(__dirname, "..", ".next", "standalone");
-    }
+    const resourcesPath = process.resourcesPath;
+    const serverPath = path.join(resourcesPath, "standalone", "server.js");
+    const cwd = path.join(resourcesPath, "standalone");
 
     if (!existsSync(serverPath)) {
-      reject(new Error(`Next.js standalone server tidak ditemukan di ${serverPath}. Jalankan 'npm run build' dulu.`));
+      reject(
+        new Error(
+          `Next.js standalone server tidak ditemukan di:\n${serverPath}\n\nAplikasi mungkin corrupt. Coba reinstall.`
+        )
+      );
       return;
     }
 
@@ -71,8 +84,7 @@ async function startNextServer(): Promise<void> {
         ...process.env,
         PORT: String(INTERNAL_PORT),
         NODE_ENV: "production",
-        // DATABASE_URL sudah diset oleh applyDatabaseUrl()
-        ELECTRON_RUN_AS_NODE: undefined, // pastikan tidak set
+        ELECTRON_RUN_AS_NODE: undefined,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -80,7 +92,6 @@ async function startNextServer(): Promise<void> {
     nextServer.stdout?.on("data", (data) => {
       const msg = data.toString();
       console.log(`[next] ${msg.trim()}`);
-      // Resolve saat server siap
       if (msg.includes("Ready") || msg.includes("started server")) {
         resolve();
       }
@@ -100,13 +111,13 @@ async function startNextServer(): Promise<void> {
       nextServer = null;
     });
 
-    // Safety timeout — anggap server siap dalam 30 detik
+    // Safety timeout
     setTimeout(() => resolve(), 30000);
   });
 }
 
-// ── Tunggu Next.js ready ─────────────────────────
-async function waitForNext(maxRetries = 60, intervalMs = 500): Promise<void> {
+// ── Tunggu port siap ─────────────────────────────
+async function waitForPort(port: number, maxRetries = 60, intervalMs = 500): Promise<void> {
   const net = require("net");
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -125,7 +136,7 @@ async function waitForNext(maxRetries = 60, intervalMs = 500): Promise<void> {
           socket.destroy();
           resolve(false);
         });
-        socket.connect(INTERNAL_PORT, "127.0.0.1");
+        socket.connect(port, "127.0.0.1");
       });
       if (ok) return;
     } catch {
@@ -133,7 +144,15 @@ async function waitForNext(maxRetries = 60, intervalMs = 500): Promise<void> {
     }
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  throw new Error(`Next.js server tidak siap dalam ${maxRetries * intervalMs / 1000} detik`);
+  throw new Error(`Tidak dapat terhubung ke port ${port} dalam ${maxRetries * intervalMs / 1000} detik`);
+}
+
+// ── URL untuk load ───────────────────────────────
+function getLoadUrl(): string {
+  if (isDevMode) {
+    return `http://localhost:${DEV_PORT}`;
+  }
+  return `http://127.0.0.1:${INTERNAL_PORT}`;
 }
 
 // ── Buat main window ─────────────────────────────
@@ -144,7 +163,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 680,
     backgroundColor: "#003d79",
-    show: false, // tampilkan setelah ready-to-show
+    show: false,
     title: "BRILink POS",
     icon: path.join(__dirname, "build", "icon.png"),
     webPreferences: {
@@ -156,10 +175,8 @@ function createWindow() {
     },
   });
 
-  // Hapus menu bar default (File/Edit/View/...) untuk UX kios POS
   Menu.setApplicationMenu(null);
 
-  // External link → buka di browser default
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http://localhost") || url.startsWith("http://127.0.0.1")) {
       return { action: "allow" };
@@ -170,7 +187,7 @@ function createWindow() {
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
-    if (process.env.ELECTRON_DEV === "1") {
+    if (isDevMode) {
       mainWindow?.webContents.openDevTools({ mode: "detach" });
     }
   });
@@ -179,9 +196,42 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Auto-update init
-  initAutoUpdater(mainWindow);
-  startUpdateCheck(10000); // cek 10 detik setelah start
+  // Auto-update init (production only)
+  if (isPackaged) {
+    initAutoUpdater(mainWindow);
+    startUpdateCheck(10000);
+  }
+}
+
+// ── Tampilkan window error ───────────────────────
+function showErrorWindow(errorMessage: string) {
+  mainWindow = new BrowserWindow({
+    width: 600,
+    height: 480,
+    title: "BRILink POS - Error",
+    backgroundColor: "#fef2f2",
+  });
+  mainWindow.loadURL(
+    "data:text/html," +
+      encodeURIComponent(
+        `<html><head><meta charset="utf-8"><style>
+          body { font-family: -apple-system, system-ui, sans-serif; padding: 40px; background: #fef2f2; color: #991b1b; }
+          h1 { color: #dc2626; margin-bottom: 16px; font-size: 20px; }
+          p { line-height: 1.6; margin-bottom: 12px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+          code { background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+          .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #fecaca; font-size: 12px; color: #7f1d1d; }
+        </style></head><body>
+          <h1>Gagal Memulai Aplikasi</h1>
+          <p>${errorMessage}</p>
+          <div class="footer">
+            <strong>Solusi:</strong><br>
+            • Mode Development: jalankan <code>npm run dev:electron</code> (bukan <code>electron .</code> langsung)<br>
+            • Mode Production: jalankan <code>npm run build:electron</code> untuk build installer<br>
+            • Jika sudah build, coba reinstall aplikasi
+          </div>
+        </body></html>`
+      )
+  );
 }
 
 // ── IPC handlers ─────────────────────────────────
@@ -225,30 +275,42 @@ function registerAppIpc() {
 app.whenReady().then(async () => {
   registerAppIpc();
   registerPrinterIpc(() => mainWindow);
-  await loadPrinterConfig(); // load saved printer config
+  await loadPrinterConfig();
 
-  try {
-    await startNextServer();
-    await waitForNext();
-  } catch (err) {
-    console.error("[main] Gagal start Next.js:", err);
-    // Tampilkan window error
-    mainWindow = new BrowserWindow({ width: 600, height: 400 });
-    mainWindow.loadURL(
-      "data:text/html," +
-        encodeURIComponent(
-          `<html><body style="font-family:sans-serif;padding:40px"><h1>Gagal Memulai</h1><p>${err instanceof Error ? err.message : String(err)}</p><p>Pastikan aplikasi tidak corrupt. Coba reinstall.</p></body></html>`
-        )
-    );
+  // ── Mode DEV: langsung load Next.js dev server ──
+  if (isDevMode) {
+    console.log("[main] Mode DEV: connecting to Next.js dev server at http://localhost:" + DEV_PORT);
+    try {
+      // Tunggu Next.js dev server siap (di-spawn oleh concurrently di package.json)
+      await waitForPort(DEV_PORT, 120, 1000); // 120 detik timeout (Next.js dev butuh compile)
+      createWindow();
+      mainWindow?.loadURL(getLoadUrl());
+    } catch (err) {
+      console.error("[main] Next.js dev server tidak siap:", err);
+      showErrorWindow(
+        `Tidak dapat terhubung ke Next.js dev server di http://localhost:${DEV_PORT}.\n\n` +
+        `Pastikan Anda menjalankan 'npm run dev:electron' (bukan 'electron .' langsung),\n` +
+        `atau jalankan 'npm run dev' di terminal terpisah dahulu.`
+      );
+    }
     return;
   }
 
-  createWindow();
-  mainWindow?.loadURL(`http://127.0.0.1:${INTERNAL_PORT}`);
+  // ── Mode PRODUCTION: spawn standalone server ──
+  try {
+    await startNextServer();
+    await waitForPort(INTERNAL_PORT);
+    createWindow();
+    mainWindow?.loadURL(getLoadUrl());
+  } catch (err) {
+    console.error("[main] Gagal start Next.js:", err);
+    showErrorWindow(
+      err instanceof Error ? err.message : String(err)
+    );
+  }
 });
 
 app.on("window-all-closed", () => {
-  // POS app: tutup sepenuhnya saat window ditutup (tidak stay di dock macOS)
   if (nextServer) {
     nextServer.kill("SIGTERM");
     nextServer = null;
@@ -265,7 +327,19 @@ app.on("before-quit", () => {
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-    mainWindow?.loadURL(`http://127.0.0.1:${INTERNAL_PORT}`);
+    if (isDevMode) {
+      // Di dev mode, cek apakah dev server jalan
+      waitForPort(DEV_PORT, 10, 500)
+        .then(() => {
+          createWindow();
+          mainWindow?.loadURL(getLoadUrl());
+        })
+        .catch(() => {
+          showErrorWindow("Next.js dev server tidak siap.");
+        });
+    } else if (nextServer) {
+      createWindow();
+      mainWindow?.loadURL(getLoadUrl());
+    }
   }
 });
