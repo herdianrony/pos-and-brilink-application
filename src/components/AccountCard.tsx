@@ -20,13 +20,14 @@ export interface AccountData {
  *
  * Fitur:
  * - Gradient background dari account.color
- * - Chip kartu (SVG pattern)
- * - Contactless icon (Wifi rotated)
+ * - Chip kartu (untuk rekening bank)
+ * - Contactless icon (Wifi rotated) seperti kartu kredit modern
  * - Bank icon di pojok kanan atas
- * - Nama akun + balance prominently
- * - Min balance indicator di bawah
- * - Hover: lift + slight 3D rotation
+ * - Nama akun + balance prominent
+ * - Min balance indicator
+ * - Hover: lift effect (no 3D rotation)
  * - Low balance warning (AlertTriangle)
+ * - Optional action buttons di dalam card (bawah)
  */
 export function AccountCard({
   account,
@@ -39,7 +40,7 @@ export function AccountCard({
   account: AccountData;
   onClick?: () => void;
   compact?: boolean;
-  /** Custom action buttons rendered below the card */
+  /** Custom action buttons rendered di dalam card (bottom row) */
   actions?: React.ReactNode;
   /** Show edit button on hover (top-right) */
   onEdit?: () => void;
@@ -72,156 +73,155 @@ export function AccountCard({
   const Wrapper = onClick ? "button" : "div";
 
   return (
-    <div className="space-y-2">
-      <Wrapper
-        onClick={onClick}
-        className={cn(
-          "group relative text-left w-full overflow-hidden block",
-          "rounded-2xl aspect-[1.585/1] min-h-[140px]",
-          "shadow-lg hover:shadow-2xl transition-all duration-500",
-          "hover:-translate-y-1 hover:rotate-[-1deg]",
-          !onClick && "cursor-default"
-        )}
+    <Wrapper
+      onClick={onClick}
+      className={cn(
+        "group relative text-left w-full overflow-hidden block",
+        "rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300",
+        "hover:-translate-y-0.5",
+        !onClick && "cursor-default"
+      )}
+      style={{
+        background: `linear-gradient(135deg, ${cardColor} 0%, ${cardColorDark} 100%)`,
+      }}
+    >
+      {/* ── Decorative circles ──────────────────────── */}
+      <div
+        className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500"
+        style={{ background: cardColorLight }}
+      />
+      <div
+        className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full opacity-10 group-hover:opacity-20 transition-all duration-500"
+        style={{ background: cardColorLight }}
+      />
+
+      {/* ── Subtle pattern overlay ──────────────────── */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
         style={{
-          background: `linear-gradient(135deg, ${cardColor} 0%, ${cardColorDark} 100%)`,
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundSize: "16px 16px",
         }}
-      >
-        {/* ── Decorative circles ──────────────────────── */}
-        <div
-          className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500"
-          style={{ background: cardColorLight }}
-        />
-        <div
-          className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full opacity-10 group-hover:opacity-20 transition-all duration-500"
-          style={{ background: cardColorLight }}
-        />
+      />
 
-        {/* ── Subtle pattern overlay ──────────────────── */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-            backgroundSize: "16px 16px",
-          }}
-        />
-
-        {/* ── Card content ────────────────────────────── */}
-        <div className="relative h-full p-4 flex flex-col justify-between text-white">
-          {/* Top row: icon + low balance warning + contactless + edit/delete */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-                <DynamicIcon
-                  name={account.icon}
-                  fallback={isCash ? "wallet" : "landmark"}
-                  size={18}
-                  className="text-white"
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wider text-white/70 font-medium leading-tight">
-                  {isCash ? "Kas Tunai" : "Rekening"}
-                </p>
-                <p className="text-xs font-semibold text-white truncate max-w-[110px]">
-                  {account.name}
-                </p>
-              </div>
+      {/* ── Card content ────────────────────────────── */}
+      <div className="relative p-4 text-white">
+        {/* Top row: icon + low balance warning + contactless + edit/delete */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+              <DynamicIcon
+                name={account.icon}
+                fallback={isCash ? "wallet" : "landmark"}
+                size={18}
+                className="text-white"
+              />
             </div>
-
-            <div className="flex items-center gap-1">
-              {isLow && (
-                <div className="w-7 h-7 rounded-lg bg-amber-400/30 backdrop-blur-sm flex items-center justify-center" title={`Saldo di bawah minimum: ${minBalance}`}>
-                  <AlertTriangle size={14} className="text-amber-200" />
-                </div>
-              )}
-              {/* Contactless icon (rotated wifi) — seperti pada kartu kredit modern */}
-              {!isCash && (
-                <div className="w-7 h-7 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center rotate-90">
-                  <Wifi size={14} className="text-white/70" />
-                </div>
-              )}
-              {/* Edit & Delete buttons (shown on hover) */}
-              {(onEdit || onDelete) && (
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {onEdit && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                      className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
-                      title="Edit"
-                    >
-                      <Pencil size={12} />
-                    </button>
-                  )}
-                  {onDelete && !isCash && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                      className="w-7 h-7 rounded-lg bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
-                      title="Hapus"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-white/70 font-medium leading-tight">
+                {isCash ? "Kas Tunai" : "Rekening"}
+              </p>
+              <p className="text-xs font-semibold text-white truncate max-w-[120px]">
+                {account.name}
+              </p>
             </div>
           </div>
 
-          {/* Middle: chip kartu (untuk non-cash) */}
-          {!isCash && !compact && (
-            <div className="flex items-center gap-2 my-1">
-              <div className="w-9 h-7 rounded-md bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 relative overflow-hidden shadow-sm">
-                {/* Chip pattern */}
-                <div className="absolute inset-0.5 rounded-sm border border-yellow-600/30" />
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-600/30" />
-                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-yellow-600/30" />
-                <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
-                <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
-                <div className="absolute bottom-1 left-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
-                <div className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
+          <div className="flex items-center gap-1">
+            {isLow && (
+              <div className="w-7 h-7 rounded-lg bg-amber-400/30 backdrop-blur-sm flex items-center justify-center" title={`Saldo di bawah minimum: ${minBalance}`}>
+                <AlertTriangle size={14} className="text-amber-200" />
               </div>
-              <span className="text-[10px] font-mono text-white/60 tracking-wider">
-                {cardNumber}
-              </span>
-            </div>
-          )}
-
-          {/* Bottom: balance */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-white/60 font-medium">
-              Saldo {isCash ? "Tunai" : "Rekening"}
-            </p>
-            <p className="text-lg font-bold text-white tracking-tight">
-              {formattedBalance}
-            </p>
-            {!compact && account.minBalance && (
-              <p className="text-[10px] text-white/50 mt-0.5">
-                Min: {new Intl.NumberFormat("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                }).format(minBalance)}
-              </p>
+            )}
+            {/* Contactless icon (rotated wifi) — seperti pada kartu kredit modern */}
+            {!isCash && (
+              <div className="w-7 h-7 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center rotate-90">
+                <Wifi size={14} className="text-white/70" />
+              </div>
+            )}
+            {/* Edit & Delete buttons (shown on hover) */}
+            {(onEdit || onDelete) && (
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                    className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
+                    title="Edit"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                )}
+                {onDelete && !isCash && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="w-7 h-7 rounded-lg bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
+                    title="Hapus"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Shine effect on hover */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-          <div
-            className="absolute -inset-x-12 -top-12 h-24 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 group-hover:translate-x-[300%] transition-transform duration-1000"
-          />
-        </div>
-      </Wrapper>
+        {/* Middle: chip kartu (untuk non-cash) */}
+        {!isCash && !compact && (
+          <div className="flex items-center gap-2 my-3">
+            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 relative overflow-hidden shadow-sm">
+              {/* Chip pattern */}
+              <div className="absolute inset-0.5 rounded-sm border border-yellow-600/30" />
+              <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-600/30" />
+              <div className="absolute top-0 bottom-0 left-1/2 w-px bg-yellow-600/30" />
+              <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
+              <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
+              <div className="absolute bottom-1 left-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
+              <div className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-sm border border-yellow-600/40" />
+            </div>
+            <span className="text-[10px] font-mono text-white/60 tracking-wider">
+              {cardNumber}
+            </span>
+          </div>
+        )}
 
-      {/* Action buttons below the card (optional) */}
-      {actions && (
-        <div className="flex gap-2">{actions}</div>
-      )}
-    </div>
+        {/* Balance section */}
+        <div className={cn(!isCash && !compact && "mt-3")}>
+          <p className="text-[10px] uppercase tracking-wider text-white/60 font-medium">
+            Saldo {isCash ? "Tunai" : "Rekening"}
+          </p>
+          <p className="text-xl font-bold text-white tracking-tight">
+            {formattedBalance}
+          </p>
+          {!compact && account.minBalance && (
+            <p className="text-[10px] text-white/50 mt-0.5">
+              Min: {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              }).format(minBalance)}
+            </p>
+          )}
+        </div>
+
+        {/* Action buttons (di dalam card, bawah) */}
+        {actions && (
+          <div className="flex gap-2 mt-4 pt-3 border-t border-white/15">
+            {actions}
+          </div>
+        )}
+      </div>
+
+      {/* Shine effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        <div
+          className="absolute -inset-x-12 -top-12 h-24 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 group-hover:translate-x-[300%] transition-transform duration-1000"
+        />
+      </div>
+    </Wrapper>
   );
 }
 

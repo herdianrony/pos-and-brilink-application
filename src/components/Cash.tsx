@@ -203,22 +203,18 @@ export default function Cash() {
             onDelete={!acc.code || acc.code !== "cash" ? () => handleDeleteAccount(acc) : undefined}
             actions={
               <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="flex-1"
+                <button
                   onClick={() => { setSelAccount(acc); setModal("adjust"); }}
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Plus size={14} /> Sesuaikan
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="flex-1"
+                </button>
+                <button
                   onClick={() => { setSelAccount(acc); setModal("transfer"); }}
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <ArrowRightLeft size={14} /> Transfer
-                </Button>
+                </button>
               </>
             }
           />
