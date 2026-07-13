@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, Button, Input, Spinner } from "@/components/ui";
 import { Settings as SettingsIcon, Save, Store, User, Phone, MapPin, CreditCard } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 import PrinterSettings from "@/components/PrinterSettings";
 
 export default function SettingsPage() {
@@ -99,7 +100,7 @@ export default function SettingsPage() {
           <Save size={16} /> {saving ? "Menyimpan..." : "Simpan Pengaturan"}
         </Button>
         {saved && (
-          <span className="text-emerald-600 text-sm font-medium animate-fadeIn">✅ Berhasil disimpan!</span>
+          <span className="text-emerald-600 text-sm font-medium animate-fadeIn">Berhasil disimpan!</span>
         )}
       </div>
     </div>

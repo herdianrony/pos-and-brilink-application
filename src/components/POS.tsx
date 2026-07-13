@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Badge, Spinner, EmptyState, Card } from "@/components/ui";
+import { DynamicIcon } from "@/components/DynamicIcon";
 import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X } from "lucide-react";
 
 interface Product {
@@ -134,14 +135,14 @@ export default function POS() {
                 "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
                 catFilter === c.id.toString() ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-gray-600 border border-gray-200 hover:border-primary/30"
               )}
-            >{c.icon} {c.name}</button>
+            ><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</button>
           ))}
         </div>
 
         {/* Products Grid */}
         <div className="flex-1 overflow-y-auto pr-1">
           {loading ? <Spinner /> : products.length === 0 ? (
-            <EmptyState icon="🔍" title="Produk tidak ditemukan" />
+            <EmptyState icon="search" title="Produk tidak ditemukan" />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {products.map(p => {
@@ -162,7 +163,9 @@ export default function POS() {
                         {inCart.quantity}
                       </div>
                     )}
-                    <div className="text-2xl mb-2">{p.categoryIcon || "📦"}</div>
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
+                      <DynamicIcon name={p.categoryIcon} fallback="package" size={20} className="text-primary" />
+                    </div>
                     <p className="font-semibold text-sm text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</p>
                     <p className="text-primary font-bold text-base">{formatRupiah(p.sellPrice)}</p>
                     <div className="flex items-center justify-between mt-1.5">
@@ -250,13 +253,18 @@ export default function POS() {
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-gray-600">Metode Pembayaran</label>
             <div className="grid grid-cols-3 gap-2">
-              {([["cash", "💵", "Tunai"], ["transfer", "🏦", "Transfer"], ["qris", "📱", "QRIS"]] as const).map(([m, ico, lbl]) => (
+              {([
+                { m: "cash", icon: "banknote", label: "Tunai" },
+                { m: "transfer", icon: "landmark", label: "Transfer" },
+                { m: "qris", icon: "smartphone", label: "QRIS" },
+              ] as const).map(({ m, icon, label }) => (
                 <button key={m} onClick={() => setPayMethod(m)}
                   className={cn(
-                    "py-3 rounded-xl text-sm font-semibold border-2 transition-all",
+                    "py-3 rounded-xl text-sm font-semibold border-2 transition-all flex flex-col items-center gap-1.5",
                     payMethod === m ? "bg-primary/5 border-primary text-primary" : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                   )}>
-                  <span className="text-lg block mb-0.5">{ico}</span>{lbl}
+                  <DynamicIcon name={icon} size={20} className={payMethod === m ? "text-primary" : "text-gray-500"} />
+                  {label}
                 </button>
               ))}
             </div>
@@ -281,7 +289,7 @@ export default function POS() {
             <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowPay(false)}>Batal</Button>
             <Button variant="success" size="lg" className="flex-1" onClick={doCheckout}
               disabled={submitting || (payMethod === "cash" && parseFloat(cashAmt || "0") < total)}>
-              {submitting ? "Memproses..." : "✅ Konfirmasi Bayar"}
+              {submitting ? "Memproses..." : "Konfirmasi Bayar"}
             </Button>
           </div>
         </div>

@@ -12,7 +12,10 @@ import {
   ArrowUpRight,
   Banknote,
   Building2,
+  CheckCircle2,
+  Lightbulb,
 } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 interface Account {
   id: number;
@@ -50,7 +53,7 @@ export default function Dashboard() {
   }, []);
 
   if (loading) return <Spinner />;
-  if (!d) return <EmptyState icon="❌" title="Gagal memuat dashboard" />;
+  if (!d) return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
 
   const maxRev = d.last7.length ? Math.max(...d.last7.map(x => parseFloat(x.revenue)), 1) : 1;
 
@@ -81,7 +84,7 @@ export default function Dashboard() {
             >
               <div className="relative">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg">{acc.icon}</span>
+                  <DynamicIcon name={acc.icon} fallback="package" size={18} className="text-gray-600" />
                   {isLow && <AlertTriangle size={14} className="text-amber-300" />}
                 </div>
                 <p className="text-xs opacity-80 truncate">{acc.name}</p>
@@ -94,10 +97,12 @@ export default function Dashboard() {
 
       {/* Balance Info */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm">
-        <p className="text-blue-800 font-medium mb-1">💡 Tips Multi-Rekening:</p>
+        <p className="text-blue-800 font-medium mb-1 flex items-center gap-1.5">
+          <Lightbulb size={14} /> Tips Multi-Rekening:
+        </p>
         <ul className="text-blue-600 text-xs space-y-0.5 ml-4 list-disc">
           <li><strong>Hemat biaya transfer:</strong> Gunakan rekening yang sama dengan bank tujuan nasabah</li>
-          <li><strong>Transfer sesama bank = Gratis:</strong> BRI→BRI, Mandiri→Mandiri, BCA→BCA</li>
+          <li><strong>Transfer sesama bank = Gratis:</strong> BRI-BRI, Mandiri-Mandiri, BCA-BCA</li>
           <li><strong>Balancing saldo:</strong> Ke menu "Kas & Saldo" untuk transfer antar rekening</li>
         </ul>
       </div>
@@ -108,7 +113,7 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">💰</span>
+            <Wallet size={20} className="text-emerald-100" />
             <span className="text-emerald-100 text-sm font-medium">Keuntungan Hari Ini</span>
           </div>
           <p className="text-4xl font-bold">{formatRupiah(d.today.profit)}</p>
@@ -182,7 +187,7 @@ export default function Dashboard() {
             <TrendingUp size={16} className="text-blue-500" /> Pendapatan 7 Hari
           </h3>
           {d.last7.length === 0 ? (
-            <EmptyState icon="📊" title="Belum ada data" />
+            <EmptyState icon="bar-chart-3" title="Belum ada data" />
           ) : (
             <div className="flex items-end gap-3 h-44 px-2">
               {d.last7.map((day, i) => {
@@ -211,8 +216,9 @@ export default function Dashboard() {
             <AlertTriangle size={16} className="text-amber-500" /> Stok Menipis
           </h3>
           {d.lowStock.length === 0 ? (
-            <div className="text-center py-6 text-sm text-gray-400">
-              <span className="text-2xl block mb-1">✅</span>Semua stok aman
+            <div className="text-center py-6 text-sm text-gray-400 flex flex-col items-center gap-2">
+              <CheckCircle2 size={28} className="text-emerald-500" />
+              <span>Semua stok aman</span>
             </div>
           ) : (
             <div className="space-y-2 max-h-44 overflow-y-auto">
@@ -233,7 +239,7 @@ export default function Dashboard() {
           <h3 className="font-semibold text-gray-700">Transaksi Terakhir</h3>
         </div>
         {d.recent.length === 0 ? (
-          <EmptyState icon="📋" title="Belum ada transaksi" />
+          <EmptyState icon="clipboard-list" title="Belum ada transaksi" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

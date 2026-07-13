@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const b = await req.json();
   const [row] = await db.insert(serviceCategories).values({
     name: b.name,
-    icon: b.icon || "💳",
+    icon: b.icon || "credit-card",
     color: b.color || "#0ea5e9",
     sortOrder: b.sortOrder ?? 0,
   }).returning();

@@ -32,11 +32,11 @@ export async function POST() {
 
     // ACCOUNTS
     const accs = await db.insert(accounts).values([
-      { code: "cash", name: "Kas Tunai (Laci)", icon: "💵", color: "#22c55e", balance: 500000, minBalance: 200000 },
-      { code: "bank_bri", name: "M-Banking BRI", icon: "🏦", color: "#003d79", balance: 2000000, minBalance: 500000 },
-      { code: "bank_mandiri", name: "M-Banking Mandiri", icon: "🏛️", color: "#003366", balance: 1500000, minBalance: 300000 },
-      { code: "bank_bca", name: "M-Banking BCA", icon: "🔵", color: "#003d79", balance: 1000000, minBalance: 300000 },
-      { code: "bank_bni", name: "M-Banking BNI", icon: "🟠", color: "#f97316", balance: 500000, minBalance: 200000 },
+      { code: "cash", name: "Kas Tunai (Laci)", icon: "banknote", color: "#22c55e", balance: 500000, minBalance: 200000 },
+      { code: "bank_bri", name: "M-Banking BRI", icon: "landmark", color: "#003d79", balance: 2000000, minBalance: 500000 },
+      { code: "bank_mandiri", name: "M-Banking Mandiri", icon: "landmark", color: "#003366", balance: 1500000, minBalance: 300000 },
+      { code: "bank_bca", name: "M-Banking BCA", icon: "circle", color: "#003d79", balance: 1000000, minBalance: 300000 },
+      { code: "bank_bni", name: "M-Banking BNI", icon: "circle", color: "#f97316", balance: 500000, minBalance: 200000 },
     ]).returning();
 
     for (const acc of accs) {
@@ -60,14 +60,14 @@ export async function POST() {
 
     // PRODUCT CATEGORIES
     const cats = await db.insert(categories).values([
-      { name: "Makanan", icon: "🍜", color: "#ef4444" },
-      { name: "Minuman", icon: "🥤", color: "#3b82f6" },
-      { name: "Rokok", icon: "🚬", color: "#6b7280" },
-      { name: "Sembako", icon: "🛒", color: "#22c55e" },
-      { name: "Snack", icon: "🍿", color: "#f59e0b" },
-      { name: "ATK", icon: "✏️", color: "#8b5cf6" },
-      { name: "Toiletries", icon: "🧴", color: "#ec4899" },
-      { name: "Gas & Listrik", icon: "⚡", color: "#f97316" },
+      { name: "Makanan", icon: "utensils", color: "#ef4444" },
+      { name: "Minuman", icon: "cup-soda", color: "#3b82f6" },
+      { name: "Rokok", icon: "smoke", color: "#6b7280" },
+      { name: "Sembako", icon: "shopping-cart", color: "#22c55e" },
+      { name: "Snack", icon: "cookie", color: "#f59e0b" },
+      { name: "ATK", icon: "pencil", color: "#8b5cf6" },
+      { name: "Toiletries", icon: "spray-can", color: "#ec4899" },
+      { name: "Gas & Listrik", icon: "zap", color: "#f97316" },
     ]).returning();
 
     const cm: Record<string, number> = {};
@@ -90,11 +90,11 @@ export async function POST() {
 
     // BRILINK SERVICE CATEGORIES
     const svcCats = await db.insert(serviceCategories).values([
-      { name: "Transfer", icon: "↗️", color: "#0ea5e9", sortOrder: 1 },
-      { name: "Penarikan Tunai", icon: "💵", color: "#22c55e", sortOrder: 2 },
-      { name: "Setor Tunai", icon: "💰", color: "#f59e0b", sortOrder: 3 },
-      { name: "Pembayaran", icon: "📄", color: "#8b5cf6", sortOrder: 4 },
-      { name: "Lainnya", icon: "📦", color: "#6b7280", sortOrder: 5 },
+      { name: "Transfer", icon: "arrow-up-right", color: "#0ea5e9", sortOrder: 1 },
+      { name: "Penarikan Tunai", icon: "banknote", color: "#22c55e", sortOrder: 2 },
+      { name: "Setor Tunai", icon: "wallet", color: "#f59e0b", sortOrder: 3 },
+      { name: "Pembayaran", icon: "file-text", color: "#8b5cf6", sortOrder: 4 },
+      { name: "Lainnya", icon: "package", color: "#6b7280", sortOrder: 5 },
     ]).returning();
 
     const scm: Record<string, number> = {};
@@ -103,27 +103,27 @@ export async function POST() {
     // BRILINK SERVICES
     const svcs = await db.insert(brilinkServices).values([
       // Transfer
-      { name: "Transfer Antar Bank (RTGS)", categoryId: scm["Transfer"], icon: "↗️", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-      { name: "Transfer Sesama BRI", categoryId: scm["Transfer"], icon: "↗️", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-      { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "📱", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
+      { name: "Transfer Antar Bank (RTGS)", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
+      { name: "Transfer Sesama BRI", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
+      { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "smartphone", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
 
       // Penarikan Tunai
-      { name: "Tarik Tunai BRI", categoryId: scm["Penarikan Tunai"], icon: "💵", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
-      { name: "Tarik Tunai Bank Lain", categoryId: scm["Penarikan Tunai"], icon: "💵", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
+      { name: "Tarik Tunai BRI", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
+      { name: "Tarik Tunai Bank Lain", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
 
       // Setor Tunai
-      { name: "Setor Tunai BRI", categoryId: scm["Setor Tunai"], icon: "💰", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "💰", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Setor Tunai BRI", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Pembayaran
-      { name: "Tagihan PLN", categoryId: scm["Pembayaran"], icon: "⚡", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran"], icon: "💧", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran"], icon: "🌐", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran"], icon: "🏥", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Pulsa & Paket Data", categoryId: scm["Pembayaran"], icon: "📱", adminFee: 500, agentFee: 500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan PLN", categoryId: scm["Pembayaran"], icon: "zap", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran"], icon: "droplet", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran"], icon: "globe", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran"], icon: "heart-pulse", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Pulsa & Paket Data", categoryId: scm["Pembayaran"], icon: "smartphone", adminFee: 500, agentFee: 500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Lainnya
-      { name: "Cek Saldo", categoryId: scm["Lainnya"], icon: "📊", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none" },
+      { name: "Cek Saldo", categoryId: scm["Lainnya"], icon: "bar-chart-3", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none" },
     ]).returning();
 
     // FEE TIERS

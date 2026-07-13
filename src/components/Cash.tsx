@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, cn } from "@/lib/utils";
 import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select } from "@/components/ui";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 interface Account {
   id: number; code: string; name: string; icon: string | null; color: string | null;
@@ -16,7 +17,7 @@ interface Mutation {
   referenceId: number | null; createdAt: string;
 }
 
-const bankIcons = ["🏦", "🏛️", "🔵", "🟠", "🟢", "🔴", "💳", "💰", "📱", "🏧"];
+const bankIcons = ["landmark", "wallet", "banknote", "credit-card", "smartphone", "piggy-bank", "building", "coins", "cash", "safe"];
 const bankColors = ["#003d79", "#003366", "#0066cc", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function Cash() {
@@ -33,7 +34,7 @@ export default function Cash() {
   const [saving, setSaving] = useState(false);
   
   // For add/edit account
-  const [accForm, setAccForm] = useState({ name: "", icon: "🏦", color: "#003d79", balance: "", minBalance: "100000" });
+  const [accForm, setAccForm] = useState({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" });
 
   async function load() {
     const [accs, muts] = await Promise.all([
@@ -106,7 +107,7 @@ export default function Cash() {
       }),
     });
     setModal(null);
-    setAccForm({ name: "", icon: "🏦", color: "#003d79", balance: "", minBalance: "100000" });
+    setAccForm({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" });
     load();
     setSaving(false);
   }
@@ -146,7 +147,7 @@ export default function Cash() {
     setSelAccount(acc);
     setAccForm({ 
       name: acc.name, 
-      icon: acc.icon || "🏦", 
+      icon: acc.icon || "landmark", 
       color: acc.color || "#003d79", 
       balance: "", 
       minBalance: acc.minBalance || "100000" 
@@ -179,7 +180,7 @@ export default function Cash() {
           </h2>
           <p className="text-sm text-gray-400">Kelola kas tunai dan rekening M-Banking</p>
         </div>
-        <Button onClick={() => { setAccForm({ name: "", icon: "🏦", color: "#003d79", balance: "", minBalance: "100000" }); setModal("add_account"); }}>
+        <Button onClick={() => { setAccForm({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" }); setModal("add_account"); }}>
           <Plus size={16} /> Tambah Rekening
         </Button>
       </div>
@@ -218,7 +219,7 @@ export default function Cash() {
               
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{acc.icon}</span>
+                  <DynamicIcon name={acc.icon} fallback="package" size={18} className="text-gray-600" />
                   <span className="text-sm font-semibold text-gray-700">{acc.name}</span>
                 </div>
                 {isLow && (
@@ -260,7 +261,7 @@ export default function Cash() {
 
       {/* Info Box */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm">
-        <p className="text-blue-800 font-medium mb-2">💡 Tips Multi-Rekening:</p>
+        <p className="text-blue-800 font-medium mb-2">Tips Multi-Rekening:</p>
         <ul className="text-blue-700 text-xs space-y-1 list-disc ml-4">
           <li><strong>Hemat Biaya Transfer:</strong> Gunakan rekening yang sama dengan bank tujuan nasabah</li>
           <li><strong>Transfer Sesama Bank = Gratis/Murah:</strong> BRI→BRI, Mandiri→Mandiri, dll</li>
@@ -287,12 +288,12 @@ export default function Cash() {
                 onClick={() => setActiveTab(a.id.toString())}
                 className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-gray-100 text-gray-600")}
               >
-                {a.icon} {a.name.split(" ")[0]}
+                <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{a.name.split(" ")[0]}
               </button>
             ))}
           </div>
         </div>
-        {filteredMutations.length === 0 ? <EmptyState icon="📋" title="Belum ada mutasi" /> : (
+        {filteredMutations.length === 0 ? <EmptyState icon="clipboard-list" title="Belum ada mutasi" /> : (
           <div className="overflow-x-auto max-h-96">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white"><tr className="text-xs text-gray-400 uppercase tracking-wider bg-gray-50/80">
@@ -341,7 +342,7 @@ export default function Cash() {
           {selAccount && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-400">Akun</p>
-              <p className="font-semibold">{selAccount.icon} {selAccount.name}</p>
+              <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
               <p className="text-sm text-gray-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
@@ -349,7 +350,7 @@ export default function Cash() {
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Top up dari ATM" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={handleAdjust} disabled={saving || !amount}>{saving ? "..." : "✅ Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={handleAdjust} disabled={saving || !amount}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>
@@ -364,21 +365,21 @@ export default function Cash() {
           {selAccount && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-400">Dari Akun</p>
-              <p className="font-semibold">{selAccount.icon} {selAccount.name}</p>
+              <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
               <p className="text-sm text-gray-500">Saldo: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
           <Select label="Ke Akun" value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
             <option value="">— Pilih —</option>
             {accounts.filter(a => a.id !== selAccount?.id).map(a => (
-              <option key={a.id} value={a.id}>{a.icon} {a.name}</option>
+              <option key={a.id} value={a.id}><DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{a.name}</option>
             ))}
           </Select>
           <Input label="Jumlah" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="text-lg font-bold" />
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Tarik ATM, Setor tunai" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={handleTransfer} disabled={saving || !amount || !toAccountId}>{saving ? "..." : "✅ Transfer"}</Button>
+            <Button variant="primary" className="flex-1" onClick={handleTransfer} disabled={saving || !amount || !toAccountId}>{saving ? "..." : "Transfer"}</Button>
           </div>
         </div>
       </Modal>
@@ -399,9 +400,7 @@ export default function Cash() {
                   key={icon}
                   onClick={() => setAccForm({ ...accForm, icon })}
                   className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-gray-100 hover:bg-gray-200")}
-                >
-                  {icon}
-                </button>
+                ><DynamicIcon name={icon} size={18} className="text-gray-700" /></button>
               ))}
             </div>
           </div>
@@ -422,7 +421,7 @@ export default function Cash() {
           <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={handleAddAccount} disabled={saving || !accForm.name}>{saving ? "..." : "💾 Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={handleAddAccount} disabled={saving || !accForm.name}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>
@@ -443,9 +442,7 @@ export default function Cash() {
                   key={icon}
                   onClick={() => setAccForm({ ...accForm, icon })}
                   className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", accForm.icon === icon ? "bg-primary/10 ring-2 ring-primary" : "bg-gray-100 hover:bg-gray-200")}
-                >
-                  {icon}
-                </button>
+                ><DynamicIcon name={icon} size={18} className="text-gray-700" /></button>
               ))}
             </div>
           </div>
@@ -466,7 +463,7 @@ export default function Cash() {
           <p className="text-xs text-gray-400">* Untuk mengubah saldo, gunakan fitur "Sesuaikan" pada kartu rekening</p>
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={handleEditAccount} disabled={saving || !accForm.name}>{saving ? "..." : "💾 Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={handleEditAccount} disabled={saving || !accForm.name}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>

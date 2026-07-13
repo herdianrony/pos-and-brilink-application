@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { DynamicIcon } from "./DynamicIcon";
 
 // ── Modal ─────────────────────────────────────────
 export function Modal({ open, onClose, children, size = "md" }: {
@@ -14,8 +15,8 @@ export function Modal({ open, onClose, children, size = "md" }: {
   const w = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${w} max-h-[90vh] overflow-y-auto animate-scaleIn`}
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fadeIn" />
+      <div className={`relative bg-white rounded-3xl shadow-2xl w-full ${w} max-h-[90vh] overflow-y-auto animate-scaleIn border border-slate-200/50`}
         onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
@@ -26,7 +27,12 @@ export function Modal({ open, onClose, children, size = "md" }: {
 // ── Card ──────────────────────────────────────────
 export function Card({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("bg-white rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-0.5 transition-all duration-300", className)} {...props}>
+    <div className={cn(
+      "bg-white rounded-2xl border border-slate-200/70 shadow-sm",
+      "hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-0.5",
+      "transition-all duration-300",
+      className
+    )} {...props}>
       {children}
     </div>
   );
@@ -38,7 +44,7 @@ export function Badge({ children, variant = "default" }: {
   variant?: "default" | "success" | "danger" | "warning" | "primary" | "purple";
 }) {
   const colors = {
-    default: "bg-gray-100 text-gray-700",
+    default: "bg-slate-100 text-slate-700",
     success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
     danger: "bg-red-50 text-red-700 ring-1 ring-red-200",
     warning: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
@@ -61,12 +67,12 @@ export function Button({ children, variant = "primary", size = "md", className, 
   disabled?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const variants = {
-    primary: "bg-primary text-white hover:bg-primary-light shadow-lg shadow-primary/20",
-    secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm",
-    ghost: "text-gray-600 hover:bg-gray-100",
+    primary: "bg-primary text-white hover:bg-primary-light shadow-lg shadow-primary/20 hover:shadow-primary/30",
+    secondary: "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm",
+    ghost: "text-slate-600 hover:bg-slate-100",
     danger: "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20",
     success: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20",
-    accent: "bg-gradient-to-r from-accent to-accent-light text-white shadow-lg shadow-accent/30",
+    accent: "bg-gradient-to-r from-accent to-accent-light text-white shadow-lg shadow-accent/30 hover:shadow-accent/40",
   };
   const sizes = {
     sm: "px-3 py-1.5 text-xs rounded-lg",
@@ -76,7 +82,7 @@ export function Button({ children, variant = "primary", size = "md", className, 
   return (
     <button
       className={cn(
-        "font-semibold transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none inline-flex items-center justify-center gap-2",
+        "font-semibold transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100 inline-flex items-center justify-center gap-2",
         variants[variant],
         sizes[size],
         className
@@ -96,10 +102,12 @@ export function Input({ label, className, ...props }: {
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="space-y-1.5">
-      {label && <label className="text-sm font-medium text-gray-600">{label}</label>}
+      {label && <label className="text-sm font-medium text-slate-600">{label}</label>}
       <input
         className={cn(
-          "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm",
+          "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50",
+          "focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary",
+          "transition-all text-sm placeholder:text-slate-400",
           className
         )}
         {...props}
@@ -116,10 +124,12 @@ export function Select({ label, children, className, ...props }: {
 } & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div className="space-y-1.5">
-      {label && <label className="text-sm font-medium text-gray-600">{label}</label>}
+      {label && <label className="text-sm font-medium text-slate-600">{label}</label>}
       <select
         className={cn(
-          "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm",
+          "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50",
+          "focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary",
+          "transition-all text-sm",
           className
         )}
         {...props}
@@ -137,10 +147,12 @@ export function EmptyState({ icon, title, subtitle }: {
   subtitle?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <span className="text-5xl mb-3">{icon}</span>
-      <p className="font-medium text-gray-500">{title}</p>
-      {subtitle && <p className="text-sm mt-1">{subtitle}</p>}
+    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+      <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <DynamicIcon name={icon} fallback="package" size={28} className="text-slate-400" />
+      </div>
+      <p className="font-semibold text-slate-600">{title}</p>
+      {subtitle && <p className="text-sm mt-1 text-slate-400">{subtitle}</p>}
     </div>
   );
 }
@@ -164,7 +176,7 @@ export function StatCard({ icon, label, value, sub, color, trend }: {
   color: string;
   trend?: "up" | "down" | "neutral";
 }) {
-  const trendColor = trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-gray-400";
+  const trendColor = trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-slate-400";
   return (
     <Card className="p-5 animate-fadeIn group">
       <div className="flex items-start gap-4">
@@ -172,9 +184,9 @@ export function StatCard({ icon, label, value, sub, color, trend }: {
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</p>
-          <p className="text-xl font-bold text-gray-800 mt-0.5 truncate">{value}</p>
-          {sub && <p className={`text-xs mt-0.5 ${trend ? trendColor : "text-gray-400"}`}>{sub}</p>}
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</p>
+          <p className="text-xl font-bold text-slate-800 mt-0.5 truncate">{value}</p>
+          {sub && <p className={`text-xs mt-0.5 ${trend ? trendColor : "text-slate-400"}`}>{sub}</p>}
         </div>
       </div>
     </Card>
@@ -197,8 +209,8 @@ export function SectionTitle({ icon, title, desc, action }: {
           </div>
         )}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-          {desc && <p className="text-sm text-gray-400">{desc}</p>}
+          <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+          {desc && <p className="text-sm text-slate-400">{desc}</p>}
         </div>
       </div>
       {action}
@@ -213,19 +225,19 @@ export function Tabs({ tabs, active, onChange }: {
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
+            "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
             active === t.id
               ? "bg-white text-primary shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              : "text-slate-500 hover:text-slate-700"
           )}
         >
-          {t.icon && <span className="mr-1.5">{t.icon}</span>}
+          {t.icon && <DynamicIcon name={t.icon} fallback="package" size={14} className="inline-block" />}
           {t.label}
         </button>
       ))}

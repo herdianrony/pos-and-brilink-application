@@ -171,7 +171,7 @@ export default function AboutPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-5">
               Aplikasi ini gratis & open-source. Dukungan Anda sangat berarti untuk
               pengembangan fitur baru, perbaikan bug, dan biaya operasional.
-              Setiap kontribusi — sekecil apapun — sangat dihargai! 🙏
+              Setiap kontribusi — sekecil apapun — sangat dihargai! heart
             </p>
 
             {/* CTA button */}
@@ -273,7 +273,7 @@ export default function AboutPage() {
         {/* ── Footer ──────────────────────────── */}
         <footer className="text-center py-6">
           <p className="text-xs text-gray-400">
-            © {new Date().getFullYear()} BRILink POS — Dibuat dengan ❤️ oleh{" "}
+            © {new Date().getFullYear()} BRILink POS — Dibuat oleh{" "}
             <a
               href="https://github.com/herdianrony"
               target="_blank"

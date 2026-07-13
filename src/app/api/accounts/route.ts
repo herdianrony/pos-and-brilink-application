@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const [acc] = await db.insert(accounts).values({
       code: b.code,
       name: b.name,
-      icon: b.icon || "💰",
+      icon: b.icon || "wallet",
       color: b.color || "#10b981",
       balance: parseFloat(b.balance || "0"),
       minBalance: parseFloat(b.minBalance || "100000"),

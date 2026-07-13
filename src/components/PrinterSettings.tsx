@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, Button, Input, Select, Spinner, Badge } from "@/components/ui";
 import { Printer, Wifi, Usb, Cable, CheckCircle2, XCircle, Loader2, Info } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 import {
   isElectron,
   loadPrinterConfig,
@@ -88,9 +89,9 @@ export default function PrinterSettings() {
           value={config.type}
           onChange={(e) => setConfig({ ...config, type: e.target.value as PrinterConfig["type"] })}
         >
-          <option value="network">🌐 Network (LAN/WiFi) — Recommended</option>
-          <option value="usb">🔌 USB (Direct)</option>
-          <option value="serial">📡 Serial (COM)</option>
+          <option value="network">Network (LAN/WiFi) — Recommended</option>
+          <option value="usb">USB (Direct)</option>
+          <option value="serial">Serial (COM)</option>
         </Select>
         <Select
           label="Lebar Kertas"
@@ -139,8 +140,7 @@ export default function PrinterSettings() {
       )}
 
       {config.type === "usb" && (
-        <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-xs animate-fadeIn">
-          💡 Pastikan driver printer USB sudah terinstall di Windows. Interface
+        <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-xs animate-fadeIn">Pastikan driver printer USB sudah terinstall di Windows. Interface
           default USB akan dideteksi otomatis oleh sistem.
         </div>
       )}
@@ -168,7 +168,7 @@ export default function PrinterSettings() {
           {testing ? "Mencetak..." : "Test Print"}
         </Button>
         {saved && (
-          <Badge variant="success">✓ Tersimpan</Badge>
+          <Badge variant="success">Tersimpan</Badge>
         )}
       </div>
 

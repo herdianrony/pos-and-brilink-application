@@ -61,7 +61,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     `CREATE TABLE IF NOT EXISTS \`categories\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       \`name\` text(100) NOT NULL,
-      \`icon\` text(10) DEFAULT '📦',
+      \`icon\` text(50) DEFAULT 'package',
       \`color\` text(20) DEFAULT '#6366f1',
       \`is_active\` integer DEFAULT true NOT NULL,
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL
@@ -84,7 +84,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     `CREATE TABLE IF NOT EXISTS \`service_categories\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       \`name\` text(100) NOT NULL,
-      \`icon\` text(10) DEFAULT '💳',
+      \`icon\` text(50) DEFAULT 'credit-card',
       \`color\` text(20) DEFAULT '#0ea5e9',
       \`sort_order\` integer DEFAULT 0 NOT NULL,
       \`is_active\` integer DEFAULT true NOT NULL,
@@ -94,7 +94,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       \`name\` text(100) NOT NULL,
       \`category_id\` integer,
-      \`icon\` text(10) DEFAULT '💳',
+      \`icon\` text(50) DEFAULT 'credit-card',
       \`admin_fee\` real DEFAULT 0 NOT NULL,
       \`agent_fee\` real DEFAULT 0 NOT NULL,
       \`use_tiered_fee\` integer DEFAULT false NOT NULL,
@@ -144,7 +144,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       \`code\` text(20) NOT NULL,
       \`name\` text(100) NOT NULL,
-      \`icon\` text(10) DEFAULT '💰',
+      \`icon\` text(50) DEFAULT 'wallet',
       \`color\` text(20) DEFAULT '#10b981',
       \`balance\` real DEFAULT 0 NOT NULL,
       \`min_balance\` real DEFAULT 100000,

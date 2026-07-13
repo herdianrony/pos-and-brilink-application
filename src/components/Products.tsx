@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, Tabs } from "@/components/ui";
 import { Plus, Pencil, Trash2, X, Package, Tags, Landmark, Search, Layers } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 // ── Types ─────────────────────────────────────────
 interface Product {
@@ -30,8 +31,10 @@ interface BLService {
   description: string | null;
 }
 
-// ── Emoji Picker Data ─────────────────────────────
-const emojis = ["📦","🍜","🥤","🚬","🛒","🍿","✏️","🧴","⚡","🎁","🧹","💊","🍞","🥛","🧊","🔧","📱","👕","🎮","🏠","💳","🏦","🏧","📲","💵","💰","💸","⚡","💡","💧","🏥","📞","🏛️","📶","🌐","💚","💜","💙","🧡","📋","🔄","🛍️","📄"];
+// ── Icon Picker Data ──────────────────────────────
+// Lucide icon names yang tersedia untuk dipilih saat membuat kategori/layanan/akun.
+import { AVAILABLE_ICONS } from "@/components/DynamicIcon";
+const icons = AVAILABLE_ICONS;
 
 export default function Products() {
   const [tab, setTab] = useState("products");
@@ -44,10 +47,10 @@ export default function Products() {
       </div>
       <Tabs
         tabs={[
-          { id: "products", label: "Produk", icon: "📦" },
-          { id: "categories", label: "Kategori Produk", icon: "🏷️" },
-          { id: "bl_services", label: "Layanan BRILink", icon: "🏦" },
-          { id: "bl_categories", label: "Kategori Layanan", icon: "📂" },
+          { id: "products", label: "Produk", icon: "package" },
+          { id: "categories", label: "Kategori Produk", icon: "tag" },
+          { id: "bl_services", label: "Layanan BRILink", icon: "landmark" },
+          { id: "bl_categories", label: "Kategori Layanan", icon: "folder-open" },
         ]}
         active={tab}
         onChange={setTab}
@@ -114,7 +117,7 @@ function ProductsTab() {
       </div>
 
       <Card className="overflow-hidden">
-        {loading ? <Spinner /> : products.length === 0 ? <EmptyState icon="📦" title="Belum ada produk" subtitle="Tambah produk pertama Anda" /> : (
+        {loading ? <Spinner /> : products.length === 0 ? <EmptyState icon="package" title="Belum ada produk" subtitle="Tambah produk pertama Anda" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-xs text-gray-400 uppercase tracking-wider bg-gray-50/80">
@@ -131,7 +134,7 @@ function ProductsTab() {
                   <tr key={p.id} className="border-t border-gray-50 hover:bg-blue-50/30 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{p.categoryIcon || "📦"}</span>
+                        <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-gray-600" />
                         <div>
                           <p className="font-semibold text-gray-800">{p.name}</p>
                           {p.barcode && <p className="text-[11px] text-gray-400 font-mono">{p.barcode}</p>}
@@ -172,7 +175,7 @@ function ProductsTab() {
             <Input label="Barcode" value={f.barcode} onChange={e => setF({ ...f, barcode: e.target.value })} placeholder="Barcode" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
               <option value="">— Pilih —</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              {categories.map(c => <option key={c.id} value={c.id}><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</option>)}
             </Select>
             <Select label="Satuan" value={f.unit} onChange={e => setF({ ...f, unit: e.target.value })}>
               {["pcs","botol","bungkus","kg","liter","karung","tabung","lusin","sachet","box","pak","rim"].map(u => <option key={u} value={u}>{u}</option>)}
@@ -190,7 +193,7 @@ function ProductsTab() {
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(false)}>Batal</Button>
             <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name || !f.sellPrice}>
-              {saving ? "Menyimpan..." : "💾 Simpan"}
+              {saving ? "Menyimpan..." : "Simpan"}
             </Button>
           </div>
         </div>
@@ -207,14 +210,14 @@ function CategoriesTab() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [edit, setEdit] = useState<Category | null>(null);
-  const [f, setF] = useState({ name: "", icon: "📦", color: "#6366f1" });
+  const [f, setF] = useState({ name: "", icon: "package", color: "#6366f1" });
   const [saving, setSaving] = useState(false);
 
   async function load() { setCats(await (await fetch("/api/categories")).json()); setLoading(false); }
   useEffect(() => { load(); }, []);
 
-  function openAdd() { setEdit(null); setF({ name: "", icon: "📦", color: "#6366f1" }); setModal(true); }
-  function openEdit(c: Category) { setEdit(c); setF({ name: c.name, icon: c.icon || "📦", color: c.color || "#6366f1" }); setModal(true); }
+  function openAdd() { setEdit(null); setF({ name: "", icon: "package", color: "#6366f1" }); setModal(true); }
+  function openEdit(c: Category) { setEdit(c); setF({ name: c.name, icon: c.icon || "package", color: c.color || "#6366f1" }); setModal(true); }
   async function save() {
     if (!f.name) return; setSaving(true);
     await fetch("/api/categories", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), ...f }) });
@@ -230,10 +233,10 @@ function CategoriesTab() {
     <>
       <div className="flex justify-end"><Button onClick={openAdd}><Plus size={16} /> Tambah Kategori</Button></div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="🏷️" title="Belum ada kategori" /> :
+        {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="tag" title="Belum ada kategori" /> :
           cats.map(c => (
             <Card key={c.id} className="p-4 flex items-center gap-3 group">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}>{c.icon}</div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-gray-700" /></div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 truncate">{c.name}</p>
               </div>
@@ -253,18 +256,16 @@ function CategoriesTab() {
           <div>
             <label className="text-sm font-medium text-gray-600 mb-1.5 block">Pilih Ikon</label>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-gray-50 rounded-xl p-3">
-              {emojis.slice(0, 20).map(em => (
+              {icons.slice(0, 30).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary scale-110" : "hover:bg-gray-200")}>
-                  {em}
-                </button>
+                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary scale-110" : "hover:bg-gray-200")}><DynamicIcon name={em} size={18} className="text-gray-700" /></button>
               ))}
             </div>
           </div>
           <Input label="Warna" type="color" value={f.color} onChange={e => setF({ ...f, color: e.target.value })} />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(false)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "💾 Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>
@@ -282,7 +283,7 @@ function BLServicesTab() {
   const [modal, setModal] = useState(false);
   const [tiersModal, setTiersModal] = useState(false);
   const [edit, setEdit] = useState<BLService | null>(null);
-  const [f, setF] = useState({ name: "", categoryId: "", icon: "💳", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
+  const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
   const [tiers, setTiers] = useState<FeeTier[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -294,13 +295,13 @@ function BLServicesTab() {
 
   function openAdd() { 
     setEdit(null); 
-    setF({ name: "", categoryId: "", icon: "💳", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" }); 
+    setF({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" }); 
     setTiers([]);
     setModal(true); 
   }
   function openEdit(s: BLService) {
     setEdit(s); 
-    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "💳", adminFee: s.adminFee, agentFee: s.agentFee, useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", description: s.description || "" }); 
+    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "credit-card", adminFee: s.adminFee, agentFee: s.agentFee, useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", description: s.description || "" }); 
     setTiers(s.feeTiers || []);
     setModal(true);
   }
@@ -366,7 +367,7 @@ function BLServicesTab() {
     <>
       <div className="flex justify-end"><Button onClick={openAdd}><Plus size={16} /> Tambah Layanan</Button></div>
       <Card className="overflow-hidden">
-        {loading ? <Spinner /> : svcs.length === 0 ? <EmptyState icon="🏦" title="Belum ada layanan" /> : (
+        {loading ? <Spinner /> : svcs.length === 0 ? <EmptyState icon="landmark" title="Belum ada layanan" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-xs text-gray-400 uppercase tracking-wider bg-gray-50/80">
@@ -381,7 +382,7 @@ function BLServicesTab() {
                   <tr key={s.id} className="border-t border-gray-50 hover:bg-blue-50/30">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{s.icon}</span>
+                        <DynamicIcon name={s.icon} fallback="package" size={18} className="text-gray-600" />
                         <div>
                           <span className="font-semibold text-gray-800">{s.name}</span>
                           {s.useTieredFee && (
@@ -422,7 +423,7 @@ function BLServicesTab() {
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
               <option value="">— Pilih —</option>
-              {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              {cats.map(c => <option key={c.id} value={c.id}><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</option>)}
             </Select>
           </div>
           
@@ -482,38 +483,36 @@ function BLServicesTab() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select label="Efek Kas Tunai" value={f.cashEffect} onChange={e => setF({ ...f, cashEffect: e.target.value })}>
-              <option value="in">➕ Masuk (nasabah bayar cash)</option>
-              <option value="out">➖ Keluar (kasih cash ke nasabah)</option>
+              <option value="in">Masuk (nasabah bayar cash)</option>
+              <option value="out">Keluar (kasih cash ke nasabah)</option>
               <option value="none">— Tidak ada efek</option>
             </Select>
             <Select label="Efek Saldo M-Banking" value={f.bankEffect} onChange={e => setF({ ...f, bankEffect: e.target.value })}>
-              <option value="in">➕ Masuk (terima transfer dari nasabah)</option>
-              <option value="out">➖ Keluar (transfer/bayar via mbanking)</option>
+              <option value="in">Masuk (terima transfer dari nasabah)</option>
+              <option value="out">Keluar (transfer/bayar via mbanking)</option>
               <option value="none">— Tidak ada efek</option>
             </Select>
           </div>
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-            <p className="font-medium mb-1">💡 Panduan Efek Saldo:</p>
+            <p className="font-medium mb-1">Panduan Efek Saldo:</p>
             <ul className="list-disc ml-4 space-y-0.5">
-              <li><strong>Tarik Tunai:</strong> Cash ➖ keluar, M-Banking ➕ masuk</li>
-              <li><strong>Transfer/Bayar/Setor:</strong> Cash ➕ masuk, M-Banking ➖ keluar</li>
+              <li><strong>Tarik Tunai:</strong> Cash minus keluar, M-Banking plus masuk</li>
+              <li><strong>Transfer/Bayar/Setor:</strong> Cash plus masuk, M-Banking minus keluar</li>
             </ul>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-600 mb-1.5 block">Pilih Ikon</label>
             <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto bg-gray-50 rounded-xl p-3">
-              {emojis.slice(20).map(em => (
+              {icons.slice(30).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-gray-200")}>
-                  {em}
-                </button>
+                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-gray-200")}><DynamicIcon name={em} size={18} className="text-gray-700" /></button>
               ))}
             </div>
           </div>
           <Input label="Deskripsi (opsional)" value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Keterangan tambahan" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(false)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "💾 Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>
@@ -527,13 +526,13 @@ function BLServicesTab() {
                 <Layers size={20} className="text-purple-500" />
                 Atur Fee Berjenjang
               </h3>
-              {edit && <p className="text-sm text-gray-500">{edit.icon} {edit.name}</p>}
+              {edit && <p className="text-sm text-gray-500"><DynamicIcon name={edit.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{edit.name}</p>}
             </div>
             <button onClick={() => setTiersModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
           </div>
           
           <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-700">
-            <p className="font-medium">💡 Contoh Skema Fee Tarik Tunai:</p>
+            <p className="font-medium">Contoh Skema Fee Tarik Tunai:</p>
             <ul className="list-disc ml-4 mt-1 space-y-0.5">
               <li>Rp 0 - 500.000 → Admin Rp 5.000, Fee Rp 3.000</li>
               <li>Rp 500.001 - 2.000.000 → Admin Rp 7.500, Fee Rp 4.500</li>
@@ -607,7 +606,7 @@ function BLServicesTab() {
           <div className="flex gap-3 pt-4 border-t">
             <Button variant="secondary" className="flex-1" onClick={() => setTiersModal(false)}>Batal</Button>
             <Button variant="primary" className="flex-1" onClick={saveTiers} disabled={saving}>
-              {saving ? "Menyimpan..." : "💾 Simpan Fee Berjenjang"}
+              {saving ? "Menyimpan..." : "Simpan Fee Berjenjang"}
             </Button>
           </div>
         </div>
@@ -624,14 +623,14 @@ function BLCategoriesTab() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [edit, setEdit] = useState<ServiceCat | null>(null);
-  const [f, setF] = useState({ name: "", icon: "💳", color: "#0ea5e9", sortOrder: "0" });
+  const [f, setF] = useState({ name: "", icon: "credit-card", color: "#0ea5e9", sortOrder: "0" });
   const [saving, setSaving] = useState(false);
 
   async function load() { setCats(await (await fetch("/api/service-categories")).json()); setLoading(false); }
   useEffect(() => { load(); }, []);
 
-  function openAdd() { setEdit(null); setF({ name: "", icon: "💳", color: "#0ea5e9", sortOrder: "0" }); setModal(true); }
-  function openEdit(c: ServiceCat) { setEdit(c); setF({ name: c.name, icon: c.icon || "💳", color: c.color || "#0ea5e9", sortOrder: c.sortOrder.toString() }); setModal(true); }
+  function openAdd() { setEdit(null); setF({ name: "", icon: "credit-card", color: "#0ea5e9", sortOrder: "0" }); setModal(true); }
+  function openEdit(c: ServiceCat) { setEdit(c); setF({ name: c.name, icon: c.icon || "credit-card", color: c.color || "#0ea5e9", sortOrder: c.sortOrder.toString() }); setModal(true); }
   async function save() {
     if (!f.name) return; setSaving(true);
     await fetch("/api/service-categories", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
@@ -649,10 +648,10 @@ function BLCategoriesTab() {
     <>
       <div className="flex justify-end"><Button onClick={openAdd}><Plus size={16} /> Tambah Kategori</Button></div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="📂" title="Belum ada kategori layanan" /> :
+        {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="folder-open" title="Belum ada kategori layanan" /> :
           cats.map(c => (
             <Card key={c.id} className="p-4 flex items-center gap-3 group">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}>{c.icon}</div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-gray-700" /></div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 truncate">{c.name}</p>
                 <p className="text-xs text-gray-400">Urutan: {c.sortOrder}</p>
@@ -673,11 +672,9 @@ function BLCategoriesTab() {
           <div>
             <label className="text-sm font-medium text-gray-600 mb-1.5 block">Ikon</label>
             <div className="flex flex-wrap gap-2 bg-gray-50 rounded-xl p-3">
-              {emojis.slice(20, 35).map(em => (
+              {icons.slice(30, 60).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-gray-200")}>
-                  {em}
-                </button>
+                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-gray-200")}><DynamicIcon name={em} size={18} className="text-gray-700" /></button>
               ))}
             </div>
           </div>
@@ -685,7 +682,7 @@ function BLCategoriesTab() {
           <Input label="Urutan" type="number" value={f.sortOrder} onChange={e => setF({ ...f, sortOrder: e.target.value })} placeholder="0" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(false)}>Batal</Button>
-            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "💾 Simpan"}</Button>
+            <Button variant="primary" className="flex-1" onClick={save} disabled={saving || !f.name}>{saving ? "..." : "Simpan"}</Button>
           </div>
         </div>
       </Modal>

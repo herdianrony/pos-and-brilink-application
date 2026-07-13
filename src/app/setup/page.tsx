@@ -433,8 +433,7 @@ function WelcomeStep() {
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 mt-8">
-        ⏱️ Setup membutuhkan sekitar 2-3 menit
+      <p className="text-xs text-gray-400 mt-8">Setup membutuhkan sekitar 2-3 menit
       </p>
     </div>
   );
@@ -589,7 +588,7 @@ function AdminStep({
           </div>
         )}
         <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs">
-          🔒 <strong>Penting:</strong> Simpan username & password di tempat aman.
+          <strong>Penting:</strong> Simpan username & password di tempat aman.
           Jika lupa, Anda perlu reset database untuk mengembalikan akses.
         </div>
       </div>
@@ -652,7 +651,7 @@ function CashStep({
         </div>
 
         <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-xs">
-          💡 <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
+          <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
           akan otomatis dibuat dengan saldo Rp 0. Anda bisa top-up nanti di menu
           "Kas & Saldo".
         </div>
@@ -770,8 +769,7 @@ function PrinterStep({
       )}
 
       {printerType === "skip" && (
-        <div className="mt-5 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs">
-          ✓ Anda bisa setup printer nanti di menu <strong>Pengaturan → Printer Thermal</strong>
+        <div className="mt-5 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs">Anda bisa setup printer nanti di menu <strong>Pengaturan → Printer Thermal</strong>
         </div>
       )}
     </div>
@@ -785,7 +783,7 @@ function DoneStep({ storeName, adminName }: { storeName: string; adminName: stri
         <PartyPopper size={42} className="text-white" />
       </div>
       <h2 className="text-3xl font-extrabold text-gray-800 mb-2">
-        Setup Selesai! 🎉
+        Setup Selesai! party-popper
       </h2>
       <p className="text-gray-500 mb-8 max-w-md mx-auto">
         Selamat! Aplikasi BRILink POS siap digunakan. Anda sudah login sebagai

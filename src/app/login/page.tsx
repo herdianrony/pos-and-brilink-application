@@ -160,8 +160,8 @@ function LoginForm() {
 
           <h2 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-4">
             {mode === "login"
-              ? "Selamat datang kembali 👋"
-              : "Setup Akun Admin Pertama 🔐"}
+              ? "Selamat datang kembali hand"
+              : "Setup Akun Admin Pertama key-round"}
           </h2>
           <p className="text-blue-100 text-base leading-relaxed mb-8">
             {mode === "login"

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const [row] = await db.insert(brilinkServices).values({
     name: b.name,
     categoryId: b.categoryId || null,
-    icon: b.icon || "💳",
+    icon: b.icon || "credit-card",
     adminFee: b.adminFee?.toString() || "0",
     agentFee: b.agentFee?.toString() || "0",
     useTieredFee: b.useTieredFee || false,

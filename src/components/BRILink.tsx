@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge } from "@/components/ui";
 import { Landmark, CheckCircle, X, Search, ArrowDownLeft, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 interface FeeTier {
   id: number;
@@ -192,7 +193,7 @@ export default function BRILink() {
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-sm">{acc.icon}</span>
+                <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-white" />
                 <span className="text-xs font-medium text-gray-600 truncate">{acc.name}</span>
                 {isLow && <AlertTriangle size={10} className="text-amber-500" />}
               </div>
@@ -221,7 +222,7 @@ export default function BRILink() {
             <button key={c.id} onClick={() => setCatFilter(c.id.toString())}
               className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
                 catFilter === c.id.toString() ? "bg-primary text-white shadow-md" : "bg-white text-gray-600 border border-gray-200")}>
-              {c.icon} {c.name}
+              <DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}
             </button>
           ))}
         </div>
@@ -229,7 +230,7 @@ export default function BRILink() {
 
       {/* Services */}
       {Object.keys(grouped).length === 0 ? (
-        <EmptyState icon="🔍" title="Layanan tidak ditemukan" />
+        <EmptyState icon="search" title="Layanan tidak ditemukan" />
       ) : (
         Object.entries(grouped).map(([cat, svcs]) => (
           <div key={cat}>
@@ -241,7 +242,7 @@ export default function BRILink() {
                     "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg",
                     sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-gray-200"
                   )}>
-                  <span className="text-3xl block mb-2 group-hover:scale-110 transition-transform">{s.icon}</span>
+                  <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
                   <p className="font-semibold text-sm text-gray-800 leading-tight mb-1">{s.name}</p>
                   <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     {s.useTieredFee ? (
@@ -276,7 +277,7 @@ export default function BRILink() {
           <div className="p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{sel.icon}</span>
+                <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">{sel.name}</h3>
                   <div className="flex items-center gap-2">
@@ -344,7 +345,7 @@ export default function BRILink() {
                         )}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          <span>{acc.icon}</span>
+                          <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-gray-500" />
                           <span className="text-xs font-medium text-gray-700 truncate">{acc.name}</span>
                         </div>
                         <p className={cn("text-sm font-bold", isLow ? "text-amber-600" : "text-gray-800")}>
@@ -362,18 +363,18 @@ export default function BRILink() {
 
             {/* Cash/Bank Effect Info */}
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs">
-              <p className="text-gray-700 font-medium mb-2">📊 Efek ke Saldo:</p>
+              <p className="text-gray-700 font-medium mb-2">bar-chart-3 Efek ke Saldo:</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-gray-100")}>
                   <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-gray-400"} />
                   <span className={sel.cashEffect === "in" ? "text-emerald-700" : sel.cashEffect === "out" ? "text-red-600" : "text-gray-500"}>
-                    Kas: {sel.cashEffect === "in" ? "➕ Masuk" : sel.cashEffect === "out" ? "➖ Keluar" : "—"}
+                    Kas: {sel.cashEffect === "in" ? "plus Masuk" : sel.cashEffect === "out" ? "minus Keluar" : "—"}
                   </span>
                 </div>
                 <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-gray-100")}>
                   <Building2 size={14} className={sel.bankEffect === "in" ? "text-emerald-600" : sel.bankEffect === "out" ? "text-red-500" : "text-gray-400"} />
                   <span className={sel.bankEffect === "in" ? "text-emerald-700" : sel.bankEffect === "out" ? "text-red-600" : "text-gray-500"}>
-                    {selectedBank?.name || "M-Banking"}: {sel.bankEffect === "in" ? "➕ Masuk" : sel.bankEffect === "out" ? "➖ Keluar" : "—"}
+                    {selectedBank?.name || "M-Banking"}: {sel.bankEffect === "in" ? "plus Masuk" : sel.bankEffect === "out" ? "minus Keluar" : "—"}
                   </span>
                 </div>
               </div>
@@ -392,14 +393,13 @@ export default function BRILink() {
                   className="text-lg font-bold" 
                 />
                 {sel.useTieredFee && form.amount && currentTier && (
-                  <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                    💡 Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
+                  <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
                   </p>
                 )}
               </div>
               <Select label="Nasabah Bayar Dengan" value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: e.target.value })}>
-                <option value="cash">💵 Tunai</option>
-                <option value="transfer">🏦 Transfer ke Rekening Agen</option>
+                <option value="cash">Tunai</option>
+                <option value="transfer">Transfer ke Rekening Agen</option>
               </Select>
             </div>
             <Input label="Catatan (opsional)" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Catatan tambahan..." />
@@ -426,7 +426,7 @@ export default function BRILink() {
             {adminFee > 0 && (
               <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">💰</span>
+                  <Wallet size={18} className="text-emerald-600" />
                   <span className="font-bold text-emerald-700">Keuntungan Anda (Multi-Bank Strategy)</span>
                 </div>
                 <div className="space-y-1.5 text-sm">
@@ -436,7 +436,7 @@ export default function BRILink() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Biaya ke Bank (sesama bank)</span>
-                    <span className="font-semibold text-emerald-600">Rp 0 ✓</span>
+                    <span className="font-semibold text-emerald-600">Rp 0 check</span>
                   </div>
                   <div className="flex justify-between pt-1.5 border-t border-emerald-200">
                     <span className="font-bold text-emerald-700">PROFIT BERSIH</span>
@@ -445,7 +445,7 @@ export default function BRILink() {
                 </div>
                 {potentialExtraProfit > 0 && (
                   <div className="mt-3 bg-emerald-100 rounded-lg p-2 text-xs text-emerald-700">
-                    <p className="font-semibold">🎉 Anda hemat {formatRupiah(potentialExtraProfit)} biaya antar bank!</p>
+                    <p className="font-semibold">Anda hemat {formatRupiah(potentialExtraProfit)} biaya antar bank!</p>
                     <p>Tanpa multi-bank, profit hanya {formatRupiah(agentFee)} (dikurangi biaya transfer antar bank)</p>
                   </div>
                 )}
@@ -467,7 +467,7 @@ export default function BRILink() {
               <Button variant="secondary" size="lg" className="flex-1" onClick={() => setSel(null)}>Batal</Button>
               <Button variant="primary" size="lg" className="flex-1" onClick={handleSubmit}
                 disabled={submitting || !form.amount || parseFloat(form.amount) <= 0 || !hasEnoughBankBalance}>
-                {submitting ? "Memproses..." : "✅ Proses Transaksi"}
+                {submitting ? "Memproses..." : "Proses Transaksi"}
               </Button>
             </div>
           </div>

@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const [row] = await db.insert(categories).values({
     name: body.name,
-    icon: body.icon || "📦",
+    icon: body.icon || "package",
     color: body.color || "#6366f1",
   }).returning();
   return NextResponse.json(row);

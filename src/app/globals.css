@@ -1,33 +1,71 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Brand Colors ──────────────────────────────── */
   --color-primary: #003d79;
   --color-primary-light: #1a5fa8;
   --color-primary-dark: #002a54;
   --color-accent: #f7941d;
   --color-accent-light: #ffb347;
+  --color-accent-dark: #d97c00;
+
+  /* ── Status Colors ─────────────────────────────── */
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* ── Surface ───────────────────────────────────── */
   --color-surface: #ffffff;
   --color-surface-alt: #f8fafc;
-  --color-muted: #94a3b8;
+  --color-surface-elevated: #ffffff;
+
+  /* ── Text ──────────────────────────────────────── */
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-muted: #94a3b8;
+
+  /* ── Border ────────────────────────────────────── */
+  --color-border: #e2e8f0;
+  --color-border-soft: #f1f5f9;
+
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
-html { scroll-behavior: smooth; }
+/* ── Base ───────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   font-family: var(--font-sans);
-  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
   min-height: 100vh;
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+/* ── Typography ─────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.025em;
+}
+
+/* ── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+/* ── Selection ──────────────────────────────────── */
+::selection {
+  background: rgba(0, 61, 121, 0.15);
+  color: var(--color-primary-dark);
+}
+
+/* ── Animations ─────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -40,18 +78,42 @@ body {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
 .animate-slideUp { animation: slideUp 0.4s ease-out; }
 .animate-scaleIn { animation: scaleIn 0.2s ease-out; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
 
-/* Glass card effect */
+/* ── Glass card effect ──────────────────────────── */
 .glass {
   background: rgba(255,255,255,0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.3);
 }
 
-/* Wizard input style — used in /setup multi-step form */
+/* ── Gradient text ──────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Shimmer skeleton ───────────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Wizard input ───────────────────────────────── */
 .wizard-input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -71,6 +133,8 @@ body {
   color: rgb(156 163 175);
 }
 
+/* ── Print styles ───────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
+  body { background: white !important; }
 }

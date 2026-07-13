@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatRupiah, formatDate } from "@/lib/utils";
 import { Card, Badge, Button, Modal, Spinner, EmptyState, Tabs, StatCard } from "@/components/ui";
 import { ClipboardList, Eye, X, TrendingUp, ShoppingCart, Landmark } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 interface Trx {
   id: number; invoiceNo: string; type: string; subType: string | null;
@@ -57,15 +58,15 @@ export default function History() {
       <Tabs
         tabs={[
           { id: "all", label: "Semua" },
-          { id: "pos", label: "POS", icon: "🛒" },
-          { id: "brilink", label: "BRILink", icon: "🏦" },
+          { id: "pos", label: "POS", icon: "shopping-cart" },
+          { id: "brilink", label: "BRILink", icon: "landmark" },
         ]}
         active={filter}
         onChange={setFilter}
       />
 
       <Card className="overflow-hidden">
-        {loading ? <Spinner /> : trxs.length === 0 ? <EmptyState icon="📋" title="Belum ada transaksi" /> : (
+        {loading ? <Spinner /> : trxs.length === 0 ? <EmptyState icon="clipboard-list" title="Belum ada transaksi" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-xs text-gray-400 uppercase tracking-wider bg-gray-50/80">
@@ -88,7 +89,7 @@ export default function History() {
                     <td className="p-3 text-gray-600">{t.customerName || "—"}</td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
                     <td className="p-3 text-right font-semibold text-emerald-600">{formatRupiah(t.profit || "0")}</td>
-                    <td className="p-3 text-xs text-gray-500">{t.paymentMethod === "cash" ? "💵 Tunai" : t.paymentMethod === "transfer" ? "🏦 Transfer" : "📱 QRIS"}</td>
+                    <td className="p-3 text-xs text-gray-500">{t.paymentMethod === "cash" ? "Tunai" : t.paymentMethod === "transfer" ? "Transfer" : "QRIS"}</td>
                     <td className="p-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
                     <td className="p-3 text-center">
                       <button onClick={() => viewDetail(t.id)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Eye size={14} /></button>
@@ -138,7 +139,7 @@ export default function History() {
               <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{formatRupiah(detail.totalAmount)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-400">Keuntungan</span><span className="text-emerald-600 font-bold">{formatRupiah(detail.profit || "0")}</span></div>
             </div>
-            {detail.notes && <div className="bg-amber-50 rounded-xl p-3 text-sm">📝 {detail.notes}</div>}
+            {detail.notes && <div className="bg-amber-50 rounded-xl p-3 text-sm">{detail.notes}</div>}
             <Button variant="primary" className="w-full" onClick={() => setDetail(null)}>Tutup</Button>
           </div>
         )}

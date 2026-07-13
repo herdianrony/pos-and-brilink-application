@@ -18,7 +18,9 @@ import {
   User as UserIcon,
   Info,
   Heart,
+  Clock,
 } from "lucide-react";
+import { DynamicIcon } from "@/components/DynamicIcon";
 
 interface UserInfo {
   id: number;
@@ -236,8 +238,8 @@ export default function Sidebar({
         {/* Footer */}
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-sm font-bold text-white">
-              🕐
+            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+              <Clock size={16} className="text-blue-100" />
             </div>
             <div>
               <p className="text-white text-sm font-semibold">{time}</p>
