@@ -175,7 +175,7 @@ function ProductsTab() {
             <Input label="Barcode" value={f.barcode} onChange={e => setF({ ...f, barcode: e.target.value })} placeholder="Barcode" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
               <option value="">— Pilih —</option>
-              {categories.map(c => <option key={c.id} value={c.id}><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</option>)}
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
             <Select label="Satuan" value={f.unit} onChange={e => setF({ ...f, unit: e.target.value })}>
               {["pcs","botol","bungkus","kg","liter","karung","tabung","lusin","sachet","box","pak","rim"].map(u => <option key={u} value={u}>{u}</option>)}
@@ -423,7 +423,7 @@ function BLServicesTab() {
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
               <option value="">— Pilih —</option>
-              {cats.map(c => <option key={c.id} value={c.id}><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</option>)}
+              {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
           </div>
           

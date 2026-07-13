@@ -334,7 +334,7 @@ export default function Cash() {
           <Select label="Ke Akun" value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
             <option value="">— Pilih —</option>
             {accounts.filter(a => a.id !== selAccount?.id).map(a => (
-              <option key={a.id} value={a.id}><DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{a.name}</option>
+              <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </Select>
           <Input label="Jumlah" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="text-lg font-bold" />
