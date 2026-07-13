@@ -43,17 +43,24 @@ function LoginForm() {
     fetch("/api/seed", { method: "POST", cache: "no-store" })
       .catch(() => {})
       .finally(() => {
-        // Lalu cek apakah setup custom diperlukan
+        // Cek apakah perlu setup wizard (belum ada user sama sekali)
         fetch("/api/auth/setup", { cache: "no-store" })
           .then((r) => r.json())
           .then((data) => {
-            // Setelah seed, admin/admin123 pasti ada → mode login
+            if (data.setupNeeded) {
+              // Belum ada user — arahkan ke setup wizard
+              router.replace("/setup");
+              return;
+            }
             setMode("login");
+            setChecking(false);
           })
-          .catch(() => setMode("login"))
-          .finally(() => setChecking(false));
+          .catch(() => {
+            setMode("login");
+            setChecking(false);
+          });
       });
-  }, []);
+  }, [router]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -274,10 +281,13 @@ function LoginForm() {
 
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <p className="text-xs text-gray-400 text-center leading-relaxed">
-                  Demo default (jika di-seed): <br />
-                  <span className="font-semibold text-gray-500">
-                    admin / admin123
-                  </span>
+                  Belum punya akun?{" "}
+                  <a
+                    href="/setup"
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Jalankan Setup Wizard
+                  </a>
                 </p>
               </div>
             </div>

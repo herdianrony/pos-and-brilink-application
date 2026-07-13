@@ -6,6 +6,8 @@ const COOKIE_NAME = "brilink_pos_session";
 // Rute publik (tidak butuh login)
 const PUBLIC_PATHS = [
   "/login",
+  "/setup",
+  "/about",
   "/api/auth/login",
   "/api/auth/setup",
   "/api/auth/logout",
@@ -56,8 +58,8 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
   const payload = token ? await verifyToken(token) : null;
 
-  // User sudah login tapi mengakses /login → redirect ke /
-  if (pathname === "/login" && payload) {
+  // User sudah login tapi mengakses /login atau /setup → redirect ke /
+  if ((pathname === "/login" || pathname === "/setup") && payload) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

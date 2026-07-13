@@ -9,10 +9,8 @@ import {
   settings,
   accounts,
   accountMutations,
-  users,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,43 +18,12 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   try {
     await dbReady;
-    // ── Buat user default jika belum ada ──────────
-    const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
-    if (existingUsers.length === 0) {
-      const adminHash = await hashPassword("admin123");
-      const kasirHash = await hashPassword("kasir123");
-      await db.insert(users).values([
-        {
-          name: "Administrator",
-          username: "admin",
-          passwordHash: adminHash,
-          role: "admin",
-        },
-        {
-          name: "Kasir Demo",
-          username: "kasir",
-          passwordHash: kasirHash,
-          role: "kasir",
-        },
-      ]);
-    } else {
-      // Pastikan minimal admin/admin123 ada (untuk demo)
-      const adminExists = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.username, "admin"))
-        .limit(1);
-      if (adminExists.length === 0) {
-        await db.insert(users).values([
-          {
-            name: "Administrator",
-            username: "admin",
-            passwordHash: await hashPassword("admin123"),
-            role: "admin",
-          },
-        ]);
-      }
-    }
+
+    // Catatan: Tabel users TIDAK dibuat di sini lagi.
+    // Admin user harus dibuat via Setup Wizard (/setup → /api/auth/setup)
+    // agar user diminta men-set password mereka sendiri.
+    // Untuk development/testing, admin default (admin/admin123) bisa dibuat
+    // manual via /api/auth/setup dengan credentials default.
 
     const existing = await db.select().from(settings).limit(1);
     if (existing.length > 0) {

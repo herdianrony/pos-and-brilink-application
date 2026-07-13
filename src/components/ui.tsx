@@ -26,7 +26,7 @@ export function Modal({ open, onClose, children, size = "md" }: {
 // ── Card ──────────────────────────────────────────
 export function Card({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("bg-white rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-shadow", className)} {...props}>
+    <div className={cn("bg-white rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-0.5 transition-all duration-300", className)} {...props}>
       {children}
     </div>
   );
@@ -156,26 +156,53 @@ export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
 }
 
 // ── Stat Card ─────────────────────────────────────
-export function StatCard({ icon, label, value, sub, color }: {
+export function StatCard({ icon, label, value, sub, color, trend }: {
   icon: ReactNode;
   label: string;
   value: string;
   sub?: string;
   color: string;
+  trend?: "up" | "down" | "neutral";
 }) {
+  const trendColor = trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-gray-400";
   return (
-    <Card className="p-5 animate-fadeIn">
+    <Card className="p-5 animate-fadeIn group">
       <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${color}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${color} group-hover:scale-110 transition-transform duration-300`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</p>
           <p className="text-xl font-bold text-gray-800 mt-0.5 truncate">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+          {sub && <p className={`text-xs mt-0.5 ${trend ? trendColor : "text-gray-400"}`}>{sub}</p>}
         </div>
       </div>
     </Card>
+  );
+}
+
+// ── Section Title ─────────────────────────────────
+export function SectionTitle({ icon, title, desc, action }: {
+  icon?: ReactNode;
+  title: string;
+  desc?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+      <div className="flex items-center gap-3">
+        {icon && (
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md shrink-0">
+            {icon}
+          </div>
+        )}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+          {desc && <p className="text-sm text-gray-400">{desc}</p>}
+        </div>
+      </div>
+      {action}
+    </div>
   );
 }
 

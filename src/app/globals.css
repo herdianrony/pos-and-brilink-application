@@ -51,6 +51,26 @@ body {
   border: 1px solid rgba(255,255,255,0.3);
 }
 
+/* Wizard input style — used in /setup multi-step form */
+.wizard-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(249 250 251 / 0.5);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  outline: none;
+}
+.wizard-input:focus {
+  background: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(0 61 121 / 0.15);
+}
+.wizard-input::placeholder {
+  color: rgb(156 163 175);
+}
+
 @media print {
   .no-print { display: none !important; }
 }

@@ -16,6 +16,8 @@ import {
   LogOut,
   Shield,
   User as UserIcon,
+  Info,
+  Heart,
 } from "lucide-react";
 
 interface UserInfo {
@@ -168,7 +170,37 @@ export default function Sidebar({
 
         {/* User + Logout (di atas footer) */}
         {user && (
-          <div className="px-3 pb-2">
+          <div className="px-3 pb-2 space-y-2">
+            {/* About & Support buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href="/about"
+                onClick={(e) => {
+                  // Buka di tab baru untuk tidak ganggu session
+                  e.preventDefault();
+                  window.open("/about", "_blank");
+                  setOpen(false);
+                }}
+                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-blue-100 hover:text-white text-[11px] font-medium transition-colors"
+                title="Tentang Aplikasi & Developer"
+              >
+                <Info size={13} />
+                <span>Tentang</span>
+              </a>
+              <a
+                href="https://sociabuzz.com/herdianrony/tribe"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-accent/20 hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-semibold transition-colors"
+                title="Dukung developer via Sociabuzz"
+              >
+                <Heart size={12} className="fill-current" />
+                <span>Support</span>
+              </a>
+            </div>
+
+            {/* User card */}
             <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-3 flex items-center gap-3 border border-white/10">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-sm font-bold text-white shrink-0">
                 {initials}
