@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, formatDateShort, cn } from "@/lib/utils";
 import { Card, StatCard, Badge, Spinner, EmptyState } from "@/components/ui";
+import { AccountCard } from "@/components/AccountCard";
 import {
   TrendingUp,
   ShoppingCart,
@@ -66,33 +67,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Account Balances - MULTI ACCOUNT */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {d.accounts.map(acc => {
-          const isLow = parseFloat(acc.balance) < parseFloat(acc.minBalance || "0");
-          const isCash = acc.code === "cash";
-          return (
-            <Card 
-              key={acc.id} 
-              className={cn(
-                "p-4 relative overflow-hidden",
-                isCash 
-                  ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
-                  : "bg-gradient-to-br from-slate-700 to-slate-800 text-white"
-              )}
-              style={!isCash ? { background: `linear-gradient(135deg, ${acc.color} 0%, ${acc.color}dd 100%)` } : {}}
-            >
-              <div className="relative">
-                <div className="flex items-center justify-between mb-1">
-                  <DynamicIcon name={acc.icon} fallback="package" size={18} className="text-gray-600" />
-                  {isLow && <AlertTriangle size={14} className="text-amber-300" />}
-                </div>
-                <p className="text-xs opacity-80 truncate">{acc.name}</p>
-                <p className="text-lg font-bold mt-1">{formatRupiah(acc.balance)}</p>
-              </div>
-            </Card>
-          );
-        })}
+      {/* Account Balances - MULTI ACCOUNT (kartu kredit style) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        {d.accounts.map(acc => (
+          <AccountCard key={acc.id} account={acc} />
+        ))}
       </div>
 
       {/* Balance Info */}

@@ -62,7 +62,7 @@ export async function POST() {
     const cats = await db.insert(categories).values([
       { name: "Makanan", icon: "utensils", color: "#ef4444" },
       { name: "Minuman", icon: "cup-soda", color: "#3b82f6" },
-      { name: "Rokok", icon: "smoke", color: "#6b7280" },
+      { name: "Rokok", icon: "package", color: "#6b7280" },
       { name: "Sembako", icon: "shopping-cart", color: "#22c55e" },
       { name: "Snack", icon: "cookie", color: "#f59e0b" },
       { name: "ATK", icon: "pencil", color: "#8b5cf6" },

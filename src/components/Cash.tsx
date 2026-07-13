@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, cn } from "@/lib/utils";
 import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select } from "@/components/ui";
+import { AccountCard } from "@/components/AccountCard";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 
@@ -192,71 +193,36 @@ export default function Cash() {
         <p className="text-emerald-200 text-xs mt-1">{accounts.length} akun aktif</p>
       </Card>
 
-      {/* Account Cards */}
+      {/* Account Cards — Kartu Kredit Style */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {accounts.map(acc => {
-          const isLow = parseFloat(acc.balance) < parseFloat(acc.minBalance || "0");
-          const isCash = acc.code === "cash";
-          return (
-            <Card 
-              key={acc.id} 
-              className="p-5 relative overflow-hidden group"
-              style={{ 
-                background: `linear-gradient(135deg, ${acc.color}15 0%, ${acc.color}05 100%)`,
-                borderColor: `${acc.color}30`
-              }}
-            >
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEditAccount(acc)} className="p-1.5 bg-white/80 rounded-lg hover:bg-white text-gray-600">
-                  <Pencil size={12} />
-                </button>
-                {!isCash && (
-                  <button onClick={() => handleDeleteAccount(acc)} className="p-1.5 bg-white/80 rounded-lg hover:bg-white text-red-500">
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <DynamicIcon name={acc.icon} fallback="package" size={18} className="text-gray-600" />
-                  <span className="text-sm font-semibold text-gray-700">{acc.name}</span>
-                </div>
-                {isLow && (
-                  <div className="flex items-center gap-1 text-amber-600 text-xs bg-amber-100 px-2 py-0.5 rounded-full">
-                    <AlertTriangle size={10} />
-                    <span>Low</span>
-                  </div>
-                )}
-              </div>
-              
-              <p className="text-2xl font-bold text-gray-800 mb-4">{formatRupiah(acc.balance)}</p>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+        {accounts.map(acc => (
+          <AccountCard
+            key={acc.id}
+            account={acc}
+            onEdit={() => openEditAccount(acc)}
+            onDelete={!acc.code || acc.code !== "cash" ? () => handleDeleteAccount(acc) : undefined}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
                   onClick={() => { setSelAccount(acc); setModal("adjust"); }}
                 >
                   <Plus size={14} /> Sesuaikan
                 </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
                   onClick={() => { setSelAccount(acc); setModal("transfer"); }}
                 >
                   <ArrowRightLeft size={14} /> Transfer
                 </Button>
-              </div>
-              
-              {acc.minBalance && (
-                <p className="text-xs text-gray-400 mt-3">
-                  Min: {formatRupiah(acc.minBalance)}
-                </p>
-              )}
-            </Card>
-          );
-        })}
+              </>
+            }
+          />
+        ))}
       </div>
 
       {/* Info Box */}

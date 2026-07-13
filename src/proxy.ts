@@ -15,7 +15,7 @@ const PUBLIC_PATHS = [
   "/api/seed", // idempotent — aman untuk first-run bootstrap
 ];
 
-// Rute yang dilewati middleware (Next internals & static assets)
+// Rute yang dilewati proxy (Next internals & static assets)
 const EXCLUDED_PREFIXES = [
   "/_next",
   "/favicon.ico",
@@ -42,7 +42,9 @@ async function verifyToken(token: string) {
   }
 }
 
-export async function middleware(req: NextRequest) {
+// Next.js 16: middleware.ts diganti proxy.ts.
+// Fungsi default export sekarang menjadi proxy handler.
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Lewati Next internals & static assets
@@ -88,6 +90,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Middleware aktif untuk semua rute kecuali Next internals & static assets
+  // Proxy aktif untuk semua rute kecuali Next internals & static assets
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
