@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, formatDateShort, cn } from "@/lib/utils";
 import { Card, StatCard, Badge, Spinner, EmptyState } from "@/components/ui";
 import { AccountCard } from "@/components/AccountCard";
+import { useSettings } from "@/lib/use-settings";
 import {
   TrendingUp,
   ShoppingCart,
@@ -46,6 +47,8 @@ interface DashboardData {
 export default function Dashboard() {
   const [d, setD] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { settings } = useSettings();
+  const servicesLabel = settings.services_label || "Layanan Agen";
 
   useEffect(() => {
     fetch("/api/dashboard").then(r => r.json()).then(setD).finally(() => setLoading(false));
@@ -98,7 +101,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium">
               <Landmark size={12} />
-              <span>BRILink: {formatRupiah(d.today.brilink.profit)}</span>
+              <span>{servicesLabel}: {formatRupiah(d.today.brilink.profit)}</span>
             </div>
           </div>
         </div>
@@ -108,11 +111,11 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={d.today.count.toString()} sub="hari ini" color="bg-indigo-50 text-indigo-600" />
         <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos.total)} sub={`${d.today.pos.count} trx`} color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={<Landmark size={20} />} label="Volume BRILink" value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-purple-50 text-purple-600" />
-        <StatCard icon={<TrendingUp size={20} />} label="Fee BRILink" value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
+        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-purple-50 text-purple-600" />
+        <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
 
-      {/* POS vs BRILink — Modern Split Cards */}
+      {/* POS vs Layanan Agen — Modern Split Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-5 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -142,7 +145,7 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Landmark size={18} className="text-purple-600" />
               </div>
-              <span className="font-semibold text-zinc-700">Layanan BRILink</span>
+              <span className="font-semibold text-zinc-700">{servicesLabel}</span>
             </div>
             <div className="flex justify-between items-end">
               <div>
@@ -237,7 +240,7 @@ export default function Dashboard() {
                 {d.recent.map(t => (
                   <tr key={t.id} className="border-b border-zinc-50/50 hover:bg-indigo-50/30 transition-colors">
                     <td className="p-3 font-mono text-xs text-zinc-500">{t.invoiceNo}</td>
-                    <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : "BRILink"}</Badge></td>
+                    <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-zinc-600">{t.customerName || "—"}</td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
                     <td className="p-3 text-right font-semibold text-emerald-600">{formatRupiah(t.profit || "0")}</td>

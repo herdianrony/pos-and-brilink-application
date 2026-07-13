@@ -99,8 +99,8 @@ function LoginForm() {
               <Landmark size={28} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">BRILink POS</h1>
-              <p className="text-indigo-200 text-sm">Point of Sale & Agen BRILink</p>
+              <h1 className="text-2xl font-bold tracking-tight">POS & Agen Bisnis</h1>
+              <p className="text-indigo-200 text-sm">Point of Sale & Layanan Agen</p>
             </div>
           </div>
 
@@ -108,14 +108,14 @@ function LoginForm() {
             Selamat datang kembali
           </h2>
           <p className="text-indigo-100 text-base leading-relaxed mb-10">
-            Masuk untuk mengelola transaksi kasir, layanan BRILink, stok produk, dan laporan keuangan toko Anda dalam satu sistem terintegrasi.
+            Masuk untuk mengelola transaksi kasir, layanan agen, stok produk, dan laporan keuangan toko Anda dalam satu sistem terintegrasi.
           </p>
 
           <div className="space-y-3">
             {[
               { icon: ShieldCheck, text: "Transaksi aman & terlindungi" },
               { icon: Store, text: "Manajemen toko lengkap" },
-              { icon: Landmark, text: "Integrasi layanan BRILink" },
+              { icon: Landmark, text: "Layanan agen terintegrasi" },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-3 text-indigo-50">
                 <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
@@ -137,7 +137,7 @@ function LoginForm() {
               <Landmark size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-zinc-900">BRILink POS</h1>
+              <h1 className="text-lg font-bold text-zinc-900">POS & Agen Bisnis</h1>
               <p className="text-zinc-400 text-xs">Point of Sale System</p>
             </div>
           </div>
@@ -221,7 +221,7 @@ function LoginForm() {
           </div>
 
           <p className="text-center text-xs text-zinc-400 mt-6">
-            © {new Date().getFullYear()} BRILink POS — Sistem Point of Sale
+            © {new Date().getFullYear()} POS & Agen Bisnis
           </p>
         </div>
       </div>

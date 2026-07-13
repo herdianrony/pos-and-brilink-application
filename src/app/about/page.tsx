@@ -19,11 +19,16 @@ import {
   Globe,
 } from "lucide-react";
 import { getAppVersion, isElectron, isPackaged } from "@/lib/hardware";
+import { useSettings } from "@/lib/use-settings";
 
 export default function AboutPage() {
   const [version, setVersion] = useState("1.0.0");
   const [electron, setElectron] = useState(false);
   const [packaged, setPackaged] = useState(false);
+  const { settings } = useSettings();
+
+  const appName = settings.app_name || "POS & Agen Bisnis";
+  const businessType = settings.business_type || "Agen Bisnis";
 
   useEffect(() => {
     (async () => {
@@ -50,7 +55,7 @@ export default function AboutPage() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-zinc-800">Tentang Aplikasi</h1>
-              <p className="text-[11px] text-zinc-400">BRILink POS v{version}</p>
+              <p className="text-[11px] text-zinc-400">{appName} v{version}</p>
             </div>
           </div>
         </div>
@@ -68,16 +73,17 @@ export default function AboutPage() {
                 <Landmark size={28} className="text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold">BRILink POS</h1>
+                <h1 className="text-2xl font-extrabold">{appName}</h1>
                 <p className="text-indigo-200 text-xs">
-                  Point of Sale & Agen BRILink System
+                  Point of Sale & {businessType} System
                 </p>
               </div>
             </div>
             <p className="text-indigo-100 text-sm leading-relaxed max-w-md">
-              Aplikasi kasir & layanan agen BRILink yang lengkap dengan manajemen
+              Aplikasi kasir & layanan agen bisnis yang lengkap dengan manajemen
               produk, transaksi, multi-rekening, dan laporan keuangan — dirancang
-              khusus untuk toko & agen BRILink di Indonesia.
+              untuk berbagai jenis bisnis seperti BRILink, counter HP, agen pulsa,
+              agen pembayaran, dan toko retail di Indonesia.
             </p>
 
             <div className="grid grid-cols-3 gap-3 mt-6">
@@ -116,7 +122,7 @@ export default function AboutPage() {
                 Full-Stack Developer & Builder
               </p>
               <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                Mengembangkan aplikasi POS & BRILink dengan fokus pada kemudahan
+                Mengembangkan aplikasi POS & agen bisnis dengan fokus pada kemudahan
                 penggunaan untuk pelaku UMKM Indonesia.
               </p>
 
@@ -226,7 +232,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { icon: Smartphone, title: "POS & Kasir", desc: "Transaksi cepat dengan barcode scanner" },
-              { icon: Landmark, title: "Layanan BRILink", desc: "Transfer, tarik tunai, setor, pembayaran" },
+              { icon: Landmark, title: "Layanan Agen", desc: "Transfer, tarik tunai, setor, pembayaran" },
               { icon: ShieldCheck, title: "Multi-Akun", desc: "Admin & kasir dengan otoritas berbeda" },
               { icon: Printer, title: "Printer Thermal", desc: "Cetak struk otomatis via ESC/POS" },
               { icon: Zap, title: "Auto-Update", desc: "Update otomatis dari GitHub Releases" },
@@ -273,7 +279,7 @@ export default function AboutPage() {
         {/* ── Footer ──────────────────────────── */}
         <footer className="text-center py-6">
           <p className="text-xs text-zinc-400">
-            © {new Date().getFullYear()} BRILink POS — Dibuat oleh{" "}
+            © {new Date().getFullYear()} {appName} — Dibuat oleh{" "}
             <a
               href="https://github.com/herdianrony"
               target="_blank"

@@ -4,8 +4,8 @@ import "./globals.css";
 import UpdateNotification from "@/components/UpdateNotification";
 
 export const metadata: Metadata = {
-  title: "BRILink POS — Point of Sale & Agen BRILink",
-  description: "Aplikasi POS dan layanan BRILink lengkap dengan manajemen produk, kas, dan transaksi.",
+  title: "POS & Agen Bisnis — Point of Sale & Layanan Agen",
+  description: "Aplikasi POS dan layanan agen bisnis lengkap dengan manajemen produk, kas, dan transaksi. Cocok untuk BRILink, counter HP, agen pulsa, dan bisnis serupa.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

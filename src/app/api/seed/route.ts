@@ -51,11 +51,17 @@ export async function POST() {
 
     // SETTINGS
     await db.insert(settings).values([
+      // Branding (customizable — bisa diubah di Pengaturan)
+      { key: "app_name", value: "POS & Agen Bisnis" },
+      { key: "business_type", value: "Agen Bisnis" },
+      { key: "services_label", value: "Layanan Agen" },
+      // Store info
       { key: "store_name", value: "Toko Maju Jaya" },
       { key: "store_address", value: "Jl. Raya No.123, Jakarta" },
-      { key: "agent_id", value: "BRL-2024-00123" },
+      { key: "agent_id", value: "" },
       { key: "owner_name", value: "Ahmad Surya" },
       { key: "phone", value: "081234567890" },
+      { key: "opening_balance", value: "500000" },
     ]);
 
     // PRODUCT CATEGORIES
@@ -67,6 +73,8 @@ export async function POST() {
       { name: "Snack", icon: "cookie", color: "#f59e0b" },
       { name: "ATK", icon: "pencil", color: "#8b5cf6" },
       { name: "Toiletries", icon: "spray-can", color: "#ec4899" },
+      { name: "Aksesoris HP", icon: "smartphone", color: "#06b6d4" },
+      { name: "Pulsa & Voucher", icon: "smartphone", color: "#10b981" },
       { name: "Gas & Listrik", icon: "zap", color: "#f97316" },
     ]).returning();
 
@@ -88,39 +96,47 @@ export async function POST() {
       { name: "Beras Premium 5kg", categoryId: cm["Sembako"], buyPrice: 62000, sellPrice: 70000, stock: 25, minStock: 5, unit: "karung" },
     ]);
 
-    // BRILINK SERVICE CATEGORIES
+    // SERVICE CATEGORIES (generik — bisa untuk BRILink, counter HP, agen pembayaran)
     const svcCats = await db.insert(serviceCategories).values([
       { name: "Transfer", icon: "arrow-up-right", color: "#0ea5e9", sortOrder: 1 },
       { name: "Penarikan Tunai", icon: "banknote", color: "#22c55e", sortOrder: 2 },
       { name: "Setor Tunai", icon: "wallet", color: "#f59e0b", sortOrder: 3 },
-      { name: "Pembayaran", icon: "file-text", color: "#8b5cf6", sortOrder: 4 },
-      { name: "Lainnya", icon: "package", color: "#6b7280", sortOrder: 5 },
+      { name: "Pembayaran Tagihan", icon: "file-text", color: "#8b5cf6", sortOrder: 4 },
+      { name: "Pulsa & Paket Data", icon: "smartphone", color: "#06b6d4", sortOrder: 5 },
+      { name: "Lainnya", icon: "package", color: "#6b7280", sortOrder: 6 },
     ]).returning();
 
     const scm: Record<string, number> = {};
     for (const c of svcCats) scm[c.name] = c.id;
 
-    // BRILINK SERVICES
+    // SERVICES (generik — bisa untuk BRILink, counter HP, agen pembayaran)
     const svcs = await db.insert(brilinkServices).values([
       // Transfer
       { name: "Transfer Antar Bank (RTGS)", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-      { name: "Transfer Sesama BRI", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
+      { name: "Transfer Sesama Bank", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
       { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "smartphone", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
 
       // Penarikan Tunai
-      { name: "Tarik Tunai BRI", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
+      { name: "Tarik Tunai Bank", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
       { name: "Tarik Tunai Bank Lain", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
 
       // Setor Tunai
-      { name: "Setor Tunai BRI", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Setor Tunai Bank", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
       { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
-      // Pembayaran
-      { name: "Tagihan PLN", categoryId: scm["Pembayaran"], icon: "zap", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran"], icon: "droplet", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran"], icon: "globe", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran"], icon: "heart-pulse", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Pulsa & Paket Data", categoryId: scm["Pembayaran"], icon: "smartphone", adminFee: 500, agentFee: 500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      // Pembayaran Tagihan
+      { name: "Tagihan PLN", categoryId: scm["Pembayaran Tagihan"], icon: "zap", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran Tagihan"], icon: "droplet", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran Tagihan"], icon: "globe", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran Tagihan"], icon: "heart-pulse", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Cicilan", categoryId: scm["Pembayaran Tagihan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+
+      // Pulsa & Paket Data (untuk counter HP)
+      { name: "Pulsa Reguler", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Paket Data", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Top Up Game", categoryId: scm["Pulsa & Paket Data"], icon: "gamepad-2", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Top Up E-Wallet", categoryId: scm["Pulsa & Paket Data"], icon: "wallet", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Voucher Game", categoryId: scm["Pulsa & Paket Data"], icon: "gift", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Lainnya
       { name: "Cek Saldo", categoryId: scm["Lainnya"], icon: "bar-chart-3", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none" },

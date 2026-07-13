@@ -5,6 +5,7 @@ import { formatRupiah, formatDate } from "@/lib/utils";
 import { Card, Badge, Button, Modal, Spinner, EmptyState, Tabs, StatCard } from "@/components/ui";
 import { ClipboardList, Eye, X, TrendingUp, ShoppingCart, Landmark } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { useSettings } from "@/lib/use-settings";
 
 interface Trx {
   id: number; invoiceNo: string; type: string; subType: string | null;
@@ -22,6 +23,8 @@ export default function History() {
   const [filter, setFilter] = useState("all");
   const [detail, setDetail] = useState<TrxDetail | null>(null);
   const [loadingDet, setLoadingDet] = useState(false);
+  const { settings } = useSettings();
+  const servicesLabel = settings.services_label || "Layanan Agen";
 
   useEffect(() => {
     setLoading(true);
@@ -59,7 +62,7 @@ export default function History() {
         tabs={[
           { id: "all", label: "Semua" },
           { id: "pos", label: "POS", icon: "shopping-cart" },
-          { id: "brilink", label: "BRILink", icon: "landmark" },
+          { id: "brilink", label: servicesLabel, icon: "landmark" },
         ]}
         active={filter}
         onChange={setFilter}
@@ -84,7 +87,7 @@ export default function History() {
                 {trxs.map(t => (
                   <tr key={t.id} className="border-t border-zinc-50 hover:bg-indigo-50/30 transition-colors">
                     <td className="p-3 font-mono text-xs text-zinc-500">{t.invoiceNo}</td>
-                    <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : "BRILink"}</Badge></td>
+                    <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-zinc-500 text-xs">{t.subType || "Penjualan"}</td>
                     <td className="p-3 text-zinc-600">{t.customerName || "—"}</td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
@@ -115,7 +118,7 @@ export default function History() {
               <p className="text-xs text-zinc-400 mt-1">{formatDate(detail.createdAt)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-zinc-400">Tipe</span><p className="font-medium">{detail.type === "pos" ? "POS" : "BRILink"}</p></div>
+              <div><span className="text-zinc-400">Tipe</span><p className="font-medium">{detail.type === "pos" ? "POS" : servicesLabel}</p></div>
               {detail.subType && <div><span className="text-zinc-400">Layanan</span><p className="font-medium">{detail.subType}</p></div>}
               {detail.customerName && <div><span className="text-zinc-400">Pelanggan</span><p className="font-medium">{detail.customerName}</p></div>}
               {detail.customerPhone && <div><span className="text-zinc-400">No. HP/Rek</span><p className="font-medium">{detail.customerPhone}</p></div>}

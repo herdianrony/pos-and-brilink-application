@@ -21,6 +21,7 @@ import {
   Clock,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { useSettings } from "@/lib/use-settings";
 
 interface UserInfo {
   id: number;
@@ -32,7 +33,7 @@ interface UserInfo {
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "pos", label: "Kasir POS", icon: ShoppingCart },
-  { id: "brilink", label: "BRILink", icon: Landmark },
+  { id: "brilink", label: "__SERVICES__", icon: Landmark },
   { id: "products", label: "Produk", icon: Package },
   { id: "history", label: "Transaksi", icon: ClipboardList },
   { id: "cash", label: "Kas & Saldo", icon: Wallet },
@@ -50,6 +51,7 @@ export default function Sidebar({
   const [time, setTime] = useState("");
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const { settings } = useSettings();
 
   useEffect(() => {
     const tick = () => {
@@ -93,6 +95,9 @@ export default function Sidebar({
         .toUpperCase()
     : "U";
 
+  const appName = settings.app_name || "POS & Agen Bisnis";
+  const servicesLabel = settings.services_label || "Layanan Agen";
+
   return (
     <>
       {/* Mobile hamburger */}
@@ -132,9 +137,9 @@ export default function Sidebar({
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent">
               <Landmark size={20} className="text-white" />
             </div>
-            <div>
-              <h1 className="text-white font-bold text-base tracking-tight">BRILink POS</h1>
-              <p className="text-indigo-200 text-[11px]">Point of Sale System</p>
+            <div className="min-w-0">
+              <h1 className="text-white font-bold text-base tracking-tight truncate">{appName}</h1>
+              <p className="text-indigo-200 text-[11px]">{settings.business_type || "Agen Bisnis"}</p>
             </div>
           </div>
           <button onClick={() => setOpen(false)} className="lg:hidden text-indigo-200 hover:text-white">
@@ -149,6 +154,8 @@ export default function Sidebar({
             const isActive = active === item.id;
             const restrictedForKasir = ["settings"];
             const isDisabled = user?.role === "kasir" && restrictedForKasir.includes(item.id);
+            // Label dinamis untuk menu "brilink" (Layanan Agen)
+            const label = item.label === "__SERVICES__" ? servicesLabel : item.label;
 
             return (
               <button
@@ -171,7 +178,7 @@ export default function Sidebar({
                 <Icon size={18} className={cn(
                   isActive ? "text-primary" : isDisabled ? "text-indigo-300/40" : "text-indigo-200 group-hover:text-white"
                 )} />
-                <span className="text-sm font-medium flex-1">{item.label}</span>
+                <span className="text-sm font-medium flex-1">{label}</span>
                 {isActive && <ChevronRight size={14} className="text-primary" />}
               </button>
             );

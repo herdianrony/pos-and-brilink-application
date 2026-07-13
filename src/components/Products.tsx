@@ -5,6 +5,7 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, Tabs } from "@/components/ui";
 import { Plus, Pencil, Trash2, X, Package, Tags, Landmark, Search, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { useSettings } from "@/lib/use-settings";
 
 // ── Types ─────────────────────────────────────────
 interface Product {
@@ -38,18 +39,20 @@ const icons = AVAILABLE_ICONS;
 
 export default function Products() {
   const [tab, setTab] = useState("products");
+  const { settings } = useSettings();
+  const servicesLabel = settings.services_label || "Layanan Agen";
 
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-bold text-zinc-800">Manajemen Data</h2>
-        <p className="text-sm text-zinc-400">Kelola produk, kategori, dan layanan BRILink</p>
+        <p className="text-sm text-zinc-400">Kelola produk, kategori, dan {servicesLabel.toLowerCase()}</p>
       </div>
       <Tabs
         tabs={[
           { id: "products", label: "Produk", icon: "package" },
           { id: "categories", label: "Kategori Produk", icon: "tag" },
-          { id: "bl_services", label: "Layanan BRILink", icon: "landmark" },
+          { id: "bl_services", label: servicesLabel, icon: "landmark" },
           { id: "bl_categories", label: "Kategori Layanan", icon: "folder-open" },
         ]}
         active={tab}
@@ -418,7 +421,7 @@ function BLServicesTab() {
       {/* Edit/Add Service Modal */}
       <Modal open={modal} onClose={() => setModal(false)}>
         <div className="p-6 space-y-4">
-          <h3 className="text-lg font-bold">{edit ? "Edit Layanan" : "Tambah Layanan BRILink"}</h3>
+          <h3 className="text-lg font-bold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>

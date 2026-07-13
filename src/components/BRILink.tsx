@@ -5,6 +5,7 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge } from "@/components/ui";
 import { Landmark, CheckCircle, X, Search, ArrowDownLeft, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { useSettings } from "@/lib/use-settings";
 
 interface FeeTier {
   id: number;
@@ -63,6 +64,8 @@ export default function BRILink() {
   const [cats, setCats] = useState<ServiceCat[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const { settings } = useSettings();
+  const servicesLabel = settings.services_label || "Layanan Agen";
   const [catFilter, setCatFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sel, setSel] = useState<Service | null>(null);
@@ -174,7 +177,7 @@ export default function BRILink() {
     <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
-          <Landmark size={24} className="text-purple-500" /> Layanan BRILink
+          <Landmark size={24} className="text-purple-500" /> {servicesLabel}
         </h2>
         <p className="text-sm text-zinc-400">Pilih layanan dan proses transaksi nasabah</p>
       </div>
@@ -480,7 +483,7 @@ export default function BRILink() {
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-zinc-800">Transaksi BRILink Berhasil!</h3>
+          <h3 className="text-xl font-bold text-zinc-800">Transaksi {servicesLabel} Berhasil!</h3>
           <div className="bg-zinc-50 rounded-xl p-3">
             <p className="text-xs text-zinc-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
