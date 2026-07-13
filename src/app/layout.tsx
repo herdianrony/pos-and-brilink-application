@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import UpdateNotification from "@/components/UpdateNotification";
+import { ToastProvider } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "POS & Agen Bisnis — Point of Sale & Layanan Agen",
@@ -17,8 +18,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="text-zinc-900 antialiased">
-        {children}
-        <UpdateNotification />
+        <ToastProvider>
+          {children}
+          <UpdateNotification />
+        </ToastProvider>
       </body>
     </html>
   );

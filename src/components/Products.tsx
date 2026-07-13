@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
-import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, Tabs } from "@/components/ui";
+import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, Tabs, ConfirmDialog, useToast } from "@/components/ui";
 import { Plus, Pencil, Trash2, X, Package, Tags, Landmark, Search, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { useSettings } from "@/lib/use-settings";
@@ -78,6 +78,8 @@ function ProductsTab() {
   const [edit, setEdit] = useState<Product | null>(null);
   const [f, setF] = useState({ name: "", barcode: "", categoryId: "", buyPrice: "", sellPrice: "", stock: "", minStock: "5", unit: "pcs" });
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<number | null>(null);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     const p = new URLSearchParams(); if (search) p.set("search", search);
@@ -99,11 +101,12 @@ function ProductsTab() {
     const body = { ...(edit ? { id: edit.id } : {}), name: f.name, barcode: f.barcode || null, categoryId: f.categoryId ? parseInt(f.categoryId) : null, buyPrice: f.buyPrice || "0", sellPrice: f.sellPrice, stock: parseInt(f.stock || "0"), minStock: parseInt(f.minStock || "5"), unit: f.unit };
     await fetch("/api/products", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setModal(false); load(); setSaving(false);
+    toast.success(edit ? "Produk berhasil diupdate" : "Produk berhasil ditambahkan");
   }
   async function del(id: number) {
-    if (!confirm("Hapus produk ini?")) return;
     await fetch("/api/products", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     load();
+    toast.success("Produk berhasil dihapus");
   }
 
   const margin = f.buyPrice && f.sellPrice ? parseFloat(f.sellPrice) - parseFloat(f.buyPrice) : 0;
@@ -156,7 +159,7 @@ function ProductsTab() {
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => openEdit(p)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                        <button onClick={() => del(p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                        <button onClick={() => setConfirmDel(p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -201,6 +204,21 @@ function ProductsTab() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDel !== null}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={async () => {
+          if (confirmDel !== null) {
+            await del(confirmDel);
+            setConfirmDel(null);
+          }
+        }}
+        title="Hapus Produk?"
+        message="Produk akan dihapus permanen. Tindakan ini tidak dapat dibatalkan."
+        variant="danger"
+        confirmText="Hapus"
+      />
     </>
   );
 }
@@ -215,6 +233,8 @@ function CategoriesTab() {
   const [edit, setEdit] = useState<Category | null>(null);
   const [f, setF] = useState({ name: "", icon: "package", color: "#6366f1" });
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<number | null>(null);
+  const toast = useToast();
 
   async function load() { setCats(await (await fetch("/api/categories")).json()); setLoading(false); }
   useEffect(() => { load(); }, []);
@@ -225,11 +245,12 @@ function CategoriesTab() {
     if (!f.name) return; setSaving(true);
     await fetch("/api/categories", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), ...f }) });
     setModal(false); load(); setSaving(false);
+    toast.success(edit ? "Kategori berhasil diupdate" : "Kategori berhasil ditambahkan");
   }
   async function del(id: number) {
-    if (!confirm("Hapus kategori?")) return;
     await fetch("/api/categories", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     load();
+    toast.success("Kategori berhasil dihapus");
   }
 
   return (
@@ -245,7 +266,7 @@ function CategoriesTab() {
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                <button onClick={() => del(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
               </div>
             </Card>
           ))
@@ -272,6 +293,21 @@ function CategoriesTab() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDel !== null}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={async () => {
+          if (confirmDel !== null) {
+            await del(confirmDel);
+            setConfirmDel(null);
+          }
+        }}
+        title="Hapus Kategori?"
+        message="Kategori akan dihapus permanen. Produk yang terkait mungkin terpengaruh."
+        variant="danger"
+        confirmText="Hapus"
+      />
     </>
   );
 }
@@ -289,6 +325,8 @@ function BLServicesTab() {
   const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
   const [tiers, setTiers] = useState<FeeTier[]>([]);
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<number | null>(null);
+  const toast = useToast();
 
   async function load() {
     const [s, c] = await Promise.all([fetch("/api/brilink-services").then(r => r.json()), fetch("/api/service-categories").then(r => r.json())]);
@@ -345,6 +383,7 @@ function BLServicesTab() {
     }
     
     setModal(false); load(); setSaving(false);
+    toast.success(edit ? "Layanan berhasil diupdate" : "Layanan berhasil ditambahkan");
   }
   
   async function saveTiers() {
@@ -361,9 +400,9 @@ function BLServicesTab() {
   }
   
   async function del(id: number) {
-    if (!confirm("Hapus layanan?")) return;
     await fetch("/api/brilink-services", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     load();
+    toast.success("Layanan berhasil dihapus");
   }
 
   return (
@@ -407,7 +446,7 @@ function BLServicesTab() {
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => openTiers(s)} className="p-1.5 text-purple-500 hover:bg-purple-50 rounded-lg" title="Atur Fee Berjenjang"><Layers size={14} /></button>
                         <button onClick={() => openEdit(s)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                        <button onClick={() => del(s.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                        <button onClick={() => setConfirmDel(s.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -614,6 +653,21 @@ function BLServicesTab() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDel !== null}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={async () => {
+          if (confirmDel !== null) {
+            await del(confirmDel);
+            setConfirmDel(null);
+          }
+        }}
+        title="Hapus Layanan?"
+        message="Layanan akan dihapus permanen. Fee berjenjang terkait juga akan dihapus."
+        variant="danger"
+        confirmText="Hapus"
+      />
     </>
   );
 }
@@ -628,6 +682,8 @@ function BLCategoriesTab() {
   const [edit, setEdit] = useState<ServiceCat | null>(null);
   const [f, setF] = useState({ name: "", icon: "credit-card", color: "#0ea5e9", sortOrder: "0" });
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<number | null>(null);
+  const toast = useToast();
 
   async function load() { setCats(await (await fetch("/api/service-categories")).json()); setLoading(false); }
   useEffect(() => { load(); }, []);
@@ -640,11 +696,12 @@ function BLCategoriesTab() {
       body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, icon: f.icon, color: f.color, sortOrder: parseInt(f.sortOrder || "0") })
     });
     setModal(false); load(); setSaving(false);
+    toast.success(edit ? "Kategori layanan berhasil diupdate" : "Kategori layanan berhasil ditambahkan");
   }
   async function del(id: number) {
-    if (!confirm("Hapus kategori layanan?")) return;
     await fetch("/api/service-categories", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     load();
+    toast.success("Kategori layanan berhasil dihapus");
   }
 
   return (
@@ -661,7 +718,7 @@ function BLCategoriesTab() {
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                <button onClick={() => del(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
               </div>
             </Card>
           ))
@@ -689,6 +746,21 @@ function BLCategoriesTab() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDel !== null}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={async () => {
+          if (confirmDel !== null) {
+            await del(confirmDel);
+            setConfirmDel(null);
+          }
+        }}
+        title="Hapus Kategori Layanan?"
+        message="Kategori layanan akan dihapus permanen. Layanan terkait mungkin terpengaruh."
+        variant="danger"
+        confirmText="Hapus"
+      />
     </>
   );
 }

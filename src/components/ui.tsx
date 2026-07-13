@@ -1,8 +1,16 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState, useCallback, createContext, useContext, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { DynamicIcon } from "./DynamicIcon";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  XCircle,
+  X,
+  AlertCircle,
+} from "lucide-react";
 
 // ── Modal ─────────────────────────────────────────
 export function Modal({ open, onClose, children, size = "md" }: {
@@ -241,6 +249,214 @@ export function Tabs({ tabs, active, onChange }: {
           {t.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ── AlertDialog ──────────────────────────────────
+// Dialog untuk pesan alert/info (single button: OK)
+export function AlertDialog({
+  open,
+  onClose,
+  title,
+  message,
+  variant = "info",
+  confirmText = "OK",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  message: string;
+  variant?: "info" | "success" | "warning" | "danger";
+  confirmText?: string;
+}) {
+  if (!open) return null;
+  const config = {
+    info: { icon: Info, color: "text-cyan-600", bg: "bg-cyan-50", ring: "ring-cyan-200" },
+    success: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-200" },
+    warning: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200" },
+    danger: { icon: XCircle, color: "text-red-600", bg: "bg-red-50", ring: "ring-red-200" },
+  }[variant];
+  const Icon = config.icon;
+
+  return (
+    <Modal open={open} onClose={onClose} size="sm">
+      <div className="p-6">
+        <div className="flex items-start gap-4 mb-5">
+          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ring-1", config.bg, config.ring)}>
+            <Icon size={24} className={config.color} />
+          </div>
+          <div className="flex-1 min-w-0 pt-1">
+            {title && <h3 className="text-lg font-bold text-zinc-900 mb-1">{title}</h3>}
+            <p className="text-sm text-zinc-600 leading-relaxed">{message}</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="primary" onClick={onClose}>{confirmText}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── ConfirmDialog ────────────────────────────────
+// Dialog untuk konfirmasi (2 button: Cancel + Confirm)
+export function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  variant = "warning",
+  confirmText = "Konfirmasi",
+  cancelText = "Batal",
+  loading = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message: string;
+  variant?: "info" | "warning" | "danger" | "success";
+  confirmText?: string;
+  cancelText?: string;
+  loading?: boolean;
+}) {
+  if (!open) return null;
+  const config = {
+    info: { icon: Info, color: "text-cyan-600", bg: "bg-cyan-50", ring: "ring-cyan-200", btn: "primary" as const },
+    success: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-200", btn: "success" as const },
+    warning: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200", btn: "primary" as const },
+    danger: { icon: AlertCircle, color: "text-red-600", bg: "bg-red-50", ring: "ring-red-200", btn: "danger" as const },
+  }[variant];
+  const Icon = config.icon;
+
+  return (
+    <Modal open={open} onClose={onClose} size="sm">
+      <div className="p-6">
+        <div className="flex items-start gap-4 mb-5">
+          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ring-1", config.bg, config.ring)}>
+            <Icon size={24} className={config.color} />
+          </div>
+          <div className="flex-1 min-w-0 pt-1">
+            {title && <h3 className="text-lg font-bold text-zinc-900 mb-1">{title}</h3>}
+            <p className="text-sm text-zinc-600 leading-relaxed">{message}</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>{cancelText}</Button>
+          <Button variant={config.btn} onClick={onConfirm} disabled={loading}>
+            {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Toast Notification ───────────────────────────
+export interface ToastItem {
+  id: number;
+  type: "success" | "error" | "warning" | "info";
+  title?: string;
+  message: string;
+  duration?: number;
+}
+
+interface ToastContextValue {
+  toast: (toast: Omit<ToastItem, "id">) => void;
+  success: (message: string, title?: string) => void;
+  error: (message: string, title?: string) => void;
+  warning: (message: string, title?: string) => void;
+  info: (message: string, title?: string) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) {
+    // Fallback ke console jika context belum ready
+    return {
+      toast: (t: Omit<ToastItem, "id">) => console.log("[toast]", t),
+      success: (m: string, t?: string) => console.log("[success]", t, m),
+      error: (m: string, t?: string) => console.error("[error]", t, m),
+      warning: (m: string, t?: string) => console.warn("[warning]", t, m),
+      info: (m: string, t?: string) => console.log("[info]", t, m),
+    };
+  }
+  return ctx;
+}
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const remove = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const toast = useCallback((t: Omit<ToastItem, "id">) => {
+    const id = Date.now() + Math.random();
+    const duration = t.duration ?? 4000;
+    setToasts((prev) => [...prev, { ...t, id, duration }]);
+    if (duration > 0) {
+      setTimeout(() => remove(id), duration);
+    }
+  }, [remove]);
+
+  const ctx: ToastContextValue = {
+    toast,
+    success: (message, title) => toast({ type: "success", message, title }),
+    error: (message, title) => toast({ type: "error", message, title, duration: 6000 }),
+    warning: (message, title) => toast({ type: "warning", message, title }),
+    info: (message, title) => toast({ type: "info", message, title }),
+  };
+
+  return (
+    <ToastContext.Provider value={ctx}>
+      {children}
+      <ToastContainer toasts={toasts} onClose={remove} />
+    </ToastContext.Provider>
+  );
+}
+
+function ToastContainer({ toasts, onClose }: { toasts: ToastItem[]; onClose: (id: number) => void }) {
+  if (toasts.length === 0) return null;
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] space-y-2 max-w-sm w-full pointer-events-none">
+      {toasts.map((t) => {
+        const config = {
+          success: { icon: CheckCircle2, color: "text-emerald-600", border: "border-emerald-200", bg: "bg-emerald-50" },
+          error: { icon: XCircle, color: "text-red-600", border: "border-red-200", bg: "bg-red-50" },
+          warning: { icon: AlertTriangle, color: "text-amber-600", border: "border-amber-200", bg: "bg-amber-50" },
+          info: { icon: Info, color: "text-cyan-600", border: "border-cyan-200", bg: "bg-cyan-50" },
+        }[t.type];
+        const Icon = config.icon;
+        return (
+          <div
+            key={t.id}
+            className={cn(
+              "pointer-events-auto bg-white rounded-2xl shadow-pop border p-4 flex items-start gap-3 animate-slideUp",
+              config.border
+            )}
+          >
+            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", config.bg)}>
+              <Icon size={18} className={config.color} />
+            </div>
+            <div className="flex-1 min-w-0 pt-0.5">
+              {t.title && <p className="font-semibold text-zinc-900 text-sm">{t.title}</p>}
+              <p className="text-sm text-zinc-600 leading-snug">{t.message}</p>
+            </div>
+            <button
+              onClick={() => onClose(t.id)}
+              className="text-zinc-400 hover:text-zinc-600 shrink-0"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

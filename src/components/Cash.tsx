@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, cn } from "@/lib/utils";
-import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select } from "@/components/ui";
+import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select, ConfirmDialog, AlertDialog, useToast } from "@/components/ui";
 import { AccountCard } from "@/components/AccountCard";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
@@ -36,6 +36,10 @@ export default function Cash() {
   
   // For add/edit account
   const [accForm, setAccForm] = useState({ name: "", icon: "landmark", color: "#003d79", balance: "", minBalance: "100000" });
+  // Dialog state
+  const [confirmDelete, setConfirmDelete] = useState<Account | null>(null);
+  const [alertMsg, setAlertMsg] = useState<{ title: string; message: string; variant: "info" | "warning" | "danger" } | null>(null);
+  const toast = useToast();
 
   async function load() {
     const [accs, mutsRes] = await Promise.all([
@@ -134,16 +138,26 @@ export default function Cash() {
 
   async function handleDeleteAccount(acc: Account) {
     if (acc.code === "cash") {
-      alert("Kas Tunai tidak bisa dihapus!");
+      setAlertMsg({
+        title: "Tidak Bisa Dihapus",
+        message: "Kas Tunai tidak bisa dihapus. Akun ini wajib ada untuk transaksi tunai.",
+        variant: "warning",
+      });
       return;
     }
-    if (!confirm(`Hapus rekening "${acc.name}"?`)) return;
+    setConfirmDelete(acc);
+  }
+
+  async function confirmDeleteAccount() {
+    if (!confirmDelete) return;
     await fetch("/api/accounts", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", id: acc.id }),
+      body: JSON.stringify({ action: "delete", id: confirmDelete.id }),
     });
     load();
+    setConfirmDelete(null);
+    toast.success("Rekening berhasil dihapus");
   }
 
   function openEditAccount(acc: Account) {
@@ -431,6 +445,26 @@ export default function Cash() {
           </div>
         </div>
       </Modal>
+
+      {/* Confirm Delete Rekening */}
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={confirmDeleteAccount}
+        title="Hapus Rekening?"
+        message={`Rekening "${confirmDelete?.name}" akan dihapus permanen. Semua mutasi terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`}
+        variant="danger"
+        confirmText="Hapus"
+      />
+
+      {/* Alert Dialog (kas tunai tidak bisa dihapus, dll) */}
+      <AlertDialog
+        open={alertMsg !== null}
+        onClose={() => setAlertMsg(null)}
+        title={alertMsg?.title}
+        message={alertMsg?.message || ""}
+        variant={alertMsg?.variant || "info"}
+      />
     </div>
   );
 }
