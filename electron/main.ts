@@ -177,29 +177,27 @@ function createWindow() {
     },
   });
 
-  // ── Content Security Policy ───────────────────
-  // Set CSP header untuk semua request di app shell.
-  // Di DEV: allow localhost + ws (hot reload) + eval (Next.js dev).
-  // Di PROD: stricter — hanya allow self + inline styles.
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const devSrc = isDevMode
-      ? " http://localhost:3000 ws://localhost:3000 'unsafe-eval'"
-      : "";
-    const csp = [
-      "default-src 'self'",
-      `script-src 'self'${devSrc}`,
-      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-      "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob:",
-      "connect-src 'self' http://localhost:* http://127.0.0.1:*",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join("; ");
-    const responseHeaders: Record<string, string> = { ...details.responseHeaders as Record<string, string> };
-    responseHeaders["Content-Security-Policy"] = csp;
-    callback({ responseHeaders });
-  });
+  // ── Content Security Policy (production only) ─
+  // Di DEV mode: Next.js inject inline scripts (HMR, React Refresh) yang
+  // butuh 'unsafe-inline'. Apply CSP hanya di production untuk hindari konflik.
+  if (isPackaged) {
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      const csp = [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob:",
+        "connect-src 'self' http://127.0.0.1:*",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join("; ");
+      const responseHeaders: Record<string, string> = { ...details.responseHeaders as Record<string, string> };
+      responseHeaders["Content-Security-Policy"] = csp;
+      callback({ responseHeaders });
+    });
+  }
 
   Menu.setApplicationMenu(null);
 
