@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { brilinkServices, serviceCategories, feeTiers } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const services = await db
     .select({

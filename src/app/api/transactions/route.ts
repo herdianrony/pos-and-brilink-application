@@ -25,6 +25,9 @@ async function updateAccountBalance(accountId: number, amount: number, type: str
   });
 }
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const type = sp.get("type");

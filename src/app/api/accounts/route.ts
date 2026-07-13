@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { accounts, accountMutations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const data = await db.select().from(accounts);
   return NextResponse.json(data);

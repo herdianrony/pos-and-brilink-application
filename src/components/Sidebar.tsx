@@ -13,7 +13,17 @@ import {
   Menu,
   X,
   ChevronRight,
+  LogOut,
+  Shield,
+  User as UserIcon,
 } from "lucide-react";
+
+interface UserInfo {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+}
 
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500" },
@@ -34,6 +44,8 @@ export default function Sidebar({
 }) {
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState("");
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const tick = () => {
@@ -48,6 +60,34 @@ export default function Sidebar({
     const t = setInterval(tick, 30000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch {
+      setLoggingOut(false);
+    }
+  }
+
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .slice(0, 2)
+        .map((s) => s[0])
+        .join("")
+        .toUpperCase()
+    : "U";
 
   return (
     <>
@@ -96,10 +136,16 @@ export default function Sidebar({
           {nav.map((item) => {
             const Icon = item.icon;
             const isActive = active === item.id;
+            // Batasi menu untuk kasir (jika diperlukan)
+            const restrictedForKasir = ["settings"];
+            const isDisabled = user?.role === "kasir" && restrictedForKasir.includes(item.id);
+
             return (
               <button
                 key={item.id}
+                disabled={isDisabled}
                 onClick={() => {
+                  if (isDisabled) return;
                   onNav(item.id);
                   setOpen(false);
                 }}
@@ -107,16 +153,53 @@ export default function Sidebar({
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group",
                   isActive
                     ? "bg-white/15 text-white shadow-lg shadow-black/10"
-                    : "text-blue-200 hover:bg-white/8 hover:text-white"
+                    : isDisabled
+                      ? "text-blue-300/40 cursor-not-allowed"
+                      : "text-blue-200 hover:bg-white/8 hover:text-white"
                 )}
               >
-                <Icon size={19} className={cn(isActive ? "text-accent" : "text-blue-300 group-hover:text-blue-100")} />
+                <Icon size={19} className={cn(isActive ? "text-accent" : isDisabled ? "text-blue-300/40" : "text-blue-300 group-hover:text-blue-100")} />
                 <span className="text-sm font-medium flex-1">{item.label}</span>
                 {isActive && <ChevronRight size={14} className="text-accent" />}
               </button>
             );
           })}
         </nav>
+
+        {/* User + Logout (di atas footer) */}
+        {user && (
+          <div className="px-3 pb-2">
+            <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-3 flex items-center gap-3 border border-white/10">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{user.name}</p>
+                <div className="flex items-center gap-1.5 text-blue-200 text-[11px]">
+                  {user.role === "admin" ? (
+                    <>
+                      <Shield size={11} className="text-accent" />
+                      <span>Administrator</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserIcon size={11} />
+                      <span>Kasir</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                title="Keluar"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-blue-100 hover:text-white transition-colors disabled:opacity-50"
+              >
+                <LogOut size={15} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 border-t border-white/10">

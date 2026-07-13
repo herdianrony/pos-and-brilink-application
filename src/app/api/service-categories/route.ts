@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { serviceCategories } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const data = await db.select().from(serviceCategories)
     .where(eq(serviceCategories.isActive, true))

@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const rows = await db.select().from(settings);
   const map: Record<string, string> = {};

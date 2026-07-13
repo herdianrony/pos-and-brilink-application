@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { cashBalance } from "@/db/schema";
 import { desc } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const data = await db.select().from(cashBalance).orderBy(desc(cashBalance.id)).limit(50);
   const [last] = data;

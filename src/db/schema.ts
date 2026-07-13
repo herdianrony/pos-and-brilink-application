@@ -5,6 +5,20 @@ import {
   real,
 } from "drizzle-orm/sqlite-core";
 
+// ── Users (Autentikasi) ───────────────────────────
+// role: 'admin' | 'kasir'
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name", { length: 100 }).notNull(),
+  username: text("username", { length: 50 }).notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role", { length: 20 }).default("kasir").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),
+});
+
 // ── Kategori Produk ───────────────────────────────
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),

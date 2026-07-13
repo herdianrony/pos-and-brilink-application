@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { transactions, products, accounts } from "@/db/schema";
 import { sql, eq, gte, and, desc, asc } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);

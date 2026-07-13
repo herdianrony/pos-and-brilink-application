@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { accountMutations, accounts } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const accountId = sp.get("accountId");

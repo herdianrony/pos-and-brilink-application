@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { feeTiers } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const serviceId = sp.get("serviceId");

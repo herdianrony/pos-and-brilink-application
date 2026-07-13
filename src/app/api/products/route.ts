@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { products, categories } from "@/db/schema";
 import { asc, eq, ilike, and } from "drizzle-orm";
 
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const search = sp.get("search") || "";
