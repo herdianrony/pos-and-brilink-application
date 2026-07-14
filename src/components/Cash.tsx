@@ -66,11 +66,10 @@ export default function Cash() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "update_balance",
+        action: "adjust",
         accountId: selAccount.id,
-        type: "add",
         amount,
-        mutationType: parseFloat(amount) >= 0 ? "adjustment_in" : "adjustment_out",
+        type: parseFloat(amount) >= 0 ? "adjustment_in" : "adjustment_out",
         notes: notes || (parseFloat(amount) >= 0 ? "Penambahan saldo" : "Pengurangan saldo"),
       }),
     });
@@ -107,7 +106,7 @@ export default function Cash() {
     if (!accForm.name) return;
     setSaving(true);
     await fetch("/api/accounts", {
-      method: "PUT",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "create",
@@ -124,7 +123,7 @@ export default function Cash() {
     if (!selAccount || !accForm.name) return;
     setSaving(true);
     await fetch("/api/accounts", {
-      method: "PUT",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "update",
@@ -152,7 +151,7 @@ export default function Cash() {
   async function confirmDeleteAccount() {
     if (!confirmDelete) return;
     await fetch("/api/accounts", {
-      method: "PUT",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", id: confirmDelete.id }),
     });
@@ -267,7 +266,8 @@ export default function Cash() {
                 onClick={() => setActiveTab(a.id.toString())}
                 className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
               >
-                isBankIcon(a.icon) ? <BankIcon name={a.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />
+                {isBankIcon(a.icon) ? <BankIcon name={a.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />}
+                {a.name.split(" ")[0]}
               </button>
             ))}
           </div>

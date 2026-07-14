@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, dbReady } from "@/db";
 import { accountMutations, accounts } from "@/db/schema";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

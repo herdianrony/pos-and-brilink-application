@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { cashBalance } from "@/db/schema";
 import { desc } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
 
 export const runtime = "nodejs";

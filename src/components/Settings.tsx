@@ -5,6 +5,7 @@ import { Card, Button, Input, Spinner } from "@/components/ui";
 import { Settings as SettingsIcon, Save, Store, User, Phone, MapPin, CreditCard, Palette, Building2, Tag } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import PrinterSettings from "@/components/PrinterSettings";
+import UserManagement from "@/components/UserManagement";
 import { updateSettings } from "@/lib/use-settings";
 
 export default function SettingsPage() {
@@ -136,6 +137,8 @@ export default function SettingsPage() {
       </Card>
 
       <PrinterSettings />
+
+      <UserManagement />
 
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={saving} size="lg">

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { products, categories } from "@/db/schema";
-import { asc, eq, ilike, and } from "drizzle-orm";
-
+import { asc, eq, ilike, and, or } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
+  await requireAuth();
   const sp = req.nextUrl.searchParams;
   const search = sp.get("search") || "";
   const categoryId = sp.get("categoryId");
@@ -14,7 +16,10 @@ export async function GET(req: NextRequest) {
   const conds = [eq(products.isActive, true)];
   if (search) {
     // Search by name OR barcode
-    conds.push(ilike(products.name, `%${search}%`));
+    conds.push(or(
+      ilike(products.name, `%${search}%`),
+      ilike(products.barcode, `%${search}%`)
+    ) as any);
   }
   if (categoryId && categoryId !== "all") conds.push(eq(products.categoryId, parseInt(categoryId)));
 
@@ -44,6 +49,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   const [row] = await db.insert(products).values({
     name: b.name,
@@ -54,11 +61,14 @@ export async function POST(req: Request) {
     stock: b.stock ?? 0,
     minStock: b.minStock ?? 5,
     unit: b.unit || "pcs",
+    image: b.image || null,
   }).returning();
   return NextResponse.json(row);
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   const [row] = await db.update(products).set({
     name: b.name,
@@ -69,12 +79,15 @@ export async function PUT(req: Request) {
     stock: b.stock ?? 0,
     minStock: b.minStock ?? 5,
     unit: b.unit || "pcs",
+    image: b.image || null,
     updatedAt: new Date(),
   }).where(eq(products.id, b.id)).returning();
   return NextResponse.json(row);
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   await db.update(products).set({ isActive: false }).where(eq(products.id, b.id));
   return NextResponse.json({ ok: true });

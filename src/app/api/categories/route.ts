@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
 
 export const runtime = "nodejs";

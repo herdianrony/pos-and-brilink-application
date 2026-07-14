@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { transactions, transactionItems, products, accounts, accountMutations, brilinkServices } from "@/db/schema";
 import { desc, eq, and, sql } from "drizzle-orm";
 import { generateInvoice } from "@/lib/utils";
+import { requireAuth } from "@/lib/auth";
 
 async function getAccountByCode(code: string) {
   const [acc] = await db.select().from(accounts).where(eq(accounts.code, code));
