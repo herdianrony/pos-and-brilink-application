@@ -57,6 +57,11 @@ out-electron/
 
 # Electron testing
 electron-builder-debug.log
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
 package-lock.json
 USB
 COM1
