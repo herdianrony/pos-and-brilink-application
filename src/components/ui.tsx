@@ -23,8 +23,8 @@ export function Modal({ open, onClose, children, size = "md" }: {
   if (!open) return null;
   const w = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-fadeIn" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-fadeIn" aria-hidden="true" />
       <div className={`relative bg-white rounded-3xl shadow-float w-full ${w} max-h-[90vh] overflow-y-auto animate-bounceIn border border-slate-200/50`}
         onClick={(e) => e.stopPropagation()}>
         {children}

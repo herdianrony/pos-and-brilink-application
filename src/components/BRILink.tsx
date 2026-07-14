@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
-import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge } from "@/components/ui";
+import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge, useToast } from "@/components/ui";
 import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
@@ -67,6 +67,7 @@ export default function BRILink() {
   const [loading, setLoading] = useState(true);
   const { settings } = useSettings();
   const servicesLabel = settings.services_label || "Layanan Agen";
+  const toast = useToast();
   const [catFilter, setCatFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sel, setSel] = useState<Service | null>(null);
@@ -162,13 +163,19 @@ export default function BRILink() {
         }),
       });
       const trx = await res.json();
+      // P0-1: Check res.ok before showing success
+      if (!res.ok) {
+        toast.error(trx.error || "Transaksi gagal diproses");
+        return; // Don't close modal, don't clear form
+      }
       setLastInv(trx.invoiceNo);
       setSel(null);
       setShowDone(true);
-      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "" });
+      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "", periode: "" });
       const newAccs = await fetch("/api/accounts").then(r => r.json());
       setAccounts(newAccs);
-    } catch { alert("Gagal memproses"); }
+      toast.success("Transaksi berhasil!");
+    } catch { toast.error("Gagal memproses transaksi"); }
     finally { setSubmitting(false); }
   }
 
