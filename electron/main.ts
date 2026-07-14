@@ -77,22 +77,37 @@ async function startNextServer(): Promise<void> {
     }
 
     console.log(`[main] Starting Next.js server from ${serverPath}`);
+    console.log(`[main] CWD: ${cwd}`);
+    console.log(`[main] PORT: ${INTERNAL_PORT}`);
+
+    // ── PENTING: ELECTRON_RUN_AS_NODE ──────────────
+    // process.execPath di packaged Electron = path ke "BRILink POS.exe"
+    // (Electron executable, BUKAN Node.js). Tanpa ELECTRON_RUN_AS_NODE=1,
+    // Electron akan mencoba menjalankan server.js sebagai GUI app → crash.
+    // Dengan ELECTRON_RUN_AS_NODE=1, Electron executable berperilaku sebagai
+    // Node.js runtime, sehingga server.js bisa dijalankan dengan benar.
+    const spawnEnv: Record<string, string | undefined> = {
+      ...process.env,
+      PORT: String(INTERNAL_PORT),
+      NODE_ENV: "production",
+      ELECTRON_RUN_AS_NODE: "1",
+      // Hapus env yang bisa konflik
+      ELECTRON_SECURE_WARNINGS: "1",
+    };
 
     nextServer = spawn(process.execPath, [serverPath], {
       cwd,
-      env: {
-        ...process.env,
-        PORT: String(INTERNAL_PORT),
-        NODE_ENV: "production",
-        ELECTRON_RUN_AS_NODE: undefined,
-      },
+      env: spawnEnv,
       stdio: ["ignore", "pipe", "pipe"],
     });
+
+    let resolved = false;
 
     nextServer.stdout?.on("data", (data) => {
       const msg = data.toString();
       console.log(`[next] ${msg.trim()}`);
-      if (msg.includes("Ready") || msg.includes("started server")) {
+      if (!resolved && (msg.includes("Ready") || msg.includes("started server") || msg.includes("Local:"))) {
+        resolved = true;
         resolve();
       }
     });
@@ -103,22 +118,35 @@ async function startNextServer(): Promise<void> {
 
     nextServer.on("error", (err) => {
       console.error("[main] Failed to start Next.js server:", err);
-      reject(err);
+      if (!resolved) {
+        resolved = true;
+        reject(new Error(`Gagal start Next.js server: ${err.message}\n\nPastikan aplikasi tidak diblokir antivirus.`));
+      }
     });
 
     nextServer.on("exit", (code) => {
       console.log(`[main] Next.js server exited with code ${code}`);
       nextServer = null;
+      if (!resolved && code !== 0) {
+        resolved = true;
+        reject(new Error(`Next.js server exit dengan kode ${code}. Mungkin ada error di startup.`));
+      }
     });
 
-    // Safety timeout
-    setTimeout(() => resolve(), 30000);
+    // Safety timeout — 60 detik (Next.js standalone butuh waktu compile di first run)
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        resolve(); // lanjut ke waitForPort yang akan cek koneksi
+      }
+    }, 60000);
   });
 }
 
 // ── Tunggu port siap ─────────────────────────────
-async function waitForPort(port: number, maxRetries = 60, intervalMs = 500): Promise<void> {
+async function waitForPort(port: number, maxRetries = 120, intervalMs = 500): Promise<void> {
   const net = require("net");
+  const maxSeconds = (maxRetries * intervalMs) / 1000;
   for (let i = 0; i < maxRetries; i++) {
     try {
       const ok = await new Promise<boolean>((resolve) => {
@@ -138,13 +166,23 @@ async function waitForPort(port: number, maxRetries = 60, intervalMs = 500): Pro
         });
         socket.connect(port, "127.0.0.1");
       });
-      if (ok) return;
+      if (ok) {
+        console.log(`[main] Port ${port} siap setelah ${i * intervalMs / 1000}s`);
+        return;
+      }
     } catch {
       // ignore
     }
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  throw new Error(`Tidak dapat terhubung ke port ${port} dalam ${maxRetries * intervalMs / 1000} detik`);
+  throw new Error(
+    `Tidak dapat terhubung ke port ${port} dalam ${maxSeconds} detik.\n\n` +
+    `Kemungkinan penyebab:\n` +
+    `• Next.js server gagal start (cek log di console)\n` +
+    `• Port ${port} sudah dipakai aplikasi lain\n` +
+    `• Antivirus memblokir eksekusi server\n` +
+    `• Aplikasi corrupt — coba reinstall`
+  );
 }
 
 // ── URL untuk load ───────────────────────────────
