@@ -71,7 +71,7 @@ export default function SettingsPage() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="space-y-5 animate-fadeIn max-w-3xl">
+    <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <SettingsIcon size={24} className="text-slate-500" /> Pengaturan

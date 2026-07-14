@@ -23,16 +23,12 @@ function getSecret(): Uint8Array {
     throw new Error("AUTH_SECRET wajib di production (min 32 chars). Set env var atau jalankan via Electron.");
   }
 
-  // Dev only: generate random per-process
-  if (!generatedSecret) {
-    const crypto = require("crypto");
-    const bytes = crypto.randomBytes(48);
-    generatedSecret = new Uint8Array(bytes);
-    // R-04: Share with proxy via globalThis
-    (globalThis as any).__authSecret = generatedSecret;
-    console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Dev mode dengan random secret.");
-  }
-  return generatedSecret;
+  // Dev only: use fixed dev secret so proxy and API routes share the same key
+  // across different runtimes (edge proxy vs nodejs server).
+  // This is NOT secure for production — only for local development.
+  const DEV_SECRET = "dev_secret_pos_agen_bisnis_2024_not_for_production_use";
+  console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Dev mode dengan fixed dev secret.");
+  return new TextEncoder().encode(DEV_SECRET);
 }
 
 export interface SessionPayload {
