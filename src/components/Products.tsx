@@ -12,6 +12,7 @@ interface Product {
   id: number; name: string; barcode: string | null;
   categoryId: number | null; categoryName: string | null; categoryIcon: string | null;
   buyPrice: string; sellPrice: string; stock: number; minStock: number; unit: string | null;
+  image: string | null;
 }
 interface Category { id: number; name: string; icon: string | null; color: string | null; isActive: boolean; }
 interface ServiceCat { id: number; name: string; icon: string | null; color: string | null; sortOrder: number; }
@@ -76,7 +77,7 @@ function ProductsTab() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [edit, setEdit] = useState<Product | null>(null);
-  const [f, setF] = useState({ name: "", barcode: "", categoryId: "", buyPrice: "", sellPrice: "", stock: "", minStock: "5", unit: "pcs" });
+  const [f, setF] = useState({ name: "", barcode: "", categoryId: "", buyPrice: "", sellPrice: "", stock: "", minStock: "5", unit: "pcs", image: "" });
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
   const toast = useToast();
@@ -91,14 +92,14 @@ function ProductsTab() {
   useEffect(() => { fetch("/api/categories").then(r => r.json()).then(setCategories); }, []);
 
   function openAdd() {
-    setEdit(null); setF({ name: "", barcode: "", categoryId: "", buyPrice: "", sellPrice: "", stock: "", minStock: "5", unit: "pcs" }); setModal(true);
+    setEdit(null); setF({ name: "", barcode: "", categoryId: "", buyPrice: "", sellPrice: "", stock: "", minStock: "5", unit: "pcs", image: "" }); setModal(true);
   }
   function openEdit(p: Product) {
-    setEdit(p); setF({ name: p.name, barcode: p.barcode || "", categoryId: p.categoryId?.toString() || "", buyPrice: p.buyPrice, sellPrice: p.sellPrice, stock: p.stock.toString(), minStock: p.minStock.toString(), unit: p.unit || "pcs" }); setModal(true);
+    setEdit(p); setF({ name: p.name, barcode: p.barcode || "", categoryId: p.categoryId?.toString() || "", buyPrice: p.buyPrice, sellPrice: p.sellPrice, stock: p.stock.toString(), minStock: p.minStock.toString(), unit: p.unit || "pcs", image: p.image || "" }); setModal(true);
   }
   async function save() {
     if (!f.name || !f.sellPrice) return; setSaving(true);
-    const body = { ...(edit ? { id: edit.id } : {}), name: f.name, barcode: f.barcode || null, categoryId: f.categoryId ? parseInt(f.categoryId) : null, buyPrice: f.buyPrice || "0", sellPrice: f.sellPrice, stock: parseInt(f.stock || "0"), minStock: parseInt(f.minStock || "5"), unit: f.unit };
+    const body = { ...(edit ? { id: edit.id } : {}), name: f.name, barcode: f.barcode || null, categoryId: f.categoryId ? parseInt(f.categoryId) : null, buyPrice: f.buyPrice || "0", sellPrice: f.sellPrice, stock: parseInt(f.stock || "0"), minStock: parseInt(f.minStock || "5"), unit: f.unit, image: f.image || null };
     await fetch("/api/products", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setModal(false); load(); setSaving(false);
     toast.success(edit ? "Produk berhasil diupdate" : "Produk berhasil ditambahkan");
@@ -140,7 +141,11 @@ function ProductsTab() {
                   <tr key={p.id} className="border-t border-slate-50 hover:bg-emerald-50/30 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-slate-600" />
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover border border-slate-200" />
+                        ) : (
+                          <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-slate-600" />
+                        )}
                         <div>
                           <p className="font-semibold text-slate-800">{p.name}</p>
                           {p.barcode && <p className="text-[11px] text-slate-400 font-mono">{p.barcode}</p>}
@@ -179,6 +184,51 @@ function ProductsTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Produk *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama produk" />
             <Input label="Barcode" value={f.barcode} onChange={e => setF({ ...f, barcode: e.target.value })} placeholder="Barcode" />
+
+            {/* Foto Produk */}
+            <div className="sm:col-span-2">
+              <label className="text-sm font-bold text-slate-700 mb-2 block">Foto Produk (opsional)</label>
+              <div className="flex items-center gap-3">
+                {f.image ? (
+                  <img src={f.image} alt="Preview" className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-200" />
+                ) : (
+                  <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
+                    <Package size={24} className="text-slate-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 500000) {
+                        toast.warning("Ukuran gambar maksimal 500KB");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setF({ ...f, image: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                    id="product-image-upload"
+                  />
+                  <label htmlFor="product-image-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition-all">
+                    <Plus size={16} /> Pilih Gambar
+                  </label>
+                  {f.image && (
+                    <button onClick={() => setF({ ...f, image: "" })} className="ml-2 text-xs text-red-500 font-bold hover:underline">
+                      Hapus
+                    </button>
+                  )}
+                  <p className="text-[11px] text-slate-400 mt-1">Maks 500KB, format JPG/PNG/WebP</p>
+                </div>
+              </div>
+            </div>
+
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
               <option value="">— Pilih —</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -263,6 +313,7 @@ function CategoriesTab() {
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-slate-700" /></div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-800 truncate">{c.name}</p>
+                <p className="text-xs text-slate-400 font-medium">{(c as any).productCount || 0} produk</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>

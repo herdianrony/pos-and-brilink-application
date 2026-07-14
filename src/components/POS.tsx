@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
-import { Modal, Button, Input, Badge, Spinner, EmptyState, Card } from "@/components/ui";
+import { Modal, Button, Input, Badge, Spinner, EmptyState, Card, useToast } from "@/components/ui";
 import { DynamicIcon } from "@/components/DynamicIcon";
-import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X } from "lucide-react";
+import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
+import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X, Pause, Play, Tag, ScanLine } from "lucide-react";
 
 interface Product {
   id: number; name: string; barcode: string | null;
@@ -16,6 +17,7 @@ interface CartItem {
   quantity: number; subtotal: string; stock: number; unit: string | null;
 }
 interface Category { id: number; name: string; icon: string | null; }
+interface HeldCart { id: string; cart: CartItem[]; customerName: string; timestamp: number; }
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,6 +33,15 @@ export default function POS() {
   const [showDone, setShowDone] = useState(false);
   const [lastInv, setLastInv] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // ── New features ─────────────────────────────
+  const [heldCarts, setHeldCarts] = useState<HeldCart[]>([]);
+  const [showHeld, setShowHeld] = useState(false);
+  const [discountType, setDiscountType] = useState<"none" | "percent" | "rupiah">("none");
+  const [discountValue, setDiscountValue] = useState("");
+  const [showDiscount, setShowDiscount] = useState(false);
+  const [scanFlash, setScanFlash] = useState(false);
+  const toast = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = useCallback(async () => {
     const p = new URLSearchParams();
@@ -43,6 +54,98 @@ export default function POS() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
   useEffect(() => { fetch("/api/categories").then(r => r.json()).then(setCategories); }, []);
+
+  // ── Barcode Scanner Integration ───────────────
+  // Scan barcode → search product by barcode → add to cart
+  useBarcodeScanner({
+    onScan: async (code) => {
+      setScanFlash(true);
+      setTimeout(() => setScanFlash(false), 300);
+      // Cari produk by barcode
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        const found = data.find((p: Product) => p.barcode === code);
+        if (found) {
+          addToCart(found);
+          toast.success(`${found.name} ditambahkan ke keranjang`);
+        } else {
+          toast.warning(`Barcode "${code}" tidak ditemukan`);
+        }
+      } catch {
+        toast.error("Gagal mencari produk");
+      }
+    },
+    enabled: !showPay && !showDone, // disable saat modal terbuka
+  });
+
+  // ── Keyboard Shortcuts ────────────────────────
+  // F1 = Bayar (open payment modal)
+  // F2 = Hold cart
+  // ESC = Clear cart / close modal
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip jika sedang mengetik di input field
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA") && e.key !== "F1" && e.key !== "F2") return;
+
+      if (e.key === "F1") {
+        e.preventDefault();
+        if (cart.length > 0 && !showPay && !showDone) {
+          setShowPay(true);
+        }
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        if (cart.length > 0 && !showPay && !showDone) {
+          holdCart();
+        }
+      } else if (e.key === "Escape") {
+        if (showPay) setShowPay(false);
+        else if (showDone) setShowDone(false);
+        else if (showHeld) setShowHeld(false);
+        else if (showDiscount) setShowDiscount(false);
+        else if (cart.length > 0) {
+          if (confirm("Kosongkan keranjang?")) {
+            setCart([]);
+            setCustomerName("");
+            toast.info("Keranjang dikosongkan");
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [cart, showPay, showDone, showHeld, showDiscount]);
+
+  // ── Hold Cart ─────────────────────────────────
+  function holdCart() {
+    if (cart.length === 0) return;
+    const held: HeldCart = {
+      id: Date.now().toString(),
+      cart: [...cart],
+      customerName,
+      timestamp: Date.now(),
+    };
+    setHeldCarts(prev => [...prev, held]);
+    setCart([]);
+    setCustomerName("");
+    toast.success("Transaksi ditahan (Hold)");
+  }
+
+  // ── Resume Held Cart ───────────────────────────
+  function resumeCart(held: HeldCart) {
+    if (cart.length > 0) {
+      if (!confirm("Keranjang saat ini akan diganti. Lanjutkan?")) return;
+    }
+    setCart(held.cart);
+    setCustomerName(held.customerName);
+    setHeldCarts(prev => prev.filter(h => h.id !== held.id));
+    setShowHeld(false);
+    toast.info("Transaksi dilanjutkan");
+  }
+
+  // ── Discount Calculation ───────────────────────
+  // total & discountAmount calculated below after cart totals
 
   function addToCart(p: Product) {
     setCart(prev => {
@@ -72,7 +175,14 @@ export default function POS() {
 
   const total = cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
   const totalItems = cart.reduce((s, c) => s + c.quantity, 0);
-  const change = parseFloat(cashAmt || "0") - total;
+  const discountAmount = (() => {
+    if (discountType === "none" || !discountValue) return 0;
+    const val = parseFloat(discountValue) || 0;
+    if (discountType === "percent") return (total * val) / 100;
+    return Math.min(val, total);
+  })();
+  const grandTotal = total - discountAmount;
+  const change = parseFloat(cashAmt || "0") - grandTotal;
 
   async function doCheckout() {
     if (!cart.length) return;
@@ -81,7 +191,7 @@ export default function POS() {
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "pos", items: cart, totalAmount: total, customerName: customerName || null, paymentMethod: payMethod }),
+        body: JSON.stringify({ type: "pos", items: cart, totalAmount: grandTotal, customerName: customerName || null, paymentMethod: payMethod, discount: discountAmount }),
       });
       const trx = await res.json();
       setLastInv(trx.invoiceNo);
@@ -90,8 +200,11 @@ export default function POS() {
       setCart([]);
       setCustomerName("");
       setCashAmt("");
+      setDiscountType("none");
+      setDiscountValue("");
       fetchProducts();
-    } catch { alert("Gagal memproses transaksi"); }
+      toast.success("Transaksi berhasil!");
+    } catch { toast.error("Gagal memproses transaksi"); }
     finally { setSubmitting(false); }
   }
 
@@ -232,15 +345,117 @@ export default function POS() {
         </div>
 
         <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/30">
+          {/* Discount display */}
+          {discountAmount > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-emerald-600 font-semibold">Diskon</span>
+              <span className="text-emerald-600 font-bold">-{formatRupiah(discountAmount)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Total Pembayaran</span>
-            <span className="text-2xl font-extrabold text-primary">{formatRupiah(total)}</span>
+            <span className="text-slate-500 font-semibold">Total{discountAmount > 0 ? " Akhir" : " Pembayaran"}</span>
+            <span className="text-2xl font-extrabold text-primary">{formatRupiah(grandTotal)}</span>
           </div>
-          <Button variant="accent" size="lg" className="w-full" disabled={!cart.length} onClick={() => setShowPay(true)}>
-            <CreditCard size={18} /> Bayar Sekarang
+
+          {/* Action buttons row */}
+          <div className="flex gap-2">
+            {heldCarts.length > 0 && (
+              <Button variant="secondary" size="md" onClick={() => setShowHeld(true)} title="Lihat transaksi ditahan">
+                <Play size={16} /> {heldCarts.length}
+              </Button>
+            )}
+            <Button variant="secondary" size="md" onClick={holdCart} disabled={!cart.length} title="Tahan transaksi (F2)">
+              <Pause size={16} /> Hold
+            </Button>
+            <Button variant="secondary" size="md" onClick={() => setShowDiscount(true)} disabled={!cart.length} title="Atur diskon">
+              <Tag size={16} /> Diskon
+            </Button>
+          </div>
+
+          <Button variant="primary" size="lg" className="w-full" disabled={!cart.length} onClick={() => setShowPay(true)}>
+            <CreditCard size={18} /> Bayar Sekarang (F1)
           </Button>
+
+          {/* Scan indicator */}
+          {scanFlash && (
+            <div className="flex items-center justify-center gap-2 py-1 text-xs font-bold text-primary animate-fadeIn">
+              <ScanLine size={14} className="animate-pulse" /> Barcode terdeteksi!
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Held Carts Modal */}
+      <Modal open={showHeld} onClose={() => setShowHeld(false)} size="md">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-extrabold text-slate-900">Transaksi Ditahan</h3>
+            <button onClick={() => setShowHeld(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          </div>
+          {heldCarts.length === 0 ? (
+            <EmptyState icon="clipboard-list" title="Belum ada transaksi ditahan" />
+          ) : (
+            <div className="space-y-2">
+              {heldCarts.map((held) => {
+                const heldTotal = held.cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
+                return (
+                  <div key={held.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                      <p className="font-bold text-slate-700">{held.customerName || "Pelanggan"}</p>
+                      <p className="text-xs text-slate-400">{held.cart.length} item • {formatRupiah(heldTotal)}</p>
+                      <p className="text-[10px] text-slate-400">{new Date(held.timestamp).toLocaleTimeString("id-ID")}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="primary" size="sm" onClick={() => resumeCart(held)}>
+                        <Play size={14} /> Lanjut
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => setHeldCarts(prev => prev.filter(h => h.id !== held.id))}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Discount Modal */}
+      <Modal open={showDiscount} onClose={() => setShowDiscount(false)} size="sm">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-extrabold text-slate-900">Diskon</h3>
+            <button onClick={() => setShowDiscount(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          </div>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <button onClick={() => setDiscountType("none")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "none" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Tanpa Diskon</button>
+              <button onClick={() => setDiscountType("percent")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "percent" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Persen (%)</button>
+              <button onClick={() => setDiscountType("rupiah")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "rupiah" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Rupiah</button>
+            </div>
+            {discountType !== "none" && (
+              <Input
+                label={discountType === "percent" ? "Diskon (%)" : "Diskon (Rp)"}
+                type="number"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+                placeholder={discountType === "percent" ? "10" : "5000"}
+                autoFocus
+              />
+            )}
+            {discountAmount > 0 && (
+              <div className="p-3 bg-emerald-50 rounded-xl text-sm flex justify-between">
+                <span className="font-semibold text-emerald-700">Total Diskon:</span>
+                <span className="font-bold text-emerald-700">{formatRupiah(discountAmount)}</span>
+              </div>
+            )}
+            <Button variant="primary" className="w-full" onClick={() => setShowDiscount(false)}>
+              Terapkan
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Pay Modal */}
       <Modal open={showPay} onClose={() => setShowPay(false)}>
@@ -272,7 +487,7 @@ export default function POS() {
           <Card className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/10">
             <div className="flex justify-between text-lg font-extrabold">
               <span className="text-slate-600">Total</span>
-              <span className="text-primary">{formatRupiah(total)}</span>
+              <span className="text-primary">{formatRupiah(grandTotal)}</span>
             </div>
           </Card>
           {payMethod === "cash" && (

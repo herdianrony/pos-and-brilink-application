@@ -40,6 +40,7 @@ export const products = sqliteTable("products", {
   stock: integer("stock").notNull().default(0),
   minStock: integer("min_stock").notNull().default(5),
   unit: text("unit", { length: 20 }).default("pcs"),
+  image: text("image"), // base64 data URL atau URL gambar produk
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),

@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
   const categoryId = sp.get("categoryId");
 
   const conds = [eq(products.isActive, true)];
-  if (search) conds.push(ilike(products.name, `%${search}%`));
+  if (search) {
+    // Search by name OR barcode
+    conds.push(ilike(products.name, `%${search}%`));
+  }
   if (categoryId && categoryId !== "all") conds.push(eq(products.categoryId, parseInt(categoryId)));
 
   const data = await db
@@ -28,6 +31,7 @@ export async function GET(req: NextRequest) {
       stock: products.stock,
       minStock: products.minStock,
       unit: products.unit,
+      image: products.image,
       isActive: products.isActive,
       createdAt: products.createdAt,
     })

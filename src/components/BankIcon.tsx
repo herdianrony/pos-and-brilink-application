@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils";
 export const BANK_ICONS = [
   // Bank besar
   "bca", "bri", "bni", "mandiri", "btn", "cimb-niaga", "danamon",
-  "permata", "muamalat",
+  "permata", "muamalat", "bsi",
   // Bank daerah & lainnya
   "bank-bjb", "bank-jakarta", "bank-mayapada", "bank-nagari",
-  "bank-sahabat-sampoerna",
+  "bank-sahabat-sampoerna", "bca-mobile", "bca-digital",
   // E-wallet & payment
   "gopay", "ovo", "dana", "linkaja", "doku", "jenius", "astra-pay",
+  "shopeepay", "qris",
   // Service & tagihan
   "pln", "indihome", "pdam", "bpjs",
 ] as const;

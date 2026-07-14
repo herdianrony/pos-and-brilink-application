@@ -70,9 +70,9 @@ export default function BRILink() {
   const [catFilter, setCatFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sel, setSel] = useState<Service | null>(null);
-  const [form, setForm] = useState({ 
-    customerName: "", customerPhone: "", amount: "", notes: "", 
-    paymentMethod: "cash", selectedBankId: "" 
+  const [form, setForm] = useState({
+    customerName: "", customerPhone: "", amount: "", notes: "",
+    paymentMethod: "cash", selectedBankId: "", periode: ""
   });
   const [submitting, setSubmitting] = useState(false);
   const [showDone, setShowDone] = useState(false);
@@ -395,6 +395,19 @@ export default function BRILink() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Nama Pelanggan" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="Nama nasabah" />
               <Input label="No. HP / No. Rekening Tujuan" value={form.customerPhone} onChange={e => setForm({ ...form, customerPhone: e.target.value })} placeholder="08xx / 0012xxx" />
+
+              {/* BPJS Periode — show only for BPJS service */}
+              {sel?.name?.toLowerCase().includes("bpjs") && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Periode (Bulan)</label>
+                  <input
+                    type="month"
+                    value={form.periode}
+                    onChange={(e) => setForm({ ...form, periode: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Input 
                   label="Nominal Transaksi" 

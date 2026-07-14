@@ -76,6 +76,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`stock\` integer DEFAULT 0 NOT NULL,
       \`min_stock\` integer DEFAULT 5 NOT NULL,
       \`unit\` text(20) DEFAULT 'pcs',
+      \`image\` text,
       \`is_active\` integer DEFAULT true NOT NULL,
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
       \`updated_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,

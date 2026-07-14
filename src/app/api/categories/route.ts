@@ -1,13 +1,27 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { categories } from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { categories, products } from "@/db/schema";
+import { asc, eq, sql } from "drizzle-orm";
 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
-  const data = await db.select().from(categories).where(eq(categories.isActive, true)).orderBy(asc(categories.name));
+  // Get categories with product count
+  const data = await db.select({
+    id: categories.id,
+    name: categories.name,
+    icon: categories.icon,
+    color: categories.color,
+    isActive: categories.isActive,
+    createdAt: categories.createdAt,
+    productCount: sql<number>`count(${products.id})`,
+  })
+    .from(categories)
+    .leftJoin(products, eq(products.categoryId, categories.id))
+    .where(eq(categories.isActive, true))
+    .groupBy(categories.id)
+    .orderBy(asc(categories.name));
   return NextResponse.json(data);
 }
 
