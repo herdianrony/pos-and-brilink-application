@@ -5,6 +5,7 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Badge, Spinner, EmptyState, Card, useToast } from "@/components/ui";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { ReceiptPreview, type ReceiptData } from "@/components/ReceiptPreview";
 import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
 import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X, Pause, Play, Tag, ScanLine, Printer } from "lucide-react";
 
@@ -33,6 +34,8 @@ export default function POS() {
   const [showPay, setShowPay] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [lastInv, setLastInv] = useState("");
+  const [lastTrxData, setLastTrxData] = useState<ReceiptData | null>(null);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // ── New features ─────────────────────────────
   // P1-2: Persist held carts to localStorage
@@ -224,6 +227,31 @@ export default function POS() {
         return; // Don't close modal, don't clear cart
       }
       setLastInv(trx.invoiceNo);
+      // Preserve transaction data for print preview (before clearing cart)
+      setLastTrxData({
+        store: { name: "POS & Agen Bisnis" }, // TODO: load from settings
+        invoice: {
+          no: trx.invoiceNo,
+          date: new Date().toLocaleString("id-ID"),
+          type: "POS",
+          cashier: "Admin",
+          customer: customerName || undefined,
+        },
+        items: cart.map(c => ({
+          name: c.productName,
+          qty: c.quantity,
+          price: parseFloat(c.unitPrice),
+          subtotal: parseFloat(c.subtotal),
+        })),
+        summary: {
+          subtotal: total,
+          discount: discountAmount,
+          total: grandTotal,
+          paymentMethod: payMethod,
+          paid: payMethod === "cash" ? parseFloat(cashAmt || "0") : grandTotal,
+          change: payMethod === "cash" ? change : 0,
+        },
+      });
       setShowPay(false);
       setShowDone(true);
       setCart([]);
@@ -555,6 +583,26 @@ export default function POS() {
             <h3 className="text-xl font-extrabold text-slate-900">Transaksi Berhasil!</h3>
             <p className="text-sm text-slate-400 mt-1">Struk siap dicetak</p>
           </div>
+
+          {/* Receipt Preview — collapsible */}
+          {lastTrxData && (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowReceiptPreview(!showReceiptPreview)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex items-center justify-between text-sm font-medium text-slate-700"
+              >
+                <span className="flex items-center gap-2"><Printer size={14} /> Preview Struk</span>
+                <span className="text-xs text-slate-400">{showReceiptPreview ? "Sembunyikan" : "Tampilkan"}</span>
+              </button>
+              {showReceiptPreview && (
+                <div className="overflow-auto max-h-64 p-2 bg-slate-100 rounded-xl">
+                  <ReceiptPreview data={lastTrxData} width={58} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Summary — quick glance */}
           <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-500 font-semibold">No. Invoice</span>
@@ -562,48 +610,54 @@ export default function POS() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-slate-500 font-semibold">Total</span>
-              <span className="font-bold text-slate-800">{formatRupiah(grandTotal)}</span>
+              <span className="font-bold text-slate-800">{formatRupiah(lastTrxData?.summary.total ?? grandTotal)}</span>
             </div>
-            {discountAmount > 0 && (
+            {lastTrxData?.summary.discount && lastTrxData.summary.discount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500 font-semibold">Diskon</span>
-                <span className="font-bold text-emerald-600">-{formatRupiah(discountAmount)}</span>
+                <span className="font-bold text-emerald-600">-{formatRupiah(lastTrxData.summary.discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-semibold">Bayar</span>
-              <span className="font-bold text-slate-800">{formatRupiah(payMethod === "cash" ? parseFloat(cashAmt || "0") : grandTotal)}</span>
-            </div>
-            {payMethod === "cash" && change > 0 && (
+            {lastTrxData?.summary.paid && lastTrxData.summary.paid > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 font-semibold">Bayar</span>
+                <span className="font-bold text-slate-800">{formatRupiah(lastTrxData.summary.paid)}</span>
+              </div>
+            )}
+            {lastTrxData?.summary.change && lastTrxData.summary.change > 0 && (
               <div className="flex justify-between text-sm border-t border-slate-200 pt-2">
                 <span className="text-slate-500 font-semibold">Kembalian</span>
-                <span className="font-bold text-emerald-600">{formatRupiah(change)}</span>
+                <span className="font-bold text-emerald-600">{formatRupiah(lastTrxData.summary.change)}</span>
               </div>
             )}
           </div>
+
           <div className="space-y-2">
-            <Button variant="primary" size="lg" className="w-full" onClick={() => {
-              // Try print via Electron
-              if (typeof window !== "undefined" && window.electronAPI) {
-                window.electronAPI.printer.print({
-                  store: { name: "POS & Agen Bisnis" },
-                  invoice: { no: lastInv, date: new Date().toLocaleString("id-ID"), type: "POS", cashier: "Admin", customer: customerName || undefined },
-                  items: [], // cart already cleared, would need to preserve for print
-                  summary: { subtotal: total, adminFee: 0, total: grandTotal, paymentMethod: payMethod, paid: parseFloat(cashAmt || "0"), change },
-                });
-              } else {
-                window.print();
-              }
-            }}>
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={!lastTrxData}
+              onClick={() => {
+                if (!lastTrxData) return;
+                // Try print via Electron thermal printer
+                if (typeof window !== "undefined" && window.electronAPI) {
+                  window.electronAPI.printer.print(lastTrxData);
+                } else {
+                  // Fallback: browser print with receipt preview
+                  window.print();
+                }
+              }}
+            >
               <Printer size={18} /> Cetak Struk
             </Button>
             <div className="flex gap-2">
-              <Button variant="secondary" size="md" className="flex-1" onClick={() => setShowDone(false)}>
+              <Button variant="secondary" size="md" className="flex-1" onClick={() => { setShowDone(false); setShowReceiptPreview(false); }}>
                 Transaksi Baru
               </Button>
               <Button variant="ghost" size="md" className="flex-1" onClick={() => {
                 setShowDone(false);
-                // Navigate to history
+                setShowReceiptPreview(false);
                 window.location.hash = "history";
               }}>
                 Lihat Riwayat
