@@ -288,7 +288,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true, // F-07: enable sandbox for renderer isolation
       spellcheck: false,
       // Disable source map loading di production untuk hindari 404 warning
       ...(isPackaged ? { devTools: false } : {}),
@@ -296,16 +296,18 @@ function createWindow() {
   });
 
   // ── Content Security Policy (production only) ─
-  // R-07: Restrict connect-src to specific port, not wildcard
+  // F-07: Restrict connect-src to specific port, not wildcard
+  // F-07: Remove 'unsafe-eval' (only needed in dev for HMR)
   if (isPackaged) {
     mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       const csp = [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        // Production: Next.js standalone still uses some inline scripts for hydration
+        "script-src 'self' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob:",
-        // R-07: Restrict to app port only, not localhost:*
+        // F-07: Restrict to app port only, not localhost:*
         `connect-src 'self' http://127.0.0.1:${INTERNAL_PORT}`,
         "frame-ancestors 'none'",
         "base-uri 'self'",
@@ -338,13 +340,21 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  // M-03: Prevent navigation to external URLs
+  // F-07: Prevent navigation to external URLs (check both hostname AND port)
   mainWindow.webContents.on("will-navigate", (event, url) => {
     try {
       const parsed = new URL(url);
-      if (parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+      const allowedHosts = ["localhost", "127.0.0.1"];
+      const allowedPorts = isDevMode ? [String(DEV_PORT)] : [String(INTERNAL_PORT)];
+      const isAllowed =
+        allowedHosts.includes(parsed.hostname) &&
+        (parsed.port === "" || allowedPorts.includes(parsed.port)) &&
+        parsed.protocol === "http:";
+      if (!isAllowed) {
         event.preventDefault();
-        shell.openExternal(url);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          shell.openExternal(url);
+        }
       }
     } catch {
       event.preventDefault();

@@ -8,6 +8,9 @@ import { requireAuth, requireAdmin } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
+  // F-07: properly check auth result
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   const data = await db.select().from(serviceCategories)
     .where(eq(serviceCategories.isActive, true))
     .orderBy(asc(serviceCategories.sortOrder));

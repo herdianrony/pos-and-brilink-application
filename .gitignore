@@ -62,7 +62,6 @@ electron-builder-debug.log
 test-results/
 playwright-report/
 playwright/.cache/
-package-lock.json
+.playwright-auth.json
 USB
 COM1
-package-lock.json

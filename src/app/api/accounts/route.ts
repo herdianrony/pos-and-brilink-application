@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, runTransaction, parseSafeNumber } from "@/db";
 import { accounts, accountMutations } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await requireAuth();
+  // F-07: properly check auth result
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   const data = await db.select().from(accounts);
   return NextResponse.json(data);
 }
@@ -21,22 +23,36 @@ export async function POST(req: Request) {
 
   // ── Create account ──────────────────────────────
   if (b.action === "create") {
+    // F-07: validate code uniqueness + numeric fields
+    const code = String(b.code || "").trim();
+    const name = String(b.name || "").trim();
+    if (!code || !name) {
+      return NextResponse.json({ error: "Kode dan nama akun wajib diisi" }, { status: 400 });
+    }
+    const balance = parseSafeNumber(b.balance, { default: 0, min: 0 });
+    const minBalance = parseSafeNumber(b.minBalance, { default: 100000, min: 0 });
+
+    const [existing] = await db.select().from(accounts).where(eq(accounts.code, code)).limit(1);
+    if (existing) {
+      return NextResponse.json({ error: `Kode akun "${code}" sudah digunakan` }, { status: 400 });
+    }
+
     const [acc] = await db.insert(accounts).values({
-      code: b.code,
-      name: b.name,
+      code,
+      name,
       icon: b.icon || "wallet",
       color: b.color || "#00875A",
-      balance: parseFloat(b.balance || "0"),
-      minBalance: parseFloat(b.minBalance || "100000"),
+      balance,
+      minBalance,
       isActive: b.isActive !== false,
     }).returning();
 
-    if (acc && parseFloat(b.balance || "0") > 0) {
+    if (acc && balance > 0) {
       await db.insert(accountMutations).values({
         accountId: acc.id,
         type: "opening",
-        amount: parseFloat(b.balance || "0"),
-        balanceAfter: parseFloat(b.balance || "0"),
+        amount: balance,
+        balanceAfter: balance,
         notes: `Saldo awal ${acc.name}`,
       });
     }
@@ -45,69 +61,107 @@ export async function POST(req: Request) {
 
   // ── Adjust balance (sesuaikan saldo) ────────────
   if (b.action === "adjust") {
-    const [acc] = await db.select().from(accounts).where(eq(accounts.id, b.accountId));
-    if (!acc) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    const accountId = Number(b.accountId);
+    if (!Number.isFinite(accountId) || accountId <= 0) {
+      return NextResponse.json({ error: "accountId tidak valid" }, { status: 400 });
+    }
+    const amount = parseSafeNumber(b.amount, { allowNegative: true, default: 0 });
+    if (!Number.isFinite(amount) || amount === 0) {
+      return NextResponse.json({ error: "Amount harus non-zero" }, { status: 400 });
+    }
 
-    const amount = parseFloat(b.amount || "0");
-    const newBalance = acc.balance + amount;
+    // F-03: atomic — fetch + update + insert mutation in single tx
+    return await runTransaction(async (tx) => {
+      const [acc] = await tx.select().from(accounts).where(eq(accounts.id, accountId));
+      if (!acc) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-    await db.update(accounts).set({ balance: newBalance, updatedAt: new Date() }).where(eq(accounts.id, b.accountId));
-    await db.insert(accountMutations).values({
-      accountId: b.accountId,
-      type: b.type || b.mutationType || "adjustment",
-      amount,
-      balanceAfter: newBalance,
-      notes: b.notes || null,
-      referenceId: b.referenceId || null,
+      const newBalance = Number(acc.balance) + amount;
+
+      await tx.update(accounts).set({ balance: newBalance, updatedAt: new Date() }).where(eq(accounts.id, accountId));
+      await tx.insert(accountMutations).values({
+        accountId,
+        type: b.type || b.mutationType || "adjustment",
+        amount,
+        balanceAfter: newBalance,
+        notes: b.notes ? String(b.notes) : null,
+        referenceId: b.referenceId || null,
+      });
+      return NextResponse.json({ success: true, newBalance });
     });
-    return NextResponse.json({ success: true, newBalance });
   }
 
   // ── Transfer between accounts ───────────────────
   if (b.action === "transfer") {
-    const [fromAcc] = await db.select().from(accounts).where(eq(accounts.id, b.fromAccountId));
-    const [toAcc] = await db.select().from(accounts).where(eq(accounts.id, b.toAccountId));
-    if (!fromAcc || !toAcc) return NextResponse.json({ error: "Account not found" }, { status: 404 });
-
-    // H-01: Larang self-transfer (transfer ke rekening yang sama)
-    if (b.fromAccountId === b.toAccountId) {
+    const fromId = Number(b.fromAccountId);
+    const toId = Number(b.toAccountId);
+    const amount = parseSafeNumber(b.amount, { default: 0, min: 1 });
+    if (!Number.isFinite(fromId) || fromId <= 0 || !Number.isFinite(toId) || toId <= 0) {
+      return NextResponse.json({ error: "accountId tidak valid" }, { status: 400 });
+    }
+    if (fromId === toId) {
       return NextResponse.json({ error: "Tidak bisa transfer ke rekening yang sama" }, { status: 400 });
     }
-
-    const amount = parseFloat(b.amount || "0");
-    // H-01: Validasi amount — harus finite, positif
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (amount <= 0) {
       return NextResponse.json({ error: "Nominal tidak valid" }, { status: 400 });
     }
-    if (fromAcc.balance < amount) return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
 
-    const newFromBalance = fromAcc.balance - amount;
-    const newToBalance = toAcc.balance + amount;
+    // F-03: atomic transfer with conditional balance check
+    return await runTransaction(async (tx) => {
+      const [fromAcc] = await tx.select().from(accounts).where(eq(accounts.id, fromId));
+      const [toAcc] = await tx.select().from(accounts).where(eq(accounts.id, toId));
+      if (!fromAcc || !toAcc) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-    await db.update(accounts).set({ balance: newFromBalance, updatedAt: new Date() }).where(eq(accounts.id, b.fromAccountId));
-    await db.update(accounts).set({ balance: newToBalance, updatedAt: new Date() }).where(eq(accounts.id, b.toAccountId));
-    await db.insert(accountMutations).values([
-      { accountId: b.fromAccountId, type: "transfer_out", amount: -amount, balanceAfter: newFromBalance, notes: b.notes || `Transfer ke ${toAcc.name}` },
-      { accountId: b.toAccountId, type: "transfer_in", amount, balanceAfter: newToBalance, notes: b.notes || `Transfer dari ${fromAcc.name}` },
-    ]);
-    return NextResponse.json({ success: true });
+      // F-02: conditional debit — only succeeds if balance >= amount
+      const newFromBalance = Number(fromAcc.balance) - amount;
+      const result = await tx.update(accounts)
+        .set({ balance: newFromBalance, updatedAt: new Date() })
+        .where(sql`${accounts.id} = ${fromId} AND ${accounts.balance} >= ${amount}`)
+        .returning({ id: accounts.id });
+      if (result.length === 0) {
+        return NextResponse.json({
+          error: `Saldo ${fromAcc.name} tidak cukup. Saldo: Rp${Number(fromAcc.balance).toLocaleString("id-ID")}`,
+          code: "INSUFFICIENT_BALANCE",
+        }, { status: 400 });
+      }
+
+      const newToBalance = Number(toAcc.balance) + amount;
+      await tx.update(accounts).set({ balance: newToBalance, updatedAt: new Date() }).where(eq(accounts.id, toId));
+      await tx.insert(accountMutations).values([
+        { accountId: fromId, type: "transfer_out", amount: -amount, balanceAfter: newFromBalance, notes: b.notes ? String(b.notes) : `Transfer ke ${toAcc.name}` },
+        { accountId: toId, type: "transfer_in", amount, balanceAfter: newToBalance, notes: b.notes ? String(b.notes) : `Transfer dari ${fromAcc.name}` },
+      ]);
+      return NextResponse.json({ success: true });
+    });
   }
 
   // ── Update account (edit nama, icon, dll) ───────
   if (b.action === "update") {
+    const id = Number(b.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return NextResponse.json({ error: "id tidak valid" }, { status: 400 });
+    }
     const [acc] = await db.update(accounts).set({
-      name: b.name,
+      name: String(b.name || ""),
       icon: b.icon,
       color: b.color,
-      minBalance: parseFloat(b.minBalance || "0"),
+      minBalance: parseSafeNumber(b.minBalance, { default: 0, min: 0 }),
       updatedAt: new Date(),
-    }).where(eq(accounts.id, b.id)).returning();
+    }).where(eq(accounts.id, id)).returning();
     return NextResponse.json(acc);
   }
 
   // ── Delete account (soft delete) ────────────────
   if (b.action === "delete") {
-    await db.update(accounts).set({ isActive: false, updatedAt: new Date() }).where(eq(accounts.id, b.id));
+    const id = Number(b.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return NextResponse.json({ error: "id tidak valid" }, { status: 400 });
+    }
+    // F-07: prevent deleting cash account
+    const [acc] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
+    if (acc?.code === "cash") {
+      return NextResponse.json({ error: "Akun Kas Tunai tidak bisa dihapus" }, { status: 400 });
+    }
+    await db.update(accounts).set({ isActive: false, updatedAt: new Date() }).where(eq(accounts.id, id));
     return NextResponse.json({ success: true });
   }
 

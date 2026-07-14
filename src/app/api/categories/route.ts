@@ -8,6 +8,9 @@ import { requireAuth, requireAdmin } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
+  // F-07: properly check auth result
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   // Get categories with product count
   const data = await db.select({
     id: categories.id,

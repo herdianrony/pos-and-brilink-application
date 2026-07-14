@@ -207,26 +207,22 @@ export const dbReady: Promise<void> = (
 export const db = drizzle(client);
 export { client };
 
-// ── Atomic transaction helper (R-02) ─────────────
-// libSQL client.batch() dengan type 'write' adalah atomic.
-// Jika salah satu statement gagal, semua di-rollback.
+// ── Atomic transaction helper (F-03 fix) ─────────
+// Menggunakan Drizzle's db.transaction() yang memakai libSQL interactive
+// transaction (BEGIN/COMMIT/ROLLBACK). Jika fn throw, ROLLBACK dijalankan
+// otomatis dan tidak ada perubahan yang dipersist.
+//
+// Catatan: callback menerima `tx` yang berbeda dari `db` global.
+// Semua operasi DB dalam fn HARUS pakai `tx`, BUKAN `db`.
 export async function runTransaction<T>(
-  fn: (tx: typeof db) => Promise<T>
+  fn: (tx: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<T>
 ): Promise<T> {
-  // libSQL SQLite adalah single-writer, writes sudah serial.
-  // Untuk true atomicity dengan rollback, kita pakai try-catch.
-  // Jika fn throw, caller menerima error — tidak ada partial commit
-  // karena SQLite WAL mode auto-commit per statement.
-  // Untuk full atomicity, gunakan db.transaction() bila tersedia di Drizzle.
-  try {
-    return await fn(db);
-  } catch (error) {
-    console.error("[db] Transaction failed:", error);
-    throw error;
-  }
+  return await db.transaction(fn as any, {
+    behavior: "deferred",
+  });
 }
 
-// ── Batch atomic write (R-02) ────────────────────
+// ── Batch atomic write ───────────────────────────
 // Gunakan libSQL client.batch() untuk atomic multi-statement writes.
 // Semua statement dieksekusi dalam satu transaction — jika satu gagal,
 // semua di-rollback.
@@ -236,4 +232,20 @@ export async function batchAtomic(
   await client.batch(
     statements.map(s => ({ sql: s.sql, args: s.args || [], mode: "write" as const }))
   );
+}
+
+// ── Safe numeric parser (F-07) ───────────────────
+// Parse angka dengan validasi finite & non-negative.
+// Returns 0 bila input invalid (NaN, Infinity, negative untuk allowNegative=false).
+export function parseSafeNumber(
+  input: unknown,
+  opts: { allowNegative?: boolean; min?: number; max?: number; default?: number } = {}
+): number {
+  const { allowNegative = false, min, max, default: def = 0 } = opts;
+  const n = typeof input === "number" ? input : parseFloat(String(input ?? ""));
+  if (!Number.isFinite(n)) return def;
+  if (!allowNegative && n < 0) return def;
+  if (min !== undefined && n < min) return def;
+  if (max !== undefined && n > max) return def;
+  return n;
 }

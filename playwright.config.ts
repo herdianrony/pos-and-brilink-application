@@ -9,11 +9,15 @@ export default defineConfig({
   reporter: "list",
   timeout: 30000,
   expect: { timeout: 10000 },
+  // F-06: globalSetup resets DB, creates admin, seeds data, saves auth state
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL: "http://localhost:3001",
     trace: "on-first-retry",
     headless: true,
     screenshot: "only-on-failure",
+    // F-06: All tests start authenticated (except auth.spec.ts which clears cookies)
+    storageState: ".playwright-auth.json",
   },
   projects: [
     {

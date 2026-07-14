@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, parseSafeNumber } from "@/db";
 import { products, categories } from "@/db/schema";
-import { asc, eq, like, and, or, sql } from "drizzle-orm";
+import { asc, eq, and, or, sql } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  await requireAuth();
+  // F-07: properly check auth result
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   const sp = req.nextUrl.searchParams;
   const search = sp.get("search") || "";
   const categoryId = sp.get("categoryId");
 
   const conds = [eq(products.isActive, true)];
   if (search) {
-    // H-03: Use like() instead of ilike() — SQLite doesn't support ILIKE
-    // Case-insensitive search via lower() on both sides
     conds.push(or(
       sql`lower(${products.name}) LIKE lower(${'%' + search + '%'})`,
       sql`${products.barcode} LIKE ${'%' + search + '%'}`
     ) as any);
   }
-  if (categoryId && categoryId !== "all") conds.push(eq(products.categoryId, parseInt(categoryId)));
+  if (categoryId && categoryId !== "all") {
+    const cid = parseInt(categoryId, 10);
+    if (Number.isFinite(cid) && cid > 0) conds.push(eq(products.categoryId, cid));
+  }
 
   const data = await db
     .select({
@@ -53,14 +56,20 @@ export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const b = await req.json();
+  // F-07: Safe numeric parsing
+  const buyPrice = parseSafeNumber(b.buyPrice, { default: 0, min: 0 });
+  const sellPrice = parseSafeNumber(b.sellPrice, { default: 0, min: 0 });
+  if (sellPrice <= 0) {
+    return NextResponse.json({ error: "Harga jual wajib > 0" }, { status: 400 });
+  }
   const [row] = await db.insert(products).values({
-    name: b.name,
-    barcode: b.barcode || null,
+    name: String(b.name || "").trim(),
+    barcode: b.barcode ? String(b.barcode) : null,
     categoryId: b.categoryId || null,
-    buyPrice: b.buyPrice?.toString() || "0",
-    sellPrice: b.sellPrice.toString(),
-    stock: b.stock ?? 0,
-    minStock: b.minStock ?? 5,
+    buyPrice,
+    sellPrice,
+    stock: Math.max(0, Math.floor(Number(b.stock ?? 0))),
+    minStock: Math.max(0, Math.floor(Number(b.minStock ?? 5))),
     unit: b.unit || "pcs",
     image: b.image || null,
   }).returning();
@@ -71,14 +80,20 @@ export async function PUT(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const b = await req.json();
+  // F-07: Safe numeric parsing
+  const buyPrice = parseSafeNumber(b.buyPrice, { default: 0, min: 0 });
+  const sellPrice = parseSafeNumber(b.sellPrice, { default: 0, min: 0 });
+  if (sellPrice <= 0) {
+    return NextResponse.json({ error: "Harga jual wajib > 0" }, { status: 400 });
+  }
   const [row] = await db.update(products).set({
-    name: b.name,
-    barcode: b.barcode || null,
+    name: String(b.name || "").trim(),
+    barcode: b.barcode ? String(b.barcode) : null,
     categoryId: b.categoryId || null,
-    buyPrice: b.buyPrice?.toString() || "0",
-    sellPrice: b.sellPrice.toString(),
-    stock: b.stock ?? 0,
-    minStock: b.minStock ?? 5,
+    buyPrice,
+    sellPrice,
+    stock: Math.max(0, Math.floor(Number(b.stock ?? 0))),
+    minStock: Math.max(0, Math.floor(Number(b.minStock ?? 5))),
     unit: b.unit || "pcs",
     image: b.image || null,
     updatedAt: new Date(),

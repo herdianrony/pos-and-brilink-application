@@ -4,12 +4,9 @@ import { test, expect } from "@playwright/test";
 // Test: service categories, service selection, transaction form
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/login");
-  await page.waitForSelector('input[placeholder*="username" i]', { timeout: 15000 });
-  await page.fill('input[placeholder*="username" i]', "admin");
-  await page.fill('input[type="password"]', "admin123");
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/\/$|\/dashboard/, { timeout: 10000 });
+  // F-06: Auth via storageState. Just navigate to / and then to services.
+  await page.goto("/");
+  await page.waitForLoadState("domcontentloaded");
 
   // Navigate to services page
   await page.click('button:has-text("Layanan"), button:has-text("BRILink"), button:has-text("Agen")');

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, parseSafeNumber } from "@/db";
 import { brilinkServices, serviceCategories, feeTiers } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "@/lib/auth";
@@ -8,6 +8,9 @@ import { requireAuth, requireAdmin } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
+  // F-07: properly check auth result
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   const services = await db
     .select({
       id: brilinkServices.id,
