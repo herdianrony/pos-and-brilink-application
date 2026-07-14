@@ -47,22 +47,28 @@ test.describe("F-01: Discount policy", () => {
     const product = products[0];
     const sellPrice = Number(product.sellPrice);
 
-    // Small discount (Rp500) within default policy (max Rp100.000 or 10%)
-    // Should require reason only
+    // Use quantity 2 so total is Rp7000; discount Rp500 = 7.1% (within 10% policy)
+    const qty = 2;
+    const totalAmount = sellPrice * qty;
+    const discount = 500;
+    const percentOfTotal = (discount / totalAmount) * 100;
+    // Sanity check: discount must be within policy
+    expect(percentOfTotal).toBeLessThanOrEqual(10);
+
     const res = await request.post(`${BASE_URL}/api/transactions`, {
       data: {
         type: "pos",
-        items: [{ productId: product.id, quantity: 1 }],
-        discount: 500,
+        items: [{ productId: product.id, quantity: qty }],
+        discount,
         discountReason: "Pelanggan repeat order",
         paymentMethod: "cash",
       },
     });
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
-    expect(body.totalAmount).toBe(sellPrice - 500);
-    // Profit should be finalTotal - buyPrice (NOT sellPrice - buyPrice)
-    expect(body.profit).toBe(sellPrice - 500 - Number(product.buyPrice));
+    expect(body.totalAmount).toBe(totalAmount - discount);
+    // Profit should be finalTotal - (buyPrice * qty) (NOT sellPrice - buyPrice)
+    expect(body.profit).toBe(totalAmount - discount - Number(product.buyPrice) * qty);
   });
 
   test("should reject discount without reason", async ({ request }) => {
@@ -73,12 +79,18 @@ test.describe("F-01: Discount policy", () => {
     const productsRes = await request.get(`${BASE_URL}/api/products`);
     const products = await productsRes.json();
     const product = products[0];
+    const sellPrice = Number(product.sellPrice);
+
+    // Use quantity 2 so discount Rp500 = 7.1% (within 10% policy, but no reason)
+    const qty = 2;
+    const totalAmount = sellPrice * qty;
+    const discount = 500;
 
     const res = await request.post(`${BASE_URL}/api/transactions`, {
       data: {
         type: "pos",
-        items: [{ productId: product.id, quantity: 1 }],
-        discount: 500,
+        items: [{ productId: product.id, quantity: qty }],
+        discount,
         // No discountReason
         paymentMethod: "cash",
       },

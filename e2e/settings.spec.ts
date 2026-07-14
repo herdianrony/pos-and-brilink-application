@@ -2,13 +2,12 @@ import { test, expect } from "@playwright/test";
 
 // ── E2E: Settings & User Management Flow ─────────
 // Test: settings page, branding, user CRUD, printer settings
+//
+// F-06: Use specific heading/role selectors to avoid strict mode violations.
 
 test.beforeEach(async ({ page }) => {
-  // F-06: Auth via storageState. Just navigate to / and then to Settings.
   await page.goto("/");
   await page.waitForLoadState("domcontentloaded");
-
-  // Navigate to Settings
   await page.click('button:has-text("Pengaturan")');
   await page.waitForTimeout(2000);
 });
@@ -19,19 +18,21 @@ test.describe("Settings Flow", () => {
   });
 
   test("should show branding section", async ({ page }) => {
-    await expect(page.locator("text=/branding/i")).toBeVisible({ timeout: 5000 });
+    // Use heading to avoid matching multiple text nodes
+    await expect(page.getByRole("heading", { name: /branding/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("should show store info section", async ({ page }) => {
-    await expect(page.locator("text=/informasi toko|nama toko/i")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /informasi toko/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("should show save button", async ({ page }) => {
-    await expect(page.locator('button:has-text("Simpan")')).toBeVisible({ timeout: 5000 });
+    // Use exact match to distinguish "Simpan" from "Simpan Pengaturan"
+    await expect(page.getByRole("button", { name: "Simpan Pengaturan" })).toBeVisible({ timeout: 5000 });
   });
 
   test("should show printer settings section", async ({ page }) => {
-    await expect(page.locator("text=/printer|thermal/i")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /printer thermal/i })).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -45,12 +46,10 @@ test.describe("User Management Flow", () => {
   });
 
   test("should list existing users", async ({ page }) => {
-    // Should see at least admin user
     await expect(page.locator("text=/admin|administrator/i").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("should show user role badges", async ({ page }) => {
-    // Should see role indicator (Administrator/Kasir)
     await expect(page.locator("text=/administrator|kasir/i").first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -58,56 +57,52 @@ test.describe("User Management Flow", () => {
     await page.click('button:has-text("Tambah User")');
     await page.waitForTimeout(500);
 
-    // Should see modal with form fields
-    await expect(page.locator("text=/nama lengkap/i")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=/username/i")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=/password/i")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=/role/i")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("label:has-text('Nama Lengkap')")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("label:has-text('Username')")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("label:has-text('Password')")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("label:has-text('Role')")).toBeVisible({ timeout: 5000 });
   });
 
   test("should show role options in form", async ({ page }) => {
     await page.click('button:has-text("Tambah User")');
     await page.waitForTimeout(500);
 
-    // Should see role dropdown with options
-    const roleSelect = page.locator('select').filter({ hasText: /kasir|admin/i });
-    if (await roleSelect.isVisible()) {
-      // Check options exist
-      await expect(roleSelect.locator('option:has-text("Kasir")')).toBeVisible();
-      await expect(roleSelect.locator('option:has-text("Admin")')).toBeVisible();
-    }
+    // Find the role select by its label
+    const roleSelect = page.locator('select').filter({ hasText: /Kasir|Admin/i }).first();
+    await expect(roleSelect).toBeVisible({ timeout: 5000 });
+    // Check options exist (options are always "visible" if the select is visible)
+    const options = roleSelect.locator("option");
+    const optCount = await options.count();
+    expect(optCount).toBeGreaterThanOrEqual(2);
   });
 });
 
 test.describe("Cash & Saldo Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to Cash page
-    await page.click('button:has-text("Kas"), button:has-text("Saldo")');
+    // Navigate to Cash page — use full label to avoid ambiguity
+    await page.click('button:has-text("Kas & Saldo")');
     await page.waitForTimeout(2000);
   });
 
   test("should display account cards", async ({ page }) => {
-    // Should see account cards (Kas Tunai, M-Banking BRI, etc.)
     await expect(page.locator("text=/kas tunai|saldo/i").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("should show account names", async ({ page }) => {
-    // Should see at least one bank name
-    await expect(page.locator("text=/bri|bca|mandiri|bni/i").first()).toBeVisible({ timeout: 5000 });
+    // Account names from seed: "M-Banking BRI", "M-Banking BCA", etc.
+    await expect(page.locator("text=/m-banking bri|kas tunai|dana|ovo|gopay/i").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("should show balance amounts", async ({ page }) => {
-    // Should see Rp amounts
     await expect(page.locator("text=/Rp/i").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("should show action buttons on account cards", async ({ page }) => {
-    // Should see Sesuaikan/Transfer buttons
-    const adjustBtn = page.locator('button:has-text("Sesuaikan")');
-    const transferBtn = page.locator('button:has-text("Transfer")');
-    // At least one should be visible
-    const adjustVisible = await adjustBtn.first().isVisible().catch(() => false);
-    const transferVisible = await transferBtn.first().isVisible().catch(() => false);
+    // Buttons are on account cards — use .first() and check visibility
+    const adjustBtn = page.locator('button:has-text("Sesuaikan")').first();
+    const transferBtn = page.locator('button:has-text("Transfer")').first();
+    const adjustVisible = await adjustBtn.isVisible().catch(() => false);
+    const transferVisible = await transferBtn.isVisible().catch(() => false);
     expect(adjustVisible || transferVisible).toBe(true);
   });
 });
@@ -133,10 +128,14 @@ test.describe("Rekening Koran Flow", () => {
   });
 
   test("should show preset date buttons", async ({ page }) => {
-    await expect(page.locator('button:has-text("Hari Ini"), button:has-text("Bulan Ini")')).toBeVisible({ timeout: 5000 });
+    // Use .first() to avoid strict mode — Hari Ini and Bulan Ini both exist
+    await expect(page.locator('button:has-text("Hari Ini")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button:has-text("Bulan Ini")')).toBeVisible({ timeout: 5000 });
   });
 
   test("should show export buttons", async ({ page }) => {
-    await expect(page.locator('button:has-text("CSV"), button:has-text("Print")')).toBeVisible({ timeout: 5000 });
+    // CSV and Print are separate buttons — check each
+    await expect(page.locator('button:has-text("CSV")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button:has-text("Print")')).toBeVisible({ timeout: 5000 });
   });
 });

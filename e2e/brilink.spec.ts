@@ -44,15 +44,17 @@ test.describe("BRILink Flow", () => {
   test("should open transaction form when service clicked", async ({ page }) => {
     await page.waitForTimeout(2000);
 
-    // Click first service
-    const firstService = page.locator('button:has-text("Transfer"), button:has-text("Tarik"), button:has-text("Tagihan")').first();
-    if (await firstService.isVisible()) {
-      await firstService.click();
-      await page.waitForTimeout(1000);
+    // Click first service button — use specific service name to avoid matching category filter
+    const firstService = page.locator('button:has-text("Transfer Antar Bank"), button:has-text("Tarik Tunai Bank"), button:has-text("Tagihan PLN")').first();
+    await expect(firstService).toBeVisible({ timeout: 5000 });
+    await firstService.click();
+    await page.waitForTimeout(1000);
 
-      // Should see transaction form
-      await expect(page.locator("text=/nama pelanggan|nominal|transaksi/i")).toBeVisible({ timeout: 5000 });
-    }
+    // Modal should open with service name as heading
+    const modalHeading = page.locator('h3:has-text("Transfer"), h3:has-text("Tarik"), h3:has-text("Tagihan")').first();
+    await expect(modalHeading).toBeVisible({ timeout: 5000 });
+    // Form label should be visible
+    await expect(page.locator("label:has-text('Nama Pelanggan')")).toBeVisible({ timeout: 5000 });
   });
 
   test("should show BPJS periode field for BPJS service", async ({ page }) => {
@@ -60,13 +62,12 @@ test.describe("BRILink Flow", () => {
 
     // Look for BPJS service
     const bpjsService = page.locator('button:has-text("BPJS")').first();
-    if (await bpjsService.isVisible()) {
-      await bpjsService.click();
-      await page.waitForTimeout(1000);
+    await expect(bpjsService).toBeVisible({ timeout: 5000 });
+    await bpjsService.click();
+    await page.waitForTimeout(1000);
 
-      // Should see periode (bulan) field
-      await expect(page.locator('input[type="month"], text=/periode/i')).toBeVisible({ timeout: 5000 });
-    }
+    // Should see Periode (Bulan) label — not a CSS selector mix
+    await expect(page.locator("label:has-text('Periode')")).toBeVisible({ timeout: 5000 });
   });
 
   test("should show Token PLN services", async ({ page }) => {

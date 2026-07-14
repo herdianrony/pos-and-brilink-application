@@ -17,7 +17,8 @@ test.describe("Auth Flow", () => {
   test("should show login form", async ({ page, context }) => {
     await context.clearCookies();
     await page.goto("/login");
-    await expect(page.locator("h2, h3, p").filter({ hasText: "Masuk" })).toBeVisible({ timeout: 15000 });
+    // Use exact heading match to avoid strict mode violation with subtitle
+    await expect(page.getByRole("heading", { name: "Masuk" })).toBeVisible({ timeout: 15000 });
     await expect(page.locator('input[placeholder*="username" i]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();

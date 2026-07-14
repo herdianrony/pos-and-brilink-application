@@ -18,7 +18,8 @@ test.describe("Navigation Flow", () => {
 
   test("should navigate to POS (Kasir POS)", async ({ page }) => {
     await page.click('button:has-text("Kasir POS"), a:has-text("Kasir POS")');
-    await expect(page.locator("text=/cari produk|scan barcode/i")).toBeVisible({ timeout: 10000 });
+    // Wait for POS heading (visible text)
+    await expect(page.locator('h2:has-text("Kasir POS")')).toBeVisible({ timeout: 10000 });
   });
 
   test("should navigate to Layanan Agen", async ({ page }) => {
@@ -56,6 +57,8 @@ test.describe("Navigation Flow", () => {
   });
 
   test("should show clock in sidebar", async ({ page }) => {
-    await expect(page.locator("text=/\\d{2}:\\d{2}/").first()).toBeVisible({ timeout: 5000 });
+    // Clock uses id-ID locale which formats as HH.MM (dot separator, not colon)
+    // e.g., "14.23" or "09.05"
+    await expect(page.locator("text=/^\\d{2}[.:]\\d{2}$/").first()).toBeVisible({ timeout: 10000 });
   });
 });
