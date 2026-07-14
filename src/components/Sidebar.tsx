@@ -30,15 +30,18 @@ interface UserInfo {
   role: string;
 }
 
-const nav = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "pos", label: "Kasir POS", icon: ShoppingCart },
-  { id: "brilink", label: "__SERVICES__", icon: Landmark },
-  { id: "products", label: "Produk", icon: Package },
-  { id: "history", label: "Transaksi", icon: ClipboardList },
-  { id: "rekeningKoran", label: "Rekening Koran", icon: ScrollText },
-  { id: "cash", label: "Kas & Saldo", icon: Wallet },
-  { id: "settings", label: "Pengaturan", icon: Settings },
+// P1-1: Role-based navigation
+// Kasir: Dashboard, POS, Layanan Agen, Transaksi (read-only own)
+// Admin: semua menu
+const navItems = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { id: "pos", label: "Kasir POS", icon: ShoppingCart, adminOnly: false },
+  { id: "brilink", label: "__SERVICES__", icon: Landmark, adminOnly: false },
+  { id: "products", label: "Produk", icon: Package, adminOnly: true },
+  { id: "history", label: "Transaksi", icon: ClipboardList, adminOnly: false },
+  { id: "rekeningKoran", label: "Rekening Koran", icon: ScrollText, adminOnly: true },
+  { id: "cash", label: "Kas & Saldo", icon: Wallet, adminOnly: true },
+  { id: "settings", label: "Pengaturan", icon: Settings, adminOnly: true },
 ];
 
 export default function Sidebar({
@@ -154,21 +157,19 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Nav */}
+        {/* Nav — P1-1: Role-based visibility */}
         <nav className="relative flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {nav.map((item) => {
+          {navItems
+            .filter(item => !(item.adminOnly && user?.role === "kasir"))
+            .map((item) => {
             const Icon = item.icon;
             const isActive = active === item.id;
-            const restrictedForKasir = ["settings"];
-            const isDisabled = user?.role === "kasir" && restrictedForKasir.includes(item.id);
             const label = item.label === "__SERVICES__" ? servicesLabel : item.label;
 
             return (
               <button
                 key={item.id}
-                disabled={isDisabled}
                 onClick={() => {
-                  if (isDisabled) return;
                   onNav(item.id);
                   setOpen(false);
                 }}
@@ -176,13 +177,11 @@ export default function Sidebar({
                   "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group relative font-bold text-sm",
                   isActive
                     ? "gradient-primary text-white shadow-glow-primary active:scale-95"
-                    : isDisabled
-                      ? "text-slate-600 cursor-not-allowed"
-                      : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95"
                 )}
               >
                 <Icon size={20} className={cn(
-                  isActive ? "text-white" : isDisabled ? "text-slate-600" : "text-slate-400 group-hover:text-white"
+                  isActive ? "text-white" : "text-slate-400 group-hover:text-white"
                 )} />
                 <span className="flex-1">{label}</span>
               </button>

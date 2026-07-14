@@ -34,7 +34,20 @@ export default function POS() {
   const [lastInv, setLastInv] = useState("");
   const [submitting, setSubmitting] = useState(false);
   // ── New features ─────────────────────────────
-  const [heldCarts, setHeldCarts] = useState<HeldCart[]>([]);
+  // P1-2: Persist held carts to localStorage
+  const [heldCarts, setHeldCarts] = useState<HeldCart[]>(() => {
+    try {
+      const stored = localStorage.getItem("pos_held_carts");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  // P1-2: Save held carts to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem("pos_held_carts", JSON.stringify(heldCarts));
+    } catch {}
+  }, [heldCarts]);
   const [showHeld, setShowHeld] = useState(false);
   const [discountType, setDiscountType] = useState<"none" | "percent" | "rupiah">("none");
   const [discountValue, setDiscountValue] = useState("");
@@ -178,7 +191,12 @@ export default function POS() {
   const discountAmount = (() => {
     if (discountType === "none" || !discountValue) return 0;
     const val = parseFloat(discountValue) || 0;
-    if (discountType === "percent") return (total * val) / 100;
+    if (discountType === "percent") {
+      // P0-2: Cap percent at 100%
+      const cappedVal = Math.min(val, 100);
+      return (total * cappedVal) / 100;
+    }
+    // P0-2: Cap rupiah discount at total
     return Math.min(val, total);
   })();
   const grandTotal = total - discountAmount;
@@ -186,6 +204,11 @@ export default function POS() {
 
   async function doCheckout() {
     if (!cart.length) return;
+    // P0-2: Validate cash amount vs grandTotal (not total)
+    if (payMethod === "cash" && parseFloat(cashAmt || "0") < grandTotal) {
+      toast.error("Uang tunai kurang dari total pembayaran");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/transactions", {
@@ -194,6 +217,11 @@ export default function POS() {
         body: JSON.stringify({ type: "pos", items: cart, totalAmount: grandTotal, customerName: customerName || null, paymentMethod: payMethod, discount: discountAmount }),
       });
       const trx = await res.json();
+      // P0-1: Check res.ok before showing success
+      if (!res.ok) {
+        toast.error(trx.error || "Transaksi gagal diproses");
+        return; // Don't close modal, don't clear cart
+      }
       setLastInv(trx.invoiceNo);
       setShowPay(false);
       setShowDone(true);
@@ -503,7 +531,7 @@ export default function POS() {
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowPay(false)}>Batal</Button>
             <Button variant="success" size="lg" className="flex-1" onClick={doCheckout}
-              disabled={submitting || (payMethod === "cash" && parseFloat(cashAmt || "0") < total)}>
+              disabled={submitting || (payMethod === "cash" && parseFloat(cashAmt || "0") < grandTotal)}>
               {submitting ? "Memproses..." : "Konfirmasi Bayar"}
             </Button>
           </div>
