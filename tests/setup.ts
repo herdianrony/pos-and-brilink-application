@@ -3,10 +3,14 @@ import "@testing-library/jest-dom";
 // Only define browser globals in jsdom environment
 if (typeof window !== "undefined") {
   // Mock IntersectionObserver
-  window.IntersectionObserver = class IntersectionObserver {
+  (window as any).IntersectionObserver = class IntersectionObserver {
+    root = null;
+    rootMargin = "";
+    thresholds = [];
     observe() {}
     unobserve() {}
     disconnect() {}
+    takeRecords() { return []; }
   };
 
   // Mock matchMedia

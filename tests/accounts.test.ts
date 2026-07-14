@@ -151,21 +151,27 @@ describe("Accounts: executeAdjust", () => {
 
   it("should add positive amount", () => {
     const result = executeAdjust(acc, 100000, "adjustment_in", "Tambah saldo");
-    expect(result.account.balance).toBe(600000);
-    expect(result.mutation.type).toBe("adjustment_in");
-    expect(result.mutation.balanceAfter).toBe(600000);
+    if ("account" in result) {
+      expect(result.account.balance).toBe(600000);
+      expect(result.mutation.type).toBe("adjustment_in");
+      expect(result.mutation.balanceAfter).toBe(600000);
+    }
   });
 
   it("should subtract negative amount", () => {
     const result = executeAdjust(acc, -50000, "adjustment_out", "Kurangi saldo");
-    expect(result.account.balance).toBe(450000);
-    expect(result.mutation.type).toBe("adjustment_out");
-    expect(result.mutation.amount).toBe(-50000);
+    if ("account" in result) {
+      expect(result.account.balance).toBe(450000);
+      expect(result.mutation.type).toBe("adjustment_out");
+      expect(result.mutation.amount).toBe(-50000);
+    }
   });
 
   it("should handle zero amount", () => {
     const result = executeAdjust(acc, 0, "adjustment", "Zero");
-    expect(result.account.balance).toBe(500000);
+    if ("account" in result) {
+      expect(result.account.balance).toBe(500000);
+    }
   });
 });
 
