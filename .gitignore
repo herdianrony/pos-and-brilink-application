@@ -57,3 +57,7 @@ out-electron/
 
 # Electron testing
 electron-builder-debug.log
+package-lock.json
+USB
+COM1
+package-lock.json
