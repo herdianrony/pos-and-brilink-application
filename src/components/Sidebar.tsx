@@ -107,7 +107,7 @@ export default function Sidebar({
       {/* Mobile hamburger */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-float border border-slate-200/60 text-slate-700 active:scale-95 transition-transform"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-float border border-slate-200/60 text-slate-700 active:scale-95 transition-transform no-print"
       >
         <Menu size={22} />
       </button>
@@ -115,7 +115,7 @@ export default function Sidebar({
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-[55] lg:hidden animate-fadeIn"
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-[55] lg:hidden animate-fadeIn no-print"
           onClick={() => setOpen(false)}
         />
       )}
@@ -125,6 +125,7 @@ export default function Sidebar({
         className={cn(
           "fixed lg:sticky top-0 left-0 h-screen w-72 z-[56] flex flex-col transition-transform duration-300 lg:translate-x-0",
           "gradient-dark",
+          "no-print",
           open ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ backgroundColor: "#0F172A" }}
