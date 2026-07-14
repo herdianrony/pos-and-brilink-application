@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { cashBalance } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireAdmin } from "@/lib/auth";
 
 
 export const runtime = "nodejs";
@@ -14,6 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   const [last] = await db.select({ balanceAfter: cashBalance.balanceAfter })
     .from(cashBalance).orderBy(desc(cashBalance.id)).limit(1);

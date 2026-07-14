@@ -13,20 +13,24 @@ const SESSION_DURATION_SEC = 60 * 60 * 24 * 7; // 7 hari dalam detik
 let generatedSecret: Uint8Array | null = null;
 
 function getSecret(): Uint8Array {
-  // Prioritas: AUTH_SECRET env > generated per-installation secret
   const envSecret = process.env.AUTH_SECRET;
   if (envSecret && envSecret.length >= 32) {
     return new TextEncoder().encode(envSecret);
   }
 
-  // Generate random secret per process (untuk dev tanpa AUTH_SECRET)
-  // Di production Electron, secret di-generate saat first run dan disimpan
+  // R-04: In production, fail-closed if no AUTH_SECRET
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET wajib di production (min 32 chars). Set env var atau jalankan via Electron.");
+  }
+
+  // Dev only: generate random per-process
   if (!generatedSecret) {
     const crypto = require("crypto");
     const bytes = crypto.randomBytes(48);
     generatedSecret = new Uint8Array(bytes);
-    console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Menggunakan secret random sementara.");
-    console.warn("[auth] Set AUTH_SECRET env var (min 32 chars) untuk produksi.");
+    // R-04: Share with proxy via globalThis
+    (globalThis as any).__authSecret = generatedSecret;
+    console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Dev mode dengan random secret.");
   }
   return generatedSecret;
 }

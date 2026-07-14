@@ -14,7 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
+  // R-03: requireAdmin for all account mutations (create, adjust, transfer, update, delete)
+  const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const b = await req.json();
 

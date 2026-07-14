@@ -296,8 +296,7 @@ function createWindow() {
   });
 
   // ── Content Security Policy (production only) ─
-  // Next.js App Router meng-embed RSC flight data sebagai inline <script>.
-  // Tanpa 'unsafe-inline' di script-src, hydration gagal → page stuck loading.
+  // R-07: Restrict connect-src to specific port, not wildcard
   if (isPackaged) {
     mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       const csp = [
@@ -306,7 +305,8 @@ function createWindow() {
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob:",
-        "connect-src 'self' http://127.0.0.1:* http://localhost:*",
+        // R-07: Restrict to app port only, not localhost:*
+        `connect-src 'self' http://127.0.0.1:${INTERNAL_PORT}`,
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",
@@ -320,13 +320,14 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // M-03: Use new URL() for exact hostname matching
-    // Prevents http://localhost.attacker.example bypass
+    // R-07: Use new URL() for exact hostname + port matching
     try {
       const parsed = new URL(url);
+      const allowedPorts = isDevMode ? ["3000"] : [String(INTERNAL_PORT)];
       if (
-        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
-        parsed.protocol === "http:"
+        parsed.hostname === "127.0.0.1" &&
+        parsed.protocol === "http:" &&
+        allowedPorts.includes(parsed.port)
       ) {
         return { action: "allow" };
       }

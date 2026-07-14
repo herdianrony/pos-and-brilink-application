@@ -30,10 +30,18 @@ function getSecret(): Uint8Array {
   if (envSecret && envSecret.length >= 32) {
     return new TextEncoder().encode(envSecret);
   }
-  // Dev fallback: random per-process (Electron production sets AUTH_SECRET)
+  // R-04: In production, fail-closed
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET wajib di production");
+  }
+  // Dev: share secret with auth module via globalThis
+  if ((globalThis as any).__authSecret) {
+    return (globalThis as any).__authSecret as Uint8Array;
+  }
   if (!generatedSecret) {
     const crypto = require("crypto");
     generatedSecret = new Uint8Array(crypto.randomBytes(48));
+    (globalThis as any).__authSecret = generatedSecret;
   }
   return generatedSecret;
 }

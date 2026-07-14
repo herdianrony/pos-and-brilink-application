@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { brilinkServices, serviceCategories, feeTiers } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireAdmin } from "@/lib/auth";
 
 
 export const runtime = "nodejs";
@@ -43,6 +43,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   const [row] = await db.insert(brilinkServices).values({
     name: b.name,
@@ -59,6 +61,8 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   const [row] = await db.update(brilinkServices).set({
     name: b.name,
@@ -75,6 +79,8 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   await db.update(brilinkServices).set({ isActive: false }).where(eq(brilinkServices.id, b.id));
   return NextResponse.json({ ok: true });
