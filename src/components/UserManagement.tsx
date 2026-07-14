@@ -119,9 +119,9 @@ export default function UserManagement() {
   if (loading) return <Spinner />;
 
   return (
-    <Card className="p-6 space-y-5">
+    <Card className="p-5 space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-slate-700 flex items-center gap-2">
+        <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
           <UsersIcon size={18} className="text-emerald-500" /> Manajemen Pengguna
         </h3>
         <Button size="sm" onClick={openAdd}>
@@ -149,11 +149,11 @@ export default function UserManagement() {
                 )}
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => toggleActive(u)} className="px-2 py-1.5 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700" title={u.isActive ? "Nonaktifkan" : "Aktifkan"}>
+                <button onClick={() => toggleActive(u)} className="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700" title={u.isActive ? "Nonaktifkan" : "Aktifkan"}>
                   {u.isActive ? "Nonaktifkan" : "Aktifkan"}
                 </button>
-                <button onClick={() => openEdit(u)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                <button onClick={() => setConfirmDel(u)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                <button onClick={() => openEdit(u)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Pencil size={14} /></button>
+                <button onClick={() => setConfirmDel(u)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={14} /></button>
               </div>
             </div>
           ))}
@@ -162,7 +162,7 @@ export default function UserManagement() {
 
       {/* Add/Edit Modal */}
       <Modal open={modal} onClose={() => setModal(false)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold text-slate-900">{edit ? "Edit User" : "Tambah User"}</h3>
             <button onClick={() => setModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>

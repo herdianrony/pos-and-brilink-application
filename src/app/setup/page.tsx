@@ -833,7 +833,7 @@ function StepHeader({ icon: Icon, title, desc }: { icon: typeof Store; title: st
         <Icon size={22} className="text-white" />
       </div>
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-800">{title}</h2>
+        <h2 className="text-2xl font-extrabold text-slate-900">{title}</h2>
         <p className="text-sm text-slate-500 mt-0.5">{desc}</p>
       </div>
     </div>

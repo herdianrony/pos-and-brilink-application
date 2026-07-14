@@ -177,7 +177,7 @@ export default function BRILink() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <Landmark size={24} className="text-purple-500" /> {servicesLabel}
         </h2>
         <p className="text-sm text-slate-400">Pilih layanan dan proses transaksi nasabah</p>
@@ -192,7 +192,7 @@ export default function BRILink() {
               key={acc.id} 
               className={cn(
                 "p-3 rounded-2xl border shrink-0 min-w-[140px] transition-all",
-                "bg-white border-slate-200 hover:shadow-md",
+                "bg-white border-slate-200 hover:shadow-card",
                 isLow && "ring-2 ring-amber-400"
               )}
             >
@@ -214,18 +214,18 @@ export default function BRILink() {
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Cari layanan..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-soft" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button onClick={() => setCatFilter("all")}
             className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              catFilter === "all" ? "bg-primary text-white shadow-md" : "bg-white text-slate-600 border border-slate-200")}>
+              catFilter === "all" ? "bg-primary text-white shadow-card" : "bg-white text-slate-600 border border-slate-200")}>
             Semua
           </button>
           {cats.map(c => (
             <button key={c.id} onClick={() => setCatFilter(c.id.toString())}
               className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
-                catFilter === c.id.toString() ? "bg-primary text-white shadow-md" : "bg-white text-slate-600 border border-slate-200")}>
+                catFilter === c.id.toString() ? "bg-primary text-white shadow-card" : "bg-white text-slate-600 border border-slate-200")}>
               <DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}
             </button>
           ))}
@@ -243,8 +243,8 @@ export default function BRILink() {
               {svcs.map(s => (
                 <button key={s.id} onClick={() => setSel(s)}
                   className={cn(
-                    "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg flex flex-col items-center text-center gap-2",
-                    sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-slate-200"
+                    "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-pop flex flex-col items-center text-center gap-2",
+                    sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-card" : "bg-white border-transparent hover:border-slate-200"
                   )}>
                   {isBankIcon(s.icon) ? (
                     <BankIcon name={s.icon} size={36} className="group-hover:scale-110 transition-transform" />
@@ -269,7 +269,7 @@ export default function BRILink() {
       {/* Transaction Form Modal */}
       <Modal open={!!sel} onClose={() => setSel(null)} size="lg">
         {sel && (
-          <div className="p-6 space-y-5">
+          <div className="p-5 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {isBankIcon(sel.icon) ? (
@@ -301,7 +301,7 @@ export default function BRILink() {
                     <div 
                       key={tier.id} 
                       className={cn(
-                        "p-2 rounded-lg border transition-all",
+                        "p-2 rounded-xl border transition-all",
                         currentTier?.id === tier.id 
                           ? "bg-purple-200 border-purple-400 ring-2 ring-purple-300" 
                           : "bg-white border-purple-100"
@@ -364,13 +364,13 @@ export default function BRILink() {
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs">
               <p className="text-slate-700 font-medium mb-2">bar-chart-3 Efek ke Saldo:</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
+                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
                   <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-slate-400"} />
                   <span className={sel.cashEffect === "in" ? "text-emerald-700" : sel.cashEffect === "out" ? "text-red-600" : "text-slate-500"}>
                     Kas: {sel.cashEffect === "in" ? "plus Masuk" : sel.cashEffect === "out" ? "minus Keluar" : "—"}
                   </span>
                 </div>
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
+                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
                   <Building2 size={14} className={sel.bankEffect === "in" ? "text-emerald-600" : sel.bankEffect === "out" ? "text-red-500" : "text-slate-400"} />
                   <span className={sel.bankEffect === "in" ? "text-emerald-700" : sel.bankEffect === "out" ? "text-red-600" : "text-slate-500"}>
                     {selectedBank?.name || "M-Banking"}: {sel.bankEffect === "in" ? "plus Masuk" : sel.bankEffect === "out" ? "minus Keluar" : "—"}
@@ -456,7 +456,7 @@ export default function BRILink() {
                   </div>
                 </div>
                 {potentialExtraProfit > 0 && (
-                  <div className="mt-3 bg-emerald-100 rounded-lg p-2 text-xs text-emerald-700">
+                  <div className="mt-3 bg-emerald-100 rounded-xl p-2 text-xs text-emerald-700">
                     <p className="font-semibold">Anda hemat {formatRupiah(potentialExtraProfit)} biaya antar bank!</p>
                     <p>Tanpa multi-bank, profit hanya {formatRupiah(agentFee)} (dikurangi biaya transfer antar bank)</p>
                   </div>

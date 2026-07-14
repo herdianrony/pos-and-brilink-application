@@ -46,15 +46,15 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5 animate-fadeIn max-w-2xl">
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <SettingsIcon size={24} className="text-slate-500" /> Pengaturan
         </h2>
         <p className="text-sm text-slate-400">Konfigurasi bisnis, branding, dan aplikasi</p>
       </div>
 
       {/* Branding (opsional) */}
-      <Card className="p-6 space-y-5">
-        <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <Card className="p-5 space-y-5">
+        <h3 className="font-extrabold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <Palette size={18} className="text-purple-500" /> Branding (Opsional)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -82,8 +82,8 @@ export default function SettingsPage() {
         </p>
       </Card>
 
-      <Card className="p-6 space-y-5">
-        <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <Card className="p-5 space-y-5">
+        <h3 className="font-extrabold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <Store size={18} className="text-emerald-500" /> Informasi Toko
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,8 +122,8 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      <Card className="p-6 space-y-5">
-        <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <Card className="p-5 space-y-5">
+        <h3 className="font-extrabold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <CreditCard size={18} className="text-emerald-500" /> Pengaturan Kas
         </h3>
         <Input

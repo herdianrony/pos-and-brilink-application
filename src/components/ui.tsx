@@ -77,10 +77,10 @@ export function Button({ children, variant = "primary", size = "md", className, 
   disabled?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const variants = {
-    primary: "gradient-primary text-white shadow-glow-primary hover:shadow-lg hover:brightness-110",
+    primary: "gradient-primary text-white shadow-glow-primary hover:shadow-pop hover:brightness-110",
     secondary: "bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-soft",
     ghost: "text-slate-600 hover:bg-slate-100",
-    danger: "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/25",
+    danger: "bg-red-500 text-white hover:bg-red-600 shadow-pop shadow-red-500/25",
     success: "gradient-primary text-white shadow-glow-primary hover:brightness-110",
     accent: "gradient-accent text-white shadow-glow-accent hover:brightness-110",
     outline: "bg-transparent text-primary border-2 border-primary hover:bg-primary/5",
@@ -225,7 +225,7 @@ export function SectionTitle({ icon, title, desc, action }: {
         )}
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">{title}</h2>
-          {desc && <p className="text-sm text-slate-400 font-medium">{desc}</p>}
+          {desc && <p className="text-sm text-slate-400 font-semibold">{desc}</p>}
         </div>
       </div>
       {action}

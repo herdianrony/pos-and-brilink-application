@@ -248,7 +248,7 @@ export default function RekeningKoran() {
                 <button
                   key={p.id}
                   onClick={() => setPreset(p.id)}
-                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-600 transition-colors"
+                  className="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-600 transition-colors"
                 >
                   {p.label}
                 </button>
@@ -382,7 +382,7 @@ export default function RekeningKoran() {
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
-                              "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
+                              "w-6 h-6 rounded-xl flex items-center justify-center shrink-0",
                               isIn ? "bg-emerald-100" : "bg-red-100"
                             )}
                           >

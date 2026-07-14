@@ -66,7 +66,7 @@ export default function PrinterSettings() {
 
   return (
     <Card className="p-6 space-y-5">
-      <h3 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <h3 className="font-extrabold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
         <Printer size={18} className="text-purple-500" /> Pengaturan Printer Thermal
       </h3>
 

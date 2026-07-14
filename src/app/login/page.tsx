@@ -154,7 +154,7 @@ function LoginForm() {
           <div className="bg-white rounded-3xl shadow-float border border-slate-200/50 p-8 animate-bounceIn">
             <div className="mb-6">
               <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Masuk</h2>
-              <p className="text-sm text-slate-400 font-medium">Silakan masuk dengan akun Anda</p>
+              <p className="text-sm text-slate-400 font-semibold">Silakan masuk dengan akun Anda</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5">

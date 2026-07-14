@@ -46,7 +46,7 @@ export default function History() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
         </h2>
         <p className="text-sm text-slate-400">{trxs.length} transaksi ditemukan</p>
@@ -95,7 +95,7 @@ export default function History() {
                     <td className="p-3 text-xs text-slate-500">{t.paymentMethod === "cash" ? "Tunai" : t.paymentMethod === "transfer" ? "Transfer" : "QRIS"}</td>
                     <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
                     <td className="p-3 text-center">
-                      <button onClick={() => viewDetail(t.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Eye size={14} /></button>
+                      <button onClick={() => viewDetail(t.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Eye size={14} /></button>
                     </td>
                   </tr>
                 ))}
@@ -107,7 +107,7 @@ export default function History() {
 
       <Modal open={!!detail || loadingDet} onClose={() => setDetail(null)}>
         {loadingDet ? <Spinner /> : detail && (
-          <div className="p-6 space-y-4">
+          <div className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-extrabold">Detail Transaksi</h3>
               <button onClick={() => setDetail(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -128,7 +128,7 @@ export default function History() {
               <div className="border-t border-dashed pt-3 space-y-2">
                 <p className="text-sm font-bold text-slate-600">Item:</p>
                 {detail.items.map(i => (
-                  <div key={i.id} className="flex justify-between text-sm bg-slate-50 rounded-lg p-2">
+                  <div key={i.id} className="flex justify-between text-sm bg-slate-50 rounded-xl p-2">
                     <span>{i.productName} <span className="text-slate-400">x{i.quantity}</span></span>
                     <span className="font-semibold">{formatRupiah(i.subtotal)}</span>
                   </div>

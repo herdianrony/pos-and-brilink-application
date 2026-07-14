@@ -192,7 +192,7 @@ export default function Cash() {
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
             <Wallet size={24} className="text-emerald-500" /> Manajemen Saldo
           </h2>
           <p className="text-sm text-slate-400">Kelola kas tunai dan rekening M-Banking</p>
@@ -221,13 +221,13 @@ export default function Cash() {
               <>
                 <button
                   onClick={() => { setSelAccount(acc); setModal("adjust"); }}
-                  className="flex-1 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Plus size={14} /> Sesuaikan
                 </button>
                 <button
                   onClick={() => { setSelAccount(acc); setModal("transfer"); }}
-                  className="flex-1 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <ArrowRightLeft size={14} /> Transfer
                 </button>
@@ -250,13 +250,13 @@ export default function Cash() {
       {/* Mutation History */}
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-3">
-          <h3 className="font-bold text-slate-700 flex items-center gap-2">
+          <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
             <Clock size={16} className="text-slate-400" /> Riwayat Mutasi
           </h3>
           <div className="flex gap-1 flex-wrap">
             <button 
               onClick={() => setActiveTab("all")}
-              className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === "all" ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
+              className={cn("px-3 py-1 rounded-xl text-xs font-medium", activeTab === "all" ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
             >
               Semua
             </button>
@@ -264,7 +264,7 @@ export default function Cash() {
               <button
                 key={a.id}
                 onClick={() => setActiveTab(a.id.toString())}
-                className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
+                className={cn("px-3 py-1 rounded-xl text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
               >
                 {isBankIcon(a.icon) ? <BankIcon name={a.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />}
                 {a.name.split(" ")[0]}
@@ -313,7 +313,7 @@ export default function Cash() {
 
       {/* Adjust Modal */}
       <Modal open={modal === "adjust"} onClose={() => setModal(null)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold">Sesuaikan Saldo</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -336,7 +336,7 @@ export default function Cash() {
 
       {/* Transfer Modal */}
       <Modal open={modal === "transfer"} onClose={() => setModal(null)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold">Transfer Antar Saldo</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -365,7 +365,7 @@ export default function Cash() {
 
       {/* Add Account Modal */}
       <Modal open={modal === "add_account"} onClose={() => setModal(null)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold">Tambah Rekening Baru</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -390,7 +390,7 @@ export default function Cash() {
                 <button
                   key={color}
                   onClick={() => setAccForm({ ...accForm, color })}
-                  className={cn("w-8 h-8 rounded-lg transition-all", accForm.color === color ? "ring-2 ring-offset-2 ring-primary scale-110" : "")}
+                  className={cn("w-8 h-8 rounded-xl transition-all", accForm.color === color ? "ring-2 ring-offset-2 ring-primary scale-110" : "")}
                   style={{ backgroundColor: color }}
                 />
               ))}
@@ -407,7 +407,7 @@ export default function Cash() {
 
       {/* Edit Account Modal */}
       <Modal open={modal === "edit_account"} onClose={() => setModal(null)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold">Edit Rekening</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -432,7 +432,7 @@ export default function Cash() {
                 <button
                   key={color}
                   onClick={() => setAccForm({ ...accForm, color })}
-                  className={cn("w-8 h-8 rounded-lg transition-all", accForm.color === color ? "ring-2 ring-offset-2 ring-primary scale-110" : "")}
+                  className={cn("w-8 h-8 rounded-xl transition-all", accForm.color === color ? "ring-2 ring-offset-2 ring-primary scale-110" : "")}
                   style={{ backgroundColor: color }}
                 />
               ))}

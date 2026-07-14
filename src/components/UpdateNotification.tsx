@@ -63,7 +63,7 @@ export default function UpdateNotification() {
   if (downloaded) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-5">
+        <div className="bg-white rounded-2xl shadow-float border border-emerald-200 p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
               <CheckCircle2 size={20} className="text-emerald-600" />
@@ -78,13 +78,13 @@ export default function UpdateNotification() {
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => window.electronAPI?.update.install()}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
                 >
                   Install & Restart
                 </button>
                 <button
                   onClick={() => setDismissed(true)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
                 >
                   Nanti
                 </button>
@@ -100,7 +100,7 @@ export default function UpdateNotification() {
   if (progress) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-5">
+        <div className="bg-white rounded-2xl shadow-float border border-emerald-200 p-5">
           <div className="flex items-center gap-3 mb-3">
             <RefreshCw size={18} className="text-emerald-500 animate-spin" />
             <div>
@@ -125,7 +125,7 @@ export default function UpdateNotification() {
   if (available && !dismissed) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-5">
+        <div className="bg-white rounded-2xl shadow-float border border-emerald-200 p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
               <DownloadCloud size={20} className="text-emerald-600" />
@@ -159,7 +159,7 @@ export default function UpdateNotification() {
   if (error) {
     return (
       <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
-        <div className="bg-white rounded-2xl shadow-2xl border border-red-200 p-5">
+        <div className="bg-white rounded-2xl shadow-float border border-red-200 p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
               <AlertCircle size={20} className="text-red-600" />

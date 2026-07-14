@@ -78,7 +78,7 @@ export function AccountCard({
       onClick={onClick}
       className={cn(
         "group relative text-left w-full overflow-hidden block",
-        "rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300",
+        "rounded-2xl shadow-pop hover:shadow-float transition-all duration-300",
         "hover:-translate-y-0.5",
         !onClick && "cursor-default"
       )}
@@ -137,13 +137,13 @@ export function AccountCard({
 
           <div className="flex items-center gap-1">
             {isLow && (
-              <div className="w-7 h-7 rounded-lg bg-amber-400/30 backdrop-blur-sm flex items-center justify-center" title={`Saldo di bawah minimum: ${minBalance}`}>
+              <div className="w-7 h-7 rounded-xl bg-amber-400/30 backdrop-blur-sm flex items-center justify-center" title={`Saldo di bawah minimum: ${minBalance}`}>
                 <AlertTriangle size={14} className="text-amber-200" />
               </div>
             )}
             {/* Contactless icon (rotated wifi) — seperti pada kartu kredit modern */}
             {!isCash && (
-              <div className="w-7 h-7 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center rotate-90">
+              <div className="w-7 h-7 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center rotate-90">
                 <Wifi size={14} className="text-white/70" />
               </div>
             )}
@@ -154,7 +154,7 @@ export function AccountCard({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
+                    className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
                     title="Edit"
                   >
                     <Pencil size={12} />
@@ -164,7 +164,7 @@ export function AccountCard({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="w-7 h-7 rounded-lg bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
+                    className="w-7 h-7 rounded-xl bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
                     title="Hapus"
                   >
                     <Trash2 size={12} />
@@ -178,7 +178,7 @@ export function AccountCard({
         {/* Middle: chip kartu (untuk non-cash) */}
         {!isCash && !compact && (
           <div className="flex items-center gap-2 my-3">
-            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 relative overflow-hidden shadow-sm">
+            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 relative overflow-hidden shadow-soft">
               {/* Chip pattern */}
               <div className="absolute inset-0.5 rounded-sm border border-yellow-600/30" />
               <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-600/30" />

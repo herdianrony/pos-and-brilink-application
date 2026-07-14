@@ -214,7 +214,7 @@ export default function POS() {
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-800">Kasir POS</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900">Kasir POS</h2>
             <p className="text-sm text-slate-400">Pilih produk untuk ditambahkan</p>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function POS() {
             placeholder="Cari produk atau scan barcode..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm shadow-sm"
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm shadow-soft"
           />
         </div>
 
@@ -237,7 +237,7 @@ export default function POS() {
             onClick={() => setCatFilter("all")}
             className={cn(
               "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              catFilter === "all" ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-slate-600 border border-slate-200 hover:border-primary/30"
+              catFilter === "all" ? "bg-primary text-white shadow-card shadow-primary/20" : "bg-white text-slate-600 border border-slate-200 hover:border-primary/30"
             )}
           >Semua</button>
           {categories.map(c => (
@@ -246,7 +246,7 @@ export default function POS() {
               onClick={() => setCatFilter(c.id.toString())}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
-                catFilter === c.id.toString() ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-slate-600 border border-slate-200 hover:border-primary/30"
+                catFilter === c.id.toString() ? "bg-primary text-white shadow-card shadow-primary/20" : "bg-white text-slate-600 border border-slate-200 hover:border-primary/30"
               )}
             ><DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}</button>
           ))}
@@ -267,12 +267,12 @@ export default function POS() {
                     disabled={p.stock <= 0}
                     className={cn(
                       "p-3.5 rounded-2xl text-left transition-all duration-200 border-2 group relative overflow-hidden",
-                      inCart ? "bg-primary/5 border-primary shadow-md shadow-primary/10" : "bg-white border-transparent hover:border-slate-200 hover:shadow-lg",
+                      inCart ? "bg-primary/5 border-primary shadow-card shadow-primary/10" : "bg-white border-transparent hover:border-slate-200 hover:shadow-pop",
                       p.stock <= 0 && "opacity-40 cursor-not-allowed"
                     )}
                   >
                     {inCart && (
-                      <div className="absolute top-2 right-2 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
+                      <div className="absolute top-2 right-2 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shadow-pop">
                         {inCart.quantity}
                       </div>
                     )}
@@ -298,7 +298,7 @@ export default function POS() {
       </div>
 
       {/* Right: Cart */}
-      <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col">
+      <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-pop border border-slate-100 flex flex-col">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <ShoppingBag size={18} className="text-primary" />
@@ -325,12 +325,12 @@ export default function POS() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => updateQty(item.productId, -1)}
-                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors">
+                    className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors">
                     <Minus size={13} />
                   </button>
                   <span className="w-8 text-center text-sm font-bold text-slate-700">{item.quantity}</span>
                   <button onClick={() => updateQty(item.productId, 1)}
-                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-colors">
+                    className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-colors">
                     <Plus size={13} />
                   </button>
                 </div>
@@ -387,7 +387,7 @@ export default function POS() {
 
       {/* Held Carts Modal */}
       <Modal open={showHeld} onClose={() => setShowHeld(false)} size="md">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-extrabold text-slate-900">Transaksi Ditahan</h3>
             <button onClick={() => setShowHeld(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -423,7 +423,7 @@ export default function POS() {
 
       {/* Discount Modal */}
       <Modal open={showDiscount} onClose={() => setShowDiscount(false)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-extrabold text-slate-900">Diskon</h3>
             <button onClick={() => setShowDiscount(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -459,7 +459,7 @@ export default function POS() {
 
       {/* Pay Modal */}
       <Modal open={showPay} onClose={() => setShowPay(false)}>
-        <div className="p-6 space-y-5">
+        <div className="p-5 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-extrabold text-slate-800">Pembayaran</h3>
             <button onClick={() => setShowPay(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>

@@ -117,7 +117,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-slate-700 flex items-center gap-2">
+            <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
               <TrendingUp size={16} className="text-primary" /> Pendapatan 7 Hari
             </h3>
           </div>
@@ -134,7 +134,7 @@ export default function Dashboard() {
                     </span>
                     <div className="w-full relative">
                       <div
-                        className="w-full bg-gradient-to-t from-primary to-primary-light rounded-lg transition-all duration-700 hover:from-accent hover:to-accent-light cursor-pointer"
+                        className="w-full bg-gradient-to-t from-primary to-primary-light rounded-xl transition-all duration-700 hover:from-accent hover:to-accent-light cursor-pointer"
                         style={{ height: `${Math.max(pct, 4)}px`, maxHeight: "140px", minHeight: "6px" }}
                       />
                     </div>
@@ -147,7 +147,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-5">
-          <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
+          <h3 className="font-extrabold text-slate-700 mb-3 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-500" /> Stok Menipis
           </h3>
           {d.lowStock.length === 0 ? (
@@ -171,7 +171,7 @@ export default function Dashboard() {
       {/* Recent Transactions */}
       <Card className="overflow-hidden">
         <div className="p-5 border-b border-slate-100">
-          <h3 className="font-bold text-slate-700">Transaksi Terakhir</h3>
+          <h3 className="font-extrabold text-slate-700">Transaksi Terakhir</h3>
         </div>
         {d.recent.length === 0 ? (
           <EmptyState icon="clipboard-list" title="Belum ada transaksi" />

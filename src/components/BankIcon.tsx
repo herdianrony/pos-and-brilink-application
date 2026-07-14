@@ -60,7 +60,7 @@ export function BankIcon({
       height={size}
       className={cn(
         "object-contain",
-        rounded && "rounded-lg",
+        rounded && "rounded-xl",
         className
       )}
       style={{ width: size, height: size }}

@@ -46,7 +46,7 @@ export default function Products() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-800">Manajemen Data</h2>
+        <h2 className="text-2xl font-extrabold text-slate-900">Manajemen Data</h2>
         <p className="text-sm text-slate-400">Kelola produk, kategori, dan {servicesLabel.toLowerCase()}</p>
       </div>
       <Tabs
@@ -118,7 +118,7 @@ function ProductsTab() {
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-soft" />
         </div>
         <Button onClick={openAdd}><Plus size={16} /> Tambah Produk</Button>
       </div>
@@ -163,8 +163,8 @@ function ProductsTab() {
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => openEdit(p)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                        <button onClick={() => setConfirmDel(p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                        <button onClick={() => openEdit(p)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Pencil size={14} /></button>
+                        <button onClick={() => setConfirmDel(p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -176,7 +176,7 @@ function ProductsTab() {
       </Card>
 
       <Modal open={modal} onClose={() => setModal(false)}>
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-extrabold">{edit ? "Edit Produk" : "Tambah Produk"}</h3>
             <button onClick={() => setModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -316,8 +316,8 @@ function CategoriesTab() {
                 <p className="text-xs text-slate-400 font-medium">{(c as any).productCount || 0} produk</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Pencil size={14} /></button>
+                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={14} /></button>
               </div>
             </Card>
           ))
@@ -325,7 +325,7 @@ function CategoriesTab() {
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <h3 className="text-lg font-extrabold">{edit ? "Edit Kategori" : "Tambah Kategori"}</h3>
           <Input label="Nama Kategori" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
@@ -495,9 +495,9 @@ function BLServicesTab() {
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => openTiers(s)} className="p-1.5 text-purple-500 hover:bg-purple-50 rounded-lg" title="Atur Fee Berjenjang"><Layers size={14} /></button>
-                        <button onClick={() => openEdit(s)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                        <button onClick={() => setConfirmDel(s.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                        <button onClick={() => openTiers(s)} className="p-1.5 text-purple-500 hover:bg-purple-50 rounded-xl" title="Atur Fee Berjenjang"><Layers size={14} /></button>
+                        <button onClick={() => openEdit(s)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Pencil size={14} /></button>
+                        <button onClick={() => setConfirmDel(s.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -510,7 +510,7 @@ function BLServicesTab() {
 
       {/* Edit/Add Service Modal */}
       <Modal open={modal} onClose={() => setModal(false)}>
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <h3 className="text-lg font-extrabold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
@@ -554,7 +554,7 @@ function BLServicesTab() {
               ) : (
                 <div className="space-y-2">
                   {tiers.map((tier, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2">
+                    <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2">
                       <div className="flex-1 grid grid-cols-4 gap-2">
                         <input type="number" placeholder="Min" value={tier.minAmount} onChange={e => updateTier(idx, "minAmount", e.target.value)}
                           className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
@@ -598,7 +598,7 @@ function BLServicesTab() {
             <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto bg-slate-50 rounded-xl p-3">
               {icons.slice(30).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
+                  className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
               ))}
             </div>
           </div>
@@ -612,7 +612,7 @@ function BLServicesTab() {
       
       {/* Fee Tiers Modal */}
       <Modal open={tiersModal} onClose={() => setTiersModal(false)} size="lg">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-extrabold flex items-center gap-2">
@@ -663,31 +663,31 @@ function BLServicesTab() {
                         placeholder="Min" 
                         value={tier.minAmount} 
                         onChange={e => updateTier(idx, "minAmount", e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
                       />
                       <input 
                         type="number" 
                         placeholder="Max (kosong=∞)" 
                         value={tier.maxAmount || ""} 
                         onChange={e => updateTier(idx, "maxAmount", e.target.value || null)}
-                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
                       />
                       <input 
                         type="number" 
                         placeholder="Admin" 
                         value={tier.adminFee} 
                         onChange={e => updateTier(idx, "adminFee", e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-sm focus:ring-2 focus:ring-amber-200 focus:border-amber-400" 
+                        className="px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-sm focus:ring-2 focus:ring-amber-200 focus:border-amber-400" 
                       />
                       <input 
                         type="number" 
                         placeholder="Fee" 
                         value={tier.agentFee} 
                         onChange={e => updateTier(idx, "agentFee", e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400" 
+                        className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400" 
                       />
                     </div>
-                    <button onClick={() => removeTier(idx)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                    <button onClick={() => removeTier(idx)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -768,8 +768,8 @@ function BLCategoriesTab() {
                 <p className="text-xs text-slate-400">Urutan: {c.sortOrder}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
-                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"><Pencil size={14} /></button>
+                <button onClick={() => setConfirmDel(c.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={14} /></button>
               </div>
             </Card>
           ))
@@ -777,7 +777,7 @@ function BLCategoriesTab() {
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} size="sm">
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-4">
           <h3 className="text-lg font-extrabold">{edit ? "Edit Kategori" : "Tambah Kategori Layanan"}</h3>
           <Input label="Nama" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
@@ -785,7 +785,7 @@ function BLCategoriesTab() {
             <div className="flex flex-wrap gap-2 bg-slate-50 rounded-xl p-3">
               {icons.slice(30, 60).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
+                  className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
               ))}
             </div>
           </div>
