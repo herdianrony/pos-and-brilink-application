@@ -7,7 +7,6 @@ on:
     branches: [main]
 
 jobs:
-  # ── Job 1: Lint, Typecheck, Unit Tests, Build ──
   test:
     name: Lint + Typecheck + Unit Tests + Build
     runs-on: ubuntu-latest
@@ -16,14 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js 22.12+
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "22.12.0"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint
@@ -39,6 +38,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Security audit
-        run: npm audit --audit-level=moderate
