@@ -14,8 +14,10 @@ export async function GET() {
   const services = await db
     .select({
       id: brilinkServices.id,
+      code: brilinkServices.code,
       name: brilinkServices.name,
       categoryId: brilinkServices.categoryId,
+      categoryCode: brilinkServices.categoryCode,
       categoryName: serviceCategories.name,
       categoryIcon: serviceCategories.icon,
       categoryColor: serviceCategories.color,
@@ -25,6 +27,9 @@ export async function GET() {
       useTieredFee: brilinkServices.useTieredFee,
       cashEffect: brilinkServices.cashEffect,
       bankEffect: brilinkServices.bankEffect,
+      // P1: Expose flow metadata to frontend
+      flowType: brilinkServices.flowType,
+      defaultFeeMethod: brilinkServices.defaultFeeMethod,
       description: brilinkServices.description,
       isActive: brilinkServices.isActive,
     })
@@ -76,12 +81,16 @@ export async function PUT(req: Request) {
   const [row] = await db.update(brilinkServices).set({
     name: b.name,
     categoryId: b.categoryId || null,
+    categoryCode: b.categoryCode || null,
     icon: b.icon,
     adminFee: b.adminFee?.toString(),
     agentFee: b.agentFee?.toString(),
     useTieredFee: b.useTieredFee ?? false,
     cashEffect: b.cashEffect || "in",
     bankEffect: b.bankEffect || "out",
+    // P1: Allow admin to edit flow metadata
+    flowType: b.flowType || "payment",
+    defaultFeeMethod: b.defaultFeeMethod || "cash",
     description: b.description || null,
   }).where(eq(brilinkServices.id, b.id)).returning();
   return NextResponse.json(row);

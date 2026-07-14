@@ -134,19 +134,24 @@ export async function POST(req: Request) {
     });
   }
 
-  // ── Update account (edit nama, icon, dll) ───────
+  // ── Update account (edit nama, icon, isActive, dll) ──
   if (b.action === "update") {
     const id = Number(b.id);
     if (!Number.isFinite(id) || id <= 0) {
       return NextResponse.json({ error: "id tidak valid" }, { status: 400 });
     }
-    const [acc] = await db.update(accounts).set({
+    // P0: Allow updating isActive (for setup wizard activation)
+    const updateData: Record<string, unknown> = {
       name: String(b.name || ""),
       icon: b.icon,
       color: b.color,
       minBalance: parseSafeNumber(b.minBalance, { default: 0, min: 0 }),
       updatedAt: new Date(),
-    }).where(eq(accounts.id, id)).returning();
+    };
+    if (b.isActive !== undefined) {
+      updateData.isActive = b.isActive !== false;
+    }
+    const [acc] = await db.update(accounts).set(updateData).where(eq(accounts.id, id)).returning();
     return NextResponse.json(acc);
   }
 

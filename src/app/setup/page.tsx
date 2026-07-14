@@ -23,13 +23,14 @@ import {
   Sparkles,
 } from "lucide-react";
 
-type Step = "welcome" | "store" | "admin" | "cash" | "printer" | "done";
+type Step = "welcome" | "store" | "admin" | "cash" | "settlement" | "printer" | "done";
 
 const STEPS: { id: Step; label: string; icon: typeof Store; desc: string }[] = [
   { id: "welcome", label: "Selamat Datang", icon: Sparkles, desc: "Pengenalan" },
   { id: "store", label: "Info Toko", icon: Store, desc: "Identitas usaha" },
   { id: "admin", label: "Akun Admin", icon: ShieldCheck, desc: "Keamanan login" },
   { id: "cash", label: "Kas Awal", icon: Wallet, desc: "Saldo awal rekening" },
+  { id: "settlement", label: "Rekening Settlement", icon: Landmark, desc: "Bank/e-wallet aktif" },
   { id: "printer", label: "Printer", icon: Printer, desc: "Opsional" },
   { id: "done", label: "Selesai", icon: PartyPopper, desc: "Mulai menggunakan" },
 ];
@@ -59,6 +60,18 @@ function SetupWizardForm() {
   // Cash — default 0 (user fills actual opening balance)
   const [openingBalance, setOpeningBalance] = useState("0");
 
+  // Settlement accounts — activate bank/e-wallet templates and set initial balance
+  // Format: { [accountId]: { active: boolean, balance: string } }
+  const [settlementAccounts, setSettlementAccounts] = useState<Array<{
+    id: number;
+    code: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+    active: boolean;
+    balance: string;
+  }>>([]);
+
   // Printer
   const [printerType, setPrinterType] = useState<"network" | "usb" | "serial" | "skip">("network");
   const [printerHost, setPrinterHost] = useState("192.168.1.87");
@@ -79,9 +92,31 @@ function SetupWizardForm() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  // P0: Load bank/e-wallet accounts when entering settlement step
+  useEffect(() => {
+    if (step === "settlement" && settlementAccounts.length === 0) {
+      fetch("/api/accounts", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((accs: Array<{ id: number; code: string; name: string; icon: string | null; color: string | null; isActive: boolean; balance: string }>) => {
+          // Filter to bank/e-wallet templates (exclude cash)
+          const bankAccs = accs.filter(a => a.code !== "cash");
+          setSettlementAccounts(bankAccs.map(a => ({
+            id: a.id,
+            code: a.code,
+            name: a.name,
+            icon: a.icon,
+            color: a.color,
+            active: false, // user chooses which to activate
+            balance: "0",
+          })));
+        })
+        .catch(() => {});
+    }
+  }, [step, settlementAccounts.length]);
+
   function next() {
     setError("");
-    const order: Step[] = ["welcome", "store", "admin", "cash", "printer", "done"];
+    const order: Step[] = ["welcome", "store", "admin", "cash", "settlement", "printer", "done"];
     const idx = order.indexOf(step);
     if (idx < order.length - 1) {
       // Validasi per step
@@ -100,13 +135,17 @@ function SetupWizardForm() {
         const n = parseFloat(openingBalance);
         if (isNaN(n) || n < 0) return setError("Saldo awal tidak valid");
       }
+      if (step === "settlement") {
+        // Load accounts if not loaded yet (happens on first visit to this step)
+        // Validation: at least allow 0 active accounts (user can add later)
+      }
       setStep(order[idx + 1]);
     }
   }
 
   function prev() {
     setError("");
-    const order: Step[] = ["welcome", "store", "admin", "cash", "printer", "done"];
+    const order: Step[] = ["welcome", "store", "admin", "cash", "settlement", "printer", "done"];
     const idx = order.indexOf(step);
     if (idx > 0) setStep(order[idx - 1]);
   }
@@ -178,7 +217,46 @@ function SetupWizardForm() {
         // Non-fatal — cash account bisa diatur nanti
       }
 
-      // 4. Save printer config (jika tidak skip) via Electron API
+      // 4. P0: Activate selected settlement accounts + set initial balance
+      //    This is critical — without active bank accounts, transfer/setor/payment fail.
+      try {
+        for (const acc of settlementAccounts) {
+          if (!acc.active) continue;
+          // Activate the account via update action
+          await fetch("/api/accounts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "update",
+              id: acc.id,
+              name: acc.name,
+              icon: acc.icon || "wallet",
+              color: acc.color || "#00875A",
+              minBalance: "0",
+              isActive: true,
+            }),
+          });
+          // Set initial balance via adjust action (seed creates with balance=0)
+          const targetBalance = parseFloat(acc.balance) || 0;
+          if (targetBalance > 0) {
+            await fetch("/api/accounts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "adjust",
+                accountId: acc.id,
+                amount: targetBalance,
+                type: "opening",
+                notes: `Saldo awal ${acc.name} dari Setup Wizard`,
+              }),
+            });
+          }
+        }
+      } catch {
+        // Non-fatal — settlement accounts bisa diatur nanti via Kas & Saldo
+      }
+
+      // 5. Save printer config (jika tidak skip) via Electron API
       if (printerType !== "skip" && typeof window !== "undefined" && window.electronAPI) {
         try {
           await window.electronAPI.printer.saveConfig({
@@ -192,7 +270,7 @@ function SetupWizardForm() {
         }
       }
 
-      // 5. Move to done step
+      // 6. Move to done step
       setStep("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -307,6 +385,12 @@ function SetupWizardForm() {
           )}
           {step === "cash" && (
             <CashStep openingBalance={openingBalance} setOpeningBalance={setOpeningBalance} />
+          )}
+          {step === "settlement" && (
+            <SettlementStep
+              accounts={settlementAccounts}
+              setAccounts={setSettlementAccounts}
+            />
           )}
           {step === "printer" && (
             <PrinterStep
@@ -656,6 +740,98 @@ function CashStep({
           <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
           akan otomatis dibuat dengan saldo Rp 0. Anda bisa top-up nanti di menu
           "Kas & Saldo".
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettlementStep({
+  accounts,
+  setAccounts,
+}: {
+  accounts: Array<{
+    id: number;
+    code: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+    active: boolean;
+    balance: string;
+  }>;
+  setAccounts: (accs: Array<{
+    id: number;
+    code: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+    active: boolean;
+    balance: string;
+  }>) => void;
+}) {
+  function toggleActive(id: number) {
+    setAccounts(accounts.map(a => a.id === id ? { ...a, active: !a.active } : a));
+  }
+  function setBalance(id: number, balance: string) {
+    setAccounts(accounts.map(a => a.id === id ? { ...a, balance } : a));
+  }
+
+  const activeCount = accounts.filter(a => a.active).length;
+
+  return (
+    <div>
+      <StepHeader
+        icon={Landmark}
+        title="Rekening Settlement"
+        desc="Pilih rekening bank/e-wallet yang aktif untuk transaksi transfer, setor, dan pembayaran. Isi saldo awal jika ada."
+      />
+      <div className="space-y-3 mt-6">
+        {accounts.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-4">Memuat rekening...</p>
+        ) : (
+          accounts.map(acc => (
+            <div
+              key={acc.id}
+              className={`p-4 rounded-2xl border-2 transition-all ${
+                acc.active
+                  ? "border-primary bg-primary/5"
+                  : "border-slate-200 bg-slate-50/50"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={acc.active}
+                    onChange={() => toggleActive(acc.id)}
+                    className="w-5 h-5 rounded text-primary focus:ring-primary"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 truncate">{acc.name}</p>
+                    <p className="text-xs text-slate-400">{acc.code}</p>
+                  </div>
+                </div>
+                {acc.active && (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xs">
+                      Rp
+                    </span>
+                    <input
+                      type="number"
+                      value={acc.balance}
+                      onChange={(e) => setBalance(acc.id, e.target.value)}
+                      className="w-36 pl-8 pr-3 py-2 rounded-xl border-2 border-slate-200 focus:border-primary focus:outline-none text-sm font-bold"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+          <p className="font-semibold">{activeCount} rekening aktif</p>
+          <p className="mt-0.5">Rekening yang tidak dicek akan tetap inactive. Anda bisa mengaktifkannya nanti di menu Kas & Saldo.</p>
         </div>
       </div>
     </div>

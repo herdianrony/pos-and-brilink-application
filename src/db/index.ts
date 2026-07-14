@@ -252,6 +252,60 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
         }
       }
     }
+
+    // ── P1: Backfill code/flowType/defaultFeeMethod for existing rows ──
+    // For databases created before seed-redesign, backfill stable codes
+    // based on category/service names so they get proper flow config.
+    try {
+      // Backfill service_categories.code from name (slugify) where code IS NULL
+      await client.execute(
+        `UPDATE \`service_categories\` SET \`code\` = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(\`name\`, ' ', '_'), '&', 'dan'), '/', '_'), '.', ''), ',', '')) WHERE \`code\` IS NULL OR \`code\` = ''`
+      );
+      // Backfill brilink_services.code from name where code IS NULL
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`code\` = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(\`name\`, ' ', '_'), '&', 'dan'), '/', '_'), '.', ''), ',', '')) WHERE \`code\` IS NULL OR \`code\` = ''`
+      );
+      // Backfill brilink_services.category_code from joined category
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`category_code\` = (SELECT \`code\` FROM \`service_categories\` WHERE \`service_categories\`.\`id\` = \`brilink_services\`.\`category_id\`) WHERE \`brilink_services\`.\`category_code\` IS NULL AND \`brilink_services\`.\`category_id\` IS NOT NULL`
+      );
+      // Backfill flow_type for services that have NULL or default 'payment' but should be other types
+      // Use name-based detection (same logic as getFlowType fallback)
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`flow_type\` = 'cash_withdrawal' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND (LOWER(\`name\`) LIKE '%tarik tunai%' OR LOWER(\`name\`) LIKE '%penarikan%' OR (\`cash_effect\` = 'out' AND \`bank_effect\` = 'none'))`
+      );
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`flow_type\` = 'cash_deposit' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND (LOWER(\`name\`) LIKE '%setor tunai%' OR LOWER(\`name\`) LIKE '%setor%')`
+      );
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`flow_type\` = 'transfer' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND LOWER(\`name\`) LIKE '%transfer%'`
+      );
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`flow_type\` = 'topup' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND (LOWER(\`name\`) LIKE '%pulsa%' OR LOWER(\`name\`) LIKE '%paket data%' OR LOWER(\`name\`) LIKE '%top up%' OR LOWER(\`name\`) LIKE '%voucher game%')`
+      );
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`flow_type\` = 'inquiry' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND (LOWER(\`name\`) LIKE '%cek saldo%' OR (\`cash_effect\` = 'none' AND \`bank_effect\` = 'none'))`
+      );
+
+      // P1: Create unique indexes after backfill (catch duplicate key errors gracefully)
+      try {
+        await client.execute(`CREATE UNIQUE INDEX IF NOT EXISTS \`service_categories_code_unique\` ON \`service_categories\` (\`code\`)`);
+      } catch (err: any) {
+        if (!String(err?.message || "").includes("already exists") && !String(err?.message || "").includes("UNIQUE constraint")) {
+          console.error("[db] Failed to create service_categories_code_unique index:", err);
+        }
+      }
+      try {
+        await client.execute(`CREATE UNIQUE INDEX IF NOT EXISTS \`brilink_services_code_unique\` ON \`brilink_services\` (\`code\`)`);
+      } catch (err: any) {
+        if (!String(err?.message || "").includes("already exists") && !String(err?.message || "").includes("UNIQUE constraint")) {
+          console.error("[db] Failed to create brilink_services_code_unique index:", err);
+        }
+      }
+    } catch (err) {
+      console.error("[db] Backfill migration error:", err);
+    }
+
     globalForDb.__arenaNextJsUsersTableReady = true;
   };
   globalForDb.__arenaNextJsDbReady = runBootstrap();

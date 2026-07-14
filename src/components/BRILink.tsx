@@ -32,7 +32,7 @@ interface Service {
   description: string | null; isActive: boolean;
 }
 interface ServiceCat { id: number; name: string; icon: string | null; color: string | null; }
-interface Account { id: number; code: string; name: string; icon: string | null; color: string | null; balance: string; minBalance: string | null; }
+interface Account { id: number; code: string; name: string; icon: string | null; color: string | null; balance: string; minBalance: string | null; isActive?: boolean; }
 
 // Helper function to calculate fee based on amount and tiers
 function calculateFee(amount: number, service: Service): { adminFee: number; agentFee: number; tier: FeeTier | null } {
@@ -118,7 +118,8 @@ export default function BRILink() {
     return acc;
   }, {});
 
-  const bankAccounts = accounts.filter(a => a.code !== "cash");
+  // P1: Only show active bank accounts in selector (inactive templates hidden)
+  const bankAccounts = accounts.filter(a => a.code !== "cash" && a.isActive !== false);
   const cashAccount = accounts.find(a => a.code === "cash");
   const selectedBank = bankAccounts.find(a => a.id.toString() === form.selectedBankId);
 
