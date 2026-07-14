@@ -258,9 +258,9 @@ export default function RekeningKoran() {
         </div>
       </Card>
 
-      {/* Summary Cards */}
+      {/* Summary Cards — screen only */}
       {summary && !loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 no-print">
           <StatCard
             icon={<Scale size={20} />}
             label="Saldo Awal"
@@ -295,8 +295,8 @@ export default function RekeningKoran() {
         </div>
       )}
 
-      {/* Rekening Koran Table */}
-      <Card className="overflow-hidden">
+      {/* Rekening Koran Table — screen only (hidden in print) */}
+      <Card className="overflow-hidden no-print">
         {/* Header bank-style — hidden in print (print has its own header) */}
         <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-zinc-50 to-white no-print">
           <div className="flex items-start justify-between flex-wrap gap-3">
