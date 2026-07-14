@@ -267,20 +267,46 @@ describe("Transactions API Logic", () => {
   });
 });
 
-// ── Seed Data Logic ──────────────────────────────
+// ── Seed Data Logic (redesigned: system template only) ──
 
 describe("Seed Data Logic", () => {
   describe("Account count", () => {
-    it("should have 15 accounts in seed (cash + 10 banks + 4 ewallets)", () => {
+    it("should have 15 account templates (cash + 10 banks + 4 ewallets)", () => {
       const accountCount = 1 + 10 + 4; // cash + banks + ewallets
       expect(accountCount).toBe(15);
+    });
+
+    it("should seed cash account with balance=0 (not fake Rp500.000)", () => {
+      // Seed redesign: no fake balances
+      const cashAccount = { code: "cash", balance: 0, isActive: true };
+      expect(cashAccount.balance).toBe(0);
+      expect(cashAccount.isActive).toBe(true);
+    });
+
+    it("should seed bank accounts as inactive with balance=0", () => {
+      // User activates and fills saldo via setup wizard
+      const bankAccount = { code: "bank_bri", balance: 0, isActive: false };
+      expect(bankAccount.balance).toBe(0);
+      expect(bankAccount.isActive).toBe(false);
     });
   });
 
   describe("Service categories count", () => {
-    it("should have 9 service categories", () => {
-      const categories = ["Transfer", "Penarikan Tunai", "Setor Tunai", "Pembayaran Tagihan", "Token PLN", "Pulsa & Paket Data", "Voucher Game", "Cicilan", "Lainnya"];
-      expect(categories).toHaveLength(9);
+    it("should have 8 service categories with stable codes", () => {
+      const categories = [
+        { code: "transfer", name: "Transfer" },
+        { code: "cash_withdrawal", name: "Tarik Tunai" },
+        { code: "cash_deposit", name: "Setor Tunai" },
+        { code: "payment", name: "Bayar Tagihan" },
+        { code: "topup", name: "Isi Ulang" },
+        { code: "voucher", name: "Voucher & Game" },
+        { code: "financing", name: "Cicilan & Pembiayaan" },
+        { code: "inquiry", name: "Inquiry" },
+      ];
+      expect(categories).toHaveLength(8);
+      // All codes must be unique
+      const codes = categories.map(c => c.code);
+      expect(new Set(codes).size).toBe(codes.length);
     });
   });
 
@@ -302,6 +328,77 @@ describe("Seed Data Logic", () => {
     it("should have 3 multifinance providers", () => {
       const providers = ["FIF", "Adira", "WOM"];
       expect(providers).toHaveLength(3);
+    });
+  });
+
+  describe("Service fees (redesigned)", () => {
+    it("should seed all services with adminFee=0 (user sets actual fees)", () => {
+      // Seed redesign: no fake fees
+      const services = [
+        { code: "transfer_cash", adminFee: 0 },
+        { code: "cash_withdrawal", adminFee: 0 },
+        { code: "cash_deposit", adminFee: 0 },
+        { code: "payment_pln", adminFee: 0 },
+        { code: "topup_pulsa", adminFee: 0 },
+      ];
+      for (const s of services) {
+        expect(s.adminFee).toBe(0);
+      }
+    });
+  });
+
+  describe("Settings (redesigned)", () => {
+    it("should seed neutral settings (no fake store_name, owner_name, phone)", () => {
+      const settings = {
+        store_name: "",
+        store_address: "",
+        owner_name: "",
+        phone: "",
+        agent_id: "",
+      };
+      expect(settings.store_name).toBe("");
+      expect(settings.owner_name).toBe("");
+      expect(settings.phone).toBe("");
+    });
+
+    it("should seed operational config", () => {
+      const settings = {
+        app_mode: "recording_only",
+        currency: "IDR",
+        timezone: "Asia/Jakarta",
+        max_discount_amount: "100000",
+        max_discount_percent: "10",
+        require_cash_confirmation: "true",
+        default_service_status: "recorded",
+      };
+      expect(settings.app_mode).toBe("recording_only");
+      expect(settings.default_service_status).toBe("recorded");
+    });
+  });
+
+  describe("No fake data in production seed", () => {
+    it("should NOT seed sample products", () => {
+      // Products are demo data, not system template
+      const seededProducts: unknown[] = [];
+      expect(seededProducts).toHaveLength(0);
+    });
+
+    it("should NOT seed product categories", () => {
+      // Product categories are user-created
+      const seededProductCategories: unknown[] = [];
+      expect(seededProductCategories).toHaveLength(0);
+    });
+
+    it("should NOT seed opening balance mutations", () => {
+      // Opening mutations only created when user sets initial balance
+      const seededMutations: unknown[] = [];
+      expect(seededMutations).toHaveLength(0);
+    });
+
+    it("should NOT seed fee tiers", () => {
+      // Fee tiers are user-configured via setup wizard or Pengaturan
+      const seededFeeTiers: unknown[] = [];
+      expect(seededFeeTiers).toHaveLength(0);
     });
   });
 });

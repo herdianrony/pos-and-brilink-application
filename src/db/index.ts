@@ -84,6 +84,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     )`,
     `CREATE TABLE IF NOT EXISTS \`service_categories\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`code\` text(30) NOT NULL,
       \`name\` text(100) NOT NULL,
       \`icon\` text(50) DEFAULT 'credit-card',
       \`color\` text(20) DEFAULT '#0ea5e9',
@@ -91,10 +92,13 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`is_active\` integer DEFAULT true NOT NULL,
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL
     )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS \`service_categories_code_unique\` ON \`service_categories\` (\`code\`)`,
     `CREATE TABLE IF NOT EXISTS \`brilink_services\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`code\` text(30) NOT NULL,
       \`name\` text(100) NOT NULL,
       \`category_id\` integer,
+      \`category_code\` text(30),
       \`icon\` text(50) DEFAULT 'credit-card',
       \`admin_fee\` real DEFAULT 0 NOT NULL,
       \`agent_fee\` real DEFAULT 0 NOT NULL,
@@ -108,6 +112,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
       FOREIGN KEY (\`category_id\`) REFERENCES \`service_categories\`(\`id\`) ON UPDATE no action ON DELETE no action
     )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS \`brilink_services_code_unique\` ON \`brilink_services\` (\`code\`)`,
     `CREATE TABLE IF NOT EXISTS \`fee_tiers\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       \`service_id\` integer NOT NULL,
@@ -202,7 +207,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     )`,
   ];
 
-  // ── Migration: ALTER TABLE untuk kolom baru (S-04, S-05) ──
+  // ── Migration: ALTER TABLE untuk kolom baru (S-04, S-05, seed-redesign) ──
   // ALTER TABLE ADD COLUMN di SQLite tidak error jika kolom sudah ada?
   // Tidak — SQLite akan throw "duplicate column name". Jadi kita catch errornya.
   const migrationStatements = [
@@ -219,6 +224,10 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     `ALTER TABLE \`transactions\` ADD COLUMN \`status\` text(20) DEFAULT 'completed' NOT NULL`,
     `ALTER TABLE \`transactions\` ADD COLUMN \`confirmed_at\` integer`,
     `ALTER TABLE \`transactions\` ADD COLUMN \`confirmed_by_user_id\` integer`,
+    // Seed redesign: code + category_code columns
+    `ALTER TABLE \`service_categories\` ADD COLUMN \`code\` text(30)`,
+    `ALTER TABLE \`brilink_services\` ADD COLUMN \`code\` text(30)`,
+    `ALTER TABLE \`brilink_services\` ADD COLUMN \`category_code\` text(30)`,
   ];
 
   // Eksekusi semua statement secara berurutan

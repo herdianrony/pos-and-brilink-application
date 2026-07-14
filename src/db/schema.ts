@@ -47,8 +47,10 @@ export const products = sqliteTable("products", {
 });
 
 // ── Kategori Layanan BRILink ──────────────────────
+// code: stable identifier untuk logika (tidak berubah saat user edit nama)
 export const serviceCategories = sqliteTable("service_categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code", { length: 30 }).notNull().unique(),
   name: text("name", { length: 100 }).notNull(),
   icon: text("icon", { length: 50 }).default("credit-card"),
   color: text("color", { length: 20 }).default("#0ea5e9"),
@@ -62,10 +64,14 @@ export const serviceCategories = sqliteTable("service_categories", {
 // flowType: 'cash_withdrawal' | 'cash_deposit' | 'transfer' | 'payment' | 'topup' | 'inquiry'
 //   - Explicit flow type for UI/UX behavior (S-04). No longer inferred from name.
 // defaultFeeMethod: 'cash' | 'deducted' | 'charged' — default fee method for this service
+// code: stable identifier untuk template (tidak berubah saat user edit nama/fee)
+// categoryCode: reference ke service_categories.code (untuk lookup tanpa FK id)
 export const brilinkServices = sqliteTable("brilink_services", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code", { length: 30 }).notNull().unique(),
   name: text("name", { length: 100 }).notNull(),
   categoryId: integer("category_id").references(() => serviceCategories.id),
+  categoryCode: text("category_code", { length: 30 }),
   icon: text("icon", { length: 50 }).default("credit-card"),
   adminFee: real("admin_fee").notNull().default(0),
   agentFee: real("agent_fee").notNull().default(0),

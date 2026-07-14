@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const b = await req.json();
+  // Generate code from name if not provided (slugify)
+  const code = b.code || String(b.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || `cat_${Date.now()}`;
   const [row] = await db.insert(serviceCategories).values({
+    code,
     name: b.name,
     icon: b.icon || "credit-card",
     color: b.color || "#0ea5e9",

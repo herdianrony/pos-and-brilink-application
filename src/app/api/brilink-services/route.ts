@@ -49,15 +49,21 @@ export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const b = await req.json();
+  // Generate code from name if not provided (slugify)
+  const code = b.code || String(b.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || `svc_${Date.now()}`;
   const [row] = await db.insert(brilinkServices).values({
+    code,
     name: b.name,
     categoryId: b.categoryId || null,
+    categoryCode: b.categoryCode || null,
     icon: b.icon || "credit-card",
     adminFee: b.adminFee?.toString() || "0",
     agentFee: b.agentFee?.toString() || "0",
     useTieredFee: b.useTieredFee || false,
     cashEffect: b.cashEffect || "in",
     bankEffect: b.bankEffect || "out",
+    flowType: b.flowType || "payment",
+    defaultFeeMethod: b.defaultFeeMethod || "cash",
     description: b.description || null,
   }).returning();
   return NextResponse.json(row);

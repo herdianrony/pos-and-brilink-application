@@ -56,8 +56,8 @@ function SetupWizardForm() {
   const [adminConfirm, setAdminConfirm] = useState("");
   const [showPwd, setShowPwd] = useState(false);
 
-  // Cash
-  const [openingBalance, setOpeningBalance] = useState("500000");
+  // Cash — default 0 (user fills actual opening balance)
+  const [openingBalance, setOpeningBalance] = useState("0");
 
   // Printer
   const [printerType, setPrinterType] = useState<"network" | "usb" | "serial" | "skip">("network");
@@ -149,9 +149,8 @@ function SetupWizardForm() {
         }),
       });
 
-      // 3. Adjust cash account balance to user-specified opening balance
-      //    /api/seed creates cash account with default balance (500000),
-      //    so we adjust the delta.
+      // 3. Set cash account opening balance (seed creates cash with balance=0)
+      //    User-specified opening balance is applied via adjust action.
       try {
         const accsRes = await fetch("/api/accounts");
         if (accsRes.ok) {
@@ -159,17 +158,17 @@ function SetupWizardForm() {
           const cashAcc = accs.find((a: { code: string; balance: number }) => a.code === "cash");
           if (cashAcc) {
             const target = parseFloat(openingBalance) || 0;
-            const delta = target - parseFloat(cashAcc.balance);
-            if (Math.abs(delta) > 0.01) {
+            // Seed creates cash with balance=0, so delta = target - 0 = target
+            if (target > 0) {
               await fetch("/api/accounts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   action: "adjust",
                   accountId: cashAcc.id,
-                  amount: delta,
-                  type: "opening_adjust",
-                  notes: "Penyesuaian saldo awal dari Setup Wizard",
+                  amount: target,
+                  type: "opening",
+                  notes: "Saldo awal kas dari Setup Wizard",
                 }),
               });
             }
@@ -617,7 +616,7 @@ function CashStep({
       <StepHeader
         icon={Wallet}
         title="Kas Awal"
-        desc="Saldo awal untuk laci kas tunai. Bisa diubah nanti di menu Kas & Saldo."
+        desc="Saldo awal untuk laci kas tunai. Isi 0 jika belum ada uang di laci. Bisa diubah nanti di menu Kas & Saldo."
       />
       <div className="space-y-5 mt-6">
         <div className="relative">
@@ -629,7 +628,7 @@ function CashStep({
             value={openingBalance}
             onChange={(e) => setOpeningBalance(e.target.value)}
             className="wizard-input pl-11 text-lg font-extrabold"
-            placeholder="500000"
+            placeholder="0"
             autoFocus
           />
         </div>

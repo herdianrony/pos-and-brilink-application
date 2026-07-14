@@ -88,7 +88,7 @@ async function globalSetup(config: FullConfig) {
   }
   const sessionCookie = cookieMatch[1];
 
-  // Now seed with auth cookie
+  // Now seed with auth cookie (system templates only)
   const seedRes = await fetch(`${BASE_URL}/api/seed`, {
     method: "POST",
     headers: {
@@ -98,6 +98,19 @@ async function globalSetup(config: FullConfig) {
   if (!seedRes.ok) {
     const txt = await seedRes.text();
     throw new Error(`Seed failed: ${seedRes.status} ${txt}`);
+  }
+
+  // 4b. Create demo data (products + fee tiers) for E2E tests
+  //     This is separate from production seed — only for testing.
+  const demoRes = await fetch(`${BASE_URL}/api/seed-demo`, {
+    method: "POST",
+    headers: {
+      "Cookie": `brilink_pos_session=${sessionCookie}`,
+    },
+  });
+  if (!demoRes.ok) {
+    const txt = await demoRes.text();
+    throw new Error(`Demo seed failed: ${demoRes.status} ${txt}`);
   }
 
   // 5. Save auth state for tests
