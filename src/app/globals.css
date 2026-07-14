@@ -240,29 +240,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ── Print styles ───────────────────────────────── */
-/* Strategy: hide everything, then show only .print-area and .print-only */
+/* Strategy: hide everything via visibility, hide .no-print via display:none */
 @media print {
-  /* Hide everything by default */
+  /* Completely remove no-print elements from layout */
+  .no-print { display: none !important; }
+
+  /* Hide everything else via visibility */
   body * {
     visibility: hidden;
   }
 
   /* Show only the print area and its children */
-  .print-area, .print-area *,
-  .print-only, .print-only * {
+  .print-area, .print-area * {
     visibility: visible;
   }
 
   /* Position print area at top of page */
-  .print-area, .print-only {
+  .print-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-  }
-
-  /* Reset print area styling */
-  .print-area {
     background: white !important;
     color: #000 !important;
     font-size: 11px !important;
@@ -272,20 +270,19 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* Tables: clean print layout */
-  .print-area table, .print-only table {
+  .print-area table {
     width: 100% !important;
     border-collapse: collapse !important;
     font-size: 10px !important;
   }
 
-  .print-area th, .print-area td,
-  .print-only th, .print-only td {
+  .print-area th, .print-area td {
     border: 1px solid #ddd !important;
     padding: 4px 6px !important;
     color: #000 !important;
   }
 
-  .print-area th, .print-only th {
+  .print-area th {
     background: #f5f5f5 !important;
     font-weight: bold !important;
   }
