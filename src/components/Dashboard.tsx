@@ -40,6 +40,7 @@ interface DashboardData {
   }>;
   last7: Array<{ date: string; revenue: string; profit: string; count: number }>;
   accounts: Account[];
+  pendingCount?: number;
 }
 
 export default function Dashboard() {
@@ -97,6 +98,49 @@ export default function Dashboard() {
         <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-violet-50 text-violet-600" />
         <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
+
+      {/* P1: Action Required block */}
+      {(() => {
+        const actions: Array<{ icon: typeof AlertTriangle; label: string; color: string; action: () => void }> = [];
+        // Pending transactions
+        if (d.pendingCount && d.pendingCount > 0) {
+          actions.push({ icon: AlertTriangle, label: `${d.pendingCount} transaksi masih Pending`, color: "amber", action: () => window.location.hash = "history" });
+        }
+        // Low stock
+        if (d.lowStock.length > 0) {
+          actions.push({ icon: AlertTriangle, label: `${d.lowStock.length} produk stok menipis`, color: "amber", action: () => window.location.hash = "products" });
+        }
+        // Low balance accounts
+        const lowBalanceAccounts = d.accounts.filter(a => parseFloat(a.balance) < parseFloat(a.minBalance || "0"));
+        if (lowBalanceAccounts.length > 0) {
+          actions.push({ icon: AlertTriangle, label: `${lowBalanceAccounts.length} rekening di bawah minimum`, color: "red", action: () => window.location.hash = "cash" });
+        }
+
+        if (actions.length === 0) return null;
+
+        return (
+          <Card className="p-4 space-y-2 border-amber-200 bg-amber-50/50">
+            <h3 className="text-sm font-bold text-amber-700 flex items-center gap-2">
+              <AlertTriangle size={16} /> Perlu Tindakan
+            </h3>
+            <div className="space-y-1.5">
+              {actions.map((a, i) => (
+                <button
+                  key={i}
+                  onClick={a.action}
+                  className={`w-full flex items-center gap-2 p-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    a.color === "red" ? "text-red-700 hover:bg-red-100" : "text-amber-700 hover:bg-amber-100"
+                  }`}
+                >
+                  <a.icon size={14} className={a.color === "red" ? "text-red-500" : "text-amber-500"} />
+                  {a.label}
+                  <span className="ml-auto text-xs opacity-50">→</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* Account Balances — compact horizontal scroll */}
       <div>

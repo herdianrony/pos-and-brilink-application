@@ -31,6 +31,7 @@ export default function POS() {
   const [customerName, setCustomerName] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [cashAmt, setCashAmt] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [showPay, setShowPay] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [lastInv, setLastInv] = useState("");
@@ -55,6 +56,8 @@ export default function POS() {
   const [showHeld, setShowHeld] = useState(false);
   const [discountType, setDiscountType] = useState<"none" | "percent" | "rupiah">("none");
   const [discountValue, setDiscountValue] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
+  const [discountAdminPin, setDiscountAdminPin] = useState("");
   const [showDiscount, setShowDiscount] = useState(false);
   const [scanFlash, setScanFlash] = useState(false);
   const toast = useToast();
@@ -218,7 +221,17 @@ export default function POS() {
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "pos", items: cart, totalAmount: grandTotal, customerName: customerName || null, paymentMethod: payMethod, discount: discountAmount }),
+        body: JSON.stringify({
+          type: "pos",
+          items: cart,
+          totalAmount: grandTotal,
+          customerName: customerName || null,
+          paymentMethod: payMethod,
+          discount: discountAmount,
+          discountReason: discountReason || undefined,
+          discountAdminPin: discountAdminPin || undefined,
+          referenceNo: paymentReference || undefined,
+        }),
       });
       const trx = await res.json();
       // P0-1: Check res.ok before showing success
@@ -257,8 +270,11 @@ export default function POS() {
       setCart([]);
       setCustomerName("");
       setCashAmt("");
+      setPaymentReference("");
       setDiscountType("none");
       setDiscountValue("");
+      setDiscountReason("");
+      setDiscountAdminPin("");
       fetchProducts();
       toast.success("Transaksi berhasil!");
     } catch { toast.error("Gagal memproses transaksi"); }
@@ -484,7 +500,7 @@ export default function POS() {
         </div>
       </Modal>
 
-      {/* Discount Modal */}
+      {/* Discount Modal — P0: with reason + admin PIN */}
       <Modal open={showDiscount} onClose={() => setShowDiscount(false)} size="sm">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -493,27 +509,73 @@ export default function POS() {
           </div>
           <div className="space-y-3">
             <div className="flex gap-2">
-              <button onClick={() => setDiscountType("none")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "none" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Tanpa Diskon</button>
+              <button onClick={() => setDiscountType("none")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "none" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Tanpa</button>
               <button onClick={() => setDiscountType("percent")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "percent" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Persen (%)</button>
               <button onClick={() => setDiscountType("rupiah")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "rupiah" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Rupiah</button>
             </div>
             {discountType !== "none" && (
-              <Input
-                label={discountType === "percent" ? "Diskon (%)" : "Diskon (Rp)"}
-                type="number"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(e.target.value)}
-                placeholder={discountType === "percent" ? "10" : "5000"}
-                autoFocus
-              />
+              <>
+                <Input
+                  label={discountType === "percent" ? "Diskon (%)" : "Diskon (Rp)"}
+                  type="number"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  placeholder={discountType === "percent" ? "10" : "5000"}
+                  autoFocus
+                />
+                {discountAmount > 0 && (
+                  <div className="p-3 bg-emerald-50 rounded-xl text-sm flex justify-between">
+                    <span className="font-semibold text-emerald-700">Total Diskon:</span>
+                    <span className="font-bold text-emerald-700">{formatRupiah(discountAmount)}</span>
+                  </div>
+                )}
+                {/* P0: Alasan diskon wajib */}
+                <Input
+                  label="Alasan Diskon *"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  placeholder="Pelanggan loyal / barang rusak / promo"
+                />
+                {/* P0: PIN admin untuk diskon besar */}
+                {discountAmount > 0 && (() => {
+                  const total = cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
+                  const percent = total > 0 ? (discountAmount / total) * 100 : 0;
+                  const maxAmount = 100000; // default policy
+                  const maxPercent = 10; // default policy
+                  const isFullDiscount = discountAmount >= total;
+                  const needsPin = discountAmount > maxAmount || percent > maxPercent || isFullDiscount;
+                  if (needsPin) {
+                    return (
+                      <div className="space-y-2">
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+                          Diskon {formatRupiah(discountAmount)} memerlukan otorisasi admin.
+                          Masukkan PIN admin untuk melanjutkan.
+                        </div>
+                        <Input
+                          label="PIN Admin"
+                          type="password"
+                          value={discountAdminPin}
+                          onChange={(e) => setDiscountAdminPin(e.target.value)}
+                          placeholder="••••••"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </>
             )}
-            {discountAmount > 0 && (
-              <div className="p-3 bg-emerald-50 rounded-xl text-sm flex justify-between">
-                <span className="font-semibold text-emerald-700">Total Diskon:</span>
-                <span className="font-bold text-emerald-700">{formatRupiah(discountAmount)}</span>
-              </div>
-            )}
-            <Button variant="primary" className="w-full" onClick={() => setShowDiscount(false)}>
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={() => {
+                if (discountType !== "none" && discountAmount > 0 && !discountReason.trim()) {
+                  toast.error("Alasan diskon wajib diisi");
+                  return;
+                }
+                setShowDiscount(false);
+              }}
+            >
               Terapkan
             </Button>
           </div>
@@ -547,6 +609,15 @@ export default function POS() {
               ))}
             </div>
           </div>
+          {/* P0: Reference field for non-cash payments */}
+          {payMethod !== "cash" && (
+            <Input
+              label="No. Referensi Pembayaran (opsional)"
+              value={paymentReference}
+              onChange={e => setPaymentReference(e.target.value)}
+              placeholder="Contoh: TRX-12345 dari M-Banking / QRIS"
+            />
+          )}
           <Card className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/10">
             <div className="flex justify-between text-lg font-extrabold">
               <span className="text-slate-600">Total</span>

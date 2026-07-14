@@ -53,11 +53,17 @@ export async function GET() {
 
   const accountBalances = await db.select().from(accounts).where(eq(accounts.isActive, true)).orderBy(asc(accounts.id));
 
+  // P1: Count pending transactions for Action Required
+  const [pendingResult] = await db.select({
+    count: sql<number>`CAST(count(*) AS INTEGER)`,
+  }).from(transactions).where(eq(transactions.status, "pending"));
+
   return NextResponse.json({
     today: { ...todayAll, pos: todayPos, brilink: todayBrilink },
     lowStock,
     recent,
     last7,
     accounts: accountBalances,
+    pendingCount: pendingResult?.count || 0,
   });
 }
