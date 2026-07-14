@@ -338,8 +338,8 @@ export default function RekeningKoran() {
 
       {/* Rekening Koran Table */}
       <Card className="overflow-hidden">
-        {/* Header bank-style */}
-        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-zinc-50 to-white">
+        {/* Header bank-style — hidden in print (print has its own header) */}
+        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-zinc-50 to-white no-print">
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div
@@ -473,13 +473,36 @@ export default function RekeningKoran() {
         )}
       </Card>
 
-      {/* Print-only header (hidden on screen) */}
-      <div className="hidden print:block">
-        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
-          Rekening Koran — {selectedAccount?.name}
-        </h1>
-        <p style={{ fontSize: 12, color: "#666", marginBottom: 16 }}>
-          Periode: {startDate} s/d {endDate}
+      {/* Print-only content (hidden on screen, shown when printing) */}
+      <div className="hidden print:block print-only">
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
+            {settings.app_name || "POS & Agen Bisnis"}
+          </h1>
+          {settings.store_address && (
+            <p style={{ fontSize: 10, color: "#666", margin: "2px 0" }}>{settings.store_address}</p>
+          )}
+          {settings.phone && (
+            <p style={{ fontSize: 10, color: "#666", margin: "2px 0" }}>Telp: {settings.phone}</p>
+          )}
+        </div>
+        <h2 style={{ fontSize: 14, fontWeight: 700, textAlign: "center", margin: "10px 0" }}>
+          Rekening Koran
+        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 12 }}>
+          <span><strong>Rekening:</strong> {selectedAccount?.name}</span>
+          <span><strong>Periode:</strong> {startDate} s/d {endDate}</span>
+        </div>
+        {summary && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 12, padding: "8px 0", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc" }}>
+            <span>Saldo Awal: <strong>{formatRupiah(summary.openingBalance)}</strong></span>
+            <span>Masuk: <strong>{formatRupiah(summary.totalIn)}</strong></span>
+            <span>Keluar: <strong>{formatRupiah(summary.totalOut)}</strong></span>
+            <span>Saldo Akhir: <strong>{formatRupiah(summary.closingBalance)}</strong></span>
+          </div>
+        )}
+        <p style={{ fontSize: 9, color: "#999", textAlign: "center", marginTop: 16 }}>
+          Dicetak: {new Date().toLocaleString("id-ID")}
         </p>
       </div>
 
