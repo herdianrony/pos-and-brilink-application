@@ -45,8 +45,8 @@ export default function Products() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-zinc-800">Manajemen Data</h2>
-        <p className="text-sm text-zinc-400">Kelola produk, kategori, dan {servicesLabel.toLowerCase()}</p>
+        <h2 className="text-2xl font-bold text-slate-800">Manajemen Data</h2>
+        <p className="text-sm text-slate-400">Kelola produk, kategori, dan {servicesLabel.toLowerCase()}</p>
       </div>
       <Tabs
         tabs={[
@@ -115,9 +115,9 @@ function ProductsTab() {
     <>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-sm" />
         </div>
         <Button onClick={openAdd}><Plus size={16} /> Tambah Produk</Button>
       </div>
@@ -126,7 +126,7 @@ function ProductsTab() {
         {loading ? <Spinner /> : products.length === 0 ? <EmptyState icon="package" title="Belum ada produk" subtitle="Tambah produk pertama Anda" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="text-xs text-zinc-400 uppercase tracking-wider bg-zinc-50/80">
+              <thead><tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
                 <th className="text-left p-3 font-medium">Produk</th>
                 <th className="text-left p-3 font-medium">Kategori</th>
                 <th className="text-right p-3 font-medium">Harga Beli</th>
@@ -137,18 +137,18 @@ function ProductsTab() {
               </tr></thead>
               <tbody>
                 {products.map(p => (
-                  <tr key={p.id} className="border-t border-zinc-50 hover:bg-emerald-50/30 transition-colors">
+                  <tr key={p.id} className="border-t border-slate-50 hover:bg-emerald-50/30 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-zinc-600" />
+                        <DynamicIcon name={p.categoryIcon} fallback="package" size={18} className="text-slate-600" />
                         <div>
-                          <p className="font-semibold text-zinc-800">{p.name}</p>
-                          {p.barcode && <p className="text-[11px] text-zinc-400 font-mono">{p.barcode}</p>}
+                          <p className="font-semibold text-slate-800">{p.name}</p>
+                          {p.barcode && <p className="text-[11px] text-slate-400 font-mono">{p.barcode}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 text-zinc-500 text-xs">{p.categoryName || "—"}</td>
-                    <td className="p-3 text-right text-zinc-500">{formatRupiah(p.buyPrice)}</td>
+                    <td className="p-3 text-slate-500 text-xs">{p.categoryName || "—"}</td>
+                    <td className="p-3 text-right text-slate-500">{formatRupiah(p.buyPrice)}</td>
                     <td className="p-3 text-right font-semibold text-primary">{formatRupiah(p.sellPrice)}</td>
                     <td className="p-3 text-right font-semibold text-emerald-600">{formatRupiah(parseFloat(p.sellPrice) - parseFloat(p.buyPrice))}</td>
                     <td className="p-3 text-right">
@@ -174,7 +174,7 @@ function ProductsTab() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">{edit ? "Edit Produk" : "Tambah Produk"}</h3>
-            <button onClick={() => setModal(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+            <button onClick={() => setModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Produk *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama produk" />
@@ -260,9 +260,9 @@ function CategoriesTab() {
         {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="tag" title="Belum ada kategori" /> :
           cats.map(c => (
             <Card key={c.id} className="p-4 flex items-center gap-3 group">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-zinc-700" /></div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-slate-700" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-zinc-800 truncate">{c.name}</p>
+                <p className="font-semibold text-slate-800 truncate">{c.name}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
@@ -278,11 +278,11 @@ function CategoriesTab() {
           <h3 className="text-lg font-bold">{edit ? "Edit Kategori" : "Tambah Kategori"}</h3>
           <Input label="Nama Kategori" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
-            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Pilih Ikon</label>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-zinc-50 rounded-xl p-3">
+            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Pilih Ikon</label>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto bg-slate-50 rounded-xl p-3">
               {icons.slice(0, 30).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary scale-110" : "hover:bg-zinc-200")}><DynamicIcon name={em} size={18} className="text-zinc-700" /></button>
+                  className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary scale-110" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
               ))}
             </div>
           </div>
@@ -412,7 +412,7 @@ function BLServicesTab() {
         {loading ? <Spinner /> : svcs.length === 0 ? <EmptyState icon="landmark" title="Belum ada layanan" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="text-xs text-zinc-400 uppercase tracking-wider bg-zinc-50/80">
+              <thead><tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
                 <th className="text-left p-3 font-medium">Layanan</th>
                 <th className="text-left p-3 font-medium">Kategori</th>
                 <th className="text-right p-3 font-medium">Biaya Admin</th>
@@ -421,19 +421,19 @@ function BLServicesTab() {
               </tr></thead>
               <tbody>
                 {svcs.map(s => (
-                  <tr key={s.id} className="border-t border-zinc-50 hover:bg-emerald-50/30">
+                  <tr key={s.id} className="border-t border-slate-50 hover:bg-emerald-50/30">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <DynamicIcon name={s.icon} fallback="package" size={18} className="text-zinc-600" />
+                        <DynamicIcon name={s.icon} fallback="package" size={18} className="text-slate-600" />
                         <div>
-                          <span className="font-semibold text-zinc-800">{s.name}</span>
+                          <span className="font-semibold text-slate-800">{s.name}</span>
                           {s.useTieredFee && (
                             <span className="ml-2"><Badge variant="purple"><Layers size={10} className="inline" /> Berjenjang</Badge></span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 text-zinc-500 text-xs">{s.categoryName || "—"}</td>
+                    <td className="p-3 text-slate-500 text-xs">{s.categoryName || "—"}</td>
                     <td className="p-3 text-right font-semibold text-amber-600">
                       {s.useTieredFee ? (
                         <span className="text-xs text-purple-600">{s.feeTiers?.length || 0} tier</span>
@@ -495,29 +495,29 @@ function BLServicesTab() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-zinc-700">Skema Fee Berjenjang:</p>
+                <p className="text-sm font-medium text-slate-700">Skema Fee Berjenjang:</p>
                 <Button variant="ghost" size="sm" onClick={addTier}><Plus size={14} /> Tambah Tier</Button>
               </div>
               {tiers.length === 0 ? (
-                <p className="text-center text-zinc-400 text-sm py-4">Belum ada tier. Klik "Tambah Tier" untuk memulai.</p>
+                <p className="text-center text-slate-400 text-sm py-4">Belum ada tier. Klik "Tambah Tier" untuk memulai.</p>
               ) : (
                 <div className="space-y-2">
                   {tiers.map((tier, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-zinc-50 rounded-lg p-2">
+                    <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2">
                       <div className="flex-1 grid grid-cols-4 gap-2">
                         <input type="number" placeholder="Min" value={tier.minAmount} onChange={e => updateTier(idx, "minAmount", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-zinc-200 text-sm" />
+                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
                         <input type="number" placeholder="Max (kosong=∞)" value={tier.maxAmount || ""} onChange={e => updateTier(idx, "maxAmount", e.target.value || null)}
-                          className="px-2 py-1.5 rounded border border-zinc-200 text-sm" />
+                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
                         <input type="number" placeholder="Admin" value={tier.adminFee} onChange={e => updateTier(idx, "adminFee", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-zinc-200 text-sm" />
+                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
                         <input type="number" placeholder="Fee Agen" value={tier.agentFee} onChange={e => updateTier(idx, "agentFee", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-zinc-200 text-sm" />
+                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
                       </div>
                       <button onClick={() => removeTier(idx)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
                     </div>
                   ))}
-                  <p className="text-xs text-zinc-400">Format: Nominal Min | Nominal Max | Biaya Admin | Fee Agen</p>
+                  <p className="text-xs text-slate-400">Format: Nominal Min | Nominal Max | Biaya Admin | Fee Agen</p>
                 </div>
               )}
             </div>
@@ -543,11 +543,11 @@ function BLServicesTab() {
             </ul>
           </div>
           <div>
-            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Pilih Ikon</label>
-            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto bg-zinc-50 rounded-xl p-3">
+            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Pilih Ikon</label>
+            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto bg-slate-50 rounded-xl p-3">
               {icons.slice(30).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-zinc-200")}><DynamicIcon name={em} size={18} className="text-zinc-700" /></button>
+                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
               ))}
             </div>
           </div>
@@ -568,9 +568,9 @@ function BLServicesTab() {
                 <Layers size={20} className="text-purple-500" />
                 Atur Fee Berjenjang
               </h3>
-              {edit && <p className="text-sm text-zinc-500"><DynamicIcon name={edit.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{edit.name}</p>}
+              {edit && <p className="text-sm text-slate-500"><DynamicIcon name={edit.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{edit.name}</p>}
             </div>
-            <button onClick={() => setTiersModal(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+            <button onClick={() => setTiersModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           
           <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-700">
@@ -585,19 +585,19 @@ function BLServicesTab() {
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-700">Daftar Tier:</p>
+              <p className="text-sm font-medium text-slate-700">Daftar Tier:</p>
               <Button variant="primary" size="sm" onClick={addTier}><Plus size={14} /> Tambah Tier</Button>
             </div>
             
             {tiers.length === 0 ? (
-              <div className="text-center py-8 bg-zinc-50 rounded-xl">
+              <div className="text-center py-8 bg-slate-50 rounded-xl">
                 <Layers size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-zinc-400 text-sm">Belum ada tier</p>
+                <p className="text-slate-400 text-sm">Belum ada tier</p>
                 <p className="text-gray-300 text-xs">Klik "Tambah Tier" untuk membuat skema fee berjenjang</p>
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="grid grid-cols-5 gap-2 text-xs font-medium text-zinc-500 px-2">
+                <div className="grid grid-cols-5 gap-2 text-xs font-medium text-slate-500 px-2">
                   <span>Nominal Min</span>
                   <span>Nominal Max</span>
                   <span>Biaya Admin</span>
@@ -605,21 +605,21 @@ function BLServicesTab() {
                   <span></span>
                 </div>
                 {tiers.map((tier, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                  <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
                     <div className="flex-1 grid grid-cols-4 gap-2">
                       <input 
                         type="number" 
                         placeholder="Min" 
                         value={tier.minAmount} 
                         onChange={e => updateTier(idx, "minAmount", e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-zinc-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
+                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
                       />
                       <input 
                         type="number" 
                         placeholder="Max (kosong=∞)" 
                         value={tier.maxAmount || ""} 
                         onChange={e => updateTier(idx, "maxAmount", e.target.value || null)}
-                        className="px-3 py-2 rounded-lg border border-zinc-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
+                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
                       />
                       <input 
                         type="number" 
@@ -711,10 +711,10 @@ function BLCategoriesTab() {
         {loading ? <Spinner /> : cats.length === 0 ? <EmptyState icon="folder-open" title="Belum ada kategori layanan" /> :
           cats.map(c => (
             <Card key={c.id} className="p-4 flex items-center gap-3 group">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-zinc-700" /></div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${c.color}15` }}><DynamicIcon name={c.icon} fallback="package" size={24} className="text-slate-700" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-zinc-800 truncate">{c.name}</p>
-                <p className="text-xs text-zinc-400">Urutan: {c.sortOrder}</p>
+                <p className="font-semibold text-slate-800 truncate">{c.name}</p>
+                <p className="text-xs text-slate-400">Urutan: {c.sortOrder}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Pencil size={14} /></button>
@@ -730,11 +730,11 @@ function BLCategoriesTab() {
           <h3 className="text-lg font-bold">{edit ? "Edit Kategori" : "Tambah Kategori Layanan"}</h3>
           <Input label="Nama" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
-            <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Ikon</label>
-            <div className="flex flex-wrap gap-2 bg-zinc-50 rounded-xl p-3">
+            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Ikon</label>
+            <div className="flex flex-wrap gap-2 bg-slate-50 rounded-xl p-3">
               {icons.slice(30, 60).map(em => (
                 <button key={em} onClick={() => setF({ ...f, icon: em })}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-zinc-200")}><DynamicIcon name={em} size={18} className="text-zinc-700" /></button>
+                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg", f.icon === em ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-slate-200")}><DynamicIcon name={em} size={18} className="text-slate-700" /></button>
               ))}
             </div>
           </div>

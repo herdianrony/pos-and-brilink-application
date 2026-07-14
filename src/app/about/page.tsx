@@ -41,21 +41,21 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
       {/* ── Header ─────────────────────────────── */}
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
+      <header className="bg-white border-b border-slate-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium"
           >
             <ArrowLeft size={18} /> Kembali
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#10b981" }}>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-md" style={{ backgroundColor: "#00875A" }}>
               <Landmark size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-zinc-800">Tentang Aplikasi</h1>
-              <p className="text-[11px] text-zinc-400">{appName} v{version}</p>
+              <h1 className="text-sm font-bold text-slate-800">Tentang Aplikasi</h1>
+              <p className="text-[11px] text-slate-400">{appName} v{version}</p>
             </div>
           </div>
         </div>
@@ -63,13 +63,13 @@ export default function AboutPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* ── Hero ─────────────────────────────── */}
-        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#0f172a" }}>
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#0F172A" }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl -ml-16 -mb-16" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl -ml-16 -mb-16" />
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
                 <Landmark size={28} className="text-white" />
               </div>
               <div>
@@ -104,24 +104,24 @@ export default function AboutPage() {
         </div>
 
         {/* ── Developer Card ───────────────────── */}
-        <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-6 sm:p-8">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-5">
             <Code2 size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-zinc-800">Dibuat oleh Developer</h2>
+            <h2 className="text-lg font-bold text-slate-800">Dibuat oleh Developer</h2>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#10b981" }}>
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#00875A" }}>
               <span className="text-white text-2xl font-bold">HR</span>
             </div>
 
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-zinc-800">Herdian Rony</h3>
-              <p className="text-sm text-zinc-500 mt-0.5">
+              <h3 className="text-xl font-bold text-slate-800">Herdian Rony</h3>
+              <p className="text-sm text-slate-500 mt-0.5">
                 Full-Stack Developer & Builder
               </p>
-              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Mengembangkan aplikasi POS & agen bisnis dengan fokus pada kemudahan
                 penggunaan untuk pelaku UMKM Indonesia.
               </p>
@@ -132,13 +132,13 @@ export default function AboutPage() {
                   href="https://github.com/herdianrony"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
                   <Globe size={14} /> GitHub
                 </a>
                 <a
                   href="mailto:herdianrony@gmail.com"
-                  className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
                   <Mail size={14} /> Email
                 </a>
@@ -146,7 +146,7 @@ export default function AboutPage() {
                   href="https://github.com/herdianrony/pos-and-brilink-application"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
                   <ExternalLink size={14} /> Repository
                 </a>
@@ -165,7 +165,7 @@ export default function AboutPage() {
                 <Heart size={24} className="text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-zinc-800">
+                <h2 className="text-lg font-bold text-slate-800">
                   Dukung Pengembangan
                 </h2>
                 <p className="text-sm text-amber-700/80 mt-0.5">
@@ -174,7 +174,7 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <p className="text-sm text-zinc-600 leading-relaxed mb-5">
+            <p className="text-sm text-slate-600 leading-relaxed mb-5">
               Aplikasi ini gratis & open-source. Dukungan Anda sangat berarti untuk
               pengembangan fitur baru, perbaikan bug, dan biaya operasional.
               Setiap kontribusi — sekecil apapun — sangat dihargai! heart
@@ -213,7 +213,7 @@ export default function AboutPage() {
                   return (
                     <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/60 backdrop-blur-sm">
                       <Icon size={14} className="text-amber-600 shrink-0" />
-                      <span className="text-xs text-zinc-700 font-medium">{b.text}</span>
+                      <span className="text-xs text-slate-700 font-medium">{b.text}</span>
                     </div>
                   );
                 })}
@@ -223,10 +223,10 @@ export default function AboutPage() {
         </div>
 
         {/* ── Features ────────────────────────── */}
-        <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-6 sm:p-8">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-5">
             <Sparkles size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-zinc-800">Fitur Utama</h2>
+            <h2 className="text-lg font-bold text-slate-800">Fitur Utama</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -240,13 +240,13 @@ export default function AboutPage() {
             ].map((f, i) => {
               const Icon = f.icon;
               return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
                   <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
                     <Icon size={16} className="text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-zinc-700">{f.title}</p>
-                    <p className="text-xs text-zinc-400 mt-0.5">{f.desc}</p>
+                    <p className="text-sm font-semibold text-slate-700">{f.title}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{f.desc}</p>
                   </div>
                 </div>
               );
@@ -255,10 +255,10 @@ export default function AboutPage() {
         </div>
 
         {/* ── Tech Stack ──────────────────────── */}
-        <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-6 sm:p-8">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-4">
             <Code2 size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-zinc-800">Teknologi</h2>
+            <h2 className="text-lg font-bold text-slate-800">Teknologi</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {[
@@ -268,7 +268,7 @@ export default function AboutPage() {
             ].map((tech) => (
               <span
                 key={tech}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-zinc-200 text-xs font-medium text-zinc-600"
+                className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-slate-200 text-xs font-medium text-slate-600"
               >
                 {tech}
               </span>
@@ -278,7 +278,7 @@ export default function AboutPage() {
 
         {/* ── Footer ──────────────────────────── */}
         <footer className="text-center py-6">
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-400">
             © {new Date().getFullYear()} {appName} — Dibuat oleh{" "}
             <a
               href="https://github.com/herdianrony"
@@ -289,7 +289,7 @@ export default function AboutPage() {
               herdianrony
             </a>
           </p>
-          <p className="text-[11px] text-zinc-400 mt-1">
+          <p className="text-[11px] text-slate-400 mt-1">
             Open Source • MIT License
           </p>
         </footer>

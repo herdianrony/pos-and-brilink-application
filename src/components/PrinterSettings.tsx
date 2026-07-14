@@ -66,7 +66,7 @@ export default function PrinterSettings() {
 
   return (
     <Card className="p-6 space-y-5">
-      <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <h3 className="font-semibold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
         <Printer size={18} className="text-purple-500" /> Pengaturan Printer Thermal
       </h3>
 
@@ -146,7 +146,7 @@ export default function PrinterSettings() {
       )}
 
       {/* Action buttons */}
-      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-zinc-100">
+      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
         <Button onClick={save} disabled={saving} variant="primary">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
           {saving ? "Menyimpan..." : "Simpan"}
@@ -208,8 +208,8 @@ export default function PrinterSettings() {
       )}
 
       {/* Panduan koneksi */}
-      <div className="text-xs text-zinc-400 space-y-1.5 pt-3 border-t border-zinc-100">
-        <p className="font-semibold text-zinc-500">Panduan:</p>
+      <div className="text-xs text-slate-400 space-y-1.5 pt-3 border-t border-slate-100">
+        <p className="font-semibold text-slate-500">Panduan:</p>
         <p>• <strong>Network</strong>: Hubungkan printer ke WiFi/router, set IP static, masukkan IP di atas.</p>
         <p>• <strong>USB</strong>: Sambungkan kabel USB, install driver dari pabrikan.</p>
         <p>• <strong>Serial</strong>: Pilih COM port yang sesuai (cek di Device Manager).</p>

@@ -54,7 +54,7 @@ export function AccountCard({
   const isCash = account.code === "cash";
 
   // Warna kartu — gunakan color dari account, fallback ke default
-  const cardColor = account.color || (isCash ? "#22c55e" : "#003d79");
+  const cardColor = account.color || (isCash ? "#22c55e" : "#0F172A");
   // Darken color for gradient bottom
   const cardColorDark = darkenColor(cardColor, 25);
   // Lighter accent for top-right decoration

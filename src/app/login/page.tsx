@@ -73,7 +73,7 @@ function LoginForm() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0F172A" }}>
         <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
       </div>
     );
@@ -84,11 +84,11 @@ function LoginForm() {
       {/* ── Kiri: Brand panel ─────────────────────── */}
       <div
         className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden items-center justify-center p-12"
-        style={{ backgroundColor: "#0f172a" }}
+        style={{ backgroundColor: "#0F172A" }}
       >
         {/* Decorative shapes */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl -ml-24 -mb-24" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl -ml-24 -mb-24" />
         <div className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
@@ -98,7 +98,7 @@ function LoginForm() {
 
         <div className="relative z-10 text-white max-w-md">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
               <Landmark size={28} className="text-white" />
             </div>
             <div>
@@ -132,30 +132,30 @@ function LoginForm() {
       </div>
 
       {/* ── Kanan: Form panel ─────────────────────── */}
-      <div className="flex-1 lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-zinc-50">
+      <div className="flex-1 lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-slate-50">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
               <Landmark size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-zinc-900">POS & Agen Bisnis</h1>
-              <p className="text-zinc-400 text-xs">Point of Sale System</p>
+              <h1 className="text-lg font-bold text-slate-900">POS & Agen Bisnis</h1>
+              <p className="text-slate-400 text-xs">Point of Sale System</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-pop border border-zinc-200/60 p-8 animate-fadeIn">
-            <h2 className="text-2xl font-bold text-zinc-900 mb-1">Masuk</h2>
-            <p className="text-sm text-zinc-400 mb-6">
+          <div className="bg-white rounded-3xl shadow-pop border border-slate-200/60 p-8 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-900 mb-1">Masuk</h2>
+            <p className="text-sm text-slate-400 mb-6">
               Silakan masuk dengan akun Anda
             </p>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-700">Username</label>
+                <label className="text-sm font-medium text-slate-700">Username</label>
                 <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={username}
@@ -163,27 +163,27 @@ function LoginForm() {
                     placeholder="Masukkan username"
                     autoFocus
                     required
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-700">Password</label>
+                <label className="text-sm font-medium text-slate-700">Password</label>
                 <div className="relative">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Masukkan password"
                     required
-                    className="w-full pl-11 pr-11 py-3 rounded-xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
+                    className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -200,7 +200,7 @@ function LoginForm() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#10b981" }}
+                style={{ backgroundColor: "#00875A" }}
               >
                 {loading ? (
                   <>
@@ -214,8 +214,8 @@ function LoginForm() {
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-zinc-100">
-              <p className="text-xs text-zinc-400 text-center leading-relaxed">
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-xs text-slate-400 text-center leading-relaxed">
                 Belum punya akun?{" "}
                 <a href="/setup" className="text-primary font-semibold hover:underline">
                   Jalankan Setup Wizard
@@ -224,7 +224,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <p className="text-center text-xs text-zinc-400 mt-6">
+          <p className="text-center text-xs text-slate-400 mt-6">
             © {new Date().getFullYear()} POS & Agen Bisnis
           </p>
         </div>
@@ -237,7 +237,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0f172a" }}>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0F172A" }}>
           <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
         </div>
       }

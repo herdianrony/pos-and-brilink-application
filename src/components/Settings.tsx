@@ -55,20 +55,20 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5 animate-fadeIn max-w-2xl">
       <div>
-        <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
-          <SettingsIcon size={24} className="text-zinc-500" /> Pengaturan
+        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <SettingsIcon size={24} className="text-slate-500" /> Pengaturan
         </h2>
-        <p className="text-sm text-zinc-400">Konfigurasi bisnis, branding, dan aplikasi</p>
+        <p className="text-sm text-slate-400">Konfigurasi bisnis, branding, dan aplikasi</p>
       </div>
 
       {/* Branding & Business Type */}
       <Card className="p-6 space-y-5">
-        <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
+        <h3 className="font-semibold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <Palette size={18} className="text-purple-500" /> Branding & Tipe Bisnis
         </h3>
 
         <div>
-          <label className="text-sm font-medium text-zinc-700 mb-2 block">Tipe Bisnis (preset cepat)</label>
+          <label className="text-sm font-medium text-slate-700 mb-2 block">Tipe Bisnis (preset cepat)</label>
           <div className="flex flex-wrap gap-2">
             {businessPresets.map((preset) => (
               <button
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   data.business_type === preset
                     ? "border-primary bg-primary/5 text-primary"
-                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
                 {preset}
@@ -131,7 +131,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="p-6 space-y-5">
-        <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
+        <h3 className="font-semibold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <Store size={18} className="text-emerald-500" /> Informasi Toko
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -171,7 +171,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="p-6 space-y-5">
-        <h3 className="font-semibold text-zinc-700 flex items-center gap-2 border-b border-zinc-100 pb-3">
+        <h3 className="font-semibold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-3">
           <CreditCard size={18} className="text-emerald-500" /> Pengaturan Kas
         </h3>
         <Input
@@ -181,7 +181,7 @@ export default function SettingsPage() {
           onChange={e => setData({ ...data, opening_balance: e.target.value })}
           placeholder="500000"
         />
-        <p className="text-xs text-zinc-400">Saldo awal yang digunakan sebagai referensi pembukaan kas harian.</p>
+        <p className="text-xs text-slate-400">Saldo awal yang digunakan sebagai referensi pembukaan kas harian.</p>
       </Card>
 
       <PrinterSettings />

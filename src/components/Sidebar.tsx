@@ -12,7 +12,6 @@ import {
   Wallet,
   Menu,
   X,
-  ChevronRight,
   LogOut,
   Shield,
   User as UserIcon,
@@ -105,15 +104,15 @@ export default function Sidebar({
       {/* Mobile hamburger */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-3 left-3 z-50 p-2.5 bg-white rounded-xl shadow-card border border-zinc-200/70 text-zinc-700"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-float border border-slate-200/60 text-slate-700 active:scale-95 transition-transform"
       >
-        <Menu size={20} />
+        <Menu size={22} />
       </button>
 
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-zinc-950/40 backdrop-blur-sm z-[55] lg:hidden"
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-[55] lg:hidden animate-fadeIn"
           onClick={() => setOpen(false)}
         />
       )}
@@ -122,31 +121,36 @@ export default function Sidebar({
       <aside
         className={cn(
           "fixed lg:sticky top-0 left-0 h-screen w-72 z-[56] flex flex-col transition-transform duration-300 lg:translate-x-0",
-          "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950",
+          "gradient-dark",
           open ? "translate-x-0" : "-translate-x-full"
         )}
-        style={{ backgroundColor: "#0f172a" }}
+        style={{ backgroundColor: "#0F172A" }}
       >
-        {/* Decorative gradient overlay */}
+        {/* Decorative gradient glow */}
         <div className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
-            background: "radial-gradient(circle at 0% 0%, rgba(16,185,129,0.25) 0%, transparent 50%)",
+            background: "radial-gradient(circle at 0% 0%, rgba(0,179,126,0.3) 0%, transparent 50%)",
+          }}
+        />
+        <div className="absolute bottom-0 right-0 w-48 h-48 opacity-20 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(124,58,237,0.4) 0%, transparent 70%)",
           }}
         />
 
         {/* Header */}
         <div className="relative p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#10b981" }}>
-              <Landmark size={20} className="text-white" />
+            <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
+              <Landmark size={22} className="text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-white font-bold text-base tracking-tight truncate">{appName}</h1>
-              <p className="text-slate-300 text-[11px]">{settings.business_type || "Agen Bisnis"}</p>
+              <h1 className="text-white font-extrabold text-base tracking-tight truncate">{appName}</h1>
+              <p className="text-slate-400 text-[11px] font-medium">{settings.business_type || "Agen Bisnis"}</p>
             </div>
           </div>
-          <button onClick={() => setOpen(false)} className="lg:hidden text-slate-300 hover:text-white">
-            <X size={20} />
+          <button onClick={() => setOpen(false)} className="lg:hidden text-slate-400 hover:text-white active:scale-90 transition-all">
+            <X size={22} />
           </button>
         </div>
 
@@ -157,7 +161,6 @@ export default function Sidebar({
             const isActive = active === item.id;
             const restrictedForKasir = ["settings"];
             const isDisabled = user?.role === "kasir" && restrictedForKasir.includes(item.id);
-            // Label dinamis untuk menu "brilink" (Layanan Agen)
             const label = item.label === "__SERVICES__" ? servicesLabel : item.label;
 
             return (
@@ -170,28 +173,27 @@ export default function Sidebar({
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left transition-all duration-200 group relative",
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group relative font-bold text-sm",
                   isActive
-                    ? "bg-white text-primary shadow-lg"
+                    ? "gradient-primary text-white shadow-glow-primary active:scale-95"
                     : isDisabled
-                      ? "text-slate-500/60 cursor-not-allowed"
-                      : "text-slate-200 hover:bg-white/10 hover:text-white"
+                      ? "text-slate-600 cursor-not-allowed"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95"
                 )}
               >
-                <Icon size={18} className={cn(
-                  isActive ? "text-primary" : isDisabled ? "text-slate-500/60" : "text-slate-300 group-hover:text-white"
+                <Icon size={20} className={cn(
+                  isActive ? "text-white" : isDisabled ? "text-slate-600" : "text-slate-400 group-hover:text-white"
                 )} />
-                <span className="text-sm font-medium flex-1">{label}</span>
-                {isActive && <ChevronRight size={14} className="text-primary" />}
+                <span className="flex-1">{label}</span>
               </button>
             );
           })}
         </nav>
 
-        {/* User + Actions (di atas footer) */}
+        {/* User + Actions */}
         {user && (
-          <div className="relative px-3 pb-2 space-y-2">
-            {/* About & Support buttons */}
+          <div className="relative px-3 pb-3 space-y-2">
+            {/* About & Support */}
             <div className="grid grid-cols-2 gap-2">
               <a
                 href="/about"
@@ -200,10 +202,9 @@ export default function Sidebar({
                   window.open("/about", "_blank");
                   setOpen(false);
                 }}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-[11px] font-medium transition-colors"
-                title="Tentang Aplikasi & Developer"
+                className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-bold transition-all active:scale-95"
               >
-                <Info size={13} />
+                <Info size={14} />
                 <span>Tentang</span>
               </a>
               <a
@@ -211,25 +212,25 @@ export default function Sidebar({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-accent/20 hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-semibold transition-colors"
-                title="Dukung developer via Sociabuzz"
+                className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-accent/20 hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-bold transition-all active:scale-95"
+                style={{ backgroundColor: "rgba(124, 58, 237, 0.2)" }}
               >
-                <Heart size={12} className="fill-current" />
+                <Heart size={13} className="fill-current" />
                 <span>Support</span>
               </a>
             </div>
 
             {/* User card */}
-            <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-3 flex items-center gap-3 border border-white/10">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: "#10b981" }}>
+            <div className="rounded-2xl bg-white/5 backdrop-blur-sm p-3 flex items-center gap-3 border border-white/5">
+              <div className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center text-sm font-extrabold text-white shrink-0 shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-semibold truncate">{user.name}</p>
-                <div className="flex items-center gap-1.5 text-slate-300 text-[11px]">
+                <p className="text-white text-sm font-bold truncate">{user.name}</p>
+                <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
                   {user.role === "admin" ? (
                     <>
-                      <Shield size={11} className="text-primary-light" />
+                      <Shield size={11} className="text-emerald-400" />
                       <span>Administrator</span>
                     </>
                   ) : (
@@ -244,23 +245,23 @@ export default function Sidebar({
                 onClick={handleLogout}
                 disabled={loggingOut}
                 title="Keluar"
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 flex items-center justify-center text-slate-200 hover:text-white transition-colors disabled:opacity-50"
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-500/80 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-90 disabled:opacity-50"
               >
-                <LogOut size={15} />
+                <LogOut size={16} />
               </button>
             </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="relative p-4 border-t border-white/10">
+        <div className="relative p-4 border-t border-white/5">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-              <Clock size={16} className="text-slate-200" />
+            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+              <Clock size={18} className="text-slate-300" />
             </div>
             <div>
-              <p className="text-white text-sm font-semibold">{time}</p>
-              <p className="text-slate-300 text-[11px]">
+              <p className="text-white text-sm font-bold">{time}</p>
+              <p className="text-slate-400 text-[11px]">
                 {new Date().toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",

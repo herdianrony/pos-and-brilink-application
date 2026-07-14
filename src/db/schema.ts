@@ -118,7 +118,7 @@ export const accounts = sqliteTable("accounts", {
   code: text("code", { length: 20 }).notNull().unique(),
   name: text("name", { length: 100 }).notNull(),
   icon: text("icon", { length: 50 }).default("wallet"),
-  color: text("color", { length: 20 }).default("#10b981"),
+  color: text("color", { length: 20 }).default("#00875A"),
   balance: real("balance").notNull().default(0),
   minBalance: real("min_balance").default(100000),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),

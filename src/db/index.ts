@@ -145,7 +145,7 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`code\` text(20) NOT NULL,
       \`name\` text(100) NOT NULL,
       \`icon\` text(50) DEFAULT 'wallet',
-      \`color\` text(20) DEFAULT '#10b981',
+      \`color\` text(20) DEFAULT '#00875A',
       \`balance\` real DEFAULT 0 NOT NULL,
       \`min_balance\` real DEFAULT 100000,
       \`is_active\` integer DEFAULT true NOT NULL,

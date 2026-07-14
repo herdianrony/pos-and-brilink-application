@@ -194,8 +194,8 @@ export default function RekeningKoran() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 no-print">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900">Rekening Koran</h2>
-          <p className="text-sm text-zinc-400">
+          <h2 className="text-2xl font-bold text-slate-900">Rekening Koran</h2>
+          <p className="text-sm text-slate-400">
             Mutasi rekening instan — mirip rekening koran bank
           </p>
         </div>
@@ -236,7 +236,7 @@ export default function RekeningKoran() {
             onChange={(e) => setEndDate(e.target.value)}
           />
           <div>
-            <label className="text-sm font-medium text-zinc-700 mb-1.5 block">Presets</label>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Presets</label>
             <div className="flex flex-wrap gap-1">
               {[
                 { id: "today", label: "Hari Ini" },
@@ -248,7 +248,7 @@ export default function RekeningKoran() {
                 <button
                   key={p.id}
                   onClick={() => setPreset(p.id)}
-                  className="px-2 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-xs font-medium text-zinc-600 transition-colors"
+                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-600 transition-colors"
                 >
                   {p.label}
                 </button>
@@ -298,13 +298,13 @@ export default function RekeningKoran() {
       {/* Rekening Koran Table */}
       <Card className="overflow-hidden">
         {/* Header bank-style */}
-        <div className="p-5 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white">
+        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-zinc-50 to-white">
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
                 style={{
-                  background: `linear-gradient(135deg, ${selectedAccount?.color || "#4f46e5"} 0%, ${selectedAccount?.color || "#4f46e5"}dd 100%)`,
+                  background: `linear-gradient(135deg, ${selectedAccount?.color || "#00875A"} 0%, ${selectedAccount?.color || "#00875A"}dd 100%)`,
                 }}
               >
                 <DynamicIcon
@@ -315,15 +315,15 @@ export default function RekeningKoran() {
                 />
               </div>
               <div>
-                <h3 className="font-bold text-zinc-900">{selectedAccount?.name}</h3>
-                <p className="text-xs text-zinc-400">
+                <h3 className="font-bold text-slate-900">{selectedAccount?.name}</h3>
+                <p className="text-xs text-slate-400">
                   Periode: {startDate || "—"} s/d {endDate || "—"}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider">Saldo Saat Ini</p>
-              <p className="text-xl font-bold text-zinc-900">{formatRupiah(selectedAccount?.balance || "0")}</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Saldo Saat Ini</p>
+              <p className="text-xl font-bold text-slate-900">{formatRupiah(selectedAccount?.balance || "0")}</p>
             </div>
           </div>
         </div>
@@ -341,23 +341,23 @@ export default function RekeningKoran() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-200">
-                  <th className="text-left p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Tanggal
                   </th>
-                  <th className="text-left p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                  <th className="text-left p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Keterangan
                   </th>
-                  <th className="text-center p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                  <th className="text-center p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Tipe
                   </th>
-                  <th className="text-right p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Masuk
                   </th>
-                  <th className="text-right p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Keluar
                   </th>
-                  <th className="text-right p-3 font-semibold text-zinc-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
                     Saldo
                   </th>
                 </tr>
@@ -371,14 +371,14 @@ export default function RekeningKoran() {
                     <tr
                       key={m.id}
                       className={cn(
-                        "border-b border-zinc-50 hover:bg-emerald-50/30 transition-colors",
+                        "border-b border-slate-50 hover:bg-emerald-50/30 transition-colors",
                         idx === 0 && "bg-amber-50/30"
                       )}
                     >
-                      <td className="p-3 text-zinc-600 whitespace-nowrap text-xs">
+                      <td className="p-3 text-slate-600 whitespace-nowrap text-xs">
                         {formatDate(m.createdAt)}
                       </td>
-                      <td className="p-3 text-zinc-700 max-w-xs">
+                      <td className="p-3 text-slate-700 max-w-xs">
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
@@ -404,7 +404,7 @@ export default function RekeningKoran() {
                       <td className="p-3 text-right font-semibold text-red-600">
                         {!isIn ? formatRupiah(Math.abs(amt)) : "—"}
                       </td>
-                      <td className="p-3 text-right font-bold text-zinc-800">
+                      <td className="p-3 text-right font-bold text-slate-800">
                         {formatRupiah(m.balanceAfter)}
                       </td>
                     </tr>
@@ -412,8 +412,8 @@ export default function RekeningKoran() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-zinc-100 border-t-2 border-zinc-300 font-bold">
-                  <td colSpan={3} className="p-3 text-right text-zinc-700 uppercase text-xs tracking-wider">
+                <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                  <td colSpan={3} className="p-3 text-right text-slate-700 uppercase text-xs tracking-wider">
                     Total Periode:
                   </td>
                   <td className="p-3 text-right text-emerald-700">
@@ -422,7 +422,7 @@ export default function RekeningKoran() {
                   <td className="p-3 text-right text-red-700">
                     {summary ? formatRupiah(summary.totalOut) : "—"}
                   </td>
-                  <td className="p-3 text-right text-zinc-900">
+                  <td className="p-3 text-right text-slate-900">
                     {summary ? formatRupiah(summary.closingBalance) : "—"}
                   </td>
                 </tr>

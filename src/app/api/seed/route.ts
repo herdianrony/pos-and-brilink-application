@@ -74,7 +74,7 @@ export async function POST() {
       { name: "ATK", icon: "pencil", color: "#8b5cf6" },
       { name: "Toiletries", icon: "spray-can", color: "#ec4899" },
       { name: "Aksesoris HP", icon: "smartphone", color: "#06b6d4" },
-      { name: "Pulsa & Voucher", icon: "smartphone", color: "#10b981" },
+      { name: "Pulsa & Voucher", icon: "smartphone", color: "#00875A" },
       { name: "Gas & Listrik", icon: "zap", color: "#f97316" },
     ]).returning();
 

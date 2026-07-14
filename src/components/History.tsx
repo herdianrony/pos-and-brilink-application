@@ -46,10 +46,10 @@ export default function History() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-zinc-800 flex items-center gap-2">
-          <ClipboardList size={24} className="text-cyan-500" /> Riwayat Transaksi
+        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
         </h2>
-        <p className="text-sm text-zinc-400">{trxs.length} transaksi ditemukan</p>
+        <p className="text-sm text-slate-400">{trxs.length} transaksi ditemukan</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -72,7 +72,7 @@ export default function History() {
         {loading ? <Spinner /> : trxs.length === 0 ? <EmptyState icon="clipboard-list" title="Belum ada transaksi" /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="text-xs text-zinc-400 uppercase tracking-wider bg-zinc-50/80">
+              <thead><tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
                 <th className="text-left p-3 font-medium">Invoice</th>
                 <th className="text-left p-3 font-medium">Tipe</th>
                 <th className="text-left p-3 font-medium">Detail</th>
@@ -85,15 +85,15 @@ export default function History() {
               </tr></thead>
               <tbody>
                 {trxs.map(t => (
-                  <tr key={t.id} className="border-t border-zinc-50 hover:bg-emerald-50/30 transition-colors">
-                    <td className="p-3 font-mono text-xs text-zinc-500">{t.invoiceNo}</td>
+                  <tr key={t.id} className="border-t border-slate-50 hover:bg-emerald-50/30 transition-colors">
+                    <td className="p-3 font-mono text-xs text-slate-500">{t.invoiceNo}</td>
                     <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
-                    <td className="p-3 text-zinc-500 text-xs">{t.subType || "Penjualan"}</td>
-                    <td className="p-3 text-zinc-600">{t.customerName || "—"}</td>
+                    <td className="p-3 text-slate-500 text-xs">{t.subType || "Penjualan"}</td>
+                    <td className="p-3 text-slate-600">{t.customerName || "—"}</td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
                     <td className="p-3 text-right font-semibold text-emerald-600">{formatRupiah(t.profit || "0")}</td>
-                    <td className="p-3 text-xs text-zinc-500">{t.paymentMethod === "cash" ? "Tunai" : t.paymentMethod === "transfer" ? "Transfer" : "QRIS"}</td>
-                    <td className="p-3 text-zinc-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
+                    <td className="p-3 text-xs text-slate-500">{t.paymentMethod === "cash" ? "Tunai" : t.paymentMethod === "transfer" ? "Transfer" : "QRIS"}</td>
+                    <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
                     <td className="p-3 text-center">
                       <button onClick={() => viewDetail(t.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Eye size={14} /></button>
                     </td>
@@ -110,26 +110,26 @@ export default function History() {
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">Detail Transaksi</h3>
-              <button onClick={() => setDetail(null)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+              <button onClick={() => setDetail(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
-            <div className="text-center bg-zinc-50 rounded-xl p-4">
-              <p className="text-xs text-zinc-400">Invoice</p>
+            <div className="text-center bg-slate-50 rounded-xl p-4">
+              <p className="text-xs text-slate-400">Invoice</p>
               <p className="font-mono font-bold text-lg text-primary">{detail.invoiceNo}</p>
-              <p className="text-xs text-zinc-400 mt-1">{formatDate(detail.createdAt)}</p>
+              <p className="text-xs text-slate-400 mt-1">{formatDate(detail.createdAt)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-zinc-400">Tipe</span><p className="font-medium">{detail.type === "pos" ? "POS" : servicesLabel}</p></div>
-              {detail.subType && <div><span className="text-zinc-400">Layanan</span><p className="font-medium">{detail.subType}</p></div>}
-              {detail.customerName && <div><span className="text-zinc-400">Pelanggan</span><p className="font-medium">{detail.customerName}</p></div>}
-              {detail.customerPhone && <div><span className="text-zinc-400">No. HP/Rek</span><p className="font-medium">{detail.customerPhone}</p></div>}
-              <div><span className="text-zinc-400">Pembayaran</span><p className="font-medium capitalize">{detail.paymentMethod}</p></div>
+              <div><span className="text-slate-400">Tipe</span><p className="font-medium">{detail.type === "pos" ? "POS" : servicesLabel}</p></div>
+              {detail.subType && <div><span className="text-slate-400">Layanan</span><p className="font-medium">{detail.subType}</p></div>}
+              {detail.customerName && <div><span className="text-slate-400">Pelanggan</span><p className="font-medium">{detail.customerName}</p></div>}
+              {detail.customerPhone && <div><span className="text-slate-400">No. HP/Rek</span><p className="font-medium">{detail.customerPhone}</p></div>}
+              <div><span className="text-slate-400">Pembayaran</span><p className="font-medium capitalize">{detail.paymentMethod}</p></div>
             </div>
             {detail.items?.length > 0 && (
               <div className="border-t border-dashed pt-3 space-y-2">
-                <p className="text-sm font-semibold text-zinc-600">Item:</p>
+                <p className="text-sm font-semibold text-slate-600">Item:</p>
                 {detail.items.map(i => (
-                  <div key={i.id} className="flex justify-between text-sm bg-zinc-50 rounded-lg p-2">
-                    <span>{i.productName} <span className="text-zinc-400">x{i.quantity}</span></span>
+                  <div key={i.id} className="flex justify-between text-sm bg-slate-50 rounded-lg p-2">
+                    <span>{i.productName} <span className="text-slate-400">x{i.quantity}</span></span>
                     <span className="font-semibold">{formatRupiah(i.subtotal)}</span>
                   </div>
                 ))}
@@ -137,10 +137,10 @@ export default function History() {
             )}
             <div className="border-t border-dashed pt-3 space-y-1">
               {detail.adminFee && parseFloat(detail.adminFee) > 0 && (
-                <div className="flex justify-between text-sm"><span className="text-zinc-400">Biaya Admin</span><span className="text-amber-600 font-semibold">{formatRupiah(detail.adminFee)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-slate-400">Biaya Admin</span><span className="text-amber-600 font-semibold">{formatRupiah(detail.adminFee)}</span></div>
               )}
               <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{formatRupiah(detail.totalAmount)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-zinc-400">Keuntungan</span><span className="text-emerald-600 font-bold">{formatRupiah(detail.profit || "0")}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-slate-400">Keuntungan</span><span className="text-emerald-600 font-bold">{formatRupiah(detail.profit || "0")}</span></div>
             </div>
             {detail.notes && <div className="bg-amber-50 rounded-xl p-3 text-sm">{detail.notes}</div>}
             <Button variant="primary" className="w-full" onClick={() => setDetail(null)}>Tutup</Button>
