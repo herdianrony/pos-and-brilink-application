@@ -31,6 +31,9 @@ extraResources:
   - from: .next/static
     to: standalone/.next/static
     filter: ["**/*"]
+  - from: public
+    to: standalone/public
+    filter: ["**/*"]
 
 # Windows target
 win:

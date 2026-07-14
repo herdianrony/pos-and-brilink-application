@@ -5,6 +5,7 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge } from "@/components/ui";
 import { Landmark, CheckCircle, X, Search, ArrowDownLeft, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { BankIcon, isBankIcon } from "@/components/BankIcon";
 import { useSettings } from "@/lib/use-settings";
 
 interface FeeTier {
@@ -196,7 +197,7 @@ export default function BRILink() {
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-white" />
+                isBankIcon(acc.icon) ? <BankIcon name={acc.icon} size={16} /> : <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-white" />
                 <span className="text-xs font-medium text-zinc-600 truncate">{acc.name}</span>
                 {isLow && <AlertTriangle size={10} className="text-amber-500" />}
               </div>
@@ -245,7 +246,11 @@ export default function BRILink() {
                     "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg",
                     sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-zinc-200"
                   )}>
-                  <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
+                  {isBankIcon(s.icon) ? (
+                    <BankIcon name={s.icon} size={36} className="group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
+                  )}
                   <p className="font-semibold text-sm text-zinc-800 leading-tight mb-1">{s.name}</p>
                   <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     {s.useTieredFee ? (
@@ -280,7 +285,11 @@ export default function BRILink() {
           <div className="p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
+                {isBankIcon(sel.icon) ? (
+                  <BankIcon name={sel.icon} size={36} />
+                ) : (
+                  <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
+                )}
                 <div>
                   <h3 className="text-lg font-bold text-zinc-800">{sel.name}</h3>
                   <div className="flex items-center gap-2">
@@ -348,7 +357,7 @@ export default function BRILink() {
                         )}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-zinc-500" />
+                          isBankIcon(acc.icon) ? <BankIcon name={acc.icon} size={18} /> : <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-zinc-500" />
                           <span className="text-xs font-medium text-zinc-700 truncate">{acc.name}</span>
                         </div>
                         <p className={cn("text-sm font-bold", isLow ? "text-amber-600" : "text-zinc-800")}>

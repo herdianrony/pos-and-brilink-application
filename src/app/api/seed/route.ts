@@ -33,10 +33,10 @@ export async function POST() {
     // ACCOUNTS
     const accs = await db.insert(accounts).values([
       { code: "cash", name: "Kas Tunai (Laci)", icon: "banknote", color: "#22c55e", balance: 500000, minBalance: 200000 },
-      { code: "bank_bri", name: "M-Banking BRI", icon: "landmark", color: "#003d79", balance: 2000000, minBalance: 500000 },
-      { code: "bank_mandiri", name: "M-Banking Mandiri", icon: "landmark", color: "#003366", balance: 1500000, minBalance: 300000 },
-      { code: "bank_bca", name: "M-Banking BCA", icon: "circle", color: "#003d79", balance: 1000000, minBalance: 300000 },
-      { code: "bank_bni", name: "M-Banking BNI", icon: "circle", color: "#f97316", balance: 500000, minBalance: 200000 },
+      { code: "bank_bri", name: "M-Banking BRI", icon: "bri", color: "#00529B", balance: 2000000, minBalance: 500000 },
+      { code: "bank_mandiri", name: "M-Banking Mandiri", icon: "mandiri", color: "#003A79", balance: 1500000, minBalance: 300000 },
+      { code: "bank_bca", name: "M-Banking BCA", icon: "bca", color: "#0060AF", balance: 1000000, minBalance: 300000 },
+      { code: "bank_bni", name: "M-Banking BNI", icon: "bni", color: "#F37021", balance: 500000, minBalance: 200000 },
     ]).returning();
 
     for (const acc of accs) {
@@ -114,7 +114,7 @@ export async function POST() {
       // Transfer
       { name: "Transfer Antar Bank (RTGS)", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
       { name: "Transfer Sesama Bank", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-      { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "smartphone", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
+      { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "ovo", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
 
       // Penarikan Tunai
       { name: "Tarik Tunai Bank", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
@@ -125,17 +125,17 @@ export async function POST() {
       { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Pembayaran Tagihan
-      { name: "Tagihan PLN", categoryId: scm["Pembayaran Tagihan"], icon: "zap", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran Tagihan"], icon: "droplet", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran Tagihan"], icon: "globe", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran Tagihan"], icon: "heart-pulse", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan PLN", categoryId: scm["Pembayaran Tagihan"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran Tagihan"], icon: "pdam", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran Tagihan"], icon: "indihome", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "BPJS Kesehatan", categoryId: scm["Pembayaran Tagihan"], icon: "bpjs", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
       { name: "Tagihan Cicilan", categoryId: scm["Pembayaran Tagihan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Pulsa & Paket Data (untuk counter HP)
       { name: "Pulsa Reguler", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
       { name: "Paket Data", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
       { name: "Top Up Game", categoryId: scm["Pulsa & Paket Data"], icon: "gamepad-2", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-      { name: "Top Up E-Wallet", categoryId: scm["Pulsa & Paket Data"], icon: "wallet", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
+      { name: "Top Up E-Wallet", categoryId: scm["Pulsa & Paket Data"], icon: "gopay", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
       { name: "Voucher Game", categoryId: scm["Pulsa & Paket Data"], icon: "gift", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
 
       // Lainnya

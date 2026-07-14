@@ -6,6 +6,7 @@ import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select, C
 import { AccountCard } from "@/components/AccountCard";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { BankIcon, isBankIcon } from "@/components/BankIcon";
 
 interface Account {
   id: number; code: string; name: string; icon: string | null; color: string | null;
@@ -266,7 +267,7 @@ export default function Cash() {
                 onClick={() => setActiveTab(a.id.toString())}
                 className={cn("px-3 py-1 rounded-lg text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-zinc-100 text-zinc-600")}
               >
-                <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{a.name.split(" ")[0]}
+                isBankIcon(a.icon) ? <BankIcon name={a.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />
               </button>
             ))}
           </div>
@@ -320,7 +321,7 @@ export default function Cash() {
           {selAccount && (
             <div className="bg-zinc-50 rounded-xl p-3">
               <p className="text-xs text-zinc-400">Akun</p>
-              <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
+              <p className="font-semibold">{isBankIcon(selAccount.icon) ? <BankIcon name={selAccount.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />}{selAccount.name}</p>
               <p className="text-sm text-zinc-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
@@ -343,7 +344,7 @@ export default function Cash() {
           {selAccount && (
             <div className="bg-zinc-50 rounded-xl p-3">
               <p className="text-xs text-zinc-400">Dari Akun</p>
-              <p className="font-semibold"><DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{selAccount.name}</p>
+              <p className="font-semibold">{isBankIcon(selAccount.icon) ? <BankIcon name={selAccount.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={selAccount.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />}{selAccount.name}</p>
               <p className="text-sm text-zinc-500">Saldo: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}

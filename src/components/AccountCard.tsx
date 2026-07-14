@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { DynamicIcon } from "./DynamicIcon";
+import { BankIcon, isBankIcon } from "./BankIcon";
 import { AlertTriangle, Wifi, Pencil, Trash2 } from "lucide-react";
 
 export interface AccountData {
@@ -110,14 +111,20 @@ export function AccountCard({
         {/* Top row: icon + low balance warning + contactless + edit/delete */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-              <DynamicIcon
-                name={account.icon}
-                fallback={isCash ? "wallet" : "landmark"}
-                size={18}
-                className="text-white"
-              />
-            </div>
+            {isBankIcon(account.icon) ? (
+              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center p-1">
+                <BankIcon name={account.icon} size={28} />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                <DynamicIcon
+                  name={account.icon}
+                  fallback={isCash ? "wallet" : "landmark"}
+                  size={18}
+                  className="text-white"
+                />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-wider text-white/70 font-medium leading-tight">
                 {isCash ? "Kas Tunai" : "Rekening"}
