@@ -19,6 +19,30 @@ async function getAccountByCode(code: string) {
   return acc;
 }
 
+// ── Build transaction notes with optional denomination breakdown ──
+function buildTransactionNotes(
+  userNotes: unknown,
+  denomination: unknown,
+  feeMethod: string
+): string | null {
+  const parts: string[] = [];
+  if (typeof userNotes === "string" && userNotes.trim()) {
+    parts.push(userNotes.trim());
+  }
+  if (feeMethod && feeMethod !== "cash") {
+    parts.push(`Fee: ${feeMethod}`);
+  }
+  if (denomination && typeof denomination === "object") {
+    const entries = Object.entries(denomination as Record<string, number>)
+      .filter(([, count]) => count > 0)
+      .map(([val, count]) => `${count}×${parseInt(val)}`);
+    if (entries.length > 0) {
+      parts.push(`Denominasi: ${entries.join(", ")}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(" | ") : null;
+}
+
 // ── F-01: Diskon policy ────────────────────────────
 // Default: max discount Rp100.000 atau 10% dari subtotal, mana lebih besar.
 // Bila discount > limit, wajib PIN admin (diset di settings: discount_admin_pin).
@@ -331,6 +355,13 @@ export async function POST(req: Request) {
         bankBalanceAfter = bankEffect === "out" ? ba.balance - totalAmount : ba.balance + totalAmount;
       }
 
+      // ── Fee method affects cash flow ────────────
+      // - "cash": nasabah bayar fee tunai terpisah → kas += adminFee
+      // - "deducted": fee dipotong dari nominal → nasabah terima (nominal - adminFee)
+      // - "charged": fee dibebankan ke rekening nasabah → kas tidak terdampak fee
+      const feeMethod = (body.feeMethod === "deducted" || body.feeMethod === "charged") ? body.feeMethod : "cash";
+      const cashFromFee = feeMethod === "cash" ? adminFee : 0;
+
       const [trx] = await tx.insert(transactions).values({
         invoiceNo,
         type: "brilink",
@@ -341,10 +372,11 @@ export async function POST(req: Request) {
         adminFee,
         profit: agentFee,
         paymentMethod: body.paymentMethod || "cash",
-        notes: body.notes ? String(body.notes) : null,
+        notes: buildTransactionNotes(body.notes, body.denomination, feeMethod),
       }).returning();
 
-      const totalCashFlow = totalAmount + adminFee;
+      // Cash flow depends on fee method
+      const totalCashFlow = cashEffect === "in" ? totalAmount + cashFromFee : -totalAmount;
 
       // ── Cash account effect ─────────────────────
       if (cashAcc) {
@@ -376,7 +408,8 @@ export async function POST(req: Request) {
             accountId: cashAcc.id, type: "brilink_out", amount: -totalAmount, balanceAfter: cashBalanceAfter,
             notes: `BRILink OUT: ${service.name} - ${invoiceNo}`, referenceId: trx.id,
           });
-          if (adminFee > 0) {
+          // Fee only added to cash if fee method is "cash" (paid separately by customer)
+          if (adminFee > 0 && feeMethod === "cash") {
             const feeBalance = cashBalanceAfter + adminFee;
             await tx.update(accounts).set({ balance: feeBalance, updatedAt: new Date() }).where(eq(accounts.id, cashAcc.id));
             await tx.insert(accountMutations).values({

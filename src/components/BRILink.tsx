@@ -4,10 +4,11 @@ import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge, useToast } from "@/components/ui";
 import { CurrencyInput } from "@/components/CurrencyInput";
-import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
+import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers, TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
 import { useSettings } from "@/lib/use-settings";
+import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, type FeeMethod } from "@/lib/service-flow";
 
 interface FeeTier {
   id: number;
@@ -74,10 +75,13 @@ export default function BRILink() {
   const [sel, setSel] = useState<Service | null>(null);
   const [form, setForm] = useState({
     customerName: "", customerPhone: "", amount: "", notes: "",
-    paymentMethod: "cash", selectedBankId: "", periode: ""
+    paymentMethod: "cash", selectedBankId: "", periode: "",
+    feeMethod: "cash" as FeeMethod,
   });
+  const [denomination, setDenomination] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [lastInv, setLastInv] = useState("");
 
   useEffect(() => {
@@ -111,36 +115,74 @@ export default function BRILink() {
   }, {});
 
   const bankAccounts = accounts.filter(a => a.code !== "cash");
+  const cashAccount = accounts.find(a => a.code === "cash");
   const selectedBank = bankAccounts.find(a => a.id.toString() === form.selectedBankId);
-  
+
+  // ── Flow config (context-specific UI/UX) ─────────
+  const flowConfig = useMemo(() => sel ? getFlowConfig(sel) : null, [sel]);
+  const toneClasses = useMemo(() => flowConfig ? getToneClasses(flowConfig.tone) : null, [flowConfig]);
+
   // Calculate dynamic fee based on amount
   const { adminFee, agentFee, tier: currentTier } = useMemo(() => {
     if (!sel) return { adminFee: 0, agentFee: 0, tier: null };
     const amount = parseFloat(form.amount || "0");
     return calculateFee(amount, sel);
   }, [sel, form.amount]);
-  
-  const totalAmt = parseFloat(form.amount || "0") + adminFee;
-  
-  // Calculate profit - with same-bank strategy, ALL admin fee is profit!
-  // No interbank cost when using matching bank account
-  const isSameBankTransfer = selectedBank?.name?.toLowerCase().includes(
-    form.customerPhone?.toLowerCase().includes("bri") ? "bri" :
-    form.customerPhone?.toLowerCase().includes("mandiri") ? "mandiri" :
-    form.customerPhone?.toLowerCase().includes("bca") ? "bca" :
-    form.customerPhone?.toLowerCase().includes("bni") ? "bni" : ""
-  ) || false;
-  
+
+  const nominalAmount = parseFloat(form.amount || "0");
+
+  // ── Fee method affects cash flow calculation ─────
+  // - "cash": nasabah bayar fee tunai terpisah → kas += adminFee
+  // - "deducted": fee dipotong dari nominal → nasabah terima (nominal - adminFee)
+  // - "charged": fee dibebankan ke rekening nasabah → kas tidak terdampak fee
+  const cashFromFee = form.feeMethod === "cash" ? adminFee : 0;
+  const totalCashFlow = useMemo(() => {
+    if (!sel) return 0;
+    if (sel.cashEffect === "in") return nominalAmount + cashFromFee;
+    if (sel.cashEffect === "out") return -nominalAmount; // fee doesn't reduce cash out
+    return 0;
+  }, [sel, nominalAmount, cashFromFee]);
+
+  // ── Balance preview (before → after) ─────────────
+  const cashBalanceBefore = cashAccount ? parseFloat(cashAccount.balance) : 0;
+  const cashBalanceAfter = cashBalanceBefore + totalCashFlow;
+  const bankBalanceBefore = selectedBank ? parseFloat(selectedBank.balance) : 0;
+  const bankBalanceAfter = sel && selectedBank
+    ? sel.bankEffect === "out"
+      ? bankBalanceBefore - nominalAmount
+      : sel.bankEffect === "in"
+        ? bankBalanceBefore + nominalAmount
+        : bankBalanceBefore
+    : bankBalanceBefore;
+
+  const totalAmt = nominalAmount + (form.feeMethod === "cash" ? adminFee : 0);
+
   // With multi-bank strategy: admin fee = profit (no bank cost)
-  const actualProfit = adminFee; // 100% profit karena pakai rekening yang sama
-  const potentialExtraProfit = adminFee - agentFee; // Selisih dari fee yang seharusnya ke bank
+  const actualProfit = adminFee;
+  const potentialExtraProfit = adminFee - agentFee;
+
+  // Denomination total (for deposit verification)
+  const denominationTotal = useMemo(() => {
+    return Object.entries(denomination).reduce((sum, [val, count]) => sum + parseInt(val) * count, 0);
+  }, [denomination]);
 
   // Check if selected bank has enough balance
   const bankNeedsBalance = sel?.bankEffect === "out";
   const bankBalance = selectedBank ? parseFloat(selectedBank.balance) : 0;
   const hasEnoughBankBalance = !bankNeedsBalance || bankBalance >= parseFloat(form.amount || "0");
 
+  // Check if cash has enough balance (for cash_withdrawal)
+  const cashNeedsBalance = sel?.cashEffect === "out";
+  const hasEnoughCashBalance = !cashNeedsBalance || cashBalanceBefore >= nominalAmount;
+
+  // Cash insufficient amount (for display)
+  const cashShortfall = cashNeedsBalance && nominalAmount > cashBalanceBefore ? nominalAmount - cashBalanceBefore : 0;
+
+  // Overall can submit
+  const canSubmit = nominalAmount > 0 && hasEnoughBankBalance && hasEnoughCashBalance;
+
   async function handleSubmit() {
+    // Now called only after confirmation dialog
     if (!sel || !form.amount) return;
     setSubmitting(true);
     try {
@@ -156,11 +198,13 @@ export default function BRILink() {
           totalAmount: parseFloat(form.amount),
           adminFee: adminFee,
           agentFee: agentFee,
+          feeMethod: form.feeMethod,
           cashEffect: sel.cashEffect,
           bankEffect: sel.bankEffect,
           bankAccountId: form.selectedBankId ? parseInt(form.selectedBankId) : null,
           paymentMethod: form.paymentMethod,
           notes: form.notes || null,
+          denomination: flowConfig?.showDenomination ? denomination : null,
         }),
       });
       const trx = await res.json();
@@ -171,13 +215,32 @@ export default function BRILink() {
       }
       setLastInv(trx.invoiceNo);
       setSel(null);
+      setShowConfirm(false);
       setShowDone(true);
-      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "", periode: "" });
+      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "", periode: "", feeMethod: "cash" });
+      setDenomination({});
       const newAccs = await fetch("/api/accounts").then(r => r.json());
       setAccounts(newAccs);
       toast.success("Transaksi berhasil!");
     } catch { toast.error("Gagal memproses transaksi"); }
     finally { setSubmitting(false); }
+  }
+
+  function attemptSubmit() {
+    // Open confirmation dialog instead of directly submitting
+    if (!form.amount || parseFloat(form.amount) <= 0) {
+      toast.error("Nominal belum diisi");
+      return;
+    }
+    if (!hasEnoughBankBalance) {
+      toast.error("Saldo rekening tidak cukup untuk transaksi ini");
+      return;
+    }
+    if (!hasEnoughCashBalance) {
+      toast.error("Saldo kas tidak cukup untuk penarikan tunai");
+      return;
+    }
+    setShowConfirm(true);
   }
 
   const [recentServices, setRecentServices] = useState<number[]>(() => {
@@ -316,21 +379,22 @@ export default function BRILink() {
         ))
       )}
 
-      {/* Transaction Form Modal */}
+      {/* Transaction Form Modal — flow-aware */}
       <Modal open={!!sel} onClose={() => setSel(null)} size="lg">
-        {sel && (
+        {sel && flowConfig && toneClasses && (
           <div className="p-5 space-y-5">
+            {/* ── Header with flow-specific tone ────────── */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {isBankIcon(sel.icon) ? (
                   <BankIcon name={sel.icon} size={36} />
                 ) : (
-                  <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
+                  <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className={toneClasses.accent} />
                 )}
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-800">{sel.name}</h3>
+                  <h3 className="text-lg font-extrabold text-slate-800">{flowConfig.title}: {sel.name}</h3>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm text-slate-400">{sel.categoryName}</p>
+                    <p className="text-sm text-slate-400">{flowConfig.subtitle}</p>
                     {sel.useTieredFee && (
                       <Badge variant="purple"><Layers size={10} /> Fee Berjenjang</Badge>
                     )}
@@ -340,6 +404,18 @@ export default function BRILink() {
               <button onClick={() => setSel(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
 
+            {/* ── Cash direction badge ──────────────────── */}
+            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold", toneClasses.badge)}>
+              {flowConfig.cashBadgeTone === "warning" ? (
+                <TrendingDown size={16} />
+              ) : flowConfig.cashBadgeTone === "success" ? (
+                <TrendingUp size={16} />
+              ) : (
+                <ArrowRight size={16} />
+              )}
+              {flowConfig.cashBadgeText}
+            </div>
+
             {/* Fee Tiers Info */}
             {sel.useTieredFee && sel.feeTiers.length > 0 && (
               <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
@@ -347,13 +423,13 @@ export default function BRILink() {
                   <Layers size={14} /> Skema Biaya Admin Berjenjang:
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  {sel.feeTiers.map((tier, i) => (
-                    <div 
-                      key={tier.id} 
+                  {sel.feeTiers.map((tier) => (
+                    <div
+                      key={tier.id}
                       className={cn(
                         "p-2 rounded-xl border transition-all",
-                        currentTier?.id === tier.id 
-                          ? "bg-purple-200 border-purple-400 ring-2 ring-purple-300" 
+                        currentTier?.id === tier.id
+                          ? "bg-purple-200 border-purple-400 ring-2 ring-purple-300"
                           : "bg-white border-purple-100"
                       )}
                     >
@@ -368,12 +444,12 @@ export default function BRILink() {
               </div>
             )}
 
-            {/* Bank Account Selection */}
+            {/* ── Account Selection — context-specific label ── */}
             {sel.bankEffect !== "none" && bankAccounts.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                   <Wallet size={16} className="text-emerald-500" />
-                  Pilih Rekening untuk Transaksi Ini
+                  {flowConfig.accountSelectorLabel}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {bankAccounts.map(acc => {
@@ -387,8 +463,8 @@ export default function BRILink() {
                         onClick={() => setForm({ ...form, selectedBankId: acc.id.toString() })}
                         className={cn(
                           "p-3 rounded-xl border-2 text-left transition-all",
-                          isSelected 
-                            ? "bg-emerald-50 border-blue-500 ring-2 ring-blue-200" 
+                          isSelected
+                            ? "bg-emerald-50 border-blue-500 ring-2 ring-blue-200"
                             : "bg-slate-50 border-slate-200 hover:border-slate-300",
                           needsBalance && !hasBalance && form.amount && "opacity-50"
                         )}
@@ -414,28 +490,7 @@ export default function BRILink() {
               </div>
             )}
 
-            {/* Cash/Bank Effect Info */}
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs">
-              <p className="text-slate-700 font-medium mb-2 flex items-center gap-1.5">
-                <DynamicIcon name="bar-chart-3" fallback="bar-chart-3" size={14} className="text-slate-500" />
-                Efek ke Saldo:
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
-                  <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-slate-400"} />
-                  <span className={sel.cashEffect === "in" ? "text-emerald-700" : sel.cashEffect === "out" ? "text-red-600" : "text-slate-500"}>
-                    Kas: {sel.cashEffect === "in" ? "plus Masuk" : sel.cashEffect === "out" ? "minus Keluar" : "—"}
-                  </span>
-                </div>
-                <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl", sel.bankEffect === "in" ? "bg-emerald-100" : sel.bankEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
-                  <Building2 size={14} className={sel.bankEffect === "in" ? "text-emerald-600" : sel.bankEffect === "out" ? "text-red-500" : "text-slate-400"} />
-                  <span className={sel.bankEffect === "in" ? "text-emerald-700" : sel.bankEffect === "out" ? "text-red-600" : "text-slate-500"}>
-                    {selectedBank?.name || "M-Banking"}: {sel.bankEffect === "in" ? "plus Masuk" : sel.bankEffect === "out" ? "minus Keluar" : "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
+            {/* ── Form fields ─────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Nama Pelanggan" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="Nama nasabah" />
               <Input label="No. HP / No. Rekening Tujuan" value={form.customerPhone} onChange={e => setForm({ ...form, customerPhone: e.target.value })} placeholder="08xx / 0012xxx" />
@@ -461,35 +516,149 @@ export default function BRILink() {
                   autoFocus
                 />
                 {sel.useTieredFee && form.amount && currentTier && (
-                  <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
+                  <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                    Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
                   </p>
                 )}
               </div>
-              <Select label="Nasabah Bayar Dengan" value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: e.target.value })}>
-                <option value="cash">Tunai</option>
-                <option value="transfer">Transfer ke Rekening Agen</option>
-              </Select>
+
+              {/* ── Fee method selection ───────────────── */}
+              {flowConfig.showFeeMethod && adminFee > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Metode Biaya Admin</label>
+                  <select
+                    value={form.feeMethod}
+                    onChange={(e) => setForm({ ...form, feeMethod: e.target.value as FeeMethod })}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
+                  >
+                    {flowConfig.allowedFeeMethods.map(method => (
+                      <option key={method} value={method}>{FEE_METHOD_LABELS[method]}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-400">
+                    {form.feeMethod === "cash" && "Nasabah membayar fee tunai terpisah dari nominal."}
+                    {form.feeMethod === "deducted" && `Nasabah menerima ${formatRupiah(Math.max(0, nominalAmount - adminFee))} (nominal dikurangi fee).`}
+                    {form.feeMethod === "charged" && "Fee dibebankan ke rekening nasabah (kas tidak terdampak fee)."}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* ── Denomination input (for cash_deposit) ──── */}
+            {flowConfig.showDenomination && nominalAmount > 0 && (
+              <div className={cn("rounded-xl border p-3 space-y-2", toneClasses.cardBorder, toneClasses.cardBg)}>
+                <p className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                  <Banknote size={14} /> Denominasi Uang (opsional, untuk verifikasi hitung)
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {[100000, 50000, 20000, 10000, 5000, 2000, 1000, 500].map(val => (
+                    <div key={val} className="bg-white rounded-lg p-2 border border-slate-200">
+                      <p className="text-[10px] text-slate-500">{formatRupiah(val)}</p>
+                      <input
+                        type="number"
+                        min={0}
+                        value={denomination[val] || ""}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value) || 0;
+                          setDenomination(prev => ({ ...prev, [val]: count }));
+                        }}
+                        placeholder="0"
+                        className="w-full text-sm font-bold text-slate-800 bg-transparent focus:outline-none"
+                      />
+                      <p className="text-[10px] text-slate-400">× {formatRupiah(val * (denomination[val] || 0))}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                  <span className="font-semibold text-slate-600">Total denominasi:</span>
+                  <span className={cn("font-bold", denominationTotal === nominalAmount ? "text-emerald-600" : "text-amber-600")}>
+                    {formatRupiah(denominationTotal)}
+                    {denominationTotal > 0 && denominationTotal !== nominalAmount && (
+                      <span className="text-[10px] ml-1">
+                        (selisih {formatRupiah(Math.abs(denominationTotal - nominalAmount))})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <Input label="Catatan (opsional)" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Catatan tambahan..." />
 
-            <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-100 space-y-2">
+            {/* ── Physical cash summary ──────────────── */}
+            <Card className={cn("p-4 bg-gradient-to-br border space-y-2", toneClasses.summaryBg, toneClasses.summaryBorder)}>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Nominal Transaksi</span>
-                <span className="font-semibold">{formatRupiah(form.amount || "0")}</span>
+                <span className="text-slate-500">Nominal transaksi</span>
+                <span className="font-semibold">{formatRupiah(nominalAmount)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">
-                  Biaya Admin (dari Nasabah)
-                  {sel.useTieredFee && <span className="text-purple-500 text-xs ml-1">(auto)</span>}
+                  Biaya admin ({FEE_METHOD_LABELS[form.feeMethod].toLowerCase()})
                 </span>
                 <span className="font-semibold text-amber-600">{formatRupiah(adminFee)}</span>
               </div>
-              <div className="border-t border-purple-200 pt-2 flex justify-between text-lg font-extrabold">
-                <span>Total Bayar Nasabah</span>
-                <span className="text-primary">{formatRupiah(totalAmt)}</span>
+              <div className="border-t border-slate-200 pt-2 flex justify-between text-lg font-extrabold">
+                <span>{flowConfig.cashSummaryLabel}</span>
+                <span className={toneClasses.accent}>
+                  {sel.cashEffect === "out"
+                    ? formatRupiah(nominalAmount)
+                    : formatRupiah(totalAmt)}
+                </span>
               </div>
             </Card>
-            
+
+            {/* ── Dampak Saldo — big preview panel ─────── */}
+            <div className={cn("rounded-xl border-2 p-4 space-y-3", toneClasses.cardBorder, "bg-white")}>
+              <p className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                <DynamicIcon name="bar-chart-3" fallback="bar-chart-3" size={14} className="text-slate-500" />
+                Dampak setelah transaksi
+              </p>
+
+              {/* Cash impact */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <Banknote size={16} className="text-slate-500" />
+                  <span className="text-sm font-semibold text-slate-700">Kas Tunai</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-slate-500">{formatRupiah(cashBalanceBefore)}</span>
+                  <ArrowRight size={14} className="text-slate-400" />
+                  <span className={cn("font-bold", totalCashFlow > 0 ? "text-emerald-600" : totalCashFlow < 0 ? "text-red-600" : "text-slate-700")}>
+                    {totalCashFlow > 0 ? "+" : ""}{formatRupiah(cashBalanceAfter)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bank impact */}
+              {sel.bankEffect !== "none" && selectedBank && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <Building2 size={16} className="text-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700">{selectedBank.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-500">{formatRupiah(bankBalanceBefore)}</span>
+                    <ArrowRight size={14} className="text-slate-400" />
+                    <span className={cn("font-bold", sel.bankEffect === "in" ? "text-emerald-600" : "text-red-600")}>
+                      {sel.bankEffect === "in" ? "+" : "−"}{formatRupiah(bankBalanceAfter)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Cash insufficient warning */}
+              {cashShortfall > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700 flex items-center gap-2">
+                  <AlertTriangle size={14} />
+                  <span>
+                    Kas tersisa <strong>{formatRupiah(cashBalanceBefore)}</strong> — butuh <strong>{formatRupiah(nominalAmount)}</strong>.
+                    Kekurangan: <strong>{formatRupiah(cashShortfall)}</strong>.
+                    Pilih sumber saldo lain atau batalkan.
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Profit Calculation - Multi-Bank Strategy */}
             {adminFee > 0 && (
               <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
@@ -502,46 +671,97 @@ export default function BRILink() {
                     <span className="text-slate-600">Biaya Admin dari Nasabah</span>
                     <span className="font-semibold">{formatRupiah(adminFee)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Biaya ke Bank (sesama bank)</span>
-                    <span className="font-semibold text-emerald-600">Rp 0 check</span>
-                  </div>
                   <div className="flex justify-between pt-1.5 border-t border-emerald-200">
                     <span className="font-bold text-emerald-700">PROFIT BERSIH</span>
                     <span className="font-bold text-emerald-600 text-lg">{formatRupiah(adminFee)}</span>
                   </div>
                 </div>
-                {potentialExtraProfit > 0 && (
-                  <div className="mt-3 bg-emerald-100 rounded-xl p-2 text-xs text-emerald-700">
-                    <p className="font-semibold">Anda hemat {formatRupiah(potentialExtraProfit)} biaya antar bank!</p>
-                    <p>Tanpa multi-bank, profit hanya {formatRupiah(agentFee)} (dikurangi biaya transfer antar bank)</p>
-                  </div>
-                )}
               </div>
             )}
 
-            {/* Warning if insufficient balance */}
+            {/* Warning if insufficient bank balance */}
             {!hasEnoughBankBalance && form.amount && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 flex items-start gap-2">
                 <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold">Saldo {selectedBank?.name} tidak cukup!</p>
-                  <p className="text-xs mt-0.5">Saldo: {formatRupiah(selectedBank?.balance || "0")} — Butuh: {formatRupiah(form.amount)}</p>
+                  <p className="text-xs mt-0.5">Saldo: {formatRupiah(selectedBank?.balance || "0")} — Butuh: {formatRupiah(nominalAmount)}</p>
                 </div>
               </div>
             )}
 
             <div className="flex gap-3">
               <Button variant="secondary" size="lg" className="flex-1" onClick={() => setSel(null)}>Batal</Button>
-              <Button variant="primary" size="lg" className="flex-1" onClick={handleSubmit}
-                disabled={submitting || !form.amount || parseFloat(form.amount) <= 0 || !hasEnoughBankBalance}>
-                {submitting ? "Memproses..." : "Proses Transaksi"}
+              <Button
+                variant="primary"
+                size="lg"
+                className={cn("flex-1", toneClasses.button)}
+                onClick={attemptSubmit}
+                disabled={submitting || !canSubmit}
+              >
+                {submitting ? "Memproses..." : flowConfig.primaryActionText.replace("{amount}", formatRupiah(sel.cashEffect === "out" ? nominalAmount : totalAmt))}
               </Button>
             </div>
           </div>
         )}
       </Modal>
 
+      {/* ── Physical cash confirmation dialog ─────── */}
+      <Modal open={showConfirm} onClose={() => setShowConfirm(false)} size="sm">
+        {sel && flowConfig && toneClasses && (
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              {flowConfig.tone === "warning" ? (
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <TrendingDown size={24} className="text-amber-600" />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp size={24} className="text-emerald-600" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-800">{flowConfig.confirmationHeading}</h3>
+                <p className="text-xs text-slate-400">{flowConfig.title} — {sel.name}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600">
+              {flowConfig.confirmationBody
+                .replace("{amount}", formatRupiah(sel.cashEffect === "out" ? nominalAmount : totalAmt))
+                .replace("{account}", form.customerPhone || "—")}
+            </p>
+
+            {/* Summary in confirmation */}
+            <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">{flowConfig.cashSummaryLabel}</span>
+                <span className="font-bold">{formatRupiah(sel.cashEffect === "out" ? nominalAmount : totalAmt)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Kas setelah transaksi</span>
+                <span className={cn("font-bold", totalCashFlow < 0 ? "text-red-600" : "text-emerald-600")}>
+                  {formatRupiah(cashBalanceAfter)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowConfirm(false)}>
+                {flowConfig.confirmationCancelText}
+              </Button>
+              <Button
+                size="lg"
+                className={cn("flex-1", toneClasses.button)}
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Memproses..." : flowConfig.confirmationConfirmText}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
       {/* Success */}
       <Modal open={showDone} onClose={() => setShowDone(false)} size="sm">
         <div className="p-8 text-center space-y-4">
