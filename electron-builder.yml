@@ -29,13 +29,12 @@ files:
 # kita copy manual di afterPack hook (setelah pruning selesai).
 afterPack: scripts/after-pack.js
 
-# Windows target
+# Windows target (Windows 10/11 only — Electron 28+ butuh Node.js 18+)
 win:
   target:
     - target: nsis
       arch:
         - x64
-        - ia32
     - target: portable
       arch:
         - x64

@@ -70,29 +70,5 @@ console.log(`[post-build] Copied: .next/static → standalone/.next/static`);
 copyDir(publicSrc, publicDst);
 console.log(`[post-build] Copied: public → standalone/public`);
 
-// Copy server-wrapper.js → standalone/server-wrapper.js
-// Wrapper ini polyfill Fetch API globals untuk Node.js 16 (Electron 22)
-const wrapperSrc = path.join(projectRoot, "scripts", "server-wrapper.js");
-const wrapperDst = path.join(standaloneDir, "server-wrapper.js");
-if (fs.existsSync(wrapperSrc)) {
-  fs.copyFileSync(wrapperSrc, wrapperDst);
-  console.log(`[post-build] Copied: scripts/server-wrapper.js → standalone/server-wrapper.js`);
-} else {
-  console.warn(`[post-build] WARNING: server-wrapper.js not found at ${wrapperSrc}`);
-}
-
-// Copy undici → standalone/node_modules/undici
-// Next.js 16 butuh Fetch API globals (Request, Response, fetch, dll) yang
-// built-in di Node.js 18+. Electron 22 pakai Node 16 yang TIDAK punya.
-// undici adalah polyfill untuk Fetch API.
-const undiciSrc = path.join(projectRoot, "node_modules", "undici");
-const undiciDst = path.join(standaloneDir, "node_modules", "undici");
-if (fs.existsSync(undiciSrc)) {
-  copyDir(undiciSrc, undiciDst);
-  console.log(`[post-build] Copied: node_modules/undici → standalone/node_modules/undici`);
-} else {
-  console.warn(`[post-build] WARNING: undici not found. Fetch API polyfill will fail!`);
-}
-
 console.log("[post-build] Done. Standalone ready for electron-builder.");
 
