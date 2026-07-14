@@ -3,6 +3,7 @@ import { db, runTransaction, parseSafeNumber } from "@/db";
 import {
   transactions,
   transactionItems,
+  transactionDenominations,
   products,
   accounts,
   accountMutations,
@@ -13,6 +14,13 @@ import {
 import { desc, eq, and, sql, asc } from "drizzle-orm";
 import { generateInvoice } from "@/lib/utils";
 import { requireAuth } from "@/lib/auth";
+import {
+  getFlowConfig,
+  calculateCashFlow,
+  FEE_METHOD_LABELS,
+  type FeeMethod,
+  type FlowType,
+} from "@/lib/service-flow";
 
 async function getAccountByCode(code: string) {
   const [acc] = await db.select().from(accounts).where(eq(accounts.code, code));
@@ -269,7 +277,7 @@ export async function POST(req: Request) {
       return NextResponse.json(trx);
     });
   } else {
-    // BRILINK TRANSACTION — F-02: conditional balance check, F-03: atomic
+    // BRILINK TRANSACTION — S-02/S-03: unified cash flow calculator + feeMethod enforcement
     return await runTransaction(async (tx) => {
       const invoiceNo = generateInvoice("BRL");
 
@@ -287,6 +295,48 @@ export async function POST(req: Request) {
 
       const cashEffect = service.cashEffect;
       const bankEffect = service.bankEffect;
+
+      // S-04: Get flow config from DB flowType (with fallback)
+      const flowConfig = getFlowConfig(service);
+
+      // S-03: Validate feeMethod against flow allowlist
+      const requestedFeeMethod = String(body.feeMethod || service.defaultFeeMethod || "cash") as FeeMethod;
+      if (flowConfig.showFeeMethod && flowConfig.allowedFeeMethods.length > 0) {
+        if (!flowConfig.allowedFeeMethods.includes(requestedFeeMethod)) {
+          return NextResponse.json({
+            error: `Metode biaya '${requestedFeeMethod}' tidak didukung untuk flow ${flowConfig.title}. Yang diizinkan: ${flowConfig.allowedFeeMethods.map(m => FEE_METHOD_LABELS[m]).join(", ")}`,
+            code: "INVALID_FEE_METHOD",
+            allowedMethods: flowConfig.allowedFeeMethods,
+          }, { status: 400 });
+        }
+      }
+      const feeMethod: FeeMethod = requestedFeeMethod;
+
+      // S-04: Inquiry flow — no nominal, no fee, no cash effect
+      if (flowConfig.flowType === "inquiry") {
+        const [trx] = await tx.insert(transactions).values({
+          invoiceNo,
+          type: "brilink",
+          subType: body.subType || service.name,
+          customerName: body.customerName ? String(body.customerName) : null,
+          customerPhone: body.customerPhone ? String(body.customerPhone) : null,
+          totalAmount: 0,
+          adminFee: 0,
+          profit: 0,
+          paymentMethod: "inquiry",
+          notes: body.notes ? String(body.notes) : null,
+          flowType: flowConfig.flowType,
+          feeMethod: null,
+          cashReceived: 0,
+          cashDispensed: 0,
+          settlementAccountId: null,
+          referenceNo: body.referenceNo ? String(body.referenceNo) : null,
+          status: "completed",
+          confirmedAt: new Date(),
+          confirmedByUserId: auth.ok ? auth.user.id : null,
+        }).returning();
+        return NextResponse.json(trx);
+      }
 
       const totalAmount = parseSafeNumber(body.totalAmount, { min: 1 });
       if (totalAmount <= 0) {
@@ -318,21 +368,26 @@ export async function POST(req: Request) {
         bankAccId = defaultBank?.id ?? null;
       }
 
+      // ── S-02: Use unified cash flow calculator ──
+      const cashFlow = calculateCashFlow(cashEffect, totalAmount, adminFee, feeMethod);
+
       // F-02: Pre-validate balances BEFORE writing
-      // Re-fetch cash inside transaction (locked)
       let cashBalanceAfter = cashAcc?.balance ?? 0;
-      if (cashAcc && cashEffect === "out") {
+      if (cashAcc && cashFlow.cashDispensed > 0) {
         const [freshCash] = await tx.select().from(accounts).where(eq(accounts.id, cashAcc.id));
         if (!freshCash) {
           return NextResponse.json({ error: "Akun kas tidak ditemukan" }, { status: 400 });
         }
-        if (freshCash.balance < totalAmount) {
+        // S-02: check against cashDispensed (not full nominal for deducted)
+        if (freshCash.balance < cashFlow.cashDispensed) {
           return NextResponse.json({
-            error: `Saldo kas tidak cukup. Saldo: Rp${Number(freshCash.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${totalAmount.toLocaleString("id-ID")}`,
+            error: `Saldo kas tidak cukup. Saldo: Rp${Number(freshCash.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${cashFlow.cashDispensed.toLocaleString("id-ID")}`,
             code: "INSUFFICIENT_CASH",
           }, { status: 400 });
         }
-        cashBalanceAfter = freshCash.balance - totalAmount;
+        cashBalanceAfter = freshCash.balance + cashFlow.cashDelta;
+      } else if (cashAcc && cashFlow.cashReceived > 0) {
+        cashBalanceAfter = cashAcc.balance + cashFlow.cashDelta;
       }
 
       let bankAcc: typeof accounts.$inferSelect | null = null;
@@ -355,13 +410,6 @@ export async function POST(req: Request) {
         bankBalanceAfter = bankEffect === "out" ? ba.balance - totalAmount : ba.balance + totalAmount;
       }
 
-      // ── Fee method affects cash flow ────────────
-      // - "cash": nasabah bayar fee tunai terpisah → kas += adminFee
-      // - "deducted": fee dipotong dari nominal → nasabah terima (nominal - adminFee)
-      // - "charged": fee dibebankan ke rekening nasabah → kas tidak terdampak fee
-      const feeMethod = (body.feeMethod === "deducted" || body.feeMethod === "charged") ? body.feeMethod : "cash";
-      const cashFromFee = feeMethod === "cash" ? adminFee : 0;
-
       const [trx] = await tx.insert(transactions).values({
         invoiceNo,
         type: "brilink",
@@ -373,50 +421,63 @@ export async function POST(req: Request) {
         profit: agentFee,
         paymentMethod: body.paymentMethod || "cash",
         notes: buildTransactionNotes(body.notes, body.denomination, feeMethod),
+        // S-05: structured audit fields
+        flowType: flowConfig.flowType,
+        feeMethod,
+        cashReceived: cashFlow.cashReceived,
+        cashDispensed: cashFlow.cashDispensed,
+        settlementAccountId: bankAccId,
+        referenceNo: body.referenceNo ? String(body.referenceNo) : null,
+        // S-07: status — transfer/payment/topup = pending (perlu konfirmasi provider)
+        status: flowConfig.involvesExternalProvider ? "pending" : "completed",
+        confirmedAt: flowConfig.involvesExternalProvider ? null : new Date(),
+        confirmedByUserId: flowConfig.involvesExternalProvider ? null : (auth.ok ? auth.user.id : null),
       }).returning();
 
-      // Cash flow depends on fee method
-      const totalCashFlow = cashEffect === "in" ? totalAmount + cashFromFee : -totalAmount;
+      // S-05: Store denomination breakdown in separate table
+      if (body.denomination && typeof body.denomination === "object") {
+        const denomEntries = Object.entries(body.denomination as Record<string, number>)
+          .filter(([, count]) => count > 0);
+        if (denomEntries.length > 0) {
+          await tx.insert(transactionDenominations).values(
+            denomEntries.map(([val, count]) => ({
+              transactionId: trx.id,
+              denomination: parseInt(val),
+              count,
+              subtotal: parseInt(val) * count,
+            }))
+          );
+        }
+      }
 
-      // ── Cash account effect ─────────────────────
-      if (cashAcc) {
-        if (cashEffect === "in") {
-          const newBalance = cashAcc.balance + totalCashFlow;
-          // F-02: conditional update — only if balance after > min OR no min
+      // ── Cash account effect (S-02: use cashDelta) ──
+      if (cashAcc && cashFlow.cashDelta !== 0) {
+        if (cashFlow.cashDelta > 0) {
+          // Cash in
           const result = await tx.update(accounts)
-            .set({ balance: newBalance, updatedAt: new Date() })
+            .set({ balance: cashBalanceAfter, updatedAt: new Date() })
             .where(eq(accounts.id, cashAcc.id))
             .returning({ id: accounts.id });
           if (result.length === 0) {
             throw new Error("Gagal update kas (race condition)");
           }
           await tx.insert(accountMutations).values({
-            accountId: cashAcc.id, type: "brilink_in", amount: totalCashFlow, balanceAfter: newBalance,
+            accountId: cashAcc.id, type: "brilink_in", amount: cashFlow.cashDelta, balanceAfter: cashBalanceAfter,
             notes: `BRILink IN: ${service.name} - ${invoiceNo}`, referenceId: trx.id,
           });
-        } else if (cashEffect === "out") {
-          // F-02: Conditional update — only decrement if balance >= totalAmount
+        } else {
+          // Cash out — conditional update (S-02: check against cashDispensed)
           const result = await tx.update(accounts)
             .set({ balance: cashBalanceAfter, updatedAt: new Date() })
-            .where(sql`${accounts.id} = ${cashAcc.id} AND ${accounts.balance} >= ${totalAmount}`)
+            .where(sql`${accounts.id} = ${cashAcc.id} AND ${accounts.balance} >= ${cashFlow.cashDispensed}`)
             .returning({ id: accounts.id });
           if (result.length === 0) {
-            // F-03: Throw → triggers ROLLBACK on entire transaction
             throw new Error(`Saldo kas tidak cukup (race condition) untuk ${service.name}`);
           }
           await tx.insert(accountMutations).values({
-            accountId: cashAcc.id, type: "brilink_out", amount: -totalAmount, balanceAfter: cashBalanceAfter,
+            accountId: cashAcc.id, type: "brilink_out", amount: cashFlow.cashDelta, balanceAfter: cashBalanceAfter,
             notes: `BRILink OUT: ${service.name} - ${invoiceNo}`, referenceId: trx.id,
           });
-          // Fee only added to cash if fee method is "cash" (paid separately by customer)
-          if (adminFee > 0 && feeMethod === "cash") {
-            const feeBalance = cashBalanceAfter + adminFee;
-            await tx.update(accounts).set({ balance: feeBalance, updatedAt: new Date() }).where(eq(accounts.id, cashAcc.id));
-            await tx.insert(accountMutations).values({
-              accountId: cashAcc.id, type: "brilink_fee", amount: adminFee, balanceAfter: feeBalance,
-              notes: `Fee: ${service.name}`, referenceId: trx.id,
-            });
-          }
         }
       }
 
@@ -429,7 +490,6 @@ export async function POST(req: Request) {
             notes: `BRILink IN: ${service.name} → ${bankAcc.name} - ${invoiceNo}`, referenceId: trx.id,
           });
         } else if (bankEffect === "out") {
-          // F-02: Conditional update — only decrement if balance >= totalAmount
           const result = await tx.update(accounts)
             .set({ balance: bankBalanceAfter, updatedAt: new Date() })
             .where(sql`${accounts.id} = ${bankAcc.id} AND ${accounts.balance} >= ${totalAmount}`)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS } from "@/lib/service-flow";
+import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow } from "@/lib/service-flow";
 
 // ── Flow type detection ───────────────────────────
 describe("service-flow: getFlowType", () => {
@@ -144,5 +144,139 @@ describe("service-flow: FEE_METHOD_LABELS", () => {
     expect(FEE_METHOD_LABELS.cash.toLowerCase()).toContain("tunai");
     expect(FEE_METHOD_LABELS.deducted.toLowerCase()).toContain("dipotong");
     expect(FEE_METHOD_LABELS.charged.toLowerCase()).toContain("dibebankan");
+  });
+});
+
+// ── S-02: calculateCashFlow (unified calculator) ──
+describe("service-flow: calculateCashFlow (S-02)", () => {
+  it("should calculate cash received for deposit with cash fee", () => {
+    // Setor 100000, fee 2500 cash → kas naik 102500
+    const r = calculateCashFlow("in", 100000, 2500, "cash");
+    expect(r.cashReceived).toBe(102500);
+    expect(r.cashDispensed).toBe(0);
+    expect(r.cashDelta).toBe(102500);
+    expect(r.physicalCashAmount).toBe(102500);
+  });
+
+  it("should calculate cash received for deposit with charged fee", () => {
+    // Setor 100000, fee 2500 charged → kas naik 100000 (fee dari rekening)
+    const r = calculateCashFlow("in", 100000, 2500, "charged");
+    expect(r.cashReceived).toBe(100000);
+    expect(r.cashDelta).toBe(100000);
+  });
+
+  it("should calculate cash dispensed for withdrawal with cash fee", () => {
+    // Tarik 100000, fee 2500 cash → kas turun 100000 (fee terpisah)
+    const r = calculateCashFlow("out", 100000, 2500, "cash");
+    expect(r.cashDispensed).toBe(100000);
+    expect(r.cashReceived).toBe(0);
+    expect(r.cashDelta).toBe(-100000);
+    expect(r.physicalCashAmount).toBe(100000);
+  });
+
+  it("S-02: should calculate cash dispensed for withdrawal with deducted fee", () => {
+    // Tarik 100000, fee 2500 deducted → nasabah terima 97500, kas turun 97500
+    const r = calculateCashFlow("out", 100000, 2500, "deducted");
+    expect(r.cashDispensed).toBe(97500); // S-02 fix: nominal - fee
+    expect(r.cashDelta).toBe(-97500);
+    expect(r.physicalCashAmount).toBe(97500);
+  });
+
+  it("should calculate cash dispensed for withdrawal with charged fee", () => {
+    // Tarik 100000, fee 2500 charged → kas turun 100000 (fee dari rekening nasabah)
+    const r = calculateCashFlow("out", 100000, 2500, "charged");
+    expect(r.cashDispensed).toBe(100000);
+    expect(r.cashDelta).toBe(-100000);
+  });
+
+  it("should return zero for none cash effect", () => {
+    const r = calculateCashFlow("none", 100000, 2500, "cash");
+    expect(r.cashReceived).toBe(0);
+    expect(r.cashDispensed).toBe(0);
+    expect(r.cashDelta).toBe(0);
+  });
+
+  it("should handle zero fee", () => {
+    const r = calculateCashFlow("in", 100000, 0, "cash");
+    expect(r.cashReceived).toBe(100000);
+    expect(r.cashDelta).toBe(100000);
+  });
+
+  it("should not go negative for deducted when fee > nominal", () => {
+    // Edge case: fee > nominal
+    const r = calculateCashFlow("out", 1000, 2500, "deducted");
+    expect(r.cashDispensed).toBe(0); // max(0, 1000-2500) = 0
+  });
+});
+
+// ── S-04: inquiry flow config ─────────────────────
+describe("service-flow: inquiry flow (S-04)", () => {
+  it("should return inquiry config from DB flowType", () => {
+    const config = getFlowConfig({
+      cashEffect: "none",
+      bankEffect: "none",
+      name: "Cek Saldo",
+      flowType: "inquiry",
+    });
+    expect(config.flowType).toBe("inquiry");
+    expect(config.requiresNominal).toBe(false);
+    expect(config.requiresCashHandling).toBe(false);
+    expect(config.showFeeMethod).toBe(false);
+    expect(config.allowedFeeMethods).toHaveLength(0);
+  });
+
+  it("should not require nominal for inquiry", () => {
+    const config = getFlowConfig({
+      cashEffect: "none",
+      bankEffect: "none",
+      name: "Cek Saldo",
+      flowType: "inquiry",
+    });
+    expect(config.requiresNominal).toBe(false);
+  });
+
+  it("should involve external provider for transfer/payment/topup (S-07)", () => {
+    expect(getFlowConfig({ cashEffect: "in", bankEffect: "out", name: "Transfer", flowType: "transfer" }).involvesExternalProvider).toBe(true);
+    expect(getFlowConfig({ cashEffect: "in", bankEffect: "out", name: "Tagihan PLN", flowType: "payment" }).involvesExternalProvider).toBe(true);
+    expect(getFlowConfig({ cashEffect: "in", bankEffect: "out", name: "Pulsa", flowType: "topup" }).involvesExternalProvider).toBe(true);
+  });
+
+  it("should NOT involve external provider for cash_withdrawal/cash_deposit/inquiry (S-07)", () => {
+    expect(getFlowConfig({ cashEffect: "out", bankEffect: "none", name: "Tarik", flowType: "cash_withdrawal" }).involvesExternalProvider).toBe(false);
+    expect(getFlowConfig({ cashEffect: "in", bankEffect: "out", name: "Setor", flowType: "cash_deposit" }).involvesExternalProvider).toBe(false);
+    expect(getFlowConfig({ cashEffect: "none", bankEffect: "none", name: "Cek", flowType: "inquiry" }).involvesExternalProvider).toBe(false);
+  });
+});
+
+// ── S-04: getFlowConfig prefers DB flowType ───────
+describe("service-flow: getFlowConfig prefers DB flowType (S-04)", () => {
+  it("should use DB flowType when available", () => {
+    // Name suggests topup but DB says payment
+    const config = getFlowConfig({
+      cashEffect: "in",
+      bankEffect: "out",
+      name: "Pulsa Reguler",
+      flowType: "payment",
+    });
+    expect(config.flowType).toBe("payment");
+  });
+
+  it("should fallback to keyword detection when flowType is null", () => {
+    const config = getFlowConfig({
+      cashEffect: "in",
+      bankEffect: "out",
+      name: "Pulsa Reguler",
+      flowType: null,
+    });
+    expect(config.flowType).toBe("topup");
+  });
+
+  it("should fallback to keyword detection when flowType is undefined", () => {
+    const config = getFlowConfig({
+      cashEffect: "in",
+      bankEffect: "out",
+      name: "Pulsa Reguler",
+    });
+    expect(config.flowType).toBe("topup");
   });
 });

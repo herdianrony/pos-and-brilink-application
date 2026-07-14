@@ -8,7 +8,7 @@ import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, Al
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
 import { useSettings } from "@/lib/use-settings";
-import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, type FeeMethod } from "@/lib/service-flow";
+import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, type FeeMethod } from "@/lib/service-flow";
 
 interface FeeTier {
   id: number;
@@ -26,6 +26,9 @@ interface Service {
   useTieredFee: boolean;
   feeTiers: FeeTier[];
   cashEffect: string; bankEffect: string;
+  // S-04: explicit flow type and default fee method from DB
+  flowType?: string | null;
+  defaultFeeMethod?: string | null;
   description: string | null; isActive: boolean;
 }
 interface ServiceCat { id: number; name: string; icon: string | null; color: string | null; }
@@ -77,6 +80,7 @@ export default function BRILink() {
     customerName: "", customerPhone: "", amount: "", notes: "",
     paymentMethod: "cash", selectedBankId: "", periode: "",
     feeMethod: "cash" as FeeMethod,
+    referenceNo: "",
   });
   const [denomination, setDenomination] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -131,17 +135,13 @@ export default function BRILink() {
 
   const nominalAmount = parseFloat(form.amount || "0");
 
-  // ── Fee method affects cash flow calculation ─────
-  // - "cash": nasabah bayar fee tunai terpisah → kas += adminFee
-  // - "deducted": fee dipotong dari nominal → nasabah terima (nominal - adminFee)
-  // - "charged": fee dibebankan ke rekening nasabah → kas tidak terdampak fee
-  const cashFromFee = form.feeMethod === "cash" ? adminFee : 0;
-  const totalCashFlow = useMemo(() => {
-    if (!sel) return 0;
-    if (sel.cashEffect === "in") return nominalAmount + cashFromFee;
-    if (sel.cashEffect === "out") return -nominalAmount; // fee doesn't reduce cash out
-    return 0;
-  }, [sel, nominalAmount, cashFromFee]);
+  // ── S-02: Use shared calculateCashFlow for UI/backend consistency ──
+  const cashFlow = useMemo(() => {
+    if (!sel) return { cashReceived: 0, cashDispensed: 0, cashDelta: 0, physicalCashAmount: 0 };
+    return calculateCashFlow(sel.cashEffect, nominalAmount, adminFee, form.feeMethod);
+  }, [sel, nominalAmount, adminFee, form.feeMethod]);
+
+  const totalCashFlow = cashFlow.cashDelta;
 
   // ── Balance preview (before → after) ─────────────
   const cashBalanceBefore = cashAccount ? parseFloat(cashAccount.balance) : 0;
@@ -155,7 +155,7 @@ export default function BRILink() {
         : bankBalanceBefore
     : bankBalanceBefore;
 
-  const totalAmt = nominalAmount + (form.feeMethod === "cash" ? adminFee : 0);
+  const totalAmt = cashFlow.physicalCashAmount;
 
   // With multi-bank strategy: admin fee = profit (no bank cost)
   const actualProfit = adminFee;
@@ -171,15 +171,15 @@ export default function BRILink() {
   const bankBalance = selectedBank ? parseFloat(selectedBank.balance) : 0;
   const hasEnoughBankBalance = !bankNeedsBalance || bankBalance >= parseFloat(form.amount || "0");
 
-  // Check if cash has enough balance (for cash_withdrawal)
+  // Check if cash has enough balance (for cash_withdrawal) — S-02: use cashDispensed
   const cashNeedsBalance = sel?.cashEffect === "out";
-  const hasEnoughCashBalance = !cashNeedsBalance || cashBalanceBefore >= nominalAmount;
+  const hasEnoughCashBalance = !cashNeedsBalance || cashBalanceBefore >= cashFlow.cashDispensed;
 
-  // Cash insufficient amount (for display)
-  const cashShortfall = cashNeedsBalance && nominalAmount > cashBalanceBefore ? nominalAmount - cashBalanceBefore : 0;
+  // Cash insufficient amount (for display) — S-02: based on cashDispensed
+  const cashShortfall = cashNeedsBalance && cashFlow.cashDispensed > cashBalanceBefore ? cashFlow.cashDispensed - cashBalanceBefore : 0;
 
-  // Overall can submit
-  const canSubmit = nominalAmount > 0 && hasEnoughBankBalance && hasEnoughCashBalance;
+  // Overall can submit — S-04: inquiry doesn't require nominal
+  const canSubmit = (flowConfig?.requiresNominal === false || nominalAmount > 0) && hasEnoughBankBalance && hasEnoughCashBalance;
 
   async function handleSubmit() {
     // Now called only after confirmation dialog
@@ -205,6 +205,7 @@ export default function BRILink() {
           paymentMethod: form.paymentMethod,
           notes: form.notes || null,
           denomination: flowConfig?.showDenomination ? denomination : null,
+          referenceNo: form.referenceNo || null,
         }),
       });
       const trx = await res.json();
@@ -217,7 +218,7 @@ export default function BRILink() {
       setSel(null);
       setShowConfirm(false);
       setShowDone(true);
-      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "", periode: "", feeMethod: "cash" });
+      setForm({ ...form, customerName: "", customerPhone: "", amount: "", notes: "", periode: "", feeMethod: "cash", referenceNo: "" });
       setDenomination({});
       const newAccs = await fetch("/api/accounts").then(r => r.json());
       setAccounts(newAccs);
@@ -227,10 +228,12 @@ export default function BRILink() {
   }
 
   function attemptSubmit() {
-    // Open confirmation dialog instead of directly submitting
-    if (!form.amount || parseFloat(form.amount) <= 0) {
-      toast.error("Nominal belum diisi");
-      return;
+    // S-04: inquiry flow doesn't require nominal
+    if (flowConfig?.requiresNominal !== false) {
+      if (!form.amount || parseFloat(form.amount) <= 0) {
+        toast.error("Nominal belum diisi");
+        return;
+      }
     }
     if (!hasEnoughBankBalance) {
       toast.error("Saldo rekening tidak cukup untuk transaksi ini");
@@ -258,6 +261,13 @@ export default function BRILink() {
     });
   }
 
+  // S-04: When selecting a service, set default fee method from DB
+  function selectService(s: Service) {
+    setSel(s);
+    trackRecent(s.id);
+    setForm(f => ({ ...f, feeMethod: (s.defaultFeeMethod as FeeMethod) || "cash" }));
+  }
+
   if (loading) return <Spinner />;
 
   const recentSvcObjects = recentServices
@@ -281,7 +291,7 @@ export default function BRILink() {
             {recentSvcObjects.map(s => (
               <button
                 key={s.id}
-                onClick={() => { setSel(s); trackRecent(s.id); }}
+                onClick={() => selectService(s)}
                 className="shrink-0 p-3 rounded-2xl bg-white border-2 border-transparent hover:border-purple-300 hover:shadow-card transition-all flex flex-col items-center gap-1.5 min-w-[100px]"
               >
                 {isBankIcon(s.icon) ? (
@@ -354,7 +364,7 @@ export default function BRILink() {
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{cat}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {svcs.map(s => (
-                <button key={s.id} onClick={() => { setSel(s); trackRecent(s.id); }}
+                <button key={s.id} onClick={() => selectService(s)}
                   className={cn(
                     "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-pop flex flex-col items-center text-center gap-2",
                     sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-card" : "bg-white border-transparent hover:border-slate-200"
@@ -444,7 +454,7 @@ export default function BRILink() {
               </div>
             )}
 
-            {/* ── Account Selection — context-specific label ── */}
+            {/* ── Account Selection — context-specific label (S-06) ── */}
             {sel.bankEffect !== "none" && bankAccounts.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
@@ -490,6 +500,21 @@ export default function BRILink() {
               </div>
             )}
 
+            {/* S-06: When bankEffect=none for cash_withdrawal, show which cash account is used */}
+            {sel.bankEffect === "none" && sel.cashEffect === "out" && cashAccount && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+                <p className="font-semibold text-amber-700 flex items-center gap-1.5">
+                  <Banknote size={14} /> Kas Tunai yang digunakan
+                </p>
+                <p className="text-amber-600 mt-1">
+                  {cashAccount.name}: <strong>{formatRupiah(cashAccount.balance)}</strong>
+                  {cashShortfall > 0 && (
+                    <span className="text-red-600 ml-2">— kurang {formatRupiah(cashShortfall)}</span>
+                  )}
+                </p>
+              </div>
+            )}
+
             {/* ── Form fields ─────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Nama Pelanggan" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="Nama nasabah" />
@@ -507,20 +532,23 @@ export default function BRILink() {
                   />
                 </div>
               )}
-              <div className="space-y-1.5">
-                <CurrencyInput
-                  label="Nominal Transaksi"
-                  value={form.amount}
-                  onChange={(v) => setForm({ ...form, amount: String(v) })}
-                  placeholder="0"
-                  autoFocus
-                />
-                {sel.useTieredFee && form.amount && currentTier && (
-                  <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                    Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
-                  </p>
-                )}
-              </div>
+              {/* S-04: Nominal field — hidden for inquiry flow */}
+              {flowConfig.requiresNominal !== false && (
+                <div className="space-y-1.5">
+                  <CurrencyInput
+                    label="Nominal Transaksi"
+                    value={form.amount}
+                    onChange={(v) => setForm({ ...form, amount: String(v) })}
+                    placeholder="0"
+                    autoFocus
+                  />
+                  {sel.useTieredFee && form.amount && currentTier && (
+                    <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                      Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* ── Fee method selection ───────────────── */}
               {flowConfig.showFeeMethod && adminFee > 0 && (
@@ -584,6 +612,16 @@ export default function BRILink() {
             )}
 
             <Input label="Catatan (opsional)" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Catatan tambahan..." />
+
+            {/* S-07: Reference number for external provider transactions */}
+            {flowConfig.involvesExternalProvider && (
+              <Input
+                label="No. Referensi Provider (opsional, isi setelah transfer/pembayaran dilakukan)"
+                value={form.referenceNo}
+                onChange={e => setForm({ ...form, referenceNo: e.target.value })}
+                placeholder="Contoh: TRX12345678 dari M-Banking"
+              />
+            )}
 
             {/* ── Physical cash summary ──────────────── */}
             <Card className={cn("p-4 bg-gradient-to-br border space-y-2", toneClasses.summaryBg, toneClasses.summaryBorder)}>
@@ -762,18 +800,25 @@ export default function BRILink() {
           </div>
         )}
       </Modal>
-      {/* Success */}
+      {/* Success — S-07: wording distinguishes "pencatatan" from "provider berhasil" */}
       <Modal open={showDone} onClose={() => setShowDone(false)} size="sm">
         <div className="p-8 text-center space-y-4">
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-extrabold text-slate-800">Transaksi {servicesLabel} Berhasil!</h3>
+          <h3 className="text-xl font-extrabold text-slate-800">Pencatatan Transaksi Berhasil</h3>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
           </div>
-          <p className="text-xs text-slate-400">Saldo kas & rekening telah diperbarui otomatis</p>
+          {flowConfig?.involvesExternalProvider ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+              <p className="font-semibold">Penting:</p>
+              <p>Pencatatan lokal berhasil. Pastikan transfer/pembayaran ke provider sudah dilakukan via M-Banking/EDC. Catat nomor referensi untuk verifikasi.</p>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Saldo kas & rekening telah diperbarui otomatis</p>
+          )}
           <Button variant="primary" size="lg" className="w-full" onClick={() => setShowDone(false)}>OK</Button>
         </div>
       </Modal>

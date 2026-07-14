@@ -59,6 +59,9 @@ export const serviceCategories = sqliteTable("service_categories", {
 
 // ── Layanan BRILink ───────────────────────────────
 // cashEffect & bankEffect: 'in' = masuk, 'out' = keluar, 'none' = tidak ada efek
+// flowType: 'cash_withdrawal' | 'cash_deposit' | 'transfer' | 'payment' | 'topup' | 'inquiry'
+//   - Explicit flow type for UI/UX behavior (S-04). No longer inferred from name.
+// defaultFeeMethod: 'cash' | 'deducted' | 'charged' — default fee method for this service
 export const brilinkServices = sqliteTable("brilink_services", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name", { length: 100 }).notNull(),
@@ -69,6 +72,10 @@ export const brilinkServices = sqliteTable("brilink_services", {
   useTieredFee: integer("use_tiered_fee", { mode: "boolean" }).default(false).notNull(),
   cashEffect: text("cash_effect", { length: 10 }).default("in").notNull(),
   bankEffect: text("bank_effect", { length: 10 }).default("out").notNull(),
+  // S-04: explicit flow type (no longer inferred from name)
+  flowType: text("flow_type", { length: 30 }).default("payment").notNull(),
+  // S-04: default fee method for this service
+  defaultFeeMethod: text("default_fee_method", { length: 20 }).default("cash").notNull(),
   description: text("description"),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
@@ -86,6 +93,10 @@ export const feeTiers = sqliteTable("fee_tiers", {
 });
 
 // ── Transaksi ─────────────────────────────────────
+// S-05: Structured audit fields for financial integrity.
+// flowType, feeMethod, cashReceived, cashDispensed stored explicitly
+// (not in notes text). status tracks provider confirmation lifecycle.
+// referenceNo for external provider reference.
 export const transactions = sqliteTable("transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   invoiceNo: text("invoice_no", { length: 50 }).notNull(),
@@ -98,6 +109,19 @@ export const transactions = sqliteTable("transactions", {
   profit: real("profit").default(0),
   paymentMethod: text("payment_method", { length: 30 }).default("cash"),
   notes: text("notes"),
+  // S-05: Structured audit fields
+  flowType: text("flow_type", { length: 30 }),
+  feeMethod: text("fee_method", { length: 20 }),
+  cashReceived: real("cash_received").default(0),
+  cashDispensed: real("cash_dispensed").default(0),
+  settlementAccountId: integer("settlement_account_id"),
+  referenceNo: text("reference_no", { length: 100 }),
+  // S-07: status tracks provider confirmation lifecycle
+  // 'draft' = pencatatan awal, 'pending' = menunggu konfirmasi provider,
+  // 'completed' = dikonfirmasi sukses, 'void' = dibatalkan, 'reversed' = di-reverse
+  status: text("status", { length: 20 }).default("completed").notNull(),
+  confirmedAt: integer("confirmed_at", { mode: "timestamp_ms" }),
+  confirmedByUserId: integer("confirmed_by_user_id"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
@@ -110,6 +134,20 @@ export const transactionItems = sqliteTable("transaction_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: real("unit_price").notNull(),
   subtotal: real("subtotal").notNull(),
+});
+
+// ── Denominasi Uang (S-05) ────────────────────────
+// Untuk audit kas pada transaksi setor/terima tunai.
+// Menyimpan pecahan uang fisik yang dihitung kasir.
+export const transactionDenominations = sqliteTable("transaction_denominations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  transactionId: integer("transaction_id").references(() => transactions.id).notNull(),
+  // Nilai pecahan (mis. 100000, 50000, 20000, 10000, 5000, 2000, 1000, 500)
+  denomination: integer("denomination").notNull(),
+  // Jumlah lembar/koin
+  count: integer("count").notNull(),
+  // Subtotal = denomination * count
+  subtotal: integer("subtotal").notNull(),
 });
 
 // ── Akun Saldo (Multi-Account) ────────────────────

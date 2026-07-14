@@ -174,41 +174,57 @@ export async function POST() {
       }
 
       // ── SERVICES ───────────────────────────────
+      // S-01: Transfer direction fixed — "Kirim Transfer Tunai" (cash in, bank out)
+      //   adalah skenario agen paling umum: nasabah bayar tunai, agen kirim transfer.
+      //   "Terima Transfer/Pencairan" (cash out, bank in) adalah layanan terpisah.
+      // S-04: flow_type dan default_fee_method diset eksplisit per service.
       const existingServices = await tx.select().from(brilinkServices).limit(1);
       let svcs: Array<{ id: number; name: string }> = [];
       if (existingServices.length === 0) {
         svcs = await tx.insert(brilinkServices).values([
-          { name: "Transfer Antar Bank (RTGS)", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-          { name: "Transfer Sesama Bank", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-          { name: "Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "ovo", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "out", bankEffect: "in" },
-          { name: "Tarik Tunai Bank", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
-          { name: "Tarik Tunai Bank Lain", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "out", bankEffect: "none" },
-          { name: "Setor Tunai Bank", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Tagihan PLN", categoryId: scm["Pembayaran Tagihan"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran Tagihan"], icon: "pdam", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran Tagihan"], icon: "indihome", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "BPJS Kesehatan", categoryId: scm["Pembayaran Tagihan"], icon: "bpjs", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 20K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 50K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 100K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 200K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 500K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Token PLN 1Jt", categoryId: scm["Token PLN"], icon: "pln", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Pulsa Reguler", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Paket Data", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Top Up Game", categoryId: scm["Pulsa & Paket Data"], icon: "gamepad-2", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Top Up E-Wallet", categoryId: scm["Pulsa & Paket Data"], icon: "gopay", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 12K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 1000, agentFee: 1000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 33K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 66K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 132K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 2500, agentFee: 2500, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 330K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Voucher Game 600K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out" },
-          { name: "Cicilan FIF", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Cicilan Adira", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Cicilan WOM", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out" },
-          { name: "Cek Saldo", categoryId: scm["Lainnya"], icon: "bar-chart-3", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none" },
+          // ── Transfer (S-01: cash in, bank out = nasabah bayar tunai, agen kirim transfer) ──
+          { name: "Kirim Transfer Antar Bank", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "transfer", defaultFeeMethod: "cash" },
+          { name: "Kirim Transfer Sesama Bank", categoryId: scm["Transfer"], icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "transfer", defaultFeeMethod: "cash" },
+          { name: "Kirim Transfer ke E-Wallet", categoryId: scm["Transfer"], icon: "ovo", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "transfer", defaultFeeMethod: "cash" },
+          // S-01: Terima Transfer / Pencairan (cash out, bank in) — layanan terpisah
+          { name: "Terima Transfer / Pencairan", categoryId: scm["Transfer"], icon: "arrow-down-left", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "in", flowType: "cash_withdrawal", defaultFeeMethod: "deducted" },
+          // ── Tarik Tunai ──
+          { name: "Tarik Tunai Bank", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "out", bankEffect: "none", flowType: "cash_withdrawal", defaultFeeMethod: "cash" },
+          { name: "Tarik Tunai Bank Lain", categoryId: scm["Penarikan Tunai"], icon: "banknote", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "out", bankEffect: "none", flowType: "cash_withdrawal", defaultFeeMethod: "cash" },
+          // ── Setor Tunai ──
+          { name: "Setor Tunai Bank", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "cash_deposit", defaultFeeMethod: "cash" },
+          { name: "Setor Tunai Bank Lain", categoryId: scm["Setor Tunai"], icon: "wallet", adminFee: 3500, agentFee: 3500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "cash_deposit", defaultFeeMethod: "cash" },
+          // ── Pembayaran Tagihan ──
+          { name: "Tagihan PLN", categoryId: scm["Pembayaran Tagihan"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Tagihan Air (PDAM)", categoryId: scm["Pembayaran Tagihan"], icon: "pdam", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Tagihan Telkom/Indihome", categoryId: scm["Pembayaran Tagihan"], icon: "indihome", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "BPJS Kesehatan", categoryId: scm["Pembayaran Tagihan"], icon: "bpjs", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          // ── Token PLN ──
+          { name: "Token PLN 20K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Token PLN 50K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Token PLN 100K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Token PLN 200K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Token PLN 500K", categoryId: scm["Token PLN"], icon: "pln", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Token PLN 1Jt", categoryId: scm["Token PLN"], icon: "pln", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          // ── Pulsa & Paket Data ──
+          { name: "Pulsa Reguler", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Paket Data", categoryId: scm["Pulsa & Paket Data"], icon: "smartphone", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Top Up Game", categoryId: scm["Pulsa & Paket Data"], icon: "gamepad-2", adminFee: 1500, agentFee: 1500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Top Up E-Wallet", categoryId: scm["Pulsa & Paket Data"], icon: "gopay", adminFee: 1000, agentFee: 1000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          // ── Voucher Game ──
+          { name: "Voucher Game 12K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 1000, agentFee: 1000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Voucher Game 33K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Voucher Game 66K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Voucher Game 132K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 2500, agentFee: 2500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Voucher Game 330K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { name: "Voucher Game 600K", categoryId: scm["Voucher Game"], icon: "gift", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          // ── Cicilan ──
+          { name: "Cicilan FIF", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Cicilan Adira", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { name: "Cicilan WOM", categoryId: scm["Cicilan"], icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          // ── Lainnya ──
+          // S-04: Cek Saldo = inquiry flow (no nominal, no fee, no cash effect)
+          { name: "Cek Saldo", categoryId: scm["Lainnya"], icon: "bar-chart-3", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none", flowType: "inquiry", defaultFeeMethod: "cash" },
         ]).returning({ id: brilinkServices.id, name: brilinkServices.name });
         stats.services = svcs.length;
       } else {

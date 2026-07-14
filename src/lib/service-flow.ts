@@ -17,7 +17,8 @@ export type FlowType =
   | "cash_deposit"
   | "transfer"
   | "payment"
-  | "topup";
+  | "topup"
+  | "inquiry";
 
 export type FlowTone = "warning" | "success" | "info" | "primary";
 
@@ -55,6 +56,12 @@ export interface FlowConfig {
   showFeeMethod: boolean;
   /** Allowed fee methods for this flow */
   allowedFeeMethods: FeeMethod[];
+  /** S-04: Whether this flow requires a nominal amount (inquiry doesn't) */
+  requiresNominal: boolean;
+  /** S-04: Whether this flow involves physical cash handling */
+  requiresCashHandling: boolean;
+  /** S-07: Whether this flow involves external provider (show "pencatatan" wording) */
+  involvesExternalProvider: boolean;
 }
 
 const FLOW_CONFIGS: Record<FlowType, FlowConfig> = {
@@ -77,6 +84,9 @@ const FLOW_CONFIGS: Record<FlowType, FlowConfig> = {
     showDenomination: false,
     showFeeMethod: true,
     allowedFeeMethods: ["cash", "deducted", "charged"],
+    requiresNominal: true,
+    requiresCashHandling: true,
+    involvesExternalProvider: false,
   },
 
   // ── Setor Tunai ─────────────────────────────────
@@ -98,27 +108,34 @@ const FLOW_CONFIGS: Record<FlowType, FlowConfig> = {
     showDenomination: true,
     showFeeMethod: true,
     allowedFeeMethods: ["cash", "charged"],
+    requiresNominal: true,
+    requiresCashHandling: true,
+    involvesExternalProvider: false,
   },
 
-  // ── Transfer ────────────────────────────────────
+  // ── Transfer (Kirim Transfer Tunai) ─────────────
+  // S-01: Transfer = nasabah bayar tunai, agen kirim transfer dari rekening
   transfer: {
     flowType: "transfer",
-    title: "Transfer",
-    subtitle: "Pindah dana antar rekening",
+    title: "Kirim Transfer",
+    subtitle: "Nasabah membayar tunai, agen mengirim dana ke rekening tujuan",
     accountSelectorLabel: "Rekening Pengirim Agen",
-    cashBadgeText: "↔ Transfer antar rekening",
+    cashBadgeText: "↑ Kas masuk, ↓ Rekening keluar",
     cashBadgeTone: "info",
-    cashSummaryLabel: "Nominal transfer",
+    cashSummaryLabel: "Tunai diterima dari nasabah",
     primaryActionText: "Proses Transfer {amount}",
-    confirmationHeading: "Konfirmasi Transfer",
+    confirmationHeading: "Konfirmasi Kirim Transfer",
     confirmationBody:
-      "Pastikan detail transfer sudah benar. Nominal: {amount}. Rekening tujuan akan menerima dana dalam 1×24 jam.",
-    confirmationConfirmText: "Proses Transfer",
+      "Pastikan detail transfer sudah benar. Nominal: {amount}. Transfer harus dilakukan manual via M-Banking/EDC. Catat nomor referensi setelah selesai.",
+    confirmationConfirmText: "Transfer Sudah Dikirim",
     confirmationCancelText: "Periksa Kembali",
     tone: "info",
     showDenomination: false,
     showFeeMethod: true,
     allowedFeeMethods: ["cash", "deducted", "charged"],
+    requiresNominal: true,
+    requiresCashHandling: true,
+    involvesExternalProvider: true,
   },
 
   // ── Pembayaran Tagihan ──────────────────────────
@@ -133,13 +150,16 @@ const FLOW_CONFIGS: Record<FlowType, FlowConfig> = {
     primaryActionText: "Bayar {amount} & Proses",
     confirmationHeading: "Konfirmasi Pembayaran",
     confirmationBody:
-      "Pastikan nominal tagihan sudah benar. Nominal: {amount}. Tagihan akan diproses setelah konfirmasi.",
-    confirmationConfirmText: "Proses Pembayaran",
+      "Pastikan nominal tagihan sudah benar. Nominal: {amount}. Pembayaran ke provider harus dilakukan manual. Catat nomor referensi setelah selesai.",
+    confirmationConfirmText: "Pembayaran Sudah Dilakukan",
     confirmationCancelText: "Periksa Kembali",
     tone: "primary",
     showDenomination: false,
     showFeeMethod: true,
     allowedFeeMethods: ["cash", "charged"],
+    requiresNominal: true,
+    requiresCashHandling: true,
+    involvesExternalProvider: true,
   },
 
   // ── Top Up (Pulsa/Game/E-Wallet) ────────────────
@@ -154,13 +174,41 @@ const FLOW_CONFIGS: Record<FlowType, FlowConfig> = {
     primaryActionText: "Top Up {amount} & Proses",
     confirmationHeading: "Konfirmasi Top Up",
     confirmationBody:
-      "Pastikan nomor tujuan sudah benar. Nominal: {amount}. Top up akan diproses instan setelah konfirmasi.",
-    confirmationConfirmText: "Proses Top Up",
+      "Pastikan nomor tujuan sudah benar. Nominal: {amount}. Top up ke provider harus dilakukan manual. Catat nomor referensi setelah selesai.",
+    confirmationConfirmText: "Top Up Sudah Dilakukan",
     confirmationCancelText: "Periksa Kembali",
     tone: "primary",
     showDenomination: false,
     showFeeMethod: true,
     allowedFeeMethods: ["cash", "charged"],
+    requiresNominal: true,
+    requiresCashHandling: true,
+    involvesExternalProvider: true,
+  },
+
+  // ── Inquiry (Cek Saldo) ─────────────────────────
+  // S-04: Inquiry flow — no nominal, no fee, no cash handling
+  inquiry: {
+    flowType: "inquiry",
+    title: "Cek Saldo / Inquiry",
+    subtitle: "Cek informasi tanpa transaksi finansial",
+    accountSelectorLabel: "Rekening untuk Inquiry",
+    cashBadgeText: "ℹ Tidak ada perubahan kas",
+    cashBadgeTone: "info",
+    cashSummaryLabel: "Tidak ada uang fisik",
+    primaryActionText: "Catat Inquiry",
+    confirmationHeading: "Konfirmasi Pencatatan Inquiry",
+    confirmationBody:
+      "Pencatatan inquiry akan disimpan tanpa perubahan saldo. Tidak ada uang fisik yang berpindah.",
+    confirmationConfirmText: "Catat Inquiry",
+    confirmationCancelText: "Batal",
+    tone: "primary",
+    showDenomination: false,
+    showFeeMethod: false,
+    allowedFeeMethods: [],
+    requiresNominal: false,
+    requiresCashHandling: false,
+    involvesExternalProvider: false,
   },
 };
 
@@ -244,7 +292,13 @@ export function getFlowConfig(service: {
   bankEffect: string;
   name: string;
   categoryName?: string | null;
+  flowType?: string | null;
 }): FlowConfig {
+  // S-04: Prefer explicit flowType from DB if available
+  if (service.flowType && service.flowType in FLOW_CONFIGS) {
+    return FLOW_CONFIGS[service.flowType as FlowType];
+  }
+  // Fallback: infer from name/category/cashEffect/bankEffect
   const flowType = getFlowType(service);
   return FLOW_CONFIGS[flowType];
 }
@@ -255,6 +309,45 @@ export const FEE_METHOD_LABELS: Record<FeeMethod, string> = {
   deducted: "Dipotong dari nominal transaksi",
   charged: "Dibebankan dari rekening nasabah",
 };
+
+// ── S-02: Single source of truth for cash flow calculation ──
+// Used by both UI preview and backend ledger to ensure consistency.
+//
+// cashReceived: uang fisik yang diterima agen dari nasabah
+// cashDispensed: uang fisik yang diserahkan agen ke nasabah
+// cashDelta: perubahan kas (cashReceived - cashDispensed), positif = kas naik
+export interface CashFlowResult {
+  cashReceived: number;
+  cashDispensed: number;
+  cashDelta: number;
+  /** Total yang harus diserahkan/diterima secara fisik (untuk CTA/confirmation) */
+  physicalCashAmount: number;
+}
+
+export function calculateCashFlow(
+  cashEffect: string,
+  nominal: number,
+  fee: number,
+  feeMethod: FeeMethod
+): CashFlowResult {
+  const cashReceived = cashEffect === "in"
+    ? nominal + (feeMethod === "cash" ? fee : 0)
+    : 0;
+
+  // S-02: For withdrawal with deducted fee, nasabah receives nominal - fee
+  const cashDispensed = cashEffect === "out"
+    ? (feeMethod === "deducted" ? Math.max(0, nominal - fee) : nominal)
+    : 0;
+
+  const cashDelta = cashReceived - cashDispensed;
+
+  // Physical cash amount for CTA: what kasir actually hands over or receives
+  const physicalCashAmount = cashEffect === "out"
+    ? cashDispensed
+    : cashReceived;
+
+  return { cashReceived, cashDispensed, cashDelta, physicalCashAmount };
+}
 
 // ── Tone color classes ────────────────────────────
 export function getToneClasses(tone: FlowTone) {

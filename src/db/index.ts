@@ -101,6 +101,8 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`use_tiered_fee\` integer DEFAULT false NOT NULL,
       \`cash_effect\` text(10) DEFAULT 'in' NOT NULL,
       \`bank_effect\` text(10) DEFAULT 'out' NOT NULL,
+      \`flow_type\` text(30) DEFAULT 'payment' NOT NULL,
+      \`default_fee_method\` text(20) DEFAULT 'cash' NOT NULL,
       \`description\` text,
       \`is_active\` integer DEFAULT true NOT NULL,
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
@@ -128,6 +130,15 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`profit\` real DEFAULT 0,
       \`payment_method\` text(30) DEFAULT 'cash',
       \`notes\` text,
+      \`flow_type\` text(30),
+      \`fee_method\` text(20),
+      \`cash_received\` real DEFAULT 0,
+      \`cash_dispensed\` real DEFAULT 0,
+      \`settlement_account_id\` integer,
+      \`reference_no\` text(100),
+      \`status\` text(20) DEFAULT 'completed' NOT NULL,
+      \`confirmed_at\` integer,
+      \`confirmed_by_user_id\` integer,
       \`created_at\` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS \`transaction_items\` (
@@ -140,6 +151,14 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       \`subtotal\` real NOT NULL,
       FOREIGN KEY (\`transaction_id\`) REFERENCES \`transactions\`(\`id\`) ON UPDATE no action ON DELETE no action,
       FOREIGN KEY (\`product_id\`) REFERENCES \`products\`(\`id\`) ON UPDATE no action ON DELETE no action
+    )`,
+    `CREATE TABLE IF NOT EXISTS \`transaction_denominations\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`transaction_id\` integer NOT NULL,
+      \`denomination\` integer NOT NULL,
+      \`count\` integer NOT NULL,
+      \`subtotal\` integer NOT NULL,
+      FOREIGN KEY (\`transaction_id\`) REFERENCES \`transactions\`(\`id\`) ON UPDATE no action ON DELETE no action
     )`,
     `CREATE TABLE IF NOT EXISTS \`accounts\` (
       \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -183,6 +202,25 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
     )`,
   ];
 
+  // ── Migration: ALTER TABLE untuk kolom baru (S-04, S-05) ──
+  // ALTER TABLE ADD COLUMN di SQLite tidak error jika kolom sudah ada?
+  // Tidak — SQLite akan throw "duplicate column name". Jadi kita catch errornya.
+  const migrationStatements = [
+    // S-04: brilink_services.flow_type, default_fee_method
+    `ALTER TABLE \`brilink_services\` ADD COLUMN \`flow_type\` text(30) DEFAULT 'payment' NOT NULL`,
+    `ALTER TABLE \`brilink_services\` ADD COLUMN \`default_fee_method\` text(20) DEFAULT 'cash' NOT NULL`,
+    // S-05: transactions audit fields
+    `ALTER TABLE \`transactions\` ADD COLUMN \`flow_type\` text(30)`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`fee_method\` text(20)`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`cash_received\` real DEFAULT 0`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`cash_dispensed\` real DEFAULT 0`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`settlement_account_id\` integer`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`reference_no\` text(100)`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`status\` text(20) DEFAULT 'completed' NOT NULL`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`confirmed_at\` integer`,
+    `ALTER TABLE \`transactions\` ADD COLUMN \`confirmed_by_user_id\` integer`,
+  ];
+
   // Eksekusi semua statement secara berurutan
   const runBootstrap = async () => {
     for (const stmt of bootstrapStatements) {
@@ -191,6 +229,18 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       } catch (err) {
         // Bukan fatal — mungkin tabel sudah ada atau sedang dibuat paralel
         console.error("Bootstrap SQL error:", stmt.slice(0, 60), err);
+      }
+    }
+    // S-04/S-05: Run migrations (ALTER TABLE for new columns)
+    // Error "duplicate column name" diabaikan karena kolom mungkin sudah ada
+    for (const stmt of migrationStatements) {
+      try {
+        await client.execute(stmt);
+      } catch (err: any) {
+        // "duplicate column name" expected jika kolom sudah ada — bukan error
+        if (!String(err?.message || "").includes("duplicate column name")) {
+          console.error("Migration SQL error:", stmt.slice(0, 80), err);
+        }
       }
     }
     globalForDb.__arenaNextJsUsersTableReady = true;
