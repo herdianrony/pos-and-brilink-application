@@ -48,10 +48,6 @@ function SetupWizardForm() {
   const [storePhone, setStorePhone] = useState("");
   const [agentId, setAgentId] = useState("");
   const [ownerName, setOwnerName] = useState("");
-  // Branding (customizable)
-  const [businessType, setBusinessType] = useState("Agen Bisnis");
-  const [appName, setAppName] = useState("POS & Agen Bisnis");
-  const [servicesLabel, setServicesLabel] = useState("Layanan Agen");
 
   // Admin
   const [adminName, setAdminName] = useState("");
@@ -141,9 +137,9 @@ function SetupWizardForm() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          app_name: appName,
-          business_type: businessType,
-          services_label: servicesLabel,
+          app_name: "POS & Agen Bisnis",
+          business_type: "Agen Bisnis",
+          services_label: "Layanan Agen",
           store_name: storeName,
           store_address: storeAddress,
           phone: storePhone,
@@ -294,12 +290,6 @@ function SetupWizardForm() {
               setAgentId={setAgentId}
               ownerName={ownerName}
               setOwnerName={setOwnerName}
-              businessType={businessType}
-              setBusinessType={setBusinessType}
-              appName={appName}
-              setAppName={setAppName}
-              servicesLabel={servicesLabel}
-              setServicesLabel={setServicesLabel}
             />
           )}
           {step === "admin" && (
@@ -458,99 +448,21 @@ function StoreStep({
   storePhone, setStorePhone,
   agentId, setAgentId,
   ownerName, setOwnerName,
-  businessType, setBusinessType,
-  appName, setAppName,
-  servicesLabel, setServicesLabel,
 }: {
   storeName: string; setStoreName: (v: string) => void;
   storeAddress: string; setStoreAddress: (v: string) => void;
   storePhone: string; setStorePhone: (v: string) => void;
   agentId: string; setAgentId: (v: string) => void;
   ownerName: string; setOwnerName: (v: string) => void;
-  businessType: string; setBusinessType: (v: string) => void;
-  appName: string; setAppName: (v: string) => void;
-  servicesLabel: string; setServicesLabel: (v: string) => void;
 }) {
-  // Preset tipe bisnis — pilih untuk auto-isi branding
-  const businessPresets = [
-    { type: "Agen BRILink", app: "BRILink POS", services: "Layanan BRILink", desc: "Agen Bank BRI" },
-    { type: "Counter HP", app: "Counter HP POS", services: "Layanan Counter", desc: "Pulsa, paket data, top up" },
-    { type: "Agen Pulsa", app: "Agen Pulsa POS", services: "Layanan Pulsa", desc: "Pulsa & top up game" },
-    { type: "Agen Pembayaran", app: "Agen Bayar POS", services: "Layanan Pembayaran", desc: "Tagihan PLN, PDAM, BPJS" },
-    { type: "Toko Kelontong", app: "Toko POS", services: "Layanan Tambahan", desc: "Toko retail + layanan agen" },
-    { type: "Lainnya", app: "POS & Agen Bisnis", services: "Layanan Agen", desc: "Bisnis kustom" },
-  ];
-
   return (
     <div>
       <StepHeader
         icon={Store}
-        title="Informasi Bisnis"
-        desc="Pilih tipe bisnis & isi data toko Anda"
+        title="Informasi Toko"
+        desc="Data ini akan tampil di struk transaksi dan laporan"
       />
-      <div className="space-y-5 mt-6">
-        {/* Pilih tipe bisnis (preset) */}
-        <div>
-          <label className="text-sm font-medium text-slate-600 mb-2 block">Tipe Bisnis</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {businessPresets.map((preset) => {
-              const isActive = businessType === preset.type;
-              return (
-                <button
-                  key={preset.type}
-                  type="button"
-                  onClick={() => {
-                    setBusinessType(preset.type);
-                    setAppName(preset.app);
-                    setServicesLabel(preset.services);
-                  }}
-                  className={`p-3 rounded-xl border-2 text-left transition-all ${
-                    isActive
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <p className={`text-sm font-semibold ${isActive ? "text-primary" : "text-slate-700"}`}>
-                    {preset.type}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{preset.desc}</p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Custom branding (collapsed jika sudah pilih preset, tapi bisa override) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-          <Field label="Nama Aplikasi">
-            <input
-              type="text"
-              value={appName}
-              onChange={(e) => setAppName(e.target.value)}
-              placeholder="Mis. BRILink POS"
-              className="wizard-input"
-            />
-          </Field>
-          <Field label="Tipe Bisnis (custom)">
-            <input
-              type="text"
-              value={businessType}
-              onChange={(e) => setBusinessType(e.target.value)}
-              placeholder="Mis. Agen BRILink"
-              className="wizard-input"
-            />
-          </Field>
-          <Field label="Label Menu Layanan">
-            <input
-              type="text"
-              value={servicesLabel}
-              onChange={(e) => setServicesLabel(e.target.value)}
-              placeholder="Mis. Layanan BRILink"
-              className="wizard-input"
-            />
-          </Field>
-        </div>
-
+      <div className="space-y-4 mt-6">
         <Field label="Nama Toko" required>
           <input
             type="text"
