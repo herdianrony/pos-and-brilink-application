@@ -194,43 +194,51 @@ async function startNextServer(): Promise<void> {
 // ── Tunggu port siap ─────────────────────────────
 async function waitForPort(port: number, maxRetries = 120, intervalMs = 500): Promise<void> {
   const net = require("net");
+  const http = require("http");
   const maxSeconds = (maxRetries * intervalMs) / 1000;
+
+  // Phase 1: TCP connect check
   for (let i = 0; i < maxRetries; i++) {
     try {
       const ok = await new Promise<boolean>((resolve) => {
         const socket = new net.Socket();
         socket.setTimeout(1000);
-        socket.once("connect", () => {
-          socket.destroy();
-          resolve(true);
-        });
-        socket.once("error", () => {
-          socket.destroy();
-          resolve(false);
-        });
-        socket.once("timeout", () => {
-          socket.destroy();
-          resolve(false);
-        });
+        socket.once("connect", () => { socket.destroy(); resolve(true); });
+        socket.once("error", () => { socket.destroy(); resolve(false); });
+        socket.once("timeout", () => { socket.destroy(); resolve(false); });
         socket.connect(port, "127.0.0.1");
       });
       if (ok) {
-        console.log(`[main] Port ${port} siap setelah ${i * intervalMs / 1000}s`);
-        return;
+        console.log(`[main] TCP port ${port} siap setelah ${i * intervalMs / 1000}s`);
+        break;
       }
-    } catch {
-      // ignore
+    } catch { /* ignore */ }
+    if (i === maxRetries - 1) {
+      throw new Error(`TCP port ${port} tidak siap dalam ${maxSeconds} detik`);
     }
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  throw new Error(
-    `Tidak dapat terhubung ke port ${port} dalam ${maxSeconds} detik.\n\n` +
-    `Kemungkinan penyebab:\n` +
-    `• Next.js server gagal start (cek log di console)\n` +
-    `• Port ${port} sudah dipakai aplikasi lain\n` +
-    `• Antivirus memblokir eksekusi server\n` +
-    `• Aplikasi corrupt — coba reinstall`
-  );
+
+  // Phase 2: HTTP health check (pastikan server siap serve request)
+  for (let i = 0; i < 30; i++) {
+    try {
+      const ok = await new Promise<boolean>((resolve) => {
+        const req = http.get(`http://127.0.0.1:${port}/api/health`, (res: any) => {
+          res.destroy();
+          resolve(res.statusCode === 200);
+        });
+        req.setTimeout(2000);
+        req.on("error", () => resolve(false));
+        req.on("timeout", () => { req.destroy(); resolve(false); });
+      });
+      if (ok) {
+        console.log(`[main] HTTP health check OK setelah ${i * 500 / 1000}s`);
+        return;
+      }
+    } catch { /* ignore */ }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  console.warn("[main] HTTP health check timeout — lanjutkan anyway");
 }
 
 // ── URL untuk load ───────────────────────────────
@@ -264,17 +272,17 @@ function createWindow() {
   });
 
   // ── Content Security Policy (production only) ─
-  // Di DEV mode: Next.js inject inline scripts (HMR, React Refresh) yang
-  // butuh 'unsafe-inline'. Apply CSP hanya di production untuk hindari konflik.
+  // Next.js App Router meng-embed RSC flight data sebagai inline <script>.
+  // Tanpa 'unsafe-inline' di script-src, hydration gagal → page stuck loading.
   if (isPackaged) {
     mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       const csp = [
         "default-src 'self'",
-        "script-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob:",
-        "connect-src 'self' http://127.0.0.1:*",
+        "connect-src 'self' http://127.0.0.1:* http://localhost:*",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",
@@ -300,6 +308,27 @@ function createWindow() {
     if (isDevMode) {
       mainWindow?.webContents.openDevTools({ mode: "detach" });
     }
+  });
+
+  // ── Debug: log loading events ─────────────────
+  mainWindow.webContents.on("did-start-loading", () => {
+    console.log("[main] Page loading started");
+  });
+  mainWindow.webContents.on("did-finish-load", () => {
+    console.log("[main] Page finished loading");
+  });
+  mainWindow.webContents.on("did-fail-load", (_evt, errorCode, errorDescription, validatedURL) => {
+    console.error(`[main] Page failed to load: ${errorCode} ${errorDescription} URL: ${validatedURL}`);
+    // Retry setelah 2 detik
+    if (errorCode !== -3) { // -3 = aborted (user navigation), skip retry
+      setTimeout(() => {
+        console.log("[main] Retrying page load...");
+        mainWindow?.loadURL(getLoadUrl());
+      }, 2000);
+    }
+  });
+  mainWindow.webContents.on("console-message", (_evt, level, message, line, sourceId) => {
+    console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`);
   });
 
   mainWindow.on("closed", () => {
