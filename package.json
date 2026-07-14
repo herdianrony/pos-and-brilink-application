@@ -19,7 +19,7 @@
     "compile:electron": "tsc -p tsconfig.electron.json && node scripts/copy-preload.js",
     "dev:web": "next dev",
     "dev:electron": "npm run compile:electron && cross-env ELECTRON_DEV=1 concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "build:web": "next build",
+    "build:web": "next build && node scripts/post-build.js",
     "build:electron": "npm run build:web && npm run compile:electron && electron-builder --win",
     "build:electron:portable": "npm run build:web && npm run compile:electron && electron-builder --win portable",
     "build:electron:publish": "npm run build:web && npm run compile:electron && electron-builder --win -p always",

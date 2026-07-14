@@ -79,6 +79,7 @@ async function startNextServer(): Promise<void> {
     console.log(`[main] Starting Next.js server from ${serverPath}`);
     console.log(`[main] CWD: ${cwd}`);
     console.log(`[main] PORT: ${INTERNAL_PORT}`);
+    console.log(`[main] execPath: ${process.execPath}`);
 
     // ── PENTING: ELECTRON_RUN_AS_NODE ──────────────
     // process.execPath di packaged Electron = path ke "BRILink POS.exe"
@@ -91,9 +92,27 @@ async function startNextServer(): Promise<void> {
       PORT: String(INTERNAL_PORT),
       NODE_ENV: "production",
       ELECTRON_RUN_AS_NODE: "1",
-      // Hapus env yang bisa konflik
       ELECTRON_SECURE_WARNINGS: "1",
+      // Pastikan PATH include system folders (Windows butuh ini untuk child process)
+      PATH: process.env.PATH,
     };
+
+    // ── Buat log file untuk debug ─────────────────
+    const logDir = path.join(app.getPath("userData"), "logs");
+    try {
+      const fs = require("fs");
+      fs.mkdirSync(logDir, { recursive: true });
+    } catch {
+      // ignore
+    }
+    const logFile = path.join(logDir, "next-server.log");
+    console.log(`[main] Log file: ${logFile}`);
+
+    let logContent = `[${new Date().toISOString()}] Starting Next.js server\n`;
+    logContent += `execPath: ${process.execPath}\n`;
+    logContent += `serverPath: ${serverPath}\n`;
+    logContent += `cwd: ${cwd}\n`;
+    logContent += `PORT: ${INTERNAL_PORT}\n\n`;
 
     nextServer = spawn(process.execPath, [serverPath], {
       cwd,
@@ -102,10 +121,20 @@ async function startNextServer(): Promise<void> {
     });
 
     let resolved = false;
+    const writeLog = (msg: string) => {
+      logContent += msg + "\n";
+      try {
+        const fs = require("fs");
+        fs.writeFileSync(logFile, logContent);
+      } catch {
+        // ignore
+      }
+    };
 
     nextServer.stdout?.on("data", (data) => {
       const msg = data.toString();
       console.log(`[next] ${msg.trim()}`);
+      writeLog(`[stdout] ${msg}`);
       if (!resolved && (msg.includes("Ready") || msg.includes("started server") || msg.includes("Local:"))) {
         resolved = true;
         resolve();
@@ -113,23 +142,42 @@ async function startNextServer(): Promise<void> {
     });
 
     nextServer.stderr?.on("data", (data) => {
-      console.error(`[next:err] ${data.toString().trim()}`);
+      const msg = data.toString();
+      console.error(`[next:err] ${msg.trim()}`);
+      writeLog(`[stderr] ${msg}`);
     });
 
     nextServer.on("error", (err) => {
       console.error("[main] Failed to start Next.js server:", err);
+      writeLog(`[ERROR] ${err.message}\n${err.stack || ""}`);
       if (!resolved) {
         resolved = true;
-        reject(new Error(`Gagal start Next.js server: ${err.message}\n\nPastikan aplikasi tidak diblokir antivirus.`));
+        reject(new Error(
+          `Gagal start Next.js server: ${err.message}\n\n` +
+          `Kemungkinan penyebab:\n` +
+          `• Antivirus memblokir eksekusi\n` +
+          `• Permission denied\n` +
+          `• Aplikasi corrupt\n\n` +
+          `Log file: ${logFile}`
+        ));
       }
     });
 
     nextServer.on("exit", (code) => {
       console.log(`[main] Next.js server exited with code ${code}`);
+      writeLog(`[EXIT] code=${code}`);
       nextServer = null;
       if (!resolved && code !== 0) {
         resolved = true;
-        reject(new Error(`Next.js server exit dengan kode ${code}. Mungkin ada error di startup.`));
+        reject(new Error(
+          `Next.js server exit dengan kode ${code}. Mungkin ada error di startup.\n\n` +
+          `Kemungkinan penyebab:\n` +
+          `• File static assets (.next/static) atau public/ tidak ada\n` +
+          `• Database permission denied\n` +
+          `• Port ${INTERNAL_PORT} sudah dipakai\n` +
+          `• Module not found\n\n` +
+          `Log file: ${logFile}`
+        ));
       }
     });
 
@@ -267,29 +315,46 @@ function createWindow() {
 
 // ── Tampilkan window error ───────────────────────
 function showErrorWindow(errorMessage: string) {
+  // Path log file untuk ditampilkan ke user
+  let logPath = "";
+  try {
+    logPath = path.join(app.getPath("userData"), "logs", "next-server.log");
+  } catch {
+    // ignore
+  }
+
   mainWindow = new BrowserWindow({
-    width: 600,
-    height: 480,
-    title: "BRILink POS - Error",
+    width: 700,
+    height: 560,
+    title: "POS & Agen Bisnis - Error",
     backgroundColor: "#fef2f2",
   });
   mainWindow.loadURL(
     "data:text/html," +
       encodeURIComponent(
         `<html><head><meta charset="utf-8"><style>
-          body { font-family: -apple-system, system-ui, sans-serif; padding: 40px; background: #fef2f2; color: #991b1b; }
-          h1 { color: #dc2626; margin-bottom: 16px; font-size: 20px; }
-          p { line-height: 1.6; margin-bottom: 12px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-          code { background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
-          .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #fecaca; font-size: 12px; color: #7f1d1d; }
+          body { font-family: -apple-system, system-ui, sans-serif; padding: 32px; background: #fef2f2; color: #991b1b; }
+          h1 { color: #dc2626; margin-bottom: 12px; font-size: 20px; }
+          p { line-height: 1.6; margin-bottom: 10px; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+          code { background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; word-break: break-all; }
+          .footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid #fecaca; font-size: 12px; color: #7f1d1d; }
+          .log-info { background: #fff; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 11px; color: #7f1d1d; }
         </style></head><body>
           <h1>Gagal Memulai Aplikasi</h1>
           <p>${errorMessage}</p>
+          ${logPath ? `<div class="log-info">
+            <strong>Log file:</strong><br>
+            <code>${logPath}</code><br><br>
+            Buka file di atas dengan Notepad untuk melihat detail error,
+            lalu kirim ke developer untuk dianalisis.
+          </div>` : ""}
           <div class="footer">
-            <strong>Solusi:</strong><br>
-            • Mode Development: jalankan <code>npm run dev:electron</code> (bukan <code>electron .</code> langsung)<br>
-            • Mode Production: jalankan <code>npm run build:electron</code> untuk build installer<br>
-            • Jika sudah build, coba reinstall aplikasi
+            <strong>Solusi yang bisa dicoba:</strong><br>
+            • Tutup aplikasi lain yang mungkin pakai port 43219<br>
+            • Disable antivirus sementara, lalu jalankan lagi<br>
+            • Run as Administrator<br>
+            • Reinstall aplikasi<br>
+            • Hubungi developer dengan menyertakan log file di atas
           </div>
         </body></html>`
       )
