@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "PORT=3001 npm run dev",
+    command: "npx cross-env PORT=3001 npm run dev",
     url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
