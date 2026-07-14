@@ -23,14 +23,13 @@ import {
   Sparkles,
 } from "lucide-react";
 
-type Step = "welcome" | "store" | "admin" | "cash" | "settlement" | "printer" | "done";
+type Step = "welcome" | "store" | "admin" | "saldo" | "printer" | "done";
 
 const STEPS: { id: Step; label: string; icon: typeof Store; desc: string }[] = [
   { id: "welcome", label: "Selamat Datang", icon: Sparkles, desc: "Pengenalan" },
-  { id: "store", label: "Info Toko", icon: Store, desc: "Identitas usaha" },
+  { id: "store", label: "Info Usaha", icon: Store, desc: "Identitas usaha" },
   { id: "admin", label: "Akun Admin", icon: ShieldCheck, desc: "Keamanan login" },
-  { id: "cash", label: "Kas Awal", icon: Wallet, desc: "Saldo awal rekening" },
-  { id: "settlement", label: "Rekening Settlement", icon: Landmark, desc: "Bank/e-wallet aktif" },
+  { id: "saldo", label: "Saldo Awal", icon: Wallet, desc: "Kas + Rekening" },
   { id: "printer", label: "Printer", icon: Printer, desc: "Opsional" },
   { id: "done", label: "Selesai", icon: PartyPopper, desc: "Mulai menggunakan" },
 ];
@@ -72,8 +71,8 @@ function SetupWizardForm() {
     balance: string;
   }>>([]);
 
-  // Printer
-  const [printerType, setPrinterType] = useState<"network" | "usb" | "serial" | "skip">("network");
+  // Printer — default skip (user can configure later)
+  const [printerType, setPrinterType] = useState<"network" | "usb" | "serial" | "skip">("skip");
   const [printerHost, setPrinterHost] = useState("192.168.1.87");
   const [printerPort, setPrinterPort] = useState("9100");
   const [printerWidth, setPrinterWidth] = useState<"32" | "48">("32");
@@ -92,31 +91,37 @@ function SetupWizardForm() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  // P0: Load bank/e-wallet accounts when entering settlement step
+  // P0: Load bank/e-wallet templates via setup endpoint (public, no auth needed)
   useEffect(() => {
-    if (step === "settlement" && settlementAccounts.length === 0) {
-      fetch("/api/accounts", { cache: "no-store" })
-        .then((r) => r.json())
-        .then((accs: Array<{ id: number; code: string; name: string; icon: string | null; color: string | null; isActive: boolean; balance: string }>) => {
-          // Filter to bank/e-wallet templates (exclude cash)
-          const bankAccs = accs.filter(a => a.code !== "cash");
-          setSettlementAccounts(bankAccs.map(a => ({
+    if (step === "saldo" && settlementAccounts.length === 0) {
+      fetch("/api/setup/templates", { cache: "no-store" })
+        .then((r) => {
+          if (!r.ok) throw new Error("Failed to load templates");
+          return r.json();
+        })
+        .then((data: {
+          templates: Array<{ id: number; code: string; name: string; icon: string | null; color: string | null; isActive: boolean; balance: string }>;
+          cashAccount: { id: number; code: string; name: string; balance: string } | null;
+        }) => {
+          setSettlementAccounts(data.templates.map(a => ({
             id: a.id,
             code: a.code,
             name: a.name,
             icon: a.icon,
             color: a.color,
-            active: false, // user chooses which to activate
+            active: false,
             balance: "0",
           })));
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("Failed to load templates:", err);
+        });
     }
   }, [step, settlementAccounts.length]);
 
   function next() {
     setError("");
-    const order: Step[] = ["welcome", "store", "admin", "cash", "settlement", "printer", "done"];
+    const order: Step[] = ["welcome", "store", "admin", "saldo", "printer", "done"];
     const idx = order.indexOf(step);
     if (idx < order.length - 1) {
       // Validasi per step
@@ -131,13 +136,9 @@ function SetupWizardForm() {
         if (adminPassword.length < 6) return setError("Password minimal 6 karakter");
         if (adminPassword !== adminConfirm) return setError("Konfirmasi password tidak cocok");
       }
-      if (step === "cash") {
+      if (step === "saldo") {
         const n = parseFloat(openingBalance);
-        if (isNaN(n) || n < 0) return setError("Saldo awal tidak valid");
-      }
-      if (step === "settlement") {
-        // Load accounts if not loaded yet (happens on first visit to this step)
-        // Validation: at least allow 0 active accounts (user can add later)
+        if (isNaN(n) || n < 0) return setError("Saldo awal kas tidak valid");
       }
       setStep(order[idx + 1]);
     }
@@ -145,7 +146,7 @@ function SetupWizardForm() {
 
   function prev() {
     setError("");
-    const order: Step[] = ["welcome", "store", "admin", "cash", "settlement", "printer", "done"];
+    const order: Step[] = ["welcome", "store", "admin", "saldo", "printer", "done"];
     const idx = order.indexOf(step);
     if (idx > 0) setStep(order[idx - 1]);
   }
@@ -154,109 +155,45 @@ function SetupWizardForm() {
     setSubmitting(true);
     setError("");
     try {
-      // 1. Create admin user via /api/auth/setup (auto-login setelah ini)
-      const setupRes = await fetch("/api/auth/setup", {
+      // ── P0: Atomic setup via /api/setup/complete ──
+      // Creates admin + settings + cash balance + activates settlement accounts
+      // in a single database transaction. If any part fails, everything rolls back.
+      const activeSettlements = settlementAccounts.filter(s => s.active);
+      const kasOnly = activeSettlements.length === 0;
+
+      const res = await fetch("/api/setup/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: adminName,
-          username: adminUsername,
-          password: adminPassword,
-          role: "admin",
+          store: {
+            name: storeName,
+            ownerName,
+            phone: storePhone,
+            address: storeAddress,
+            agentId,
+          },
+          admin: {
+            name: adminName,
+            username: adminUsername,
+            password: adminPassword,
+          },
+          cashOpeningBalance: parseFloat(openingBalance) || 0,
+          settlementAccounts: activeSettlements.map(s => ({
+            code: s.code,
+            active: true,
+            openingBalance: parseFloat(s.balance) || 0,
+          })),
+          kasOnly,
         }),
       });
-      const setupData = await setupRes.json();
-      if (!setupRes.ok) {
-        setError(setupData.error || "Gagal membuat akun admin");
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Gagal menyelesaikan setup");
         return;
       }
 
-      // 2. Save store settings via /api/settings
-      await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          app_name: "POS & Agen Bisnis",
-          business_type: "Agen Bisnis",
-          services_label: "Layanan Agen",
-          store_name: storeName,
-          store_address: storeAddress,
-          phone: storePhone,
-          agent_id: agentId,
-          owner_name: ownerName,
-          opening_balance: openingBalance,
-        }),
-      });
-
-      // 3. Set cash account opening balance (seed creates cash with balance=0)
-      //    User-specified opening balance is applied via adjust action.
-      try {
-        const accsRes = await fetch("/api/accounts");
-        if (accsRes.ok) {
-          const accs = await accsRes.json();
-          const cashAcc = accs.find((a: { code: string; balance: number }) => a.code === "cash");
-          if (cashAcc) {
-            const target = parseFloat(openingBalance) || 0;
-            // Seed creates cash with balance=0, so delta = target - 0 = target
-            if (target > 0) {
-              await fetch("/api/accounts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  action: "adjust",
-                  accountId: cashAcc.id,
-                  amount: target,
-                  type: "opening",
-                  notes: "Saldo awal kas dari Setup Wizard",
-                }),
-              });
-            }
-          }
-        }
-      } catch {
-        // Non-fatal — cash account bisa diatur nanti
-      }
-
-      // 4. P0: Activate selected settlement accounts + set initial balance
-      //    This is critical — without active bank accounts, transfer/setor/payment fail.
-      try {
-        for (const acc of settlementAccounts) {
-          if (!acc.active) continue;
-          // Activate the account via update action
-          await fetch("/api/accounts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "update",
-              id: acc.id,
-              name: acc.name,
-              icon: acc.icon || "wallet",
-              color: acc.color || "#00875A",
-              minBalance: "0",
-              isActive: true,
-            }),
-          });
-          // Set initial balance via adjust action (seed creates with balance=0)
-          const targetBalance = parseFloat(acc.balance) || 0;
-          if (targetBalance > 0) {
-            await fetch("/api/accounts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "adjust",
-                accountId: acc.id,
-                amount: targetBalance,
-                type: "opening",
-                notes: `Saldo awal ${acc.name} dari Setup Wizard`,
-              }),
-            });
-          }
-        }
-      } catch {
-        // Non-fatal — settlement accounts bisa diatur nanti via Kas & Saldo
-      }
-
-      // 5. Save printer config (jika tidak skip) via Electron API
+      // Save printer config (jika tidak skip) via Electron API
       if (printerType !== "skip" && typeof window !== "undefined" && window.electronAPI) {
         try {
           await window.electronAPI.printer.saveConfig({
@@ -270,7 +207,7 @@ function SetupWizardForm() {
         }
       }
 
-      // 6. Move to done step
+      // Move to done step
       setStep("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -383,11 +320,10 @@ function SetupWizardForm() {
               setShowPwd={setShowPwd}
             />
           )}
-          {step === "cash" && (
-            <CashStep openingBalance={openingBalance} setOpeningBalance={setOpeningBalance} />
-          )}
-          {step === "settlement" && (
-            <SettlementStep
+          {step === "saldo" && (
+            <SaldoStep
+              openingBalance={openingBalance}
+              setOpeningBalance={setOpeningBalance}
               accounts={settlementAccounts}
               setAccounts={setSettlementAccounts}
             />
@@ -682,74 +618,15 @@ function AdminStep({
   );
 }
 
-function CashStep({
+// ── P1: Merged SaldoStep (Kas Awal + Rekening Settlement) ──
+function SaldoStep({
   openingBalance,
   setOpeningBalance,
-}: {
-  openingBalance: string;
-  setOpeningBalance: (v: string) => void;
-}) {
-  const presetOptions = [
-    { label: "Rp 100.000", value: "100000" },
-    { label: "Rp 200.000", value: "200000" },
-    { label: "Rp 500.000", value: "500000" },
-    { label: "Rp 1.000.000", value: "1000000" },
-  ];
-  return (
-    <div>
-      <StepHeader
-        icon={Wallet}
-        title="Kas Awal"
-        desc="Saldo awal untuk laci kas tunai. Isi 0 jika belum ada uang di laci. Bisa diubah nanti di menu Kas & Saldo."
-      />
-      <div className="space-y-5 mt-6">
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">
-            Rp
-          </span>
-          <input
-            type="number"
-            value={openingBalance}
-            onChange={(e) => setOpeningBalance(e.target.value)}
-            className="wizard-input pl-11 text-lg font-extrabold"
-            placeholder="0"
-            autoFocus
-          />
-        </div>
-
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-2">Pilih nominal cepat:</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {presetOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setOpeningBalance(opt.value)}
-                className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  openingBalance === opt.value
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs">
-          <strong>Tips:</strong> Rekening m-banking (BRI, Mandiri, BCA, BNI)
-          akan otomatis dibuat dengan saldo Rp 0. Anda bisa top-up nanti di menu
-          "Kas & Saldo".
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SettlementStep({
   accounts,
   setAccounts,
 }: {
+  openingBalance: string;
+  setOpeningBalance: (v: string) => void;
   accounts: Array<{
     id: number;
     code: string;
@@ -769,6 +646,13 @@ function SettlementStep({
     balance: string;
   }>) => void;
 }) {
+  const presetOptions = [
+    { label: "Rp 100.000", value: "100000" },
+    { label: "Rp 200.000", value: "200000" },
+    { label: "Rp 500.000", value: "500000" },
+    { label: "Rp 1.000.000", value: "1000000" },
+  ];
+
   function toggleActive(id: number) {
     setAccounts(accounts.map(a => a.id === id ? { ...a, active: !a.active } : a));
   }
@@ -781,57 +665,107 @@ function SettlementStep({
   return (
     <div>
       <StepHeader
-        icon={Landmark}
-        title="Rekening Settlement"
-        desc="Pilih rekening bank/e-wallet yang aktif untuk transaksi transfer, setor, dan pembayaran. Isi saldo awal jika ada."
+        icon={Wallet}
+        title="Saldo Awal"
+        desc="Isi saldo awal kas tunai dan pilih rekening settlement yang aktif untuk transaksi transfer, setor, dan pembayaran."
       />
-      <div className="space-y-3 mt-6">
-        {accounts.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-4">Memuat rekening...</p>
-        ) : (
-          accounts.map(acc => (
-            <div
-              key={acc.id}
-              className={`p-4 rounded-2xl border-2 transition-all ${
-                acc.active
-                  ? "border-primary bg-primary/5"
-                  : "border-slate-200 bg-slate-50/50"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <input
-                    type="checkbox"
-                    checked={acc.active}
-                    onChange={() => toggleActive(acc.id)}
-                    className="w-5 h-5 rounded text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 truncate">{acc.name}</p>
-                    <p className="text-xs text-slate-400">{acc.code}</p>
+
+      <div className="space-y-6 mt-6">
+        {/* ── Kas Tunai ── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Wallet size={18} className="text-emerald-500" />
+            <h4 className="font-bold text-slate-800">Kas Tunai (Laci)</h4>
+          </div>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">Rp</span>
+            <input
+              type="number"
+              value={openingBalance}
+              onChange={(e) => setOpeningBalance(e.target.value)}
+              className="wizard-input pl-11 text-lg font-extrabold"
+              placeholder="0"
+              autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {presetOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setOpeningBalance(opt.value)}
+                className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                  openingBalance === opt.value
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Rekening Settlement ── */}
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Landmark size={18} className="text-blue-500" />
+              <h4 className="font-bold text-slate-800">Rekening Settlement</h4>
+            </div>
+            {activeCount > 0 && (
+              <span className="text-xs font-medium text-emerald-600">{activeCount} aktif</span>
+            )}
+          </div>
+
+          {accounts.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">Memuat rekening...</p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {accounts.map(acc => (
+                <div
+                  key={acc.id}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    acc.active ? "border-primary bg-primary/5" : "border-slate-200 bg-slate-50/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={acc.active}
+                        onChange={() => toggleActive(acc.id)}
+                        className="w-5 h-5 rounded text-primary focus:ring-primary"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-800 truncate text-sm">{acc.name}</p>
+                        <p className="text-xs text-slate-400">{acc.code}</p>
+                      </div>
+                    </div>
+                    {acc.active && (
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xs">Rp</span>
+                        <input
+                          type="number"
+                          value={acc.balance}
+                          onChange={(e) => setBalance(acc.id, e.target.value)}
+                          className="w-32 pl-8 pr-3 py-2 rounded-xl border-2 border-slate-200 focus:border-primary focus:outline-none text-sm font-bold"
+                          placeholder="0"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
-                {acc.active && (
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xs">
-                      Rp
-                    </span>
-                    <input
-                      type="number"
-                      value={acc.balance}
-                      onChange={(e) => setBalance(acc.id, e.target.value)}
-                      className="w-36 pl-8 pr-3 py-2 rounded-xl border-2 border-slate-200 focus:border-primary focus:outline-none text-sm font-bold"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
-          ))
-        )}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-          <p className="font-semibold">{activeCount} rekening aktif</p>
-          <p className="mt-0.5">Rekening yang tidak dicek akan tetap inactive. Anda bisa mengaktifkannya nanti di menu Kas & Saldo.</p>
+          )}
+
+          {/* Kas-only warning */}
+          {activeCount === 0 && accounts.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+              <p className="font-semibold">Mulai dengan Kas Saja</p>
+              <p className="mt-0.5">Layanan transfer, setor tunai, dan pembayaran tagihan belum bisa dipakai. Anda bisa menambahkan rekening settlement nanti di menu Kas & Saldo.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

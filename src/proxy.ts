@@ -13,6 +13,8 @@ const PUBLIC_PATHS = [
   "/api/auth/logout",
   "/api/health",
   "/api/seed", // idempotent — aman untuk first-run bootstrap
+  "/api/setup/templates", // public only if no users exist (checked in route)
+  "/api/setup/complete", // public only if no users exist (checked in route)
 ];
 
 // Rute yang dilewati proxy (Next internals & static assets)
