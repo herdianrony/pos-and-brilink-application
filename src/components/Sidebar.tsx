@@ -242,10 +242,9 @@ export default function Sidebar({
               </div>
               <button
                 onClick={handleLogout}
-                disabled={loggingOut}
-                title="Keluar"
+                disabled={loggingOut} title="Keluar"
                 className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-500/80 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-90 disabled:opacity-50"
-              >
+               aria-label="Keluar">
                 <LogOut size={16} />
               </button>
             </div>

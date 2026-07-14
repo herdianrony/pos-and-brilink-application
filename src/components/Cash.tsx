@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatRupiah, formatDate, cn } from "@/lib/utils";
 import { Card, Button, Input, Modal, Spinner, EmptyState, Badge, Tabs, Select, ConfirmDialog, AlertDialog, useToast } from "@/components/ui";
+import { CurrencyInput } from "@/components/CurrencyInput";
 import { AccountCard } from "@/components/AccountCard";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
@@ -325,7 +326,7 @@ export default function Cash() {
               <p className="text-sm text-slate-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
-          <Input label="Jumlah (+/-)" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Positif untuk tambah, negatif untuk kurang" className="text-lg font-extrabold" />
+          <CurrencyInput label="Jumlah (positif)" value={amount} onChange={(v) => setAmount(String(v))} placeholder="0" />
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Top up dari ATM" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
@@ -354,7 +355,7 @@ export default function Cash() {
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </Select>
-          <Input label="Jumlah" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="text-lg font-extrabold" />
+          <CurrencyInput label="Jumlah" value={amount} onChange={(v) => setAmount(String(v))} placeholder="0" />
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Tarik ATM, Setor tunai" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
@@ -396,7 +397,7 @@ export default function Cash() {
               ))}
             </div>
           </div>
-          <Input label="Saldo Awal" type="number" value={accForm.balance} onChange={e => setAccForm({ ...accForm, balance: e.target.value })} placeholder="0" />
+          <CurrencyInput label="Saldo Awal" value={accForm.balance} onChange={(v) => setAccForm({ ...accForm, balance: String(v) })} placeholder="0" />
           <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
