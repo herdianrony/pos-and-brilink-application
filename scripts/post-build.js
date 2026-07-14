@@ -7,6 +7,8 @@
  * - public/ (static assets like icons, images)
  *
  * File ini harus dijalankan SETELAH `next build` dan SEBELUM `electron-builder`.
+ *
+ * Juga bersihkan dist-electron lama untuk hindari EBUSY error di Windows.
  */
 const fs = require("fs");
 const path = require("path");
@@ -17,6 +19,7 @@ const staticSrc = path.join(projectRoot, ".next", "static");
 const staticDst = path.join(standaloneDir, ".next", "static");
 const publicSrc = path.join(projectRoot, "public");
 const publicDst = path.join(standaloneDir, "public");
+const distElectronDir = path.join(projectRoot, "dist-electron");
 
 function copyDir(src, dst) {
   if (!fs.existsSync(src)) {
@@ -34,10 +37,24 @@ function copyDir(src, dst) {
       fs.copyFileSync(s, d);
     }
   }
-  console.log(`[post-build] Copied: ${src} → ${dst}`);
 }
 
-console.log("[post-build] Copying static assets to standalone...");
+function rmDir(dir) {
+  if (!fs.existsSync(dir)) return;
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+    console.log(`[post-build] Cleaned: ${dir}`);
+  } catch (e) {
+    console.warn(`[post-build] WARNING: Cannot delete ${dir}: ${e.message}`);
+    console.warn(`[post-build] Coba tutup aplikasi yang mungkin pakai file di folder tersebut,`);
+    console.warn(`[post-build] atau hapus manual: rmdir /S /Q "${dir}"`);
+  }
+}
+
+console.log("[post-build] Step 1: Clean old dist-electron...");
+rmDir(distElectronDir);
+
+console.log("[post-build] Step 2: Copying static assets to standalone...");
 
 if (!fs.existsSync(standaloneDir)) {
   console.error(`[post-build] ERROR: Standalone dir not found: ${standaloneDir}`);
@@ -47,8 +64,11 @@ if (!fs.existsSync(standaloneDir)) {
 
 // Copy .next/static → standalone/.next/static
 copyDir(staticSrc, staticDst);
+console.log(`[post-build] Copied: .next/static → standalone/.next/static`);
 
 // Copy public → standalone/public
 copyDir(publicSrc, publicDst);
+console.log(`[post-build] Copied: public → standalone/public`);
 
 console.log("[post-build] Done. Standalone ready for electron-builder.");
+
