@@ -394,7 +394,11 @@ export default function BRILink() {
                         )}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          isBankIcon(acc.icon) ? <BankIcon name={acc.icon} size={18} /> : <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-slate-500" />
+                          {isBankIcon(acc.icon) ? (
+                            <BankIcon name={acc.icon} size={18} />
+                          ) : (
+                            <DynamicIcon name={acc.icon} fallback="credit-card" size={16} className="text-slate-500" />
+                          )}
                           <span className="text-xs font-medium text-slate-700 truncate">{acc.name}</span>
                         </div>
                         <p className={cn("text-sm font-bold", isLow ? "text-amber-600" : "text-slate-800")}>
@@ -412,7 +416,10 @@ export default function BRILink() {
 
             {/* Cash/Bank Effect Info */}
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs">
-              <p className="text-slate-700 font-medium mb-2">bar-chart-3 Efek ke Saldo:</p>
+              <p className="text-slate-700 font-medium mb-2 flex items-center gap-1.5">
+                <DynamicIcon name="bar-chart-3" fallback="bar-chart-3" size={14} className="text-slate-500" />
+                Efek ke Saldo:
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 <div className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl", sel.cashEffect === "in" ? "bg-emerald-100" : sel.cashEffect === "out" ? "bg-red-100" : "bg-slate-100")}>
                   <Banknote size={14} className={sel.cashEffect === "in" ? "text-emerald-600" : sel.cashEffect === "out" ? "text-red-500" : "text-slate-400"} />
