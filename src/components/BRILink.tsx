@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge, useToast } from "@/components/ui";
+import { CurrencyInput } from "@/components/CurrencyInput";
 import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
@@ -179,7 +180,26 @@ export default function BRILink() {
     finally { setSubmitting(false); }
   }
 
+  const [recentServices, setRecentServices] = useState<number[]>(() => {
+    try {
+      const stored = localStorage.getItem("brilink_recent_services");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  function trackRecent(serviceId: number) {
+    setRecentServices(prev => {
+      const updated = [serviceId, ...prev.filter(id => id !== serviceId)].slice(0, 6);
+      try { localStorage.setItem("brilink_recent_services", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }
+
   if (loading) return <Spinner />;
+
+  const recentSvcObjects = recentServices
+    .map(id => services.find(s => s.id === id))
+    .filter(Boolean) as Service[];
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -189,6 +209,29 @@ export default function BRILink() {
         </h2>
         <p className="text-sm text-slate-400">Pilih layanan dan proses transaksi nasabah</p>
       </div>
+
+      {/* Sprint 2: Recent Services — quick access */}
+      {recentSvcObjects.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Terakhir Dipakai</h3>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {recentSvcObjects.map(s => (
+              <button
+                key={s.id}
+                onClick={() => { setSel(s); trackRecent(s.id); }}
+                className="shrink-0 p-3 rounded-2xl bg-white border-2 border-transparent hover:border-purple-300 hover:shadow-card transition-all flex flex-col items-center gap-1.5 min-w-[100px]"
+              >
+                {isBankIcon(s.icon) ? (
+                  <BankIcon name={s.icon} size={28} />
+                ) : (
+                  <DynamicIcon name={s.icon} fallback="credit-card" size={28} className="text-purple-500" />
+                )}
+                <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{s.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Account Balance Summary — compact */}
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -248,7 +291,7 @@ export default function BRILink() {
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{cat}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {svcs.map(s => (
-                <button key={s.id} onClick={() => setSel(s)}
+                <button key={s.id} onClick={() => { setSel(s); trackRecent(s.id); }}
                   className={cn(
                     "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-pop flex flex-col items-center text-center gap-2",
                     sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-card" : "bg-white border-transparent hover:border-slate-200"
@@ -403,13 +446,12 @@ export default function BRILink() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <Input 
-                  label="Nominal Transaksi" 
-                  type="number" 
-                  value={form.amount} 
-                  onChange={e => setForm({ ...form, amount: e.target.value })} 
-                  placeholder="0" 
-                  className="text-lg font-extrabold" 
+                <CurrencyInput
+                  label="Nominal Transaksi"
+                  value={form.amount}
+                  onChange={(v) => setForm({ ...form, amount: String(v) })}
+                  placeholder="0"
+                  autoFocus
                 />
                 {sel.useTieredFee && form.amount && currentTier && (
                   <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}

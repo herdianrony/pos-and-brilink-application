@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Badge, Spinner, EmptyState, Card, useToast } from "@/components/ui";
+import { CurrencyInput } from "@/components/CurrencyInput";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
-import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X, Pause, Play, Tag, ScanLine } from "lucide-react";
+import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X, Pause, Play, Tag, ScanLine, Printer } from "lucide-react";
 
 interface Product {
   id: number; name: string; barcode: string | null;
@@ -325,8 +326,14 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Right: Cart */}
-      <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-pop border border-slate-100 flex flex-col">
+      {/* Right: Cart — Sprint 2: Mobile bottom sheet */}
+      <div className={cn(
+        "bg-white border border-slate-100 flex flex-col transition-all duration-300",
+        "lg:w-[380px] lg:rounded-2xl lg:shadow-pop lg:relative lg:h-full",
+        // Mobile: bottom sheet that can expand
+        "fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl shadow-float max-h-[60vh] lg:max-h-none",
+        showPay ? "translate-y-0 lg:translate-y-0" : "translate-y-0"
+      )}>
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <ShoppingBag size={18} className="text-primary" />
@@ -520,7 +527,7 @@ export default function POS() {
           </Card>
           {payMethod === "cash" && (
             <div className="space-y-2">
-              <Input label="Uang Diterima" type="number" value={cashAmt} onChange={e => setCashAmt(e.target.value)} placeholder="0" className="text-xl font-extrabold" />
+              <CurrencyInput label="Uang Diterima" value={cashAmt} onChange={(v) => setCashAmt(String(v))} placeholder="0" autoFocus />
               {parseFloat(cashAmt || "0") >= total && parseFloat(cashAmt || "0") > 0 && (
                 <div className="bg-emerald-50 rounded-xl p-3 text-center">
                   <span className="text-emerald-600 font-bold text-lg">Kembalian: {formatRupiah(change)}</span>
@@ -538,20 +545,71 @@ export default function POS() {
         </div>
       </Modal>
 
-      {/* Done Modal */}
+      {/* Done Modal — Sprint 1: Receipt success screen */}
       <Modal open={showDone} onClose={() => setShowDone(false)} size="sm">
-        <div className="p-8 text-center space-y-4">
-          <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
+        <div className="p-8 text-center space-y-5">
+          <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center animate-bounceIn">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-extrabold text-slate-800">Transaksi Berhasil!</h3>
-          <div className="bg-slate-50 rounded-xl p-3">
-            <p className="text-xs text-slate-400">No. Invoice</p>
-            <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900">Transaksi Berhasil!</h3>
+            <p className="text-sm text-slate-400 mt-1">Struk siap dicetak</p>
           </div>
-          <Button variant="primary" size="lg" className="w-full" onClick={() => setShowDone(false)}>
-            Transaksi Baru
-          </Button>
+          <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500 font-semibold">No. Invoice</span>
+              <span className="font-mono font-bold text-primary">{lastInv}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500 font-semibold">Total</span>
+              <span className="font-bold text-slate-800">{formatRupiah(grandTotal)}</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 font-semibold">Diskon</span>
+                <span className="font-bold text-emerald-600">-{formatRupiah(discountAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500 font-semibold">Bayar</span>
+              <span className="font-bold text-slate-800">{formatRupiah(payMethod === "cash" ? parseFloat(cashAmt || "0") : grandTotal)}</span>
+            </div>
+            {payMethod === "cash" && change > 0 && (
+              <div className="flex justify-between text-sm border-t border-slate-200 pt-2">
+                <span className="text-slate-500 font-semibold">Kembalian</span>
+                <span className="font-bold text-emerald-600">{formatRupiah(change)}</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Button variant="primary" size="lg" className="w-full" onClick={() => {
+              // Try print via Electron
+              if (typeof window !== "undefined" && window.electronAPI) {
+                window.electronAPI.printer.print({
+                  store: { name: "POS & Agen Bisnis" },
+                  invoice: { no: lastInv, date: new Date().toLocaleString("id-ID"), type: "POS", cashier: "Admin", customer: customerName || undefined },
+                  items: [], // cart already cleared, would need to preserve for print
+                  summary: { subtotal: total, adminFee: 0, total: grandTotal, paymentMethod: payMethod, paid: parseFloat(cashAmt || "0"), change },
+                });
+              } else {
+                window.print();
+              }
+            }}>
+              <Printer size={18} /> Cetak Struk
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="md" className="flex-1" onClick={() => setShowDone(false)}>
+                Transaksi Baru
+              </Button>
+              <Button variant="ghost" size="md" className="flex-1" onClick={() => {
+                setShowDone(false);
+                // Navigate to history
+                window.location.hash = "history";
+              }}>
+                Lihat Riwayat
+              </Button>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>

@@ -162,6 +162,8 @@ export function Button({
         "font-bold transition-all duration-200 active:scale-[0.96] hover:scale-[1.02]",
         "disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100 disabled:hover:scale-100",
         "inline-flex items-center justify-center gap-2",
+        // P2: Focus-visible ring for accessibility
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 focus-visible:ring-offset-2",
         variants[variant],
         sizes[size],
         className,
