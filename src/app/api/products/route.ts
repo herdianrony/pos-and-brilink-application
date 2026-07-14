@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { products, categories } from "@/db/schema";
-import { asc, eq, ilike, and, or } from "drizzle-orm";
+import { asc, eq, like, and, or, sql } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -15,10 +15,11 @@ export async function GET(req: NextRequest) {
 
   const conds = [eq(products.isActive, true)];
   if (search) {
-    // Search by name OR barcode
+    // H-03: Use like() instead of ilike() — SQLite doesn't support ILIKE
+    // Case-insensitive search via lower() on both sides
     conds.push(or(
-      ilike(products.name, `%${search}%`),
-      ilike(products.barcode, `%${search}%`)
+      sql`lower(${products.name}) LIKE lower(${'%' + search + '%'})`,
+      sql`${products.barcode} LIKE ${'%' + search + '%'}`
     ) as any);
   }
   if (categoryId && categoryId !== "all") conds.push(eq(products.categoryId, parseInt(categoryId)));

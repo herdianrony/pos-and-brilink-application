@@ -68,8 +68,16 @@ export async function POST(req: Request) {
     const [toAcc] = await db.select().from(accounts).where(eq(accounts.id, b.toAccountId));
     if (!fromAcc || !toAcc) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
+    // H-01: Larang self-transfer (transfer ke rekening yang sama)
+    if (b.fromAccountId === b.toAccountId) {
+      return NextResponse.json({ error: "Tidak bisa transfer ke rekening yang sama" }, { status: 400 });
+    }
+
     const amount = parseFloat(b.amount || "0");
-    if (amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    // H-01: Validasi amount — harus finite, positif
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ error: "Nominal tidak valid" }, { status: 400 });
+    }
     if (fromAcc.balance < amount) return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
 
     const newFromBalance = fromAcc.balance - amount;

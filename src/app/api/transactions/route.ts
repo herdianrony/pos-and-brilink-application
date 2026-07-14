@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
   const body = await req.json();
 
   // Get cash account
@@ -55,7 +57,6 @@ export async function POST(req: Request) {
   if (body.type === "pos") {
     // POS TRANSACTION
     const invoiceNo = generateInvoice("POS");
-    let totalProfit = 0;
     const items: Array<{
       productId: number;
       productName: string;
@@ -65,15 +66,47 @@ export async function POST(req: Request) {
       buyPrice: number;
     }> = body.items;
 
+    // H-01: Validasi qty positive + server-authoritative price calculation
     for (const item of items) {
-      totalProfit += (Number(item.unitPrice) - Number(item.buyPrice)) * item.quantity;
+      if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+        return NextResponse.json({ error: "Quantity harus positif" }, { status: 400 });
+      }
+      // Fetch real product data from DB (don't trust client prices)
+      const [product] = await db.select().from(products).where(eq(products.id, item.productId)).limit(1);
+      if (!product) {
+        return NextResponse.json({ error: `Produk ID ${item.productId} tidak ditemukan` }, { status: 400 });
+      }
+      if (product.stock < item.quantity) {
+        return NextResponse.json({ error: `Stok ${product.name} tidak cukup` }, { status: 400 });
+      }
+      // Override client values with server-authoritative values
+      item.unitPrice = Number(product.sellPrice);
+      item.buyPrice = Number(product.buyPrice);
+      item.productName = product.name;
+      item.subtotal = item.unitPrice * item.quantity;
     }
+
+    // Server-authoritative total & profit
+    let totalAmount = 0;
+    let totalProfit = 0;
+    for (const item of items) {
+      totalAmount += item.subtotal;
+      totalProfit += (item.unitPrice - item.buyPrice) * item.quantity;
+    }
+
+    // H-01: Validate totalAmount from client matches server calc (tolerance for discount)
+    const clientTotal = Number(body.totalAmount);
+    if (!Number.isFinite(clientTotal) || clientTotal > totalAmount) {
+      return NextResponse.json({ error: "Total tidak valid" }, { status: 400 });
+    }
+    // Use server-calculated total (client may have discount applied)
+    const finalTotal = clientTotal; // client sends post-discount total
 
     const [trx] = await db.insert(transactions).values({
       invoiceNo,
       type: "pos",
       customerName: body.customerName || null,
-      totalAmount: Number(body.totalAmount),
+      totalAmount: finalTotal,
       profit: totalProfit,
       paymentMethod: body.paymentMethod || "cash",
       notes: body.notes || null,
@@ -85,8 +118,8 @@ export async function POST(req: Request) {
         productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
-        unitPrice: Number(item.unitPrice),
-        subtotal: Number(item.subtotal),
+        unitPrice: item.unitPrice,
+        subtotal: item.subtotal,
       });
       await db.update(products).set({
         stock: sql`${products.stock} - ${item.quantity}`,
@@ -95,7 +128,7 @@ export async function POST(req: Request) {
 
     // Update cash account (POS = cash in)
     if (cashAcc && body.paymentMethod === "cash") {
-      await updateAccountBalance(cashAcc.id, Number(body.totalAmount), "pos", `POS: ${invoiceNo}`, trx.id);
+      await updateAccountBalance(cashAcc.id, finalTotal, "pos", `POS: ${invoiceNo}`, trx.id);
     }
 
     return NextResponse.json(trx);

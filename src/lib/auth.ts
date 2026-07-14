@@ -9,12 +9,26 @@ const COOKIE_NAME = "brilink_pos_session";
 const SESSION_DURATION = "7d"; // 7 hari
 const SESSION_DURATION_SEC = 60 * 60 * 24 * 7; // 7 hari dalam detik
 
+// Cache generated secret per process
+let generatedSecret: Uint8Array | null = null;
+
 function getSecret(): Uint8Array {
-  const secret =
-    process.env.AUTH_SECRET ||
-    process.env.NEXT_PUBLIC_AUTH_SECRET ||
-    "brilink-pos-default-secret-change-me-in-production-please";
-  return new TextEncoder().encode(secret);
+  // Prioritas: AUTH_SECRET env > generated per-installation secret
+  const envSecret = process.env.AUTH_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    return new TextEncoder().encode(envSecret);
+  }
+
+  // Generate random secret per process (untuk dev tanpa AUTH_SECRET)
+  // Di production Electron, secret di-generate saat first run dan disimpan
+  if (!generatedSecret) {
+    const crypto = require("crypto");
+    const bytes = crypto.randomBytes(48);
+    generatedSecret = new Uint8Array(bytes);
+    console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Menggunakan secret random sementara.");
+    console.warn("[auth] Set AUTH_SECRET env var (min 32 chars) untuk produksi.");
+  }
+  return generatedSecret;
 }
 
 export interface SessionPayload {

@@ -14,9 +14,9 @@ export const users = sqliteTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role", { length: 20 }).default("kasir").notNull(),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Kategori Produk ───────────────────────────────
@@ -26,7 +26,7 @@ export const categories = sqliteTable("categories", {
   icon: text("icon", { length: 50 }).default("package"),
   color: text("color", { length: 20 }).default("#6366f1"),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Produk ────────────────────────────────────────
@@ -42,8 +42,8 @@ export const products = sqliteTable("products", {
   unit: text("unit", { length: 20 }).default("pcs"),
   image: text("image"), // base64 data URL atau URL gambar produk
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Kategori Layanan BRILink ──────────────────────
@@ -54,7 +54,7 @@ export const serviceCategories = sqliteTable("service_categories", {
   color: text("color", { length: 20 }).default("#0ea5e9"),
   sortOrder: integer("sort_order").default(0).notNull(),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Layanan BRILink ───────────────────────────────
@@ -71,7 +71,7 @@ export const brilinkServices = sqliteTable("brilink_services", {
   bankEffect: text("bank_effect", { length: 10 }).default("out").notNull(),
   description: text("description"),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Fee Tiers (Biaya Admin Berjenjang) ────────────
@@ -82,7 +82,7 @@ export const feeTiers = sqliteTable("fee_tiers", {
   maxAmount: real("max_amount"),
   adminFee: real("admin_fee").notNull(),
   agentFee: real("agent_fee").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Transaksi ─────────────────────────────────────
@@ -98,7 +98,7 @@ export const transactions = sqliteTable("transactions", {
   profit: real("profit").default(0),
   paymentMethod: text("payment_method", { length: 30 }).default("cash"),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Item Transaksi ────────────────────────────────
@@ -123,8 +123,8 @@ export const accounts = sqliteTable("accounts", {
   balance: real("balance").notNull().default(0),
   minBalance: real("min_balance").default(100000),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Mutasi Saldo ──────────────────────────────────
@@ -136,7 +136,7 @@ export const accountMutations = sqliteTable("account_mutations", {
   balanceAfter: real("balance_after").notNull(),
   referenceId: integer("reference_id"),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── Settings ──────────────────────────────────────
@@ -144,7 +144,7 @@ export const settings = sqliteTable("settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   key: text("key", { length: 100 }).notNull().unique(),
   value: text("value").notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow().notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 // ── LEGACY: Cash Balance (untuk backward compatibility) ──
@@ -155,5 +155,5 @@ export const cashBalance = sqliteTable("cash_balance", {
   balanceAfter: real("balance_after").notNull(),
   notes: text("notes"),
   referenceId: integer("reference_id"),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });

@@ -23,12 +23,19 @@ const EXCLUDED_PREFIXES = [
   "/sitemap.xml",
 ];
 
+let generatedSecret: Uint8Array | null = null;
+
 function getSecret(): Uint8Array {
-  const secret =
-    process.env.AUTH_SECRET ||
-    process.env.NEXT_PUBLIC_AUTH_SECRET ||
-    "brilink-pos-default-secret-change-me-in-production-please";
-  return new TextEncoder().encode(secret);
+  const envSecret = process.env.AUTH_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    return new TextEncoder().encode(envSecret);
+  }
+  // Dev fallback: random per-process (Electron production sets AUTH_SECRET)
+  if (!generatedSecret) {
+    const crypto = require("crypto");
+    generatedSecret = new Uint8Array(crypto.randomBytes(48));
+  }
+  return generatedSecret;
 }
 
 async function verifyToken(token: string) {

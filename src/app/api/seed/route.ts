@@ -11,15 +11,28 @@ import {
   accountMutations,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  // C-02: Seed hanya bisa dipanggil jika:
+  // 1. Dev mode (NODE_ENV !== production), atau
+  // 2. Production + sudah authenticated (admin via setup wizard)
+  // Bind ke 127.0.0.1 (C-01) sudah melindungi dari akses LAN
+  if (process.env.NODE_ENV === "production") {
+    const auth = await requireAuth();
+    if (!auth.ok) {
+      // Allow if no users exist yet (first-run before setup wizard)
+      const { hasUsers } = await import("@/lib/auth");
+      if (await hasUsers()) {
+        return auth.response; // Users exist → require auth
+      }
+    }
+  }
   try {
     await dbReady;
-
-    // Catatan: Tabel users TIDAK dibuat di sini lagi.
     // Admin user harus dibuat via Setup Wizard (/setup → /api/auth/setup)
     // agar user diminta men-set password mereka sendiri.
     // Untuk development/testing, admin default (admin/admin123) bisa dibuat

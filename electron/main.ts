@@ -81,19 +81,43 @@ async function startNextServer(): Promise<void> {
     console.log(`[main] PORT: ${INTERNAL_PORT}`);
     console.log(`[main] execPath: ${process.execPath}`);
 
-    // ── PENTING: ELECTRON_RUN_AS_NODE ──────────────
+    // ── PENTING: ELECTRON_RUN_AS_NODE + Security ───
     // process.execPath di packaged Electron = path ke "BRILink POS.exe"
     // (Electron executable, BUKAN Node.js). Tanpa ELECTRON_RUN_AS_NODE=1,
     // Electron akan mencoba menjalankan server.js sebagai GUI app → crash.
     // Dengan ELECTRON_RUN_AS_NODE=1, Electron executable berperilaku sebagai
     // Node.js runtime, sehingga server.js bisa dijalankan dengan benar.
+
+    // ── AUTH_SECRET: generate per instalasi (C-01 fix) ──
+    // Secret di-generate random saat first run, disimpan di userData,
+    // dipakai untuk semua session. Tidak ada default yang predictable.
+    const crypto = require("crypto");
+    const fs = require("fs");
+    const secretPath = path.join(app.getPath("userData"), ".auth-secret");
+    let authSecret = "";
+    try {
+      if (fs.existsSync(secretPath)) {
+        authSecret = fs.readFileSync(secretPath, "utf-8").trim();
+      }
+      if (!authSecret || authSecret.length < 32) {
+        authSecret = crypto.randomBytes(48).toString("hex");
+        fs.writeFileSync(secretPath, authSecret, { mode: 0o600 });
+        console.log("[main] Generated new AUTH_SECRET");
+      }
+    } catch (e) {
+      // Fallback: generate per-process (less ideal, sessions reset on restart)
+      authSecret = crypto.randomBytes(48).toString("hex");
+      console.error("[main] Failed to persist AUTH_SECRET:", e);
+    }
+
     const spawnEnv: Record<string, string | undefined> = {
       ...process.env,
       PORT: String(INTERNAL_PORT),
+      HOSTNAME: "127.0.0.1", // C-01: bind ke loopback only, BUKAN 0.0.0.0
       NODE_ENV: "production",
       ELECTRON_RUN_AS_NODE: "1",
       ELECTRON_SECURE_WARNINGS: "1",
-      // Pastikan PATH include system folders (Windows butuh ini untuk child process)
+      AUTH_SECRET: authSecret, // C-01: secret unik per instalasi
       PATH: process.env.PATH,
     };
 
@@ -296,11 +320,34 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http://localhost") || url.startsWith("http://127.0.0.1")) {
-      return { action: "allow" };
+    // M-03: Use new URL() for exact hostname matching
+    // Prevents http://localhost.attacker.example bypass
+    try {
+      const parsed = new URL(url);
+      if (
+        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+        parsed.protocol === "http:"
+      ) {
+        return { action: "allow" };
+      }
+    } catch {
+      // Invalid URL → deny
     }
     shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  // M-03: Prevent navigation to external URLs
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {
+      event.preventDefault();
+    }
   });
 
   mainWindow.once("ready-to-show", () => {
