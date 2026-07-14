@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, formatDate, cn } from "@/lib/utils";
-import { Card, Button, Input, Select, Spinner, EmptyState, Badge, StatCard } from "@/components/ui";
+import { Card, Button, Input, Select, Spinner, EmptyState, Badge, StatCard, Modal } from "@/components/ui";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { StatementPreview, type StatementData } from "@/components/StatementPreview";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -16,6 +17,7 @@ import {
   FileText,
   Calendar,
   X,
+  Eye,
 } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
 
@@ -75,6 +77,7 @@ export default function RekeningKoran() {
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [showPreview, setShowPreview] = useState(false);
   const { settings } = useSettings();
   const servicesLabel = settings.services_label || "Layanan Agen";
 
@@ -189,6 +192,41 @@ export default function RekeningKoran() {
     window.print();
   }
 
+  // Build statement preview data
+  const statementData: StatementData | null = useMemo(() => {
+    if (!selectedAccount || !summary) return null;
+    return {
+      account: {
+        name: selectedAccount.name,
+        code: selectedAccount.code,
+        icon: selectedAccount.icon,
+        color: selectedAccount.color,
+      },
+      period: { start: startDate, end: endDate },
+      summary: {
+        openingBalance: summary.openingBalance,
+        totalIn: summary.totalIn,
+        totalOut: summary.totalOut,
+        closingBalance: summary.closingBalance,
+        count: summary.count,
+      },
+      mutations: mutations.map(m => ({
+        id: m.id,
+        date: m.createdAt,
+        type: m.type,
+        typeLabel: mutationTypeLabels[m.type]?.label || m.type,
+        amount: typeof m.amount === "string" ? parseFloat(m.amount) : m.amount,
+        balanceAfter: typeof m.balanceAfter === "string" ? parseFloat(m.balanceAfter) : m.balanceAfter,
+        notes: m.notes,
+      })),
+      store: {
+        name: settings.store_name || settings.app_name || "POS & Agen Bisnis",
+        address: settings.store_address || undefined,
+        phone: settings.phone || undefined,
+      },
+    };
+  }, [selectedAccount, summary, mutations, startDate, endDate, settings]);
+
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header */}
@@ -202,6 +240,9 @@ export default function RekeningKoran() {
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={exportCSV} disabled={!mutations.length}>
             <Download size={14} /> CSV
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowPreview(true)} disabled={!mutations.length}>
+            <Eye size={14} /> Preview
           </Button>
           <Button variant="secondary" size="sm" onClick={printRekeningKoran} disabled={!mutations.length}>
             <Printer size={14} /> Print
@@ -441,6 +482,44 @@ export default function RekeningKoran() {
           Periode: {startDate} s/d {endDate}
         </p>
       </div>
+
+      {/* ── Statement Preview Modal ── */}
+      <Modal open={showPreview} onClose={() => setShowPreview(false)} size="md">
+        {statementData ? (
+          <div className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-slate-800">Preview Rekening Koran</h3>
+              <button onClick={() => setShowPreview(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+
+            {/* Statement preview — scrollable */}
+            <div className="overflow-auto max-h-[60vh] p-2 bg-slate-100 rounded-xl">
+              <StatementPreview data={statementData} width={80} />
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={() => setShowPreview(false)}>
+                Tutup
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => {
+                  setShowPreview(false);
+                  printRekeningKoran();
+                }}
+              >
+                <Printer size={16} /> Cetak
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center">
+            <Spinner />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
