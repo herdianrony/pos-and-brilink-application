@@ -8,6 +8,9 @@
     "email": "herdianrony@users.noreply.github.com"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
