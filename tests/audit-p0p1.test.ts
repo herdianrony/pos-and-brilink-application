@@ -214,14 +214,14 @@ describe("P0: seed-demo access control", () => {
   it("should require admin for POST", () => {
     // Code: const auth = await requireAdmin();
     // Kasir gets 403
-    const kasirRole = "kasir";
+    const kasirRole: string = "kasir";
     const isAdmin = kasirRole === "admin";
     expect(isAdmin).toBe(false);
   });
 
   it("should require admin for DELETE", () => {
     // Code: const auth = await requireAdmin();
-    const kasirRole = "kasir";
+    const kasirRole: string = "kasir";
     const isAdmin = kasirRole === "admin";
     expect(isAdmin).toBe(false);
   });
