@@ -64,19 +64,21 @@ app.on("second-instance", () => {
 async function startNextServer(): Promise<void> {
   return new Promise((resolve, reject) => {
     const resourcesPath = process.resourcesPath;
-    const serverPath = path.join(resourcesPath, "standalone", "server.js");
+    // Pakai server-wrapper.js (bukan server.js langsung) untuk polyfill
+    // Fetch API globals yang tidak ada di Node.js 16 (Electron 22)
+    const serverPath = path.join(resourcesPath, "standalone", "server-wrapper.js");
     const cwd = path.join(resourcesPath, "standalone");
 
     if (!existsSync(serverPath)) {
       reject(
         new Error(
-          `Next.js standalone server tidak ditemukan di:\n${serverPath}\n\nAplikasi mungkin corrupt. Coba reinstall.`
+          `Server wrapper tidak ditemukan di:\n${serverPath}\n\nAplikasi mungkin corrupt. Coba reinstall.`
         )
       );
       return;
     }
 
-    console.log(`[main] Starting Next.js server from ${serverPath}`);
+    console.log(`[main] Starting Next.js server (via wrapper) from ${serverPath}`);
     console.log(`[main] CWD: ${cwd}`);
     console.log(`[main] PORT: ${INTERNAL_PORT}`);
     console.log(`[main] execPath: ${process.execPath}`);
