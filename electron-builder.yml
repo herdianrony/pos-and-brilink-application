@@ -22,18 +22,12 @@ files:
   - package.json
   - "!**/*.map"
   - "!**/*.ts"
+  - "!**/.DS_Store"
 
-# extraResources: file di luar asar (Next.js standalone + static assets)
-extraResources:
-  - from: .next/standalone
-    to: standalone
-    filter: ["**/*"]
-  - from: .next/static
-    to: standalone/.next/static
-    filter: ["**/*"]
-  - from: public
-    to: standalone/public
-    filter: ["**/*"]
+# afterPack: copy Next.js standalone (termasuk node_modules) ke resources/
+# electron-builder otomatis prune node_modules dari extraResources, jadi
+# kita copy manual di afterPack hook (setelah pruning selesai).
+afterPack: scripts/after-pack.js
 
 # Windows target
 win:
@@ -71,7 +65,3 @@ publish:
 
 # Kompressi
 compression: maximum
-
-# Async building untuk memory optimization
-# Build hanya untuk Windows
-# Linux/macOS bisa diaktifkan jika perlu
