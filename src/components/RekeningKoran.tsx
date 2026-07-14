@@ -194,7 +194,7 @@ export default function RekeningKoran() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 no-print">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Rekening Koran</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900">Rekening Koran</h2>
           <p className="text-sm text-slate-400">
             Mutasi rekening instan — mirip rekening koran bank
           </p>
@@ -315,7 +315,7 @@ export default function RekeningKoran() {
                 />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">{selectedAccount?.name}</h3>
+                <h3 className="font-extrabold text-slate-900">{selectedAccount?.name}</h3>
                 <p className="text-xs text-slate-400">
                   Periode: {startDate || "—"} s/d {endDate || "—"}
                 </p>
@@ -323,7 +323,7 @@ export default function RekeningKoran() {
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-400 uppercase tracking-wider">Saldo Saat Ini</p>
-              <p className="text-xl font-bold text-slate-900">{formatRupiah(selectedAccount?.balance || "0")}</p>
+              <p className="text-xl font-extrabold text-slate-900">{formatRupiah(selectedAccount?.balance || "0")}</p>
             </div>
           </div>
         </div>
@@ -342,22 +342,22 @@ export default function RekeningKoran() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-left p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Tanggal
                   </th>
-                  <th className="text-left p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-left p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Keterangan
                   </th>
-                  <th className="text-center p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-center p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Tipe
                   </th>
-                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Masuk
                   </th>
-                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Keluar
                   </th>
-                  <th className="text-right p-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="text-right p-3 font-bold text-slate-600 text-xs uppercase tracking-wider">
                     Saldo
                   </th>
                 </tr>

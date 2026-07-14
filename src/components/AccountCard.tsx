@@ -129,7 +129,7 @@ export function AccountCard({
               <p className="text-[11px] uppercase tracking-wider text-white/70 font-medium leading-tight">
                 {isCash ? "Kas Tunai" : "Rekening"}
               </p>
-              <p className="text-xs font-semibold text-white truncate max-w-[120px]">
+              <p className="text-xs font-bold text-white truncate max-w-[120px]">
                 {account.name}
               </p>
             </div>
@@ -199,7 +199,7 @@ export function AccountCard({
           <p className="text-[10px] uppercase tracking-wider text-white/60 font-medium">
             Saldo {isCash ? "Tunai" : "Rekening"}
           </p>
-          <p className="text-xl font-bold text-white tracking-tight">
+          <p className="text-xl font-extrabold text-white tracking-tight">
             {formattedBalance}
           </p>
           {!compact && account.minBalance && (

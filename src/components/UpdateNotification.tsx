@@ -69,7 +69,7 @@ export default function UpdateNotification() {
               <CheckCircle2 size={20} className="text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-slate-800 text-sm">
+              <h4 className="font-extrabold text-slate-900 text-sm">
                 Update v{downloaded.version} Siap Dipasang
               </h4>
               <p className="text-xs text-slate-500 mt-1">
@@ -104,7 +104,7 @@ export default function UpdateNotification() {
           <div className="flex items-center gap-3 mb-3">
             <RefreshCw size={18} className="text-emerald-500 animate-spin" />
             <div>
-              <h4 className="font-bold text-slate-800 text-sm">Mengunduh Update...</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm">Mengunduh Update...</h4>
               <p className="text-xs text-slate-500">
                 {progress.percent.toFixed(0)}% • {(progress.transferred / 1024 / 1024).toFixed(1)}MB / {(progress.total / 1024 / 1024).toFixed(1)}MB
               </p>
@@ -131,7 +131,7 @@ export default function UpdateNotification() {
               <DownloadCloud size={20} className="text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-slate-800 text-sm">
+              <h4 className="font-extrabold text-slate-900 text-sm">
                 Update v{available.version} Tersedia
               </h4>
               <p className="text-xs text-slate-500 mt-1">
@@ -165,7 +165,7 @@ export default function UpdateNotification() {
               <AlertCircle size={20} className="text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-slate-800 text-sm">Gagal Cek Update</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm">Gagal Cek Update</h4>
               <p className="text-xs text-slate-500 mt-1">{error}</p>
             </div>
             <button

@@ -64,7 +64,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900">Dashboard</h2>
           <p className="text-sm text-slate-400">Ringkasan aktivitas bisnis Anda</p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function Dashboard() {
             </div>
             <span className="text-slate-200 text-sm font-medium">Keuntungan Hari Ini</span>
           </div>
-          <p className="text-4xl font-bold tracking-tight">{formatRupiah(d.today.profit)}</p>
+          <p className="text-4xl font-extrabold tracking-tight">{formatRupiah(d.today.profit)}</p>
           <div className="flex items-center gap-3 mt-4">
             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium">
               <ShoppingCart size={12} />
@@ -124,15 +124,15 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
                 <ShoppingCart size={18} className="text-emerald-600" />
               </div>
-              <span className="font-semibold text-slate-700">Penjualan Toko (POS)</span>
+              <span className="font-bold text-slate-700">Penjualan Toko (POS)</span>
             </div>
             <div className="flex justify-between items-end">
               <div>
-                <p className="text-3xl font-bold text-slate-900">{d.today.pos.count}</p>
+                <p className="text-3xl font-extrabold text-slate-900">{d.today.pos.count}</p>
                 <p className="text-xs text-slate-400">transaksi</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-emerald-600">{formatRupiah(d.today.pos.total)}</p>
+                <p className="text-lg font-extrabold text-emerald-600">{formatRupiah(d.today.pos.total)}</p>
                 <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.pos.profit)} profit</p>
               </div>
             </div>
@@ -145,15 +145,15 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Landmark size={18} className="text-blue-600" />
               </div>
-              <span className="font-semibold text-slate-700">{servicesLabel}</span>
+              <span className="font-bold text-slate-700">{servicesLabel}</span>
             </div>
             <div className="flex justify-between items-end">
               <div>
-                <p className="text-3xl font-bold text-slate-900">{d.today.brilink.count}</p>
+                <p className="text-3xl font-extrabold text-slate-900">{d.today.brilink.count}</p>
                 <p className="text-xs text-slate-400">transaksi</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-600">{formatRupiah(d.today.brilink.total)}</p>
+                <p className="text-lg font-extrabold text-blue-600">{formatRupiah(d.today.brilink.total)}</p>
                 <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.brilink.profit)} fee</p>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+            <h3 className="font-bold text-slate-700 flex items-center gap-2">
               <TrendingUp size={16} className="text-primary" /> Pendapatan 7 Hari
             </h3>
           </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-5">
-          <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-500" /> Stok Menipis
           </h3>
           {d.lowStock.length === 0 ? (
@@ -219,7 +219,7 @@ export default function Dashboard() {
       {/* Recent Transactions */}
       <Card className="overflow-hidden">
         <div className="p-5 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-700">Transaksi Terakhir</h3>
+          <h3 className="font-bold text-slate-700">Transaksi Terakhir</h3>
         </div>
         {d.recent.length === 0 ? (
           <EmptyState icon="clipboard-list" title="Belum ada transaksi" />
@@ -243,7 +243,7 @@ export default function Dashboard() {
                     <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-slate-600">{t.customerName || "—"}</td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
-                    <td className="p-3 text-right font-semibold text-emerald-600">{formatRupiah(t.profit || "0")}</td>
+                    <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.profit || "0")}</td>
                     <td className="p-3 text-slate-400 text-xs">{formatDate(t.createdAt)}</td>
                   </tr>
                 ))}

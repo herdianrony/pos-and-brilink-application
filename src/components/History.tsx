@@ -46,7 +46,7 @@ export default function History() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
           <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
         </h2>
         <p className="text-sm text-slate-400">{trxs.length} transaksi ditemukan</p>
@@ -109,7 +109,7 @@ export default function History() {
         {loadingDet ? <Spinner /> : detail && (
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Detail Transaksi</h3>
+              <h3 className="text-lg font-extrabold">Detail Transaksi</h3>
               <button onClick={() => setDetail(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             <div className="text-center bg-slate-50 rounded-xl p-4">
@@ -126,7 +126,7 @@ export default function History() {
             </div>
             {detail.items?.length > 0 && (
               <div className="border-t border-dashed pt-3 space-y-2">
-                <p className="text-sm font-semibold text-slate-600">Item:</p>
+                <p className="text-sm font-bold text-slate-600">Item:</p>
                 {detail.items.map(i => (
                   <div key={i.id} className="flex justify-between text-sm bg-slate-50 rounded-lg p-2">
                     <span>{i.productName} <span className="text-slate-400">x{i.quantity}</span></span>
@@ -139,7 +139,7 @@ export default function History() {
               {detail.adminFee && parseFloat(detail.adminFee) > 0 && (
                 <div className="flex justify-between text-sm"><span className="text-slate-400">Biaya Admin</span><span className="text-amber-600 font-semibold">{formatRupiah(detail.adminFee)}</span></div>
               )}
-              <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{formatRupiah(detail.totalAmount)}</span></div>
+              <div className="flex justify-between text-lg font-extrabold"><span>Total</span><span className="text-primary">{formatRupiah(detail.totalAmount)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-400">Keuntungan</span><span className="text-emerald-600 font-bold">{formatRupiah(detail.profit || "0")}</span></div>
             </div>
             {detail.notes && <div className="bg-amber-50 rounded-xl p-3 text-sm">{detail.notes}</div>}

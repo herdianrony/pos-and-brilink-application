@@ -177,7 +177,7 @@ export default function BRILink() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
           <Landmark size={24} className="text-purple-500" /> {servicesLabel}
         </h2>
         <p className="text-sm text-slate-400">Pilih layanan dan proses transaksi nasabah</p>
@@ -291,7 +291,7 @@ export default function BRILink() {
                   <DynamicIcon name={sel.icon} fallback="credit-card" size={32} className="text-primary" />
                 )}
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">{sel.name}</h3>
+                  <h3 className="text-lg font-extrabold text-slate-800">{sel.name}</h3>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-slate-400">{sel.categoryName}</p>
                     {sel.useTieredFee && (
@@ -402,7 +402,7 @@ export default function BRILink() {
                   value={form.amount} 
                   onChange={e => setForm({ ...form, amount: e.target.value })} 
                   placeholder="0" 
-                  className="text-lg font-bold" 
+                  className="text-lg font-extrabold" 
                 />
                 {sel.useTieredFee && form.amount && currentTier && (
                   <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">Tier: {formatRupiah(currentTier.minAmount)} - {currentTier.maxAmount ? formatRupiah(currentTier.maxAmount) : "∞"}
@@ -428,7 +428,7 @@ export default function BRILink() {
                 </span>
                 <span className="font-semibold text-amber-600">{formatRupiah(adminFee)}</span>
               </div>
-              <div className="border-t border-purple-200 pt-2 flex justify-between text-lg font-bold">
+              <div className="border-t border-purple-200 pt-2 flex justify-between text-lg font-extrabold">
                 <span>Total Bayar Nasabah</span>
                 <span className="text-primary">{formatRupiah(totalAmt)}</span>
               </div>
@@ -492,7 +492,7 @@ export default function BRILink() {
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">Transaksi {servicesLabel} Berhasil!</h3>
+          <h3 className="text-xl font-extrabold text-slate-800">Transaksi {servicesLabel} Berhasil!</h3>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>

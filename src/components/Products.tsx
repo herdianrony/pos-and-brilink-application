@@ -45,7 +45,7 @@ export default function Products() {
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">Manajemen Data</h2>
+        <h2 className="text-2xl font-extrabold text-slate-800">Manajemen Data</h2>
         <p className="text-sm text-slate-400">Kelola produk, kategori, dan {servicesLabel.toLowerCase()}</p>
       </div>
       <Tabs
@@ -173,7 +173,7 @@ function ProductsTab() {
       <Modal open={modal} onClose={() => setModal(false)}>
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">{edit ? "Edit Produk" : "Tambah Produk"}</h3>
+            <h3 className="text-lg font-extrabold">{edit ? "Edit Produk" : "Tambah Produk"}</h3>
             <button onClick={() => setModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -275,7 +275,7 @@ function CategoriesTab() {
 
       <Modal open={modal} onClose={() => setModal(false)} size="sm">
         <div className="p-6 space-y-4">
-          <h3 className="text-lg font-bold">{edit ? "Edit Kategori" : "Tambah Kategori"}</h3>
+          <h3 className="text-lg font-extrabold">{edit ? "Edit Kategori" : "Tambah Kategori"}</h3>
           <Input label="Nama Kategori" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
             <label className="text-sm font-medium text-slate-600 mb-1.5 block">Pilih Ikon</label>
@@ -460,7 +460,7 @@ function BLServicesTab() {
       {/* Edit/Add Service Modal */}
       <Modal open={modal} onClose={() => setModal(false)}>
         <div className="p-6 space-y-4">
-          <h3 className="text-lg font-bold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
+          <h3 className="text-lg font-extrabold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
@@ -564,7 +564,7 @@ function BLServicesTab() {
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-extrabold flex items-center gap-2">
                 <Layers size={20} className="text-purple-500" />
                 Atur Fee Berjenjang
               </h3>
@@ -727,7 +727,7 @@ function BLCategoriesTab() {
 
       <Modal open={modal} onClose={() => setModal(false)} size="sm">
         <div className="p-6 space-y-4">
-          <h3 className="text-lg font-bold">{edit ? "Edit Kategori" : "Tambah Kategori Layanan"}</h3>
+          <h3 className="text-lg font-extrabold">{edit ? "Edit Kategori" : "Tambah Kategori Layanan"}</h3>
           <Input label="Nama" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama kategori" />
           <div>
             <label className="text-sm font-medium text-slate-600 mb-1.5 block">Ikon</label>

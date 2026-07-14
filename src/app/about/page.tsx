@@ -63,24 +63,24 @@ export default function AboutPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* ── Hero ─────────────────────────────── */}
-        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" style={{ backgroundColor: "#0F172A" }}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl -ml-16 -mb-16" />
+        <div className="gradient-dark rounded-3xl p-8 text-white relative overflow-hidden shadow-float" style={{ backgroundColor: "#0F172A" }}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/30 rounded-full blur-3xl -mr-20 -mt-20 animate-float" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl -ml-16 -mb-16" />
 
           <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
-                <Landmark size={28} className="text-white" />
+            <div className="flex items-center gap-4 mb-5">
+              <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center shadow-glow-primary" style={{ backgroundColor: "#00875A" }}>
+                <Landmark size={32} className="text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold">{appName}</h1>
-                <p className="text-emerald-200 text-xs">
+                <h1 className="text-3xl font-extrabold tracking-tight">{appName}</h1>
+                <p className="text-slate-300 text-sm font-semibold">
                   Point of Sale & {businessType} System
                 </p>
               </div>
             </div>
-            <p className="text-emerald-100 text-sm leading-relaxed max-w-md">
-              Aplikasi kasir & layanan agen bisnis yang lengkap dengan manajemen
+            <p className="text-slate-200 text-sm leading-relaxed max-w-lg">
+              Aplikasi kasir &amp; layanan agen bisnis yang lengkap dengan manajemen
               produk, transaksi, multi-rekening, dan laporan keuangan — dirancang
               untuk berbagai jenis bisnis seperti BRILink, counter HP, agen pulsa,
               agen pembayaran, dan toko retail di Indonesia.
@@ -107,17 +107,17 @@ export default function AboutPage() {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-5">
             <Code2 size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-slate-800">Dibuat oleh Developer</h2>
+            <h2 className="text-lg font-extrabold text-slate-800">Dibuat oleh Developer</h2>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar */}
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: "#00875A" }}>
-              <span className="text-white text-2xl font-bold">HR</span>
+              <span className="text-white text-2xl font-extrabold">HR</span>
             </div>
 
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-slate-800">Herdian Rony</h3>
+              <h3 className="text-xl font-extrabold text-slate-800">Herdian Rony</h3>
               <p className="text-sm text-slate-500 mt-0.5">
                 Full-Stack Developer & Builder
               </p>
@@ -165,7 +165,7 @@ export default function AboutPage() {
                 <Heart size={24} className="text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-800">
+                <h2 className="text-lg font-extrabold text-slate-800">
                   Dukung Pengembangan
                 </h2>
                 <p className="text-sm text-amber-700/80 mt-0.5">
@@ -226,7 +226,7 @@ export default function AboutPage() {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-5">
             <Sparkles size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-slate-800">Fitur Utama</h2>
+            <h2 className="text-lg font-extrabold text-slate-800">Fitur Utama</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -245,7 +245,7 @@ export default function AboutPage() {
                     <Icon size={16} className="text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-700">{f.title}</p>
+                    <p className="text-sm font-bold text-slate-700">{f.title}</p>
                     <p className="text-xs text-slate-400 mt-0.5">{f.desc}</p>
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export default function AboutPage() {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-4">
             <Code2 size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-slate-800">Teknologi</h2>
+            <h2 className="text-lg font-extrabold text-slate-800">Teknologi</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {[

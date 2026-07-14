@@ -193,7 +193,7 @@ export default function Cash() {
     <div className="space-y-5 animate-fadeIn">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <Wallet size={24} className="text-emerald-500" /> Manajemen Saldo
           </h2>
           <p className="text-sm text-slate-400">Kelola kas tunai dan rekening M-Banking</p>
@@ -206,7 +206,7 @@ export default function Cash() {
       {/* Total Balance */}
       <Card className="p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
         <p className="text-emerald-100 text-sm">Total Semua Saldo</p>
-        <p className="text-3xl font-bold">{formatRupiah(totalBalance)}</p>
+        <p className="text-3xl font-extrabold">{formatRupiah(totalBalance)}</p>
         <p className="text-emerald-200 text-xs mt-1">{accounts.length} akun aktif</p>
       </Card>
 
@@ -251,7 +251,7 @@ export default function Cash() {
       {/* Mutation History */}
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-3">
-          <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+          <h3 className="font-bold text-slate-700 flex items-center gap-2">
             <Clock size={16} className="text-slate-400" /> Riwayat Mutasi
           </h3>
           <div className="flex gap-1 flex-wrap">
@@ -300,7 +300,7 @@ export default function Cash() {
                       <td className={cn("p-3 text-right font-semibold", isPositive ? "text-emerald-600" : "text-red-500")}>
                         {isPositive ? "+" : ""}{formatRupiah(m.amount)}
                       </td>
-                      <td className="p-3 text-right font-semibold text-slate-700">{formatRupiah(m.balanceAfter)}</td>
+                      <td className="p-3 text-right font-bold text-slate-700">{formatRupiah(m.balanceAfter)}</td>
                       <td className="p-3 text-slate-500 text-xs max-w-xs truncate">{m.notes || "—"}</td>
                     </tr>
                   );
@@ -315,7 +315,7 @@ export default function Cash() {
       <Modal open={modal === "adjust"} onClose={() => setModal(null)} size="sm">
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Sesuaikan Saldo</h3>
+            <h3 className="text-lg font-extrabold">Sesuaikan Saldo</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           {selAccount && (
@@ -325,7 +325,7 @@ export default function Cash() {
               <p className="text-sm text-slate-500">Saldo saat ini: {formatRupiah(selAccount.balance)}</p>
             </div>
           )}
-          <Input label="Jumlah (+/-)" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Positif untuk tambah, negatif untuk kurang" className="text-lg font-bold" />
+          <Input label="Jumlah (+/-)" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Positif untuk tambah, negatif untuk kurang" className="text-lg font-extrabold" />
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Top up dari ATM" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
@@ -338,7 +338,7 @@ export default function Cash() {
       <Modal open={modal === "transfer"} onClose={() => setModal(null)} size="sm">
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Transfer Antar Saldo</h3>
+            <h3 className="text-lg font-extrabold">Transfer Antar Saldo</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           {selAccount && (
@@ -354,7 +354,7 @@ export default function Cash() {
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </Select>
-          <Input label="Jumlah" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="text-lg font-bold" />
+          <Input label="Jumlah" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="text-lg font-extrabold" />
           <Input label="Catatan" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Tarik ATM, Setor tunai" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
@@ -367,7 +367,7 @@ export default function Cash() {
       <Modal open={modal === "add_account"} onClose={() => setModal(null)} size="sm">
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Tambah Rekening Baru</h3>
+            <h3 className="text-lg font-extrabold">Tambah Rekening Baru</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           <Input label="Nama Rekening" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Contoh: M-Banking BCA" />
@@ -409,7 +409,7 @@ export default function Cash() {
       <Modal open={modal === "edit_account"} onClose={() => setModal(null)} size="sm">
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Edit Rekening</h3>
+            <h3 className="text-lg font-extrabold">Edit Rekening</h3>
             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           <Input label="Nama Rekening" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Contoh: M-Banking BCA" />

@@ -208,8 +208,8 @@ function SetupWizardForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0F172A" }}>
-        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center gradient-dark" style={{ backgroundColor: "#0F172A" }}>
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
       </div>
     );
   }
@@ -440,7 +440,7 @@ function WelcomeStep() {
             <div className="w-10 h-10 mx-auto rounded-xl bg-white flex items-center justify-center shadow-sm mb-2">
               <f.icon size={18} className="text-primary" />
             </div>
-            <p className="text-sm font-semibold text-slate-700">{f.title}</p>
+            <p className="text-sm font-bold text-slate-700">{f.title}</p>
             <p className="text-[11px] text-slate-400 mt-0.5">{f.desc}</p>
           </div>
         ))}
@@ -716,7 +716,7 @@ function CashStep({
             type="number"
             value={openingBalance}
             onChange={(e) => setOpeningBalance(e.target.value)}
-            className="wizard-input pl-11 text-lg font-bold"
+            className="wizard-input pl-11 text-lg font-extrabold"
             placeholder="500000"
             autoFocus
           />
@@ -921,7 +921,7 @@ function StepHeader({ icon: Icon, title, desc }: { icon: typeof Store; title: st
         <Icon size={22} className="text-white" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+        <h2 className="text-2xl font-extrabold text-slate-800">{title}</h2>
         <p className="text-sm text-slate-500 mt-0.5">{desc}</p>
       </div>
     </div>
@@ -955,8 +955,8 @@ export default function SetupWizardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ backgroundColor: "#0F172A" }}>
-          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+        <div className="min-h-screen flex items-center justify-center gradient-dark" style={{ backgroundColor: "#0F172A" }}>
+          <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
         </div>
       }
     >

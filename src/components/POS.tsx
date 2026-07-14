@@ -101,7 +101,7 @@ export default function POS() {
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">Kasir POS</h2>
+            <h2 className="text-2xl font-extrabold text-slate-800">Kasir POS</h2>
             <p className="text-sm text-slate-400">Pilih produk untuk ditambahkan</p>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function POS() {
             cart.map(item => (
               <div key={item.productId} className="flex items-center gap-3 p-3 bg-slate-50/80 rounded-xl border border-slate-100 group animate-fadeIn">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-700 truncate">{item.productName}</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{item.productName}</p>
                   <p className="text-xs text-slate-400">{formatRupiah(item.unitPrice)} / {item.unit}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -234,7 +234,7 @@ export default function POS() {
         <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/30">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Total Pembayaran</span>
-            <span className="text-2xl font-bold text-primary">{formatRupiah(total)}</span>
+            <span className="text-2xl font-extrabold text-primary">{formatRupiah(total)}</span>
           </div>
           <Button variant="accent" size="lg" className="w-full" disabled={!cart.length} onClick={() => setShowPay(true)}>
             <CreditCard size={18} /> Bayar Sekarang
@@ -246,7 +246,7 @@ export default function POS() {
       <Modal open={showPay} onClose={() => setShowPay(false)}>
         <div className="p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-slate-800">Pembayaran</h3>
+            <h3 className="text-xl font-extrabold text-slate-800">Pembayaran</h3>
             <button onClick={() => setShowPay(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
           </div>
           <Input label="Nama Pelanggan (opsional)" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nama pelanggan" />
@@ -270,14 +270,14 @@ export default function POS() {
             </div>
           </div>
           <Card className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/10">
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex justify-between text-lg font-extrabold">
               <span className="text-slate-600">Total</span>
               <span className="text-primary">{formatRupiah(total)}</span>
             </div>
           </Card>
           {payMethod === "cash" && (
             <div className="space-y-2">
-              <Input label="Uang Diterima" type="number" value={cashAmt} onChange={e => setCashAmt(e.target.value)} placeholder="0" className="text-xl font-bold" />
+              <Input label="Uang Diterima" type="number" value={cashAmt} onChange={e => setCashAmt(e.target.value)} placeholder="0" className="text-xl font-extrabold" />
               {parseFloat(cashAmt || "0") >= total && parseFloat(cashAmt || "0") > 0 && (
                 <div className="bg-emerald-50 rounded-xl p-3 text-center">
                   <span className="text-emerald-600 font-bold text-lg">Kembalian: {formatRupiah(change)}</span>
@@ -301,7 +301,7 @@ export default function POS() {
           <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">Transaksi Berhasil!</h3>
+          <h3 className="text-xl font-extrabold text-slate-800">Transaksi Berhasil!</h3>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400">No. Invoice</p>
             <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
