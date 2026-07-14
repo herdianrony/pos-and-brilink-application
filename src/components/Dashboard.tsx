@@ -13,8 +13,6 @@ import {
   AlertTriangle,
   ArrowUpRight,
   CheckCircle2,
-  Lightbulb,
-  Sparkles,
 } from "lucide-react";
 
 interface Account {
@@ -60,46 +58,31 @@ export default function Dashboard() {
   const maxRev = d.last7.length ? Math.max(...d.last7.map(x => parseFloat(x.revenue)), 1) : 1;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-5 animate-fadeIn">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Dashboard</h2>
-          <p className="text-sm text-slate-400">Ringkasan aktivitas bisnis Anda</p>
-        </div>
-      </div>
-
-      {/* Account Balances — Kartu Kredit Style */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Saldo Rekening</h3>
-          <span className="text-xs text-slate-400">{d.accounts.length} akun aktif</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-          {d.accounts.map(acc => (
-            <AccountCard key={acc.id} account={acc} />
-          ))}
-        </div>
+        <h2 className="text-2xl font-extrabold text-slate-900">Dashboard</h2>
+        <p className="text-sm text-slate-400">Ringkasan aktivitas bisnis Anda</p>
       </div>
 
-      {/* Profit Hero Card — Dark Premium */}
-      <Card className="p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden border-0" style={{ backgroundColor: "#0F172A" }}>
+      {/* Profit Hero + Stats — combined */}
+      <Card className="p-6 gradient-dark text-white relative overflow-hidden border-0" style={{ backgroundColor: "#0F172A" }}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
               <Wallet size={18} className="text-white" />
             </div>
-            <span className="text-slate-200 text-sm font-medium">Keuntungan Hari Ini</span>
+            <span className="text-slate-200 text-sm font-semibold">Keuntungan Hari Ini</span>
           </div>
           <p className="text-4xl font-extrabold tracking-tight">{formatRupiah(d.today.profit)}</p>
           <div className="flex items-center gap-3 mt-4">
-            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium">
+            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <ShoppingCart size={12} />
               <span>POS: {formatRupiah(d.today.pos.profit)}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium">
+            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <Landmark size={12} />
               <span>{servicesLabel}: {formatRupiah(d.today.brilink.profit)}</span>
             </div>
@@ -107,7 +90,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Stats Grid — Vibrant Cards */}
+      {/* Stats Grid — 4 compact cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={d.today.count.toString()} sub="hari ini" color="bg-emerald-50 text-emerald-600" />
         <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos.total)} sub={`${d.today.pos.count} trx`} color="bg-blue-50 text-blue-600" />
@@ -115,50 +98,19 @@ export default function Dashboard() {
         <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
 
-      {/* POS vs Layanan Agen — Modern Split Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <ShoppingCart size={18} className="text-emerald-600" />
-              </div>
-              <span className="font-bold text-slate-700">Penjualan Toko (POS)</span>
+      {/* Account Balances — compact horizontal scroll */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Saldo Rekening</h3>
+          <span className="text-xs text-slate-400">{d.accounts.length} akun</span>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {d.accounts.map(acc => (
+            <div key={acc.id} className="shrink-0 w-[200px]">
+              <AccountCard account={acc} compact />
             </div>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-3xl font-extrabold text-slate-900">{d.today.pos.count}</p>
-                <p className="text-xs text-slate-400">transaksi</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-extrabold text-emerald-600">{formatRupiah(d.today.pos.total)}</p>
-                <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.pos.profit)} profit</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100 to-transparent rounded-bl-full opacity-60 group-hover:opacity-80 transition-opacity" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Landmark size={18} className="text-blue-600" />
-              </div>
-              <span className="font-bold text-slate-700">{servicesLabel}</span>
-            </div>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-3xl font-extrabold text-slate-900">{d.today.brilink.count}</p>
-                <p className="text-xs text-slate-400">transaksi</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-extrabold text-blue-600">{formatRupiah(d.today.brilink.total)}</p>
-                <p className="text-xs text-emerald-600 font-medium">+{formatRupiah(d.today.brilink.profit)} fee</p>
-              </div>
-            </div>
-          </div>
-        </Card>
+          ))}
+        </div>
       </div>
 
       {/* Chart + Low Stock */}

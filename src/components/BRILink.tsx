@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Spinner, EmptyState, Badge } from "@/components/ui";
-import { Landmark, CheckCircle, X, Search, ArrowDownLeft, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
+import { Landmark, CheckCircle, X, Search, ArrowUpRight, Banknote, Building2, AlertTriangle, Wallet, Layers } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
 import { useSettings } from "@/lib/use-settings";
@@ -183,25 +183,25 @@ export default function BRILink() {
         <p className="text-sm text-slate-400">Pilih layanan dan proses transaksi nasabah</p>
       </div>
 
-      {/* Account Balance Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      {/* Account Balance Summary — compact */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {accounts.map(acc => {
           const isLow = parseFloat(acc.balance) < parseFloat(acc.minBalance || "0");
           return (
             <div 
               key={acc.id} 
               className={cn(
-                "p-3 rounded-xl border-2 transition-all",
-                acc.code === "cash" ? "bg-emerald-50 border-emerald-200" : "bg-emerald-50 border-emerald-200",
+                "p-3 rounded-2xl border shrink-0 min-w-[140px] transition-all",
+                "bg-white border-slate-200 hover:shadow-md",
                 isLow && "ring-2 ring-amber-400"
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
-                isBankIcon(acc.icon) ? <BankIcon name={acc.icon} size={16} /> : <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-white" />
-                <span className="text-xs font-medium text-slate-600 truncate">{acc.name}</span>
+                {isBankIcon(acc.icon) ? <BankIcon name={acc.icon} size={16} /> : <DynamicIcon name={acc.icon} fallback="credit-card" size={14} className="text-slate-500" />}
+                <span className="text-xs font-semibold text-slate-600 truncate">{acc.name.split(" ").slice(0,2).join(" ")}</span>
                 {isLow && <AlertTriangle size={10} className="text-amber-500" />}
               </div>
-              <p className={cn("text-sm font-bold", acc.code === "cash" ? "text-emerald-700" : "text-emerald-700")}>
+              <p className="text-sm font-extrabold text-slate-800">
                 {formatRupiah(acc.balance)}
               </p>
             </div>
@@ -243,7 +243,7 @@ export default function BRILink() {
               {svcs.map(s => (
                 <button key={s.id} onClick={() => setSel(s)}
                   className={cn(
-                    "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg",
+                    "p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-lg flex flex-col items-center text-center gap-2",
                     sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-md" : "bg-white border-transparent hover:border-slate-200"
                   )}>
                   {isBankIcon(s.icon) ? (
@@ -251,27 +251,14 @@ export default function BRILink() {
                   ) : (
                     <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
                   )}
-                  <p className="font-semibold text-sm text-slate-800 leading-tight mb-1">{s.name}</p>
-                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                    {s.useTieredFee ? (
-                      <Badge variant="purple">
-                        <Layers size={10} className="mr-0.5" /> Berjenjang
-                      </Badge>
-                    ) : (
-                      <Badge variant="warning">Fee: {formatRupiah(s.adminFee)}</Badge>
-                    )}
-                  </div>
-                  {/* Cash/Bank Effect Indicator */}
-                  <div className="flex items-center gap-2 mt-2 text-[10px]">
-                    <span className={cn("flex items-center gap-0.5", s.cashEffect === "in" ? "text-emerald-600" : "text-red-500")}>
-                      {s.cashEffect === "in" ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}
-                      <Banknote size={10} />
-                    </span>
-                    <span className={cn("flex items-center gap-0.5", s.bankEffect === "in" ? "text-emerald-600" : "text-red-500")}>
-                      {s.bankEffect === "in" ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}
-                      <Building2 size={10} />
-                    </span>
-                  </div>
+                  <p className="font-semibold text-sm text-slate-800 leading-tight">{s.name}</p>
+                  {s.useTieredFee ? (
+                    <Badge variant="purple">
+                      <Layers size={10} className="mr-0.5" /> Berjenjang
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">Fee: {formatRupiah(s.adminFee)}</Badge>
+                  )}
                 </button>
               ))}
             </div>
