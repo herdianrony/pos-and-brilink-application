@@ -36,16 +36,10 @@ function getSecret(): Uint8Array {
   if (process.env.NODE_ENV === "production") {
     throw new Error("AUTH_SECRET wajib di production");
   }
-  // Dev: share secret with auth module via globalThis
-  if ((globalThis as any).__authSecret) {
-    return (globalThis as any).__authSecret as Uint8Array;
-  }
-  if (!generatedSecret) {
-    const crypto = require("crypto");
-    generatedSecret = new Uint8Array(crypto.randomBytes(48));
-    (globalThis as any).__authSecret = generatedSecret;
-  }
-  return generatedSecret;
+  // Dev: use fixed dev secret (same as auth.ts) so proxy and API routes
+  // share the same key across different runtimes (edge vs nodejs)
+  const DEV_SECRET = "dev_secret_pos_agen_bisnis_2024_not_for_production_use";
+  return new TextEncoder().encode(DEV_SECRET);
 }
 
 async function verifyToken(token: string) {
