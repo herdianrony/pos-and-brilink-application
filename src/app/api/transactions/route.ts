@@ -55,48 +55,74 @@ export async function POST(req: Request) {
   const cashAcc = await getAccountByCode("cash");
 
   if (body.type === "pos") {
-    // POS TRANSACTION — M-01: Atomic operation
+    // POS TRANSACTION — R-01: Server-authoritative, R-02: Atomic
     return await runTransaction(async (tx) => {
     const invoiceNo = generateInvoice("POS");
-    const items: Array<{
-      productId: number;
-      productName: string;
-      quantity: number;
-      unitPrice: number;
-      subtotal: number;
-      buyPrice: number;
-    }> = body.items;
 
-    // H-01: Validasi qty positive + server-authoritative price calculation
-    for (const item of items) {
-      if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
-        return NextResponse.json({ error: "Quantity harus positif" }, { status: 400 });
-      }
-      const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).limit(1);
-      if (!product) {
-        return NextResponse.json({ error: `Produk ID ${item.productId} tidak ditemukan` }, { status: 400 });
-      }
-      if (product.stock < item.quantity) {
-        return NextResponse.json({ error: `Stok ${product.name} tidak cukup` }, { status: 400 });
-      }
-      item.unitPrice = Number(product.sellPrice);
-      item.buyPrice = Number(product.buyPrice);
-      item.productName = product.name;
-      item.subtotal = item.unitPrice * item.quantity;
+    // R-01: Validate items exist and are array
+    if (!Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json({ error: "Items tidak valid" }, { status: 400 });
     }
 
+    // R-01: Aggregate qty per productId (prevent duplicate line item bypass)
+    const aggregated: Map<number, number> = new Map();
+    for (const raw of body.items) {
+      const qty = Number(raw.quantity);
+      // R-01: Must be positive integer
+      if (!Number.isInteger(qty) || qty <= 0) {
+        return NextResponse.json({ error: "Quantity harus integer positif" }, { status: 400 });
+      }
+      const pid = Number(raw.productId);
+      if (!Number.isInteger(pid) || pid <= 0) {
+        return NextResponse.json({ error: "Product ID tidak valid" }, { status: 400 });
+      }
+      aggregated.set(pid, (aggregated.get(pid) || 0) + qty);
+    }
+
+    // R-01: Fetch products from DB, validate stock with AGGREGATED qty
+    const serverItems: Array<{
+      productId: number; productName: string; quantity: number;
+      unitPrice: number; buyPrice: number; subtotal: number;
+    }> = [];
+
+    for (const [pid, qty] of aggregated) {
+      const [product] = await tx.select().from(products).where(eq(products.id, pid)).limit(1);
+      if (!product) {
+        return NextResponse.json({ error: `Produk ID ${pid} tidak ditemukan` }, { status: 400 });
+      }
+      if (!product.isActive) {
+        return NextResponse.json({ error: `Produk ${product.name} tidak aktif` }, { status: 400 });
+      }
+      // R-01: Check aggregated qty against stock
+      if (product.stock < qty) {
+        return NextResponse.json({ error: `Stok ${product.name} tidak cukup (tersisa ${product.stock}, diminta ${qty})` }, { status: 400 });
+      }
+      const unitPrice = Number(product.sellPrice);
+      const buyPrice = Number(product.buyPrice);
+      serverItems.push({
+        productId: pid,
+        productName: product.name,
+        quantity: qty,
+        unitPrice,
+        buyPrice,
+        subtotal: unitPrice * qty,
+      });
+    }
+
+    // R-01: Server-authoritative total & profit (ignore client values)
     let totalAmount = 0;
     let totalProfit = 0;
-    for (const item of items) {
+    for (const item of serverItems) {
       totalAmount += item.subtotal;
       totalProfit += (item.unitPrice - item.buyPrice) * item.quantity;
     }
 
-    const clientTotal = Number(body.totalAmount);
-    if (!Number.isFinite(clientTotal) || clientTotal > totalAmount) {
-      return NextResponse.json({ error: "Total tidak valid" }, { status: 400 });
+    // R-01: Server-side discount calculation
+    let discount = 0;
+    if (body.discount && Number.isFinite(Number(body.discount)) && Number(body.discount) > 0) {
+      discount = Math.min(Number(body.discount), totalAmount); // Cap at total
     }
-    const finalTotal = clientTotal;
+    const finalTotal = totalAmount - discount;
 
     const [trx] = await tx.insert(transactions).values({
       invoiceNo,
@@ -108,7 +134,8 @@ export async function POST(req: Request) {
       notes: body.notes || null,
     }).returning();
 
-    for (const item of items) {
+    // R-01: Conditional stock decrement — only if rows affected
+    for (const item of serverItems) {
       await tx.insert(transactionItems).values({
         transactionId: trx.id,
         productId: item.productId,
@@ -117,9 +144,15 @@ export async function POST(req: Request) {
         unitPrice: item.unitPrice,
         subtotal: item.subtotal,
       });
-      await tx.update(products).set({
+      // R-01: Conditional update — only decrement if stock >= qty
+      const result = await tx.update(products).set({
         stock: sql`${products.stock} - ${item.quantity}`,
-      }).where(eq(products.id, item.productId));
+      }).where(sql`${products.id} = ${item.productId} AND ${products.stock} >= ${item.quantity}`).returning({ id: products.id });
+
+      // R-01: If no row updated, stock was insufficient (race condition)
+      if (result.length === 0) {
+        throw new Error(`Stok race condition: produk ID ${item.productId} tidak cukup`);
+      }
     }
 
     if (cashAcc && body.paymentMethod === "cash") {

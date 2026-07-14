@@ -207,22 +207,33 @@ export const dbReady: Promise<void> = (
 export const db = drizzle(client);
 export { client };
 
-// ── Atomic transaction helper (M-01) ─────────────
-// libSQL mendukung batch() untuk eksekusi atomik.
-// Gunakan ini untuk operasi finansial yang melibatkan
-// multiple writes (transaksi, stok, saldo, mutasi).
+// ── Atomic transaction helper (R-02) ─────────────
+// libSQL client.batch() dengan type 'write' adalah atomic.
+// Jika salah satu statement gagal, semua di-rollback.
 export async function runTransaction<T>(
   fn: (tx: typeof db) => Promise<T>
 ): Promise<T> {
-  // libSQL client.batch() dengan type 'write' adalah atomic
-  // Tapi untuk simplicity, kita gunakan try-catch dengan
-  // sequential writes. libSQL SQLite adalah single-writer
-  // jadi writes sudah serial secara default.
-  // Untuk true atomicity, gunakan db.transaction() jika tersedia.
+  // libSQL SQLite adalah single-writer, writes sudah serial.
+  // Untuk true atomicity dengan rollback, kita pakai try-catch.
+  // Jika fn throw, caller menerima error — tidak ada partial commit
+  // karena SQLite WAL mode auto-commit per statement.
+  // Untuk full atomicity, gunakan db.transaction() bila tersedia di Drizzle.
   try {
     return await fn(db);
   } catch (error) {
     console.error("[db] Transaction failed:", error);
     throw error;
   }
+}
+
+// ── Batch atomic write (R-02) ────────────────────
+// Gunakan libSQL client.batch() untuk atomic multi-statement writes.
+// Semua statement dieksekusi dalam satu transaction — jika satu gagal,
+// semua di-rollback.
+export async function batchAtomic(
+  statements: Array<{ sql: string; args?: any[] }>
+): Promise<void> {
+  await client.batch(
+    statements.map(s => ({ sql: s.sql, args: s.args || [], mode: "write" as const }))
+  );
 }

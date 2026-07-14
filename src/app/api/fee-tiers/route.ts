@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { feeTiers } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireAdmin } from "@/lib/auth";
 
 
 export const runtime = "nodejs";
@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   const b = await req.json();
   
   if (b.action === "save_tiers") {
