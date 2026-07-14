@@ -7,6 +7,30 @@ import { requireAuth, requireAdmin } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// ── Helper: slugify name to code ──
+// "M-Banking BRI Cadangan" → "m_banking_bri_cadangan"
+// "Kas Marketplace" → "kas_marketplace"
+function slugify(name: string): string {
+  return name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 30);
+}
+
+// ── Helper: ensure code is unique (append _2, _3, etc. if needed) ──
+async function makeUniqueAccountCode(baseCode: string): Promise<string> {
+  let code = baseCode;
+  let suffix = 2;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const [existing] = await db.select().from(accounts).where(eq(accounts.code, code)).limit(1);
+    if (!existing) return code;
+    code = `${baseCode}_${suffix}`;
+    suffix++;
+    if (suffix > 100) return `${baseCode}_${Date.now()}`; // safety fallback
+  }
+}
+
 export async function GET() {
   // F-07: properly check auth result
   const auth = await requireAuth();
@@ -23,12 +47,18 @@ export async function POST(req: Request) {
 
   // ── Create account ──────────────────────────────
   if (b.action === "create") {
-    // F-07: validate code uniqueness + numeric fields
-    const code = String(b.code || "").trim();
     const name = String(b.name || "").trim();
-    if (!code || !name) {
-      return NextResponse.json({ error: "Kode dan nama akun wajib diisi" }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "Nama akun wajib diisi" }, { status: 400 });
     }
+
+    // Auto-generate code from name if not provided (slugify + ensure unique)
+    let code = String(b.code || "").trim();
+    if (!code) {
+      const baseCode = slugify(name) || `account_${Date.now()}`;
+      code = await makeUniqueAccountCode(baseCode);
+    }
+
     const balance = parseSafeNumber(b.balance, { default: 0, min: 0 });
     const minBalance = parseSafeNumber(b.minBalance, { default: 100000, min: 0 });
 
@@ -155,7 +185,7 @@ export async function POST(req: Request) {
     return NextResponse.json(acc);
   }
 
-  // ── Delete account (soft delete) ────────────────
+  // ── Delete account (soft delete = nonaktifkan) ──
   if (b.action === "delete") {
     const id = Number(b.id);
     if (!Number.isFinite(id) || id <= 0) {
@@ -163,8 +193,20 @@ export async function POST(req: Request) {
     }
     // F-07: prevent deleting cash account
     const [acc] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
-    if (acc?.code === "cash") {
-      return NextResponse.json({ error: "Akun Kas Tunai tidak bisa dihapus" }, { status: 400 });
+    if (!acc) {
+      return NextResponse.json({ error: "Akun tidak ditemukan" }, { status: 404 });
+    }
+    if (acc.code === "cash") {
+      return NextResponse.json({ error: "Akun Kas Tunai tidak bisa dinonaktifkan" }, { status: 400 });
+    }
+    // P0: Prevent deactivation if account has non-zero balance
+    const balance = Number(acc.balance);
+    if (Math.abs(balance) > 0.01) {
+      return NextResponse.json({
+        error: `Tidak bisa menonaktifkan rekening dengan saldo Rp${balance.toLocaleString("id-ID")}. Pindahkan atau sesuaikan saldo terlebih dahulu.`,
+        code: "NONZERO_BALANCE",
+        balance,
+      }, { status: 400 });
     }
     await db.update(accounts).set({ isActive: false, updatedAt: new Date() }).where(eq(accounts.id, id));
     return NextResponse.json({ success: true });

@@ -147,15 +147,15 @@ export function AccountCard({
                 <Wifi size={14} className="text-white/70" />
               </div>
             )}
-            {/* Edit & Delete buttons (shown on hover) */}
+            {/* Edit & Delete buttons — always visible (P0: not hover-only for mobile/touch) */}
             {(onEdit || onDelete) && (
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex gap-1 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
                 {onEdit && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
-                    title="Edit"
+                    title="Edit rekening"
                   >
                     <Pencil size={12} />
                   </button>
@@ -165,7 +165,7 @@ export function AccountCard({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
                     className="w-7 h-7 rounded-xl bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
-                    title="Hapus"
+                    title="Nonaktifkan rekening"
                   >
                     <Trash2 size={12} />
                   </button>

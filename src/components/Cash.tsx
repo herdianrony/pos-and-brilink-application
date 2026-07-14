@@ -11,7 +11,7 @@ import { BankIcon, isBankIcon } from "@/components/BankIcon";
 
 interface Account {
   id: number; code: string; name: string; icon: string | null; color: string | null;
-  balance: string; minBalance: string | null;
+  balance: string; minBalance: string | null; isActive?: boolean;
 }
 
 interface Mutation {
@@ -37,10 +37,11 @@ export default function Cash() {
   const [saving, setSaving] = useState(false);
   
   // For add/edit account
-  const [accForm, setAccForm] = useState({ name: "", icon: "landmark", color: "#0F172A", balance: "", minBalance: "100000" });
+  const [accForm, setAccForm] = useState<{ name: string; icon: string; color: string; balance: string; minBalance: string; isActive?: boolean }>({ name: "", icon: "landmark", color: "#0F172A", balance: "", minBalance: "100000" });
   // Dialog state
   const [confirmDelete, setConfirmDelete] = useState<Account | null>(null);
   const [alertMsg, setAlertMsg] = useState<{ title: string; message: string; variant: "info" | "warning" | "danger" } | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
   const toast = useToast();
 
   async function load() {
@@ -106,42 +107,74 @@ export default function Cash() {
   async function handleAddAccount() {
     if (!accForm.name) return;
     setSaving(true);
-    await fetch("/api/accounts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "create",
-        ...accForm,
-      }),
-    });
-    setModal(null);
-    setAccForm({ name: "", icon: "landmark", color: "#0F172A", balance: "", minBalance: "100000" });
-    load();
-    setSaving(false);
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          ...accForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Gagal menambah rekening");
+        return;
+      }
+      toast.success("Rekening berhasil ditambahkan");
+      setModal(null);
+      setAccForm({ name: "", icon: "landmark", color: "#0F172A", balance: "", minBalance: "100000" });
+      load();
+    } catch {
+      toast.error("Gagal menambah rekening");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleEditAccount() {
     if (!selAccount || !accForm.name) return;
     setSaving(true);
-    await fetch("/api/accounts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "update",
-        id: selAccount.id,
-        ...accForm,
-      }),
-    });
-    setModal(null);
-    load();
-    setSaving(false);
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          id: selAccount.id,
+          ...accForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Gagal mengupdate rekening");
+        return;
+      }
+      toast.success("Rekening berhasil diupdate");
+      setModal(null);
+      load();
+    } catch {
+      toast.error("Gagal mengupdate rekening");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleDeleteAccount(acc: Account) {
     if (acc.code === "cash") {
       setAlertMsg({
-        title: "Tidak Bisa Dihapus",
-        message: "Kas Tunai tidak bisa dihapus. Akun ini wajib ada untuk transaksi tunai.",
+        title: "Tidak Bisa Dinonaktifkan",
+        message: "Kas Tunai tidak bisa dinonaktifkan. Akun ini wajib ada untuk transaksi tunai.",
+        variant: "warning",
+      });
+      return;
+    }
+    // Check if account has non-zero balance
+    const balance = parseFloat(acc.balance);
+    if (Math.abs(balance) > 0.01) {
+      setAlertMsg({
+        title: "Tidak Bisa Dinonaktifkan",
+        message: `Rekening ini masih memiliki saldo Rp${balance.toLocaleString("id-ID")}. Pindahkan atau sesuaikan saldo terlebih dahulu sebelum menonaktifkan.`,
         variant: "warning",
       });
       return;
@@ -151,24 +184,35 @@ export default function Cash() {
 
   async function confirmDeleteAccount() {
     if (!confirmDelete) return;
-    await fetch("/api/accounts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", id: confirmDelete.id }),
-    });
-    load();
-    setConfirmDelete(null);
-    toast.success("Rekening berhasil dihapus");
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id: confirmDelete.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Gagal menonaktifkan rekening");
+        setConfirmDelete(null);
+        return;
+      }
+      toast.success("Rekening berhasil dinonaktifkan");
+      load();
+      setConfirmDelete(null);
+    } catch {
+      toast.error("Gagal menonaktifkan rekening");
+    }
   }
 
   function openEditAccount(acc: Account) {
     setSelAccount(acc);
-    setAccForm({ 
-      name: acc.name, 
-      icon: acc.icon || "landmark", 
-      color: acc.color || "#0F172A", 
-      balance: "", 
-      minBalance: acc.minBalance || "100000" 
+    setAccForm({
+      name: acc.name,
+      icon: acc.icon || "landmark",
+      color: acc.color || "#0F172A",
+      balance: "",
+      minBalance: acc.minBalance || "100000",
+      isActive: acc.isActive !== false,
     });
     setModal("edit_account");
   }
@@ -187,7 +231,10 @@ export default function Cash() {
 
   if (loading) return <Spinner />;
 
-  const totalBalance = accounts.reduce((sum, a) => sum + parseFloat(a.balance), 0);
+  // P0: Filter active vs inactive accounts
+  const activeAccounts = accounts.filter(a => a.isActive !== false);
+  const inactiveAccounts = accounts.filter(a => a.isActive === false);
+  const totalBalance = activeAccounts.reduce((sum, a) => sum + parseFloat(a.balance), 0);
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -203,16 +250,16 @@ export default function Cash() {
         </Button>
       </div>
 
-      {/* Total Balance */}
+      {/* Total Balance — only active accounts */}
       <Card className="p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-        <p className="text-emerald-100 text-sm">Total Semua Saldo</p>
+        <p className="text-emerald-100 text-sm">Total Saldo Aktif</p>
         <p className="text-3xl font-extrabold">{formatRupiah(totalBalance)}</p>
-        <p className="text-emerald-200 text-xs mt-1">{accounts.length} akun aktif</p>
+        <p className="text-emerald-200 text-xs mt-1">{activeAccounts.length} akun aktif</p>
       </Card>
 
-      {/* Account Cards — Kartu Kredit Style */}
+      {/* Account Cards — Aktif */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {accounts.map(acc => (
+        {activeAccounts.map(acc => (
           <AccountCard
             key={acc.id}
             account={acc}
@@ -237,6 +284,39 @@ export default function Cash() {
           />
         ))}
       </div>
+
+      {/* Inactive Accounts — collapsible */}
+      {inactiveAccounts.length > 0 && (
+        <div className="space-y-3">
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex items-center justify-between text-sm font-medium text-slate-600"
+          >
+            <span>Rekening Nonaktif ({inactiveAccounts.length})</span>
+            <span className="text-xs text-slate-400">{showInactive ? "Sembunyikan" : "Tampilkan"}</span>
+          </button>
+          {showInactive && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
+              {inactiveAccounts.map(acc => (
+                <AccountCard
+                  key={acc.id}
+                  account={acc}
+                  onEdit={() => openEditAccount(acc)}
+                  onDelete={undefined}
+                  actions={
+                    <button
+                      onClick={() => openEditAccount(acc)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors"
+                    >
+                      Aktifkan
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info Box */}
       <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-sm">
@@ -440,6 +520,24 @@ export default function Cash() {
             </div>
           </div>
           <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
+
+          {/* P0: Active/inactive toggle */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-600">Status Rekening</label>
+            <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+              <input
+                type="checkbox"
+                checked={accForm.isActive !== false}
+                onChange={(e) => setAccForm({ ...accForm, isActive: e.target.checked })}
+                className="w-5 h-5 rounded text-primary focus:ring-primary"
+              />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Aktif untuk transaksi</p>
+                <p className="text-xs text-slate-400">Rekening nonaktif tidak tampil di selector transaksi/transfer</p>
+              </div>
+            </label>
+          </div>
+
           <p className="text-xs text-slate-400">* Untuk mengubah saldo, gunakan fitur "Sesuaikan" pada kartu rekening</p>
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
@@ -448,15 +546,15 @@ export default function Cash() {
         </div>
       </Modal>
 
-      {/* Confirm Delete Rekening */}
+      {/* Confirm Delete Rekening (sebenarnya nonaktifkan) */}
       <ConfirmDialog
         open={confirmDelete !== null}
         onClose={() => setConfirmDelete(null)}
         onConfirm={confirmDeleteAccount}
-        title="Hapus Rekening?"
-        message={`Rekening "${confirmDelete?.name}" akan dihapus permanen. Semua mutasi terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`}
-        variant="danger"
-        confirmText="Hapus"
+        title="Nonaktifkan Rekening?"
+        message={`Rekening "${confirmDelete?.name}" akan dinonaktifkan. Rekening tidak akan dipakai untuk transaksi baru, tetapi riwayat mutasi tetap tersimpan. Anda bisa mengaktifkan kembali nanti.`}
+        variant="warning"
+        confirmText="Nonaktifkan"
       />
 
       {/* Alert Dialog (kas tunai tidak bisa dihapus, dll) */}
