@@ -80,31 +80,46 @@ function SetupWizardForm() {
   const [printerWidth, setPrinterWidth] = useState<"32" | "48">("32");
 
   useEffect(() => {
-    // Cek apakah setup diperlukan (belum ada user)
-    fetch("/api/auth/setup", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.setupNeeded) {
-          // Sudah ada user → redirect ke login
-          router.replace("/login");
-        }
-      })
+    // First-run Electron can land directly on /setup before /login has seeded
+    // system templates. Ensure seed runs before checking setup/templates.
+    fetch("/api/seed", { method: "POST", cache: "no-store" })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        // Cek apakah setup diperlukan (belum ada user)
+        fetch("/api/auth/setup", { cache: "no-store" })
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.setupNeeded) {
+              // Sudah ada user → redirect ke login
+              router.replace("/login");
+            }
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      });
   }, [router]);
 
   // P0: Load bank/e-wallet templates via setup endpoint (public, no auth needed)
   useEffect(() => {
     if (step === "saldo" && settlementAccounts.length === 0) {
-      fetch("/api/setup/templates", { cache: "no-store" })
-        .then((r) => {
-          if (!r.ok) throw new Error("Failed to load templates");
-          return r.json();
-        })
-        .then((data: {
-          templates: Array<{ id: number; code: string; name: string; icon: string | null; color: string | null; isActive: boolean; balance: string }>;
-          cashAccount: { id: number; code: string; name: string; balance: string } | null;
-        }) => {
+      const loadTemplates = async () => {
+        try {
+          let res = await fetch("/api/setup/templates", { cache: "no-store" });
+          let data: {
+            templates: Array<{ id: number; code: string; name: string; icon: string | null; color: string | null; isActive: boolean; balance: string }>;
+            cashAccount: { id: number; code: string; name: string; balance: string } | null;
+          } | null = res.ok ? await res.json() : null;
+
+          // If templates are empty, seed may not have completed yet. Seed once and retry.
+          if (!data || data.templates.length === 0) {
+            await fetch("/api/seed", { method: "POST", cache: "no-store" }).catch(() => {});
+            res = await fetch("/api/setup/templates", { cache: "no-store" });
+            if (!res.ok) throw new Error("Failed to load templates");
+            data = await res.json();
+          }
+
+          if (!data) throw new Error("Template rekening tidak tersedia");
+
           setSettlementAccounts(data.templates.map(a => ({
             id: a.id,
             code: a.code,
@@ -114,10 +129,13 @@ function SetupWizardForm() {
             active: false,
             balance: "0",
           })));
-        })
-        .catch((err) => {
+        } catch (err) {
           console.error("Failed to load templates:", err);
-        });
+          setError("Gagal memuat template rekening. Coba kembali ke langkah sebelumnya lalu lanjut lagi.");
+        }
+      };
+
+      loadTemplates();
     }
   }, [step, settlementAccounts.length]);
 
@@ -158,6 +176,9 @@ function SetupWizardForm() {
     setSubmitting(true);
     setError("");
     try {
+      // Ensure system templates exist before completing setup, especially in Electron first-run.
+      await fetch("/api/seed", { method: "POST", cache: "no-store" }).catch(() => {});
+
       // ── P0: Atomic setup via /api/setup/complete ──
       // Creates admin + settings + cash balance + activates settlement accounts
       // in a single database transaction. If any part fails, everything rolls back.
