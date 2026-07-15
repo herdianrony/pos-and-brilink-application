@@ -343,7 +343,7 @@ export default function Cash() {
             </div>
           </div>
           <CurrencyInput label="Saldo Awal" value={accForm.balance} onChange={(v) => setAccForm({ ...accForm, balance: String(v) })} placeholder="0" />
-          <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
+          <CurrencyInput label="Saldo Minimum (Alert)" value={accForm.minBalance} onChange={(v) => setAccForm({ ...accForm, minBalance: String(v) })} placeholder="100000" />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => setModal(null)}>Batal</Button>
             <Button variant="primary" className="flex-1" onClick={handleAddAccount} disabled={saving || !accForm.name}>{saving ? "..." : "Simpan"}</Button>
@@ -384,7 +384,7 @@ export default function Cash() {
               ))}
             </div>
           </div>
-          <Input label="Saldo Minimum (Alert)" type="number" value={accForm.minBalance} onChange={e => setAccForm({ ...accForm, minBalance: e.target.value })} placeholder="100000" />
+          <CurrencyInput label="Saldo Minimum (Alert)" value={accForm.minBalance} onChange={(v) => setAccForm({ ...accForm, minBalance: String(v) })} placeholder="100000" />
 
           {/* P0: Active/inactive toggle */}
           <div className="space-y-2">
