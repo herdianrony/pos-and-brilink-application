@@ -6,7 +6,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1, // Single worker — tests share DB state
-  reporter: "list",
+  reporter: process.env.CI
+    ? [
+        ["list"],
+        ["html", { outputFolder: "playwright-report", open: "never" }],
+      ]
+    : "list",
   timeout: 30000,
   expect: { timeout: 10000 },
   // F-06: globalSetup resets DB, creates admin, seeds data, saves auth state
