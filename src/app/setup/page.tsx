@@ -22,6 +22,7 @@ import {
   EyeOff,
   Sparkles,
 } from "lucide-react";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 type Step = "welcome" | "store" | "admin" | "saldo" | "printer" | "done";
 
@@ -677,17 +678,12 @@ function SaldoStep({
             <Wallet size={18} className="text-emerald-500" />
             <h4 className="font-bold text-slate-800">Kas Tunai (Laci)</h4>
           </div>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">Rp</span>
-            <input
-              type="number"
-              value={openingBalance}
-              onChange={(e) => setOpeningBalance(e.target.value)}
-              className="wizard-input pl-11 text-lg font-extrabold"
-              placeholder="0"
-              autoFocus
-            />
-          </div>
+          <CurrencyInput
+            value={openingBalance}
+            onChange={(v) => setOpeningBalance(String(v))}
+            placeholder="0"
+            autoFocus
+          />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {presetOptions.map((opt) => (
               <button
@@ -742,13 +738,10 @@ function SaldoStep({
                       </div>
                     </div>
                     {acc.active && (
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xs">Rp</span>
-                        <input
-                          type="number"
+                      <div className="w-40">
+                        <CurrencyInput
                           value={acc.balance}
-                          onChange={(e) => setBalance(acc.id, e.target.value)}
-                          className="w-32 pl-8 pr-3 py-2 rounded-xl border-2 border-slate-200 focus:border-primary focus:outline-none text-sm font-bold"
+                          onChange={(v) => setBalance(acc.id, String(v))}
                           placeholder="0"
                         />
                       </div>
