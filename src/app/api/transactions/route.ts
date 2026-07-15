@@ -74,6 +74,12 @@ async function getDefaultServiceStatus(): Promise<string> {
   return row?.value || "recorded";
 }
 
+// P2: Read require_cash_confirmation from settings
+async function getRequireCashConfirmation(): Promise<boolean> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, "require_cash_confirmation")).limit(1);
+  return row?.value === "true";
+}
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -376,6 +382,17 @@ export async function POST(req: Request) {
 
       // P1: Read default_service_status setting
       const defaultServiceStatus = await getDefaultServiceStatus();
+
+      // P2: Enforce require_cash_confirmation
+      if (flowConfig.requiresCashHandling) {
+        const requireCashConfirm = await getRequireCashConfirmation();
+        if (requireCashConfirm && !body.cashConfirmed) {
+          return NextResponse.json({
+            error: "Konfirmasi uang fisik wajib untuk transaksi ini.",
+            code: "CASH_CONFIRMATION_REQUIRED",
+          }, { status: 400 });
+        }
+      }
 
       // ── S-02: Use unified cash flow calculator ──
       const cashFlow = calculateCashFlow(cashEffect, totalAmount, adminFee, feeMethod);

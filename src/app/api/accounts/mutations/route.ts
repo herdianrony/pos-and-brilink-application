@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  // P2: defense-in-depth — requireAuth even though proxy already checks
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+
   await dbReady;
   const sp = req.nextUrl.searchParams;
   const accountId = sp.get("accountId");

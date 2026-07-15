@@ -245,6 +245,7 @@ export default function BRILink() {
           notes: form.notes || null,
           denomination: flowConfig?.showDenomination ? denomination : null,
           referenceNo: form.referenceNo || null,
+          cashConfirmed: true, // P2: User confirmed physical cash in Step 3
         }),
       });
       const trx = await res.json();
