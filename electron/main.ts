@@ -110,6 +110,8 @@ async function startNextServer(): Promise<void> {
       console.error("[main] Failed to persist AUTH_SECRET:", e);
     }
 
+    const whatsappSessionDir = path.join(app.getPath("userData"), "whatsapp-session");
+
     const spawnEnv: Record<string, string | undefined> = {
       ...process.env,
       PORT: String(INTERNAL_PORT),
@@ -123,8 +125,6 @@ async function startNextServer(): Promise<void> {
     };
 
     // ── Buat log file untuk debug ─────────────────
-    const whatsappSessionDir = path.join(app.getPath("userData"), "whatsapp-session");
-
     const logDir = path.join(app.getPath("userData"), "logs");
     try {
       const fs = require("fs");

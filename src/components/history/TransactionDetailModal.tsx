@@ -17,6 +17,10 @@ interface Props {
 }
 
 export default function TransactionDetailModal({ detail, loadingDet, servicesLabel, settings, onClose, openAction }: Props) {
+  const cashReceived = Number(detail?.cashReceived || 0);
+  const cashDispensed = Number(detail?.cashDispensed || 0);
+  const hasCashFlow = cashReceived > 0 || cashDispensed > 0;
+
   return (
 <Modal open={!!detail || loadingDet} onClose={onClose} size="md">
   {loadingDet ? <Spinner /> : detail && (
@@ -135,19 +139,19 @@ export default function TransactionDetailModal({ detail, loadingDet, servicesLab
       )}
 
       {/* Cash flow summary */}
-      {(detail.cashReceived || detail.cashDispensed) && (
+      {hasCashFlow && (
         <div className="border-t border-dashed pt-3 space-y-1">
           <p className="text-sm font-bold text-slate-600 flex items-center gap-1.5"><Receipt size={14} /> Arus Kas:</p>
-          {detail.cashReceived && parseFloat(detail.cashReceived) > 0 && (
+          {cashReceived > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 flex items-center gap-1"><Banknote size={12} className="text-emerald-500" /> Kas Diterima</span>
-              <span className="font-semibold text-emerald-600">+{formatRupiah(detail.cashReceived)}</span>
+              <span className="font-semibold text-emerald-600">+{formatRupiah(cashReceived)}</span>
             </div>
           )}
-          {detail.cashDispensed && parseFloat(detail.cashDispensed) > 0 && (
+          {cashDispensed > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 flex items-center gap-1"><Banknote size={12} className="text-red-500" /> Kas Dikeluarkan</span>
-              <span className="font-semibold text-red-600">-{formatRupiah(detail.cashDispensed)}</span>
+              <span className="font-semibold text-red-600">-{formatRupiah(cashDispensed)}</span>
             </div>
           )}
         </div>

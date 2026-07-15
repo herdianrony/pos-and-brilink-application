@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { db, dbReady } from "@/db";
 import { accountMutations, accounts, settings, transactions } from "@/db/schema";
@@ -24,7 +25,11 @@ const state: WhatsAppState = {
 };
 
 function getSessionDir(): string {
-  const dir = process.env.WHATSAPP_SESSION_DIR || path.join(process.cwd(), ".whatsapp-session");
+  // Never default to process.cwd() because Next standalone tracing may try to
+  // copy browser profile files into .next/standalone and hit EBUSY on Windows.
+  // Electron injects WHATSAPP_SESSION_DIR=userData/whatsapp-session. For web/dev
+  // fallback, keep it outside the project directory in the OS home folder.
+  const dir = process.env.WHATSAPP_SESSION_DIR || path.join(os.homedir(), ".pos-brilink", "whatsapp-session");
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
