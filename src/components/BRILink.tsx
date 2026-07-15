@@ -511,6 +511,40 @@ export default function BRILink() {
                   </div>
                 </Card>
 
+                {/* High-visibility balance impact summary */}
+                <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Ringkasan Dampak</p>
+                      <p className="text-sm font-semibold text-slate-700">Perubahan saldo setelah transaksi dicatat</p>
+                    </div>
+                    {agentFee > 0 && (
+                      <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-right">
+                        <p className="text-[10px] font-bold uppercase text-emerald-500">Profit</p>
+                        <p className="text-lg font-extrabold text-emerald-700">+{formatRupiah(agentFee)}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className={cn("rounded-2xl p-4", totalCashFlow < 0 ? "bg-red-50 border border-red-100" : totalCashFlow > 0 ? "bg-emerald-50 border border-emerald-100" : "bg-slate-50 border border-slate-100")}>
+                      <p className="text-xs font-bold text-slate-500">Kas Tunai</p>
+                      <p className={cn("text-2xl font-extrabold", totalCashFlow < 0 ? "text-red-600" : totalCashFlow > 0 ? "text-emerald-600" : "text-slate-600")}>
+                        {totalCashFlow > 0 ? "+" : totalCashFlow < 0 ? "−" : ""}{formatRupiah(Math.abs(totalCashFlow))}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">{formatRupiah(cashBalanceBefore)} → {formatRupiah(cashBalanceAfter)}</p>
+                    </div>
+                    {sel.bankEffect !== "none" && selectedBank && (
+                      <div className={cn("rounded-2xl p-4", bankFlow.bankDelta < 0 ? "bg-red-50 border border-red-100" : bankFlow.bankDelta > 0 ? "bg-emerald-50 border border-emerald-100" : "bg-slate-50 border border-slate-100")}>
+                        <p className="text-xs font-bold text-slate-500">{selectedBank.name}</p>
+                        <p className={cn("text-2xl font-extrabold", bankFlow.bankDelta < 0 ? "text-red-600" : bankFlow.bankDelta > 0 ? "text-emerald-600" : "text-slate-600")}>
+                          {bankFlow.bankDelta > 0 ? "+" : bankFlow.bankDelta < 0 ? "−" : ""}{formatRupiah(bankImpactAmount)}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-1">{formatRupiah(bankBalanceBefore)} → {formatRupiah(bankBalanceAfter)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Compact balance impact */}
                 <div className={cn("rounded-xl border-2 p-3 space-y-2", toneClasses.cardBorder, "bg-white")}>
                   <div className="flex items-center justify-between">

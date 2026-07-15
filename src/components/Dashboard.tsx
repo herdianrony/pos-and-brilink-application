@@ -90,42 +90,66 @@ export default function Dashboard() {
         <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink?.profit ?? "0")} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
 
-      {/* P1: Action Required block */}
+      {/* Action Required block — production-focused, high visibility */}
       {(() => {
-        const actions: Array<{ icon: typeof AlertTriangle; label: string; color: string; action: () => void }> = [];
-        // Pending transactions
+        const actions: Array<{ icon: typeof AlertTriangle; label: string; detail: string; color: "amber" | "red"; action: () => void }> = [];
         if (d.pendingCount && d.pendingCount > 0) {
-          actions.push({ icon: AlertTriangle, label: `${d.pendingCount} transaksi masih Pending`, color: "amber", action: () => window.location.hash = "history" });
+          actions.push({ icon: AlertTriangle, label: `${d.pendingCount} transaksi pending`, detail: "Selesaikan, void, atau reverse transaksi yang belum final.", color: "amber", action: () => window.location.hash = "history" });
         }
-        // Low stock
         if (d.lowStock.length > 0) {
-          actions.push({ icon: AlertTriangle, label: `${d.lowStock.length} produk stok menipis`, color: "amber", action: () => window.location.hash = "products" });
+          actions.push({ icon: AlertTriangle, label: `${d.lowStock.length} produk stok menipis`, detail: "Cek stok fisik dan update stok produk sebelum habis.", color: "amber", action: () => window.location.hash = "products" });
         }
-        // Low balance accounts
         const lowBalanceAccounts = d.accounts.filter(a => parseFloat(a.balance) < parseFloat(a.minBalance || "0"));
         if (lowBalanceAccounts.length > 0) {
-          actions.push({ icon: AlertTriangle, label: `${lowBalanceAccounts.length} rekening di bawah minimum`, color: "red", action: () => window.location.hash = "cash" });
+          actions.push({ icon: AlertTriangle, label: `${lowBalanceAccounts.length} rekening di bawah minimum`, detail: "Top up atau sesuaikan saldo agar transaksi tidak terhambat.", color: "red", action: () => window.location.hash = "cash" });
         }
 
-        if (actions.length === 0) return null;
+        if (actions.length === 0) {
+          return (
+            <Card className="p-4 border-emerald-200 bg-emerald-50/70">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle2 size={22} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-emerald-800">Semua aman hari ini</h3>
+                  <p className="text-xs text-emerald-700">Tidak ada transaksi pending, stok kritis, atau rekening di bawah minimum.</p>
+                </div>
+              </div>
+            </Card>
+          );
+        }
 
         return (
-          <Card className="p-4 space-y-2 border-amber-200 bg-amber-50/50">
-            <h3 className="text-sm font-bold text-amber-700 flex items-center gap-2">
-              <AlertTriangle size={16} /> Perlu Tindakan
-            </h3>
-            <div className="space-y-1.5">
+          <Card className="p-5 space-y-4 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
+                  <AlertTriangle size={24} className="text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-amber-800">Perlu Tindakan</h3>
+                  <p className="text-xs text-amber-700">Prioritaskan item berikut sebelum lanjut operasional.</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{actions.length} item</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {actions.map((a, i) => (
                 <button
                   key={i}
                   onClick={a.action}
-                  className={`w-full flex items-center gap-2 p-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    a.color === "red" ? "text-red-700 hover:bg-red-100" : "text-amber-700 hover:bg-amber-100"
+                  className={`text-left rounded-2xl border p-4 transition-all hover:shadow-card ${
+                    a.color === "red" ? "border-red-200 bg-red-50/80 hover:bg-red-50" : "border-amber-200 bg-white hover:bg-amber-50/70"
                   }`}
                 >
-                  <a.icon size={14} className={a.color === "red" ? "text-red-500" : "text-amber-500"} />
-                  {a.label}
-                  <span className="ml-auto text-xs opacity-50">→</span>
+                  <div className="flex items-start gap-3">
+                    <a.icon size={18} className={a.color === "red" ? "text-red-500 mt-0.5" : "text-amber-500 mt-0.5"} />
+                    <div>
+                      <p className={a.color === "red" ? "font-extrabold text-red-700" : "font-extrabold text-amber-700"}>{a.label}</p>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{a.detail}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
