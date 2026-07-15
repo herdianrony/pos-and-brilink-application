@@ -54,9 +54,9 @@ export default function Dashboard() {
   }, []);
 
   if (loading) return <Spinner />;
-  if (!d) return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
+  if (!d || !d.today) return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
 
-  const maxRev = d.last7.length ? Math.max(...d.last7.map(x => parseFloat(x.revenue)), 1) : 1;
+  const maxRev = d.last7?.length ? Math.max(...d.last7.map(x => parseFloat(x.revenue)), 1) : 1;
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -93,10 +93,10 @@ export default function Dashboard() {
 
       {/* Stats Grid — 4 compact cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={d.today.count.toString()} sub="hari ini" color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos.total)} sub={`${d.today.pos.count} trx`} color="bg-blue-50 text-blue-600" />
-        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink.total)} sub={`${d.today.brilink.count} trx`} color="bg-violet-50 text-violet-600" />
-        <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink.profit)} sub="100% profit" color="bg-amber-50 text-amber-600" />
+        <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={(d.today.count ?? 0).toString()} sub="hari ini" color="bg-emerald-50 text-emerald-600" />
+        <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos?.total ?? "0")} sub={`${d.today.pos?.count ?? 0} trx`} color="bg-blue-50 text-blue-600" />
+        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink?.total ?? "0")} sub={`${d.today.brilink?.count ?? 0} trx`} color="bg-violet-50 text-violet-600" />
+        <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink?.profit ?? "0")} sub="100% profit" color="bg-amber-50 text-amber-600" />
       </div>
 
       {/* P1: Action Required block */}

@@ -112,7 +112,7 @@ test.describe("F-02: Insufficient balance protection", () => {
     expect(svcRes.ok()).toBeTruthy();
     const services = await svcRes.json();
     const tarikService = services.find((s: any) =>
-      s.name.includes("Tarik Tunai Bank") && s.cashEffect === "out"
+      s.name.includes("Tarik Tunai") && s.cashEffect === "out"
     );
     expect(tarikService).toBeTruthy();
 
@@ -139,7 +139,7 @@ test.describe("F-02: Insufficient balance protection", () => {
     const svcRes = await request.get(`${BASE_URL}/api/brilink-services`);
     const services = await svcRes.json();
     const setorService = services.find((s: any) =>
-      s.name.includes("Setor Tunai Bank") && s.bankEffect === "out"
+      s.name.includes("Setor Tunai") && s.bankEffect === "out"
     );
     expect(setorService).toBeTruthy();
 

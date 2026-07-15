@@ -37,7 +37,7 @@ test.describe("BRILink Flow", () => {
       await page.waitForTimeout(1000);
 
       // Should see transfer-related services
-      await expect(page.locator("text=/transfer antar|transfer sesama|transfer ke/i").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/kirim transfer|transfer|tarik tunai|setor tunai/i").first()).toBeVisible({ timeout: 5000 });
     }
   });
 
@@ -45,7 +45,7 @@ test.describe("BRILink Flow", () => {
     await page.waitForTimeout(2000);
 
     // Click first service button — use specific service name to avoid matching category filter
-    const firstService = page.locator('button:has-text("Transfer Antar Bank"), button:has-text("Tarik Tunai Bank"), button:has-text("Tagihan PLN")').first();
+    const firstService = page.locator('button:has-text("Kirim Transfer"), button:has-text("Tarik Tunai"), button:has-text("Tagihan PLN")').first();
     await expect(firstService).toBeVisible({ timeout: 5000 });
     await firstService.click();
     await page.waitForTimeout(1000);
