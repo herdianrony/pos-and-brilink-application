@@ -496,6 +496,12 @@ Panduan operasional untuk admin, kasir, dan operator tersedia di:
 docs/user-guide.md
 ```
 
+Panduan deployment produksi tersedia di:
+
+```text
+docs/deployment.md
+```
+
 Dokumen tersebut menjelaskan setup awal, POS/kasir, pencatatan layanan agen, manajemen saldo, riwayat transaksi, rekening koran, printer, backup, troubleshooting, dan batasan aplikasi.
 
 ## Keamanan
