@@ -38,7 +38,7 @@ win:
     - target: portable
       arch:
         - x64
-  icon: electron/build/icon.png
+  icon: electron/build/icon.ico
 
 # NSIS installer config
 nsis:
