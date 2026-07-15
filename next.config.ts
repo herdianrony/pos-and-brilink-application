@@ -7,6 +7,9 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // whatsapp-web.js has optional runtime dependencies (e.g. S3 unzipper paths)
+  // that should stay external to Turbopack's server bundle.
+  serverExternalPackages: ["whatsapp-web.js", "qrcode"],
   ...(allowedDevOrigins?.length ? { allowedDevOrigins } : {}),
 };
 

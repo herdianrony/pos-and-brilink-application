@@ -1,14 +1,25 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useEffect, useState, useCallback } from "react";
 import { Card, Button, Input, Spinner, Tabs, Badge, useToast } from "@/components/ui";
-import { Settings as SettingsIcon, Save, Store, Phone, MapPin, CreditCard, ShieldCheck, Printer, AlertTriangle, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Settings as SettingsIcon, Save, Store, CreditCard, ShieldCheck, AlertTriangle, Check, MessageCircle, LogOut, RefreshCw, QrCode } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import PrinterSettings from "@/components/PrinterSettings";
 import UserManagement from "@/components/UserManagement";
 import { updateSettings } from "@/lib/use-settings";
 
-type SettingsTab = "profil" | "transaksi" | "printer" | "pengguna" | "lanjutan";
+type SettingsTab = "profil" | "transaksi" | "whatsapp" | "printer" | "pengguna" | "lanjutan";
+
+interface WhatsAppStatus {
+  status: string;
+  qrDataUrl: string | null;
+  lastError: string | null;
+  enabled: boolean;
+  autoNotifyOwner: boolean;
+  ownerNumber: string;
+}
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profil");
@@ -17,6 +28,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState<string | null>(null); // which section is saving
   const [savedAt, setSavedAt] = useState<Record<string, number>>({});
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
+  const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
+  const [waLoading, setWaLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -30,6 +43,48 @@ export default function SettingsPage() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "whatsapp") refreshWhatsAppStatus();
+  }, [activeTab]);
+
+  async function refreshWhatsAppStatus() {
+    try {
+      const res = await fetch("/api/whatsapp/status", { cache: "no-store" });
+      if (res.ok) setWaStatus(await res.json());
+    } catch {
+      // ignore status refresh failures
+    }
+  }
+
+  async function startWhatsApp() {
+    setWaLoading(true);
+    try {
+      const res = await fetch("/api/whatsapp/start", { method: "POST" });
+      const data = await res.json();
+      setWaStatus(data);
+      if (data.status === "ready") toast.success("WhatsApp terhubung");
+      else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan");
+      else if (data.lastError) toast.error(data.lastError);
+    } catch {
+      toast.error("Gagal memulai WhatsApp");
+    } finally {
+      setWaLoading(false);
+    }
+  }
+
+  async function logoutWhatsApp() {
+    setWaLoading(true);
+    try {
+      const res = await fetch("/api/whatsapp/logout", { method: "POST" });
+      if (res.ok) setWaStatus(await res.json());
+      toast.success("WhatsApp berhasil logout");
+    } catch {
+      toast.error("Gagal logout WhatsApp");
+    } finally {
+      setWaLoading(false);
+    }
+  }
 
   function update(key: string, value: string, section: string) {
     setData(prev => ({ ...prev, [key]: value }));
@@ -84,6 +139,7 @@ export default function SettingsPage() {
         tabs={[
           { id: "profil", label: "Profil Usaha", icon: "store" },
           { id: "transaksi", label: "Transaksi & Settlement", icon: "credit-card" },
+          { id: "whatsapp", label: "WhatsApp Owner", icon: "message-circle" },
           { id: "printer", label: "Printer & Struk", icon: "printer" },
           { id: "pengguna", label: "Pengguna", icon: "users" },
           { id: "lanjutan", label: "Lanjutan", icon: "alert-triangle" },
@@ -259,6 +315,80 @@ export default function SettingsPage() {
                   Pengaturan opening_balance di sini hanya referensi setup awal dan tidak mengubah saldo aktual.
                 </p>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ══════ TAB: WhatsApp Owner ══════ */}
+      {activeTab === "whatsapp" && (
+        <div className="space-y-5">
+          <Card className="p-5 space-y-4">
+            <SectionHeader
+              icon={<MessageCircle size={18} className="text-emerald-500" />}
+              title="Notifikasi WhatsApp Owner"
+              desc="Kirim notifikasi otomatis ke owner untuk transaksi yang perlu dicek/proses via m-banking atau provider."
+              dirty={dirty.whatsapp}
+              savedAt={formatSavedTime(savedAt.whatsapp)}
+            />
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Gunakan nomor WhatsApp kasir/operasional untuk scan QR. Fitur ini memakai WhatsApp Web otomatis, jadi jangan dipakai untuk spam/broadcast massal.
+            </div>
+            <ToggleRow
+              label="Aktifkan WhatsApp Owner"
+              desc="Jika aktif, aplikasi dapat mengirim pesan WhatsApp otomatis saat transaksi tertentu dicatat."
+              checked={data.whatsapp_enabled === "true"}
+              onChange={(v) => update("whatsapp_enabled", v ? "true" : "false", "whatsapp")}
+            />
+            <ToggleRow
+              label="Kirim otomatis setelah transaksi layanan agen"
+              desc="Tarik Tunai, Transfer, Setor, Pembayaran, dan Top Up akan mengirim notifikasi ke owner jika WhatsApp siap."
+              checked={data.whatsapp_auto_notify_owner === "true"}
+              onChange={(v) => update("whatsapp_auto_notify_owner", v ? "true" : "false", "whatsapp")}
+            />
+            <Input
+              label="Nomor WhatsApp Owner"
+              value={data.whatsapp_owner_number || ""}
+              onChange={e => update("whatsapp_owner_number", e.target.value, "whatsapp")}
+              placeholder="081234567890"
+            />
+            <SaveButton
+              saving={saving === "whatsapp"}
+              dirty={dirty.whatsapp}
+              savedAt={formatSavedTime(savedAt.whatsapp)}
+              onClick={() => saveSection("whatsapp", ["whatsapp_enabled", "whatsapp_auto_notify_owner", "whatsapp_owner_number"])}
+              label="Simpan Pengaturan WhatsApp"
+            />
+          </Card>
+
+          <Card className="p-5 space-y-4">
+            <SectionHeader
+              icon={<QrCode size={18} className="text-blue-500" />}
+              title="Koneksi WhatsApp Kasir"
+              desc="Scan QR dengan WhatsApp kasir/operasional. Session tersimpan lokal dan bisa logout kapan saja."
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={waStatus?.status === "ready" ? "success" : waStatus?.status === "qr" ? "warning" : waStatus?.status === "error" ? "danger" : "default"}>
+                Status: {waStatus?.status || "idle"}
+              </Badge>
+              {waStatus?.lastError && <span className="text-xs text-red-600">{waStatus.lastError}</span>}
+            </div>
+            {waStatus?.qrDataUrl && (
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <img src={waStatus.qrDataUrl} alt="QR WhatsApp" className="h-64 w-64 rounded-xl bg-white p-2" />
+                <p className="text-xs text-slate-500 text-center">Buka WhatsApp kasir → Perangkat tertaut → Tautkan perangkat → scan QR ini.</p>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" size="sm" onClick={startWhatsApp} disabled={waLoading}>
+                <MessageCircle size={14} /> {waLoading ? "Memproses..." : "Mulai / Tampilkan QR"}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={refreshWhatsAppStatus} disabled={waLoading}>
+                <RefreshCw size={14} /> Refresh Status
+              </Button>
+              <Button variant="danger" size="sm" onClick={logoutWhatsApp} disabled={waLoading}>
+                <LogOut size={14} /> Logout WhatsApp
+              </Button>
             </div>
           </Card>
         </div>

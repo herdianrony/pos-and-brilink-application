@@ -118,10 +118,13 @@ async function startNextServer(): Promise<void> {
       ELECTRON_RUN_AS_NODE: "1",
       ELECTRON_SECURE_WARNINGS: "1",
       AUTH_SECRET: authSecret, // C-01: secret unik per instalasi
+      WHATSAPP_SESSION_DIR: whatsappSessionDir,
       PATH: process.env.PATH,
     };
 
     // ── Buat log file untuk debug ─────────────────
+    const whatsappSessionDir = path.join(app.getPath("userData"), "whatsapp-session");
+
     const logDir = path.join(app.getPath("userData"), "logs");
     try {
       const fs = require("fs");

@@ -353,10 +353,42 @@ Menu Pengaturan digunakan untuk:
 - mengubah branding aplikasi,
 - mengubah nama toko,
 - mengatur alamat dan telepon,
+- mengatur notifikasi WhatsApp owner,
 - mengatur printer thermal,
 - mengatur PIN admin untuk diskon besar,
 - mengatur kebijakan diskon,
 - mengatur user/admin/kasir.
+
+### WhatsApp Owner
+
+Fitur WhatsApp Owner digunakan untuk mengirim notifikasi internal ke owner, misalnya saat kasir mencatat Tarik Tunai dan owner perlu mengecek transfer masuk di m-banking.
+
+Cara mengaktifkan:
+
+1. Buka **Pengaturan → WhatsApp Owner**.
+2. Isi nomor WhatsApp owner.
+3. Aktifkan **WhatsApp Owner** dan **Kirim otomatis** jika diperlukan.
+4. Klik **Simpan Pengaturan WhatsApp**.
+5. Klik **Mulai / Tampilkan QR**.
+6. Scan QR dengan WhatsApp kasir/operasional.
+
+Contoh notifikasi Tarik Tunai:
+
+```txt
+[CEK TRANSFER MASUK]
+Kasir mencatat transaksi Tarik Tunai.
+Nominal: Rp100.000
+Admin/Fee: Rp5.000
+Transfer masuk yang perlu dicek: Rp105.000
+Mohon cek/proses melalui kanal resmi.
+```
+
+Catatan:
+
+- Fitur ini menggunakan WhatsApp Web otomatis.
+- Jangan digunakan untuk spam/broadcast massal.
+- Jika session bermasalah, klik **Logout WhatsApp** lalu scan ulang QR.
+- Jika WhatsApp belum terhubung, transaksi tetap tersimpan; hanya notifikasi yang gagal terkirim.
 
 ### User Management
 

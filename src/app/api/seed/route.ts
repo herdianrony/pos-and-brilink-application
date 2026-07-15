@@ -71,6 +71,10 @@ export async function POST() {
           { key: "require_transaction_reference", value: "false" },
           { key: "require_cash_confirmation", value: "true" },
           { key: "default_service_status", value: "recorded" },
+          // WhatsApp owner notifications (disabled by default)
+          { key: "whatsapp_enabled", value: "false" },
+          { key: "whatsapp_auto_notify_owner", value: "false" },
+          { key: "whatsapp_owner_number", value: "" },
           // Business info (empty — user fills via setup wizard)
           { key: "store_name", value: "" },
           { key: "store_address", value: "" },
@@ -83,7 +87,7 @@ export async function POST() {
           { key: "business_type", value: "Agen Bisnis" },
           { key: "services_label", value: "Layanan Agen" },
         ]);
-        stats.settings = 17;
+        stats.settings = 20;
       }
 
       // ── 2. ACCOUNTS — templates with balance=0 ──

@@ -228,6 +228,14 @@ export default function BRILink() {
         return;
       }
       setLastInv(trx.invoiceNo);
+      fetch("/api/whatsapp/notify-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactionId: trx.id }),
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(result => { if (result?.sent) toast.success("Notifikasi WhatsApp owner terkirim"); })
+        .catch(() => {});
       closeModal();
       setShowDone(true);
       const newAccs = await fetch("/api/accounts").then(r => r.json());
