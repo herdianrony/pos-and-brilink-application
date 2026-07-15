@@ -48,6 +48,7 @@ function SetupWizardForm() {
   const [storeName, setStoreName] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
   const [storePhone, setStorePhone] = useState("");
+  const [ownerWhatsApp, setOwnerWhatsApp] = useState("");
   const [agentId, setAgentId] = useState("");
   const [ownerName, setOwnerName] = useState("");
 
@@ -193,6 +194,7 @@ function SetupWizardForm() {
             name: storeName,
             ownerName,
             phone: storePhone,
+            ownerWhatsApp,
             address: storeAddress,
             agentId,
           },
@@ -324,6 +326,8 @@ function SetupWizardForm() {
               setStoreAddress={setStoreAddress}
               storePhone={storePhone}
               setStorePhone={setStorePhone}
+              ownerWhatsApp={ownerWhatsApp}
+              setOwnerWhatsApp={setOwnerWhatsApp}
               agentId={agentId}
               setAgentId={setAgentId}
               ownerName={ownerName}
@@ -489,12 +493,14 @@ function StoreStep({
   storeName, setStoreName,
   storeAddress, setStoreAddress,
   storePhone, setStorePhone,
+  ownerWhatsApp, setOwnerWhatsApp,
   agentId, setAgentId,
   ownerName, setOwnerName,
 }: {
   storeName: string; setStoreName: (v: string) => void;
   storeAddress: string; setStoreAddress: (v: string) => void;
   storePhone: string; setStorePhone: (v: string) => void;
+  ownerWhatsApp: string; setOwnerWhatsApp: (v: string) => void;
   agentId: string; setAgentId: (v: string) => void;
   ownerName: string; setOwnerName: (v: string) => void;
 }) {
@@ -535,7 +541,7 @@ function StoreStep({
           />
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="No. Telepon">
+          <Field label="No. Telepon Toko">
             <input
               type="tel"
               value={storePhone}
@@ -544,6 +550,17 @@ function StoreStep({
               className="wizard-input"
             />
           </Field>
+          <Field label="WhatsApp Owner" hint="Untuk notifikasi cek transfer">
+            <input
+              type="tel"
+              value={ownerWhatsApp}
+              onChange={(e) => setOwnerWhatsApp(e.target.value)}
+              placeholder="081234567890"
+              className="wizard-input"
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="ID Agen / Kode Bisnis">
             <input
               type="text"

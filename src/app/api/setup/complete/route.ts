@@ -34,6 +34,7 @@ interface SetupBody {
     name?: string;
     ownerName?: string;
     phone?: string;
+    ownerWhatsApp?: string;
     address?: string;
     agentId?: string;
   };
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
           { key: "default_service_status", value: "recorded" },
           { key: "whatsapp_enabled", value: "false" },
           { key: "whatsapp_auto_notify_owner", value: "false" },
-          { key: "whatsapp_owner_number", value: "" },
+          { key: "whatsapp_owner_number", value: body.store?.ownerWhatsApp || "" },
           { key: "store_name", value: storeName },
           { key: "store_address", value: body.store?.address || "" },
           { key: "agent_id", value: body.store?.agentId || "" },
@@ -168,6 +169,7 @@ export async function POST(req: Request) {
           { key: "agent_id", value: body.store?.agentId || "" },
           { key: "owner_name", value: ownerName },
           { key: "phone", value: body.store?.phone || "" },
+          { key: "whatsapp_owner_number", value: body.store?.ownerWhatsApp || "" },
           { key: "opening_balance", value: String(body.cashOpeningBalance || 0) },
         ];
         for (const s of updateSettings) {
