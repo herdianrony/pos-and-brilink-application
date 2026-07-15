@@ -153,7 +153,7 @@ export async function POST() {
           { code: "transfer_cash", name: "Kirim Transfer Tunai", categoryId: scm["transfer"], categoryCode: "transfer", icon: "arrow-up-right", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "transfer", defaultFeeMethod: "cash" },
           { code: "transfer_receive", name: "Terima Transfer / Pencairan", categoryId: scm["transfer"], categoryCode: "transfer", icon: "arrow-down-left", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in", flowType: "cash_withdrawal", defaultFeeMethod: "deducted" },
           // ── Tarik Tunai ──
-          { code: "cash_withdrawal", name: "Tarik Tunai", categoryId: scm["cash_withdrawal"], categoryCode: "cash_withdrawal", icon: "banknote", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "none", flowType: "cash_withdrawal", defaultFeeMethod: "cash" },
+          { code: "cash_withdrawal", name: "Tarik Tunai", categoryId: scm["cash_withdrawal"], categoryCode: "cash_withdrawal", icon: "banknote", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "out", bankEffect: "in", flowType: "cash_withdrawal", defaultFeeMethod: "charged" },
           // ── Setor Tunai ──
           { code: "cash_deposit", name: "Setor Tunai", categoryId: scm["cash_deposit"], categoryCode: "cash_deposit", icon: "wallet", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "cash_deposit", defaultFeeMethod: "cash" },
           // ── Pembayaran Tagihan ──

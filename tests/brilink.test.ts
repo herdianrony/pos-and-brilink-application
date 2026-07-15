@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { AgentService, FeeTier } from "@/types/models";
 import { calculateAgentProfit, calculateServiceFee, calculateTotalWithAdminFee } from "@/lib/service-fees";
-import { calculateCashFlow } from "@/lib/service-flow";
+import { calculateCashFlow, calculateBankFlow } from "@/lib/service-flow";
 
 function tier(minAmount: number, maxAmount: number | null, adminFee: number, agentFee: number): FeeTier {
   return {
@@ -126,5 +126,16 @@ describe("Service cash flow calculation", () => {
       cashDelta: 0,
       physicalCashAmount: 0,
     });
+  });
+});
+
+
+describe("Service bank settlement flow", () => {
+  it("records tarik tunai charged scenario: customer transfers nominal + fee to agent", () => {
+    const bank = calculateBankFlow("out", "in", 100000, 5000, "charged");
+    const cash = calculateCashFlow("out", 100000, 5000, "charged");
+    expect(bank.bankDelta).toBe(105000);
+    expect(cash.cashDelta).toBe(-100000);
+    expect(cash.cashDispensed).toBe(100000);
   });
 });

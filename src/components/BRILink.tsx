@@ -12,7 +12,7 @@ import ServiceFilters from "@/components/brilink/ServiceFilters";
 import ServiceGrid from "@/components/brilink/ServiceGrid";
 import SuccessModal from "@/components/brilink/SuccessModal";
 import { useSettings } from "@/lib/use-settings";
-import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, type FeeMethod } from "@/lib/service-flow";
+import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow, type FeeMethod } from "@/lib/service-flow";
 import { calculateServiceFee } from "@/lib/service-fees";
 import type { Account, AgentService as Service, ServiceCategory as ServiceCat } from "@/types/models";
 
@@ -105,13 +105,12 @@ export default function BRILink() {
   const cashBalanceBefore = cashAccount ? parseFloat(cashAccount.balance) : 0;
   const cashBalanceAfter = cashBalanceBefore + totalCashFlow;
   const bankBalanceBefore = selectedBank ? parseFloat(selectedBank.balance) : 0;
-  const bankBalanceAfter = sel && selectedBank
-    ? sel.bankEffect === "out"
-      ? bankBalanceBefore - nominalAmount
-      : sel.bankEffect === "in"
-        ? bankBalanceBefore + nominalAmount
-        : bankBalanceBefore
-    : bankBalanceBefore;
+  const bankFlow = useMemo(() => {
+    if (!sel) return { bankDelta: 0, bankMutationAmount: 0 };
+    return calculateBankFlow(sel.cashEffect, sel.bankEffect, nominalAmount, adminFee, form.feeMethod);
+  }, [sel, nominalAmount, adminFee, form.feeMethod]);
+  const bankBalanceAfter = selectedBank ? bankBalanceBefore + bankFlow.bankDelta : bankBalanceBefore;
+  const bankImpactAmount = Math.abs(bankFlow.bankDelta);
 
   const physicalCashAmount = cashFlow.physicalCashAmount;
 
@@ -121,11 +120,12 @@ export default function BRILink() {
 
   const bankNeedsBalance = sel?.bankEffect === "out";
   const bankBalance = selectedBank ? parseFloat(selectedBank.balance) : 0;
-  const hasEnoughBankBalance = !bankNeedsBalance || bankBalance >= nominalAmount;
+  const hasEnoughBankBalance = !bankNeedsBalance || bankBalance >= bankImpactAmount;
   const cashNeedsBalance = sel?.cashEffect === "out";
   const hasEnoughCashBalance = !cashNeedsBalance || cashBalanceBefore >= cashFlow.cashDispensed;
   const cashShortfall = cashNeedsBalance && cashFlow.cashDispensed > cashBalanceBefore ? cashFlow.cashDispensed - cashBalanceBefore : 0;
-  const canSubmit = (flowConfig?.requiresNominal === false || nominalAmount > 0) && hasEnoughBankBalance && hasEnoughCashBalance;
+  const hasRequiredBankAccount = sel?.bankEffect === "none" || !!selectedBank;
+  const canSubmit = (flowConfig?.requiresNominal === false || nominalAmount > 0) && hasRequiredBankAccount && hasEnoughBankBalance && hasEnoughCashBalance;
 
   const [recentServices, setRecentServices] = useState<number[]>(() => {
     try {
@@ -178,6 +178,10 @@ export default function BRILink() {
         toast.error("Nominal belum diisi");
         return;
       }
+    }
+    if (!hasRequiredBankAccount) {
+      toast.error("Pilih rekening untuk transaksi ini");
+      return;
     }
     if (!hasEnoughBankBalance) {
       toast.error("Saldo rekening tidak cukup");
@@ -365,7 +369,7 @@ export default function BRILink() {
                         {bankAccounts.map(acc => {
                           const isSelected = form.selectedBankId === acc.id.toString();
                           const needsBalance = sel.bankEffect === "out";
-                          const hasBalance = parseFloat(acc.balance) >= nominalAmount;
+                          const hasBalance = parseFloat(acc.balance) >= bankImpactAmount;
                           return (
                             <button
                               key={acc.id}
@@ -373,7 +377,7 @@ export default function BRILink() {
                               className={cn(
                                 "w-full p-3 rounded-xl border-2 text-left transition-all flex items-center justify-between",
                                 isSelected ? "bg-emerald-50 border-blue-500 ring-2 ring-blue-200" : "bg-white border-slate-200 hover:border-slate-300",
-                                needsBalance && !hasBalance && nominalAmount > 0 && "opacity-50"
+                                needsBalance && !hasBalance && bankImpactAmount > 0 && "opacity-50"
                               )}
                             >
                               <div className="flex items-center gap-2">
@@ -522,7 +526,7 @@ export default function BRILink() {
                       <div className="bg-slate-50 rounded-lg p-2">
                         <p className="text-[10px] text-slate-400">{selectedBank.name}</p>
                         <p className={cn("text-sm font-bold", sel.bankEffect === "in" ? "text-emerald-600" : "text-red-600")}>
-                          {sel.bankEffect === "in" ? "+" : "−"}{formatRupiah(nominalAmount)}
+                          {bankFlow.bankDelta >= 0 ? "+" : "−"}{formatRupiah(bankImpactAmount)}
                         </p>
                       </div>
                     )}

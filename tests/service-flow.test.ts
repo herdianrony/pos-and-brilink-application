@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow } from "@/lib/service-flow";
+import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow } from "@/lib/service-flow";
 
 // ── Flow type detection ───────────────────────────
 describe("service-flow: getFlowType", () => {
@@ -278,5 +278,28 @@ describe("service-flow: getFlowConfig prefers DB flowType (S-04)", () => {
       name: "Pulsa Reguler",
     });
     expect(config.flowType).toBe("topup");
+  });
+});
+
+// ── Bank settlement flow ──────────────────────────
+describe("service-flow: calculateBankFlow", () => {
+  it("should add nominal + fee to bank for tarik tunai charged fee", () => {
+    const r = calculateBankFlow("out", "in", 100000, 5000, "charged");
+    expect(r.bankDelta).toBe(105000);
+    expect(r.bankMutationAmount).toBe(105000);
+  });
+
+  it("should add only nominal to bank for tarik tunai deducted fee", () => {
+    const r = calculateBankFlow("out", "in", 100000, 5000, "deducted");
+    expect(r.bankDelta).toBe(100000);
+  });
+
+  it("should subtract nominal for bank out flows", () => {
+    const r = calculateBankFlow("in", "out", 100000, 5000, "cash");
+    expect(r.bankDelta).toBe(-100000);
+  });
+
+  it("should return zero for no bank effect", () => {
+    expect(calculateBankFlow("out", "none", 100000, 5000, "charged")).toEqual({ bankDelta: 0, bankMutationAmount: 0 });
   });
 });

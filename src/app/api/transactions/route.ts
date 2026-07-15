@@ -18,6 +18,7 @@ import { handleApiError } from "@/lib/api-response";
 import {
   getFlowConfig,
   calculateCashFlow,
+  calculateBankFlow,
   FEE_METHOD_LABELS,
   type FeeMethod,
   type FlowType,
@@ -403,6 +404,8 @@ export async function POST(req: Request) {
 
         // ── S-02: Use unified cash flow calculator ──
         const cashFlow = calculateCashFlow(cashEffect, totalAmount, adminFee, feeMethod);
+        const bankFlow = calculateBankFlow(cashEffect, bankEffect, totalAmount, adminFee, feeMethod);
+        const bankAbsAmount = Math.abs(bankFlow.bankDelta);
 
         // F-02: Pre-validate balances BEFORE writing
         let cashBalanceAfter = cashAcc?.balance ?? 0;
@@ -433,14 +436,14 @@ export async function POST(req: Request) {
           if (!ba.isActive) {
             return NextResponse.json({ error: `Akun bank ${ba.name} tidak aktif` }, { status: 400 });
           }
-          if (bankEffect === "out" && ba.balance < totalAmount) {
+          if (bankEffect === "out" && ba.balance < bankAbsAmount) {
             return NextResponse.json({
-              error: `Saldo ${ba.name} tidak cukup. Saldo: Rp${Number(ba.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${totalAmount.toLocaleString("id-ID")}`,
+              error: `Saldo ${ba.name} tidak cukup. Saldo: Rp${Number(ba.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${bankAbsAmount.toLocaleString("id-ID")}`,
               code: "INSUFFICIENT_BANK_BALANCE",
             }, { status: 400 });
           }
           bankAcc = ba;
-          bankBalanceAfter = bankEffect === "out" ? ba.balance - totalAmount : ba.balance + totalAmount;
+          bankBalanceAfter = ba.balance + bankFlow.bankDelta;
         }
 
         const [trx] = await tx.insert(transactions).values({
@@ -527,19 +530,19 @@ export async function POST(req: Request) {
           if (bankEffect === "in") {
             await tx.update(accounts).set({ balance: bankBalanceAfter, updatedAt: new Date() }).where(eq(accounts.id, bankAcc.id));
             await tx.insert(accountMutations).values({
-              accountId: bankAcc.id, type: "brilink_in", amount: totalAmount, balanceAfter: bankBalanceAfter,
+              accountId: bankAcc.id, type: "brilink_in", amount: bankAbsAmount, balanceAfter: bankBalanceAfter,
               notes: `BRILink IN: ${service.name} → ${bankAcc.name} - ${invoiceNo}`, referenceId: trx.id,
             });
           } else if (bankEffect === "out") {
             const result = await tx.update(accounts)
               .set({ balance: bankBalanceAfter, updatedAt: new Date() })
-              .where(sql`${accounts.id} = ${bankAcc.id} AND ${accounts.balance} >= ${totalAmount}`)
+              .where(sql`${accounts.id} = ${bankAcc.id} AND ${accounts.balance} >= ${bankAbsAmount}`)
               .returning({ id: accounts.id });
             if (result.length === 0) {
               throw new Error(`Saldo ${bankAcc.name} tidak cukup (race condition) untuk ${service.name}`);
             }
             await tx.insert(accountMutations).values({
-              accountId: bankAcc.id, type: "brilink_out", amount: -totalAmount, balanceAfter: bankBalanceAfter,
+              accountId: bankAcc.id, type: "brilink_out", amount: -bankAbsAmount, balanceAfter: bankBalanceAfter,
               notes: `BRILink OUT: ${service.name} ← ${bankAcc.name} - ${invoiceNo}`, referenceId: trx.id,
             });
           }

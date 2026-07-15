@@ -286,6 +286,10 @@ if (!globalForDb.__arenaNextJsUsersTableReady) {
       await client.execute(
         `UPDATE \`brilink_services\` SET \`flow_type\` = 'inquiry' WHERE (\`flow_type\` IS NULL OR \`flow_type\` = 'payment') AND (LOWER(\`name\`) LIKE '%cek saldo%' OR (\`cash_effect\` = 'none' AND \`bank_effect\` = 'none'))`
       );
+      // Tarik Tunai: nasabah transfer nominal + admin ke rekening agen, agen menyerahkan cash nominal.
+      await client.execute(
+        `UPDATE \`brilink_services\` SET \`bank_effect\` = 'in', \`default_fee_method\` = 'charged' WHERE \`flow_type\` = 'cash_withdrawal' AND (LOWER(\`name\`) LIKE '%tarik tunai%' OR \`code\` = 'cash_withdrawal') AND \`bank_effect\` = 'none'`
+      );
 
       // P1: Create unique indexes after backfill (catch duplicate key errors gracefully)
       try {

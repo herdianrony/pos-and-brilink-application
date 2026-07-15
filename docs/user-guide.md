@@ -162,6 +162,19 @@ Contoh layanan:
 7. Konfirmasi pencatatan.
 8. Simpan nomor referensi provider jika tersedia.
 
+### Contoh Tarik Tunai
+
+Jika pelanggan ingin tarik tunai Rp100.000 dengan admin Rp5.000:
+
+1. Pelanggan transfer ke rekening agen sebesar Rp105.000.
+2. Agen menyerahkan cash dari laci sebesar Rp100.000.
+3. Aplikasi mencatat:
+   - Kas Tunai berkurang Rp100.000.
+   - Rekening agen bertambah Rp105.000.
+   - Profit/fee agen Rp5.000.
+
+Pastikan layanan Tarik Tunai memilih rekening penerima transfer nasabah agar saldo internal rekening ikut bertambah.
+
 ### Catatan Penting
 
 - Saldo yang berubah adalah **saldo internal aplikasi**, bukan saldo real-time bank.

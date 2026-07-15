@@ -324,6 +324,34 @@ export interface CashFlowResult {
   physicalCashAmount: number;
 }
 
+export interface BankFlowResult {
+  bankDelta: number;
+  bankMutationAmount: number;
+}
+
+export function calculateBankFlow(
+  cashEffect: string,
+  bankEffect: string,
+  nominal: number,
+  fee: number,
+  feeMethod: FeeMethod
+): BankFlowResult {
+  if (bankEffect === "none") {
+    return { bankDelta: 0, bankMutationAmount: 0 };
+  }
+
+  let amount = nominal;
+
+  // Tarik Tunai skenario umum:
+  // nasabah transfer nominal + admin ke rekening agen, agen menyerahkan cash nominal.
+  if (cashEffect === "out" && bankEffect === "in" && feeMethod === "charged") {
+    amount = nominal + fee;
+  }
+
+  const bankDelta = bankEffect === "in" ? amount : -amount;
+  return { bankDelta, bankMutationAmount: bankDelta };
+}
+
 export function calculateCashFlow(
   cashEffect: string,
   nominal: number,
