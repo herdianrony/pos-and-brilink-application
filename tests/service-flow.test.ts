@@ -76,14 +76,14 @@ describe("service-flow: getFlowConfig", () => {
 
   it("should return config with correct primary action for withdrawal", () => {
     const config = getFlowConfig({ cashEffect: "out", bankEffect: "none", name: "Tarik Tunai" });
-    expect(config.primaryActionText).toContain("Serahkan");
-    expect(config.confirmationConfirmText).toContain("Diserahkan");
+    expect(config.primaryActionText).toContain("Catat");
+    expect(config.confirmationConfirmText).toContain("Transfer");
   });
 
   it("should return config with correct primary action for deposit", () => {
     const config = getFlowConfig({ cashEffect: "in", bankEffect: "out", name: "Setor Tunai" });
-    expect(config.primaryActionText).toContain("Terima");
-    expect(config.confirmationConfirmText).toContain("Diterima");
+    expect(config.primaryActionText).toContain("Catat");
+    expect(config.confirmationConfirmText).toContain("Dicatat");
   });
 
   it("should show denomination only for deposit", () => {

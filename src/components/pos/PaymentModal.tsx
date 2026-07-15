@@ -4,7 +4,7 @@ import { Modal, Button, Input, Card } from "@/components/ui";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { formatRupiah, cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { Banknote, X } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -83,10 +83,31 @@ export default function PaymentModal({
           </div>
         </Card>
         {payMethod === "cash" && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <CurrencyInput label="Uang Diterima" value={cashAmt} onChange={(v) => onCashAmountChange(String(v))} placeholder="0" autoFocus />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Uang Pas", value: grandTotal },
+                { label: "50rb", value: 50000 },
+                { label: "100rb", value: 100000 },
+                { label: "200rb", value: 200000 },
+                { label: "500rb", value: 500000 },
+                { label: "1jt", value: 1000000 },
+              ].map((quick) => (
+                <button
+                  key={quick.label}
+                  type="button"
+                  onClick={() => onCashAmountChange(String(quick.value))}
+                  disabled={quick.value < grandTotal}
+                  className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {quick.label}
+                </button>
+              ))}
+            </div>
             {parseFloat(cashAmt || "0") >= total && parseFloat(cashAmt || "0") > 0 && (
-              <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <div className="bg-emerald-50 rounded-xl p-3 text-center flex items-center justify-center gap-2">
+                <Banknote size={18} className="text-emerald-600" />
                 <span className="text-emerald-600 font-bold text-lg">Kembalian: {formatRupiah(change)}</span>
               </div>
             )}

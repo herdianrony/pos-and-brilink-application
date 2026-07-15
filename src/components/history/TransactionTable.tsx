@@ -3,6 +3,7 @@
 import { Card, Badge, Spinner, EmptyState } from "@/components/ui";
 import { formatDate, formatRupiah } from "@/lib/utils";
 import { getStatusConfig, getTransactionStatus } from "@/lib/history";
+import { cn } from "@/lib/utils";
 import { Ban, CheckCircle, Eye, RotateCcw } from "lucide-react";
 import type { TransactionActionType, Trx } from "@/types/transactions";
 
@@ -35,12 +36,20 @@ export default function TransactionTable({ loading, transactions, servicesLabel,
                 const status = getTransactionStatus(transaction.status);
                 const statusCfg = getStatusConfig(status);
                 return (
-                  <tr key={transaction.id} className="border-t border-slate-50 hover:bg-emerald-50/30 transition-colors">
+                  <tr
+                    key={transaction.id}
+                    className={cn(
+                      "border-t transition-colors",
+                      status === "pending" && "border-amber-100 bg-amber-50/30 hover:bg-amber-50/60",
+                      status === "completed" && "border-slate-50 hover:bg-emerald-50/30",
+                      (status === "void" || status === "reversed") && "border-red-100 bg-red-50/20 text-slate-500 hover:bg-red-50/40"
+                    )}
+                  >
                     <td className="p-3 font-mono text-xs text-slate-500">{transaction.invoiceNo}</td>
                     <td className="p-3"><Badge variant={transaction.type === "pos" ? "primary" : "purple"}>{transaction.type === "pos" ? "POS" : servicesLabel}</Badge></td>
                     <td className="p-3 text-slate-500 text-xs">{transaction.subType || "Penjualan"}</td>
                     <td className="p-3">
-                      <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+                      <Badge variant={statusCfg.variant}>{status === "pending" ? "⚠ " : ""}{statusCfg.label}</Badge>
                       {transaction.referenceNo && <p className="text-[10px] text-slate-400 mt-0.5">Ref: {transaction.referenceNo}</p>}
                     </td>
                     <td className="p-3 text-right font-semibold">{formatRupiah(transaction.totalAmount)}</td>

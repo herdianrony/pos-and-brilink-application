@@ -255,6 +255,13 @@ export default function BRILink() {
         <p className="text-sm text-slate-400">Pilih layanan dan catat transaksi nasabah</p>
       </div>
 
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="font-bold">Mode pencatatan manual</p>
+        <p className="text-xs leading-relaxed">
+          Aplikasi ini tidak mengirim transaksi ke bank/provider. Pastikan transaksi aktual dilakukan melalui kanal resmi, lalu catat hasilnya di sini.
+        </p>
+      </div>
+
       <ServiceQuickLists
         favorites={favoriteSvcObjects}
         recent={recentSvcObjects}

@@ -71,7 +71,7 @@ describe("History components", () => {
 
     expect(screen.getByText("BRL-001")).toBeInTheDocument();
     expect(screen.getByText("POS-001")).toBeInTheDocument();
-    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText(/Pending/)).toBeInTheDocument();
     expect(screen.getByText("Ref: REF-1")).toBeInTheDocument();
   });
 
