@@ -25,6 +25,7 @@ Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplik
 - [Auto-Update](#auto-update)
 - [Database](#database)
 - [API Routes](#api-routes)
+- [Panduan Pengguna](#panduan-pengguna)
 - [Keamanan](#keamanan)
 - [Troubleshooting](#troubleshooting)
 - [Scripts](#scripts)
@@ -486,6 +487,16 @@ API berada di `src/app/api/`. Endpoint yang tersedia antara lain:
 | Data utility | `/api/backup`, `/api/seed`, `/api/seed-demo` |
 
 > Dokumentasi detail request/response API belum dipisahkan ke file khusus.
+
+## Panduan Pengguna
+
+Panduan operasional untuk admin, kasir, dan operator tersedia di:
+
+```text
+docs/user-guide.md
+```
+
+Dokumen tersebut menjelaskan setup awal, POS/kasir, pencatatan layanan agen, manajemen saldo, riwayat transaksi, rekening koran, printer, backup, troubleshooting, dan batasan aplikasi.
 
 ## Keamanan
 

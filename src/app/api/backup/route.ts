@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@libsql/client";
 import { requireAdmin } from "@/lib/auth";
-import { readFile, writeFile, copyFile, unlink } from "fs/promises";
-import { existsSync } from "fs";
+import { handleApiError } from "@/lib/api-response";
+import { readFile, writeFile, copyFile, unlink } from "node:fs/promises";
+import { existsSync } from "node:fs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DB_PATH = process.env.DATABASE_URL || "file:./data.db";
 const MAX_RESTORE_SIZE_BYTES = 128 * 1024 * 1024;
 
 function getDbFilePath(): string {
-  if (DB_PATH.startsWith("file:")) return DB_PATH.slice(5);
-  return DB_PATH;
+  const dbUrl = process.env.DATABASE_URL || "file:./data.db";
+  return dbUrl.startsWith("file:") ? dbUrl.slice(5) : dbUrl;
 }
 
 async function verifySqliteIntegrity(filePath: string): Promise<boolean> {
+  // Import lazily so Next/Turbopack does not trace libSQL native/runtime internals
+  // while statically analyzing this route for standalone output.
+  const { createClient } = await import("@libsql/client");
   const client = createClient({ url: `file:${filePath}` });
   try {
     const result = await client.execute("PRAGMA integrity_check");
@@ -27,10 +29,10 @@ async function verifySqliteIntegrity(filePath: string): Promise<boolean> {
 
 // GET /api/backup — download database backup
 export async function GET() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return auth.response;
-
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const dbPath = getDbFilePath();
     if (!existsSync(dbPath)) {
       return NextResponse.json({ error: "Database tidak ditemukan" }, { status: 404 });
@@ -47,19 +49,18 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Backup error:", error);
-    return NextResponse.json({ error: "Gagal backup database" }, { status: 500 });
+    return handleApiError("backup:GET", error, "Gagal backup database");
   }
 }
 
 // POST /api/backup — restore database from uploaded file
 export async function POST(req: Request) {
-  const auth = await requireAdmin();
-  if (!auth.ok) return auth.response;
-
   let tempPath: string | null = null;
 
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const dbPath = getDbFilePath();
     const arrayBuffer = await req.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -92,8 +93,7 @@ export async function POST(req: Request) {
       message: "Database berhasil di-restore. Aplikasi perlu dimulai ulang.",
     });
   } catch (error) {
-    console.error("Restore error:", error);
-    return NextResponse.json({ error: "Gagal restore database" }, { status: 500 });
+    return handleApiError("backup:POST", error, "Gagal restore database");
   } finally {
     if (tempPath && existsSync(tempPath)) {
       await unlink(tempPath).catch(() => {});

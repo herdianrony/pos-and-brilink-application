@@ -96,6 +96,3 @@ export default function CategoriesTab() {
   );
 }
 
-// ════════════════════════════════════════════════════
-// BRILINK SERVICES TAB (with Fee Tiers)
-// ════════════════════════════════════════════════════

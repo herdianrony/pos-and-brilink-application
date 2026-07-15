@@ -9,14 +9,13 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  message?: string;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, message: error.message };
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -41,11 +40,9 @@ export default class ErrorBoundary extends Component<Props, State> {
             Terjadi error pada tampilan aplikasi. Data yang sudah tersimpan di database tidak ikut terhapus.
             Klik tombol di bawah untuk memuat ulang aplikasi.
           </p>
-          {this.state.message && (
-            <p className="mb-6 rounded-2xl bg-slate-100 px-4 py-3 text-left text-xs font-mono text-slate-600">
-              {this.state.message}
-            </p>
-          )}
+          <p className="mb-6 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">
+            Terjadi kesalahan. Detail telah dicatat. Hubungi administrator jika masalah berlanjut.
+          </p>
           <button
             type="button"
             onClick={this.handleReload}
