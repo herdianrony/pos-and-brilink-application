@@ -277,18 +277,69 @@ export default function SettingsPage() {
       {/* ══════ TAB: Lanjutan ══════ */}
       {activeTab === "lanjutan" && (
         <div className="space-y-5">
-          {/* Data Management */}
+          {/* Backup & Restore */}
           <Card className="p-5 space-y-4">
             <SectionHeader
-              icon={<AlertTriangle size={18} className="text-amber-500" />}
-              title="Manajemen Data"
-              desc="Backup, restore, dan reset data aplikasi."
+              icon={<AlertTriangle size={18} className="text-blue-500" />}
+              title="Backup & Restore Database"
+              desc="Download backup database SQLite atau restore dari file backup."
             />
-            <div className="space-y-2">
-              <Button variant="secondary" size="sm" disabled>
-                Export Backup Database
-              </Button>
-              <p className="text-xs text-slate-400">Fitur backup akan tersedia di versi mendatang.</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Export Backup</p>
+                  <p className="text-xs text-slate-400">Download seluruh database dalam format .db</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/backup");
+                      if (!res.ok) { toast.error("Gagal export backup"); return; }
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `backup-${new Date().toISOString().replace(/[:.]/g, "-")}.db`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success("Backup berhasil diunduh");
+                    } catch { toast.error("Gagal export backup"); }
+                  }}
+                >
+                  Download Backup
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Restore Database</p>
+                  <p className="text-xs text-slate-400">Restore dari file backup .db. Database saat ini akan ditimpa.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".db,.sqlite,.sqlite3"
+                    id="restore-file"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (!confirm("Restore database akan MENGGANTI semua data saat ini. Lanjutkan?")) return;
+                      try {
+                        const res = await fetch("/api/backup", { method: "POST", body: file });
+                        const d = await res.json();
+                        if (res.ok) toast.success("Database berhasil di-restore. Mulai ulang aplikasi.");
+                        else toast.error(d.error || "Gagal restore");
+                      } catch { toast.error("Gagal restore database"); }
+                    }}
+                  />
+                  <Button variant="secondary" size="sm" onClick={() => document.getElementById("restore-file")?.click()}>
+                    Upload & Restore
+                  </Button>
+                </div>
+              </div>
             </div>
           </Card>
 

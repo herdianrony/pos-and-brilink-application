@@ -14,27 +14,29 @@ export async function GET() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // P0-03: Only count completed (not void/reversed) in omzet/profit
-  // Pending is shown separately, void/reversed excluded entirely
-  const validStatus = sql`(${transactions.status} IS NULL OR ${transactions.status} IN ('completed', 'pending'))`;
+  // P0-03 + P1: Exclude void/reversed from count, revenue, and profit
+  const validCount = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN 1 ELSE 0 END`;
+  const validAmount = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.totalAmount} ELSE 0 END`;
+  const validProfit = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END`;
+  const validFee = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.adminFee} ELSE 0 END`;
 
   const [todayAll] = await db.select({
-    count: sql<number>`CAST(count(*) AS INTEGER)`,
-    revenue: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.totalAmount} ELSE 0 END),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END),0) AS TEXT)`,
+    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+    revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
   }).from(transactions).where(gte(transactions.createdAt, today));
 
   const [todayPos] = await db.select({
-    count: sql<number>`CAST(count(*) AS INTEGER)`,
-    total: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.totalAmount} ELSE 0 END),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END),0) AS TEXT)`,
+    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+    total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
   }).from(transactions).where(and(gte(transactions.createdAt, today), eq(transactions.type, "pos")));
 
   const [todayBrilink] = await db.select({
-    count: sql<number>`CAST(count(*) AS INTEGER)`,
-    total: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.totalAmount} ELSE 0 END),0) AS TEXT)`,
-    fee: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.adminFee} ELSE 0 END),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END),0) AS TEXT)`,
+    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+    total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+    fee: sql<string>`CAST(coalesce(sum(${validFee}),0) AS TEXT)`,
+    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
   }).from(transactions).where(and(gte(transactions.createdAt, today), eq(transactions.type, "brilink")));
 
   const lowStock = await db.select().from(products)
@@ -46,9 +48,9 @@ export async function GET() {
 
   const last7 = await db.select({
     date: sql<string>`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch')`,
-    revenue: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.totalAmount} ELSE 0 END),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END),0) AS TEXT)`,
-    count: sql<number>`CAST(count(*) AS INTEGER)`,
+    revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
+    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
   }).from(transactions)
     .where(sql`${transactions.createdAt} >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()}`)
     .groupBy(sql`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch')`)

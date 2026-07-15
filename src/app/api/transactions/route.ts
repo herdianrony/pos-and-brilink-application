@@ -68,6 +68,12 @@ async function getDiscountPolicy() {
   };
 }
 
+// P1: Read default_service_status from settings
+async function getDefaultServiceStatus(): Promise<string> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, "default_service_status")).limit(1);
+  return row?.value || "recorded";
+}
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -368,6 +374,9 @@ export async function POST(req: Request) {
         bankAccId = defaultBank?.id ?? null;
       }
 
+      // P1: Read default_service_status setting
+      const defaultServiceStatus = await getDefaultServiceStatus();
+
       // ── S-02: Use unified cash flow calculator ──
       const cashFlow = calculateCashFlow(cashEffect, totalAmount, adminFee, feeMethod);
 
@@ -428,10 +437,18 @@ export async function POST(req: Request) {
         cashDispensed: cashFlow.cashDispensed,
         settlementAccountId: bankAccId,
         referenceNo: body.referenceNo ? String(body.referenceNo) : null,
-        // S-07: status — transfer/payment/topup = pending (perlu konfirmasi provider)
-        status: flowConfig.involvesExternalProvider ? "pending" : "completed",
-        confirmedAt: flowConfig.involvesExternalProvider ? null : new Date(),
-        confirmedByUserId: flowConfig.involvesExternalProvider ? null : (auth.ok ? auth.user.id : null),
+        // P1: Read default_service_status from settings
+        // If 'recorded' → external provider transactions start as pending
+        // If 'completed' → all transactions start as completed
+        status: flowConfig.involvesExternalProvider
+          ? (defaultServiceStatus === "completed" ? "completed" : "pending")
+          : "completed",
+        confirmedAt: (flowConfig.involvesExternalProvider && defaultServiceStatus !== "completed")
+          ? null
+          : new Date(),
+        confirmedByUserId: (flowConfig.involvesExternalProvider && defaultServiceStatus !== "completed")
+          ? null
+          : (auth.ok ? auth.user.id : null),
       }).returning();
 
       // S-05: Store denomination breakdown in separate table
