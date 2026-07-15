@@ -5,6 +5,7 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, ConfirmDialog, useToast } from "@/components/ui";
 import { Plus, Pencil, Trash2, X, Layers } from "lucide-react";
 import { DynamicIcon, AVAILABLE_ICONS } from "@/components/DynamicIcon";
+import { CurrencyInput } from "@/components/CurrencyInput";
 import type { ServiceCategory as ServiceCat, FeeTier, AgentService as BLService } from "@/types/models";
 
 const icons = AVAILABLE_ICONS;
@@ -16,7 +17,7 @@ export default function BLServicesTab() {
   const [modal, setModal] = useState(false);
   const [tiersModal, setTiersModal] = useState(false);
   const [edit, setEdit] = useState<BLService | null>(null);
-  const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
+  const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
   const [tiers, setTiers] = useState<FeeTier[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
@@ -30,13 +31,13 @@ export default function BLServicesTab() {
 
   function openAdd() { 
     setEdit(null); 
-    setF({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" }); 
+    setF({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" }); 
     setTiers([]);
     setModal(true); 
   }
   function openEdit(s: BLService) {
     setEdit(s); 
-    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "credit-card", adminFee: s.adminFee, agentFee: s.agentFee, useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", description: s.description || "" }); 
+    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "credit-card", adminFee: s.adminFee, agentFee: s.agentFee, profitDifferent: Number(s.adminFee) !== Number(s.agentFee), useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", description: s.description || "" }); 
     setTiers(s.feeTiers || []);
     setModal(true);
   }
@@ -56,7 +57,14 @@ export default function BLServicesTab() {
     }]);
   }
   function updateTier(idx: number, field: keyof FeeTier, value: string | null) {
-    setTiers(tiers.map((t, i) => i === idx ? { ...t, [field]: value } : t));
+    setTiers(tiers.map((t, i) => {
+      if (i !== idx) return t;
+      const next = { ...t, [field]: value };
+      // UX sederhana: profit agen mengikuti biaya admin pada tier.
+      // Jika nanti butuh selisih provider/upline, bisa ditambahkan mode advanced per tier.
+      if (field === "adminFee") next.agentFee = value || "0";
+      return next;
+    }));
   }
   function removeTier(idx: number) {
     setTiers(tiers.filter((_, i) => i !== idx));
@@ -64,8 +72,9 @@ export default function BLServicesTab() {
   
   async function save() {
     if (!f.name) return; setSaving(true);
+    const agentFee = f.profitDifferent ? (f.agentFee || "0") : (f.adminFee || "0");
     const res = await fetch("/api/brilink-services", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee: f.agentFee || "0", useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, description: f.description || null })
+      body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, description: f.description || null })
     });
     const svc = await res.json();
     
@@ -182,9 +191,35 @@ export default function BLServicesTab() {
           </div>
           
           {!f.useTieredFee ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Biaya Admin (ke Nasabah)" type="number" value={f.adminFee} onChange={e => setF({ ...f, adminFee: e.target.value })} placeholder="0" />
-              <Input label="Fee Agen (Keuntungan Anda)" type="number" value={f.agentFee} onChange={e => setF({ ...f, agentFee: e.target.value })} placeholder="0" />
+            <div className="space-y-3">
+              <CurrencyInput
+                label="Biaya Admin yang dibayar pelanggan"
+                value={f.adminFee}
+                onChange={(value) => setF({ ...f, adminFee: String(value), agentFee: f.profitDifferent ? f.agentFee : String(value) })}
+                placeholder="0"
+              />
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={f.profitDifferent}
+                    onChange={(e) => setF({ ...f, profitDifferent: e.target.checked, agentFee: e.target.checked ? f.agentFee : f.adminFee })}
+                    className="w-5 h-5 rounded text-primary focus:ring-primary mt-0.5"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">Profit agen berbeda dari biaya admin</p>
+                    <p className="text-xs text-slate-400">Default: profit agen otomatis sama dengan biaya admin.</p>
+                  </div>
+                </label>
+                {f.profitDifferent && (
+                  <CurrencyInput
+                    label="Profit Agen"
+                    value={f.agentFee}
+                    onChange={(value) => setF({ ...f, agentFee: String(value) })}
+                    placeholder="0"
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -197,21 +232,16 @@ export default function BLServicesTab() {
               ) : (
                 <div className="space-y-2">
                   {tiers.map((tier, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2">
-                      <div className="flex-1 grid grid-cols-4 gap-2">
-                        <input type="number" placeholder="Min" value={tier.minAmount} onChange={e => updateTier(idx, "minAmount", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
-                        <input type="number" placeholder="Max (kosong=∞)" value={tier.maxAmount || ""} onChange={e => updateTier(idx, "maxAmount", e.target.value || null)}
-                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
-                        <input type="number" placeholder="Admin" value={tier.adminFee} onChange={e => updateTier(idx, "adminFee", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
-                        <input type="number" placeholder="Fee Agen" value={tier.agentFee} onChange={e => updateTier(idx, "agentFee", e.target.value)}
-                          className="px-2 py-1.5 rounded border border-slate-200 text-sm" />
+                    <div key={idx} className="flex items-end gap-2 bg-slate-50 rounded-xl p-3">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <CurrencyInput label="Min" value={tier.minAmount} onChange={(value) => updateTier(idx, "minAmount", String(value))} placeholder="0" />
+                        <CurrencyInput label="Max" value={tier.maxAmount || ""} onChange={(value) => updateTier(idx, "maxAmount", value ? String(value) : null)} placeholder="Kosong = ∞" />
+                        <CurrencyInput label="Biaya Admin" value={tier.adminFee} onChange={(value) => updateTier(idx, "adminFee", String(value))} placeholder="0" />
                       </div>
-                      <button onClick={() => removeTier(idx)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                      <button onClick={() => removeTier(idx)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
                     </div>
                   ))}
-                  <p className="text-xs text-slate-400">Format: Nominal Min | Nominal Max | Biaya Admin | Fee Agen</p>
+                  <p className="text-xs text-slate-400">Profit agen pada tier otomatis mengikuti biaya admin.</p>
                 </div>
               )}
             </div>
@@ -270,10 +300,10 @@ export default function BLServicesTab() {
           <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-700">
             <p className="font-medium">Contoh Skema Fee Tarik Tunai:</p>
             <ul className="list-disc ml-4 mt-1 space-y-0.5">
-              <li>Rp 0 - 500.000 → Admin Rp 5.000, Fee Rp 3.000</li>
-              <li>Rp 500.001 - 2.000.000 → Admin Rp 7.500, Fee Rp 4.500</li>
-              <li>Rp 2.000.001 - 5.000.000 → Admin Rp 10.000, Fee Rp 6.000</li>
-              <li>&gt; Rp 5.000.000 → Admin Rp 15.000, Fee Rp 9.000</li>
+              <li>Rp 0 - 500.000 → Biaya Admin Rp 5.000</li>
+              <li>Rp 500.001 - 2.000.000 → Biaya Admin Rp 7.500</li>
+              <li>Rp 2.000.001 - 5.000.000 → Biaya Admin Rp 10.000</li>
+              <li>&gt; Rp 5.000.000 → Biaya Admin Rp 15.000</li>
             </ul>
           </div>
           
@@ -291,44 +321,18 @@ export default function BLServicesTab() {
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="grid grid-cols-5 gap-2 text-xs font-medium text-slate-500 px-2">
+                <div className="grid grid-cols-4 gap-2 text-xs font-medium text-slate-500 px-2">
                   <span>Nominal Min</span>
                   <span>Nominal Max</span>
                   <span>Biaya Admin</span>
-                  <span>Fee Agen</span>
                   <span></span>
                 </div>
                 {tiers.map((tier, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                    <div className="flex-1 grid grid-cols-4 gap-2">
-                      <input 
-                        type="number" 
-                        placeholder="Min" 
-                        value={tier.minAmount} 
-                        onChange={e => updateTier(idx, "minAmount", e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
-                      />
-                      <input 
-                        type="number" 
-                        placeholder="Max (kosong=∞)" 
-                        value={tier.maxAmount || ""} 
-                        onChange={e => updateTier(idx, "maxAmount", e.target.value || null)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400" 
-                      />
-                      <input 
-                        type="number" 
-                        placeholder="Admin" 
-                        value={tier.adminFee} 
-                        onChange={e => updateTier(idx, "adminFee", e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-sm focus:ring-2 focus:ring-amber-200 focus:border-amber-400" 
-                      />
-                      <input 
-                        type="number" 
-                        placeholder="Fee" 
-                        value={tier.agentFee} 
-                        onChange={e => updateTier(idx, "agentFee", e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400" 
-                      />
+                  <div key={idx} className="flex items-end gap-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <CurrencyInput label="Min" value={tier.minAmount} onChange={(value) => updateTier(idx, "minAmount", String(value))} placeholder="0" />
+                      <CurrencyInput label="Max" value={tier.maxAmount || ""} onChange={(value) => updateTier(idx, "maxAmount", value ? String(value) : null)} placeholder="Kosong = ∞" />
+                      <CurrencyInput label="Biaya Admin" value={tier.adminFee} onChange={(value) => updateTier(idx, "adminFee", String(value))} placeholder="0" />
                     </div>
                     <button onClick={() => removeTier(idx)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
                       <Trash2 size={16} />
