@@ -1,137 +1,391 @@
-# BRILink POS — Desktop Application
+# Desktop Application — Electron
 
-Aplikasi desktop POS & BRILink berbasis Electron, mendukung Windows 7/8/10/11.
+Dokumen ini menjelaskan mode desktop aplikasi POS & Agen Bisnis/BRILink POS berdasarkan konfigurasi project saat ini.
 
-## Architecture
+> **Konfigurasi saat ini:** package desktop memakai `productName: BRILink POS`, Electron `^43.1.0`, dan target build Windows x64. Dengan konfigurasi ini, target realistis adalah Windows 10/11 64-bit. Dokumentasi lama yang menyebut Electron 22, Windows 7/8, dan ia32 tidak sesuai dengan konfigurasi saat ini.
 
-```
+## Ringkasan Arsitektur
+
+```text
 Electron Main Process (electron/main.ts)
-  ├─ spawn Next.js standalone server (.next/standalone/server.js)
-  ├─ BrowserWindow load http://127.0.0.1:43219
-  ├─ Database: %APPDATA%/BRILink POS/pos-brilink.db (persistent)
-  ├─ Printer thermal via node-thermal-printer (ESC/POS)
-  ├─ Auto-update via electron-updater + GitHub Releases
-  └─ IPC handlers (printer, window controls, update)
+  ├─ DEV: load Next.js dev server di http://localhost:3000
+  ├─ PRODUCTION: spawn Next.js standalone server
+  │    └─ http://127.0.0.1:43219
+  ├─ Database: userData/pos-brilink.db
+  ├─ AUTH_SECRET: auto-generate di userData/.auth-secret saat packaged
+  ├─ Printer thermal: node-thermal-printer + IPC
+  ├─ Auto-update: electron-updater + GitHub Releases
+  └─ Window, security policy, single instance lock
 ```
 
-## Development
+## Batasan Modul Layanan Agen
+
+Modul layanan agen pada aplikasi desktop ini bersifat **pencatatan lokal/offline-first**. Modul tersebut tidak menjalankan transaksi perbankan sungguhan.
+
+Yang dilakukan aplikasi:
+
+- Mencatat transaksi layanan agen ke database lokal.
+- Menghitung nominal, admin fee, agent fee, profit, dan total transaksi.
+- Mengubah saldo internal kas/rekening yang dicatat di aplikasi.
+- Membuat mutasi rekening internal.
+- Menyediakan riwayat, laporan, dan struk.
+
+Yang tidak dilakukan aplikasi:
+
+- Tidak melakukan transfer bank otomatis.
+- Tidak mengirim instruksi transaksi ke API bank, BRILink, PPOB, QRIS, e-wallet, atau payment gateway.
+- Tidak validasi rekening/tagihan secara online.
+- Tidak membaca saldo real-time dari bank.
+- Tidak melakukan settlement otomatis.
+
+Transaksi aktual tetap dilakukan operator melalui kanal resmi seperti mobile banking, EDC, aplikasi BRILink/PPOB, atau sistem resmi lain, kemudian dicatat di aplikasi ini.
+
+## File Penting
+
+| File | Fungsi |
+|------|--------|
+| `electron/main.ts` | Main process, window, server Next.js, CSP, single instance, IPC update |
+| `electron/preload.ts` | Bridge aman antara renderer dan Electron API |
+| `electron/printer.ts` | Integrasi printer thermal ESC/POS |
+| `electron/updater.ts` | Auto-update via `electron-updater` |
+| `electron/db-path.ts` | Resolver path database Electron |
+| `electron-builder.yml` | Konfigurasi packaging desktop |
+| `scripts/after-pack.js` | Hook setelah packaging untuk copy Next.js standalone |
+| `scripts/copy-preload.js` | Copy preload hasil compile |
+| `scripts/post-build.js` | Post-build helper untuk output Next.js |
+
+## Mode Development
+
+Jalankan:
 
 ```bash
-# Mode web saja (untuk development cepat)
-npm run dev
-
-# Mode desktop (Electron + Next.js dev)
 npm run dev:electron
+```
 
-# Build installer Windows
+Script ini menjalankan:
+
+1. `npm run compile:electron`
+2. `next dev` di port `3000`
+3. `wait-on http://localhost:3000`
+4. `electron .`
+
+Pada mode ini:
+
+- Electron membaca `ELECTRON_DEV=1`.
+- Window Electron memuat `http://localhost:3000`.
+- Hot reload dari Next.js tetap aktif.
+- Database default mengikuti `DATABASE_URL` atau `file:./data.db`.
+
+Jika ingin menjalankan manual:
+
+```bash
+npm run compile:electron
+npm run dev
+npx electron .
+```
+
+## Mode Production Packaged
+
+Pada aplikasi hasil build:
+
+1. Electron mencari Next.js standalone server di folder resources.
+2. Electron menjalankan server dengan `ELECTRON_RUN_AS_NODE=1`.
+3. Server Next.js berjalan di:
+
+```text
+http://127.0.0.1:43219
+```
+
+4. BrowserWindow memuat URL lokal tersebut.
+5. Database diarahkan ke:
+
+```text
+userData/pos-brilink.db
+```
+
+6. Log server ditulis ke:
+
+```text
+userData/logs/next-server.log
+```
+
+## Build Desktop
+
+### Build Installer + Portable
+
+```bash
 npm run build:electron
-# Output: dist-electron/BRILink POS-Setup-1.0.0.exe
-#         dist-electron/BRILink POS-Portable-1.0.0.exe
+```
 
-# Build portable saja (cepat)
+Pipeline:
+
+```text
+npm run build:web
+  └─ next build && node scripts/post-build.js
+npm run compile:electron
+  └─ tsc -p tsconfig.electron.json && node scripts/copy-preload.js
+electron-builder --win
+```
+
+### Build Portable Saja
+
+```bash
 npm run build:electron:portable
 ```
 
-## Target Windows
+### Publish Release
 
-| Target | Windows 7/8/8.1 | Windows 10/11 |
-|--------|-----------------|----------------|
-| NSIS Installer (x64) | ❌ | ✅ |
-| NSIS Installer (ia32) | ✅ | ✅ |
-| Portable (x64) | ❌ | ✅ |
+```bash
+set GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+npm run build:electron:publish
+```
 
-> **Catatan**: Untuk Windows 7/8, gunakan installer `ia32` (32-bit).
-> Electron 22 adalah versi terakhir yang mendukung Windows 7/8.
+Linux/macOS:
+
+```bash
+export GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+npm run build:electron:publish
+```
+
+## Target Build Saat Ini
+
+Konfigurasi `electron-builder.yml` saat ini:
+
+```yml
+productName: BRILink POS
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+```
+
+Artinya:
+
+| Target | Arch | Status |
+|--------|------|--------|
+| NSIS installer | x64 | Aktif |
+| Portable | x64 | Aktif |
+| ia32/32-bit | ia32 | Tidak aktif |
+| Windows 7/8 compatibility | - | Tidak diklaim untuk konfigurasi saat ini |
+
+Output folder:
+
+```text
+dist-electron/
+```
+
+Nama artifact mengikuti `electron-builder` dan konfigurasi artifact. Portable dikonfigurasi sebagai:
+
+```text
+BRILink POS-Portable-<version>.exe
+```
+
+## Database Path
+
+Resolver database berada di `electron/db-path.ts`.
+
+| Mode | Database |
+|------|----------|
+| Development | `DATABASE_URL` atau `file:./data.db` |
+| Production Electron | `file:<userData>/pos-brilink.db` |
+
+Pada Windows, folder `userData` biasanya berada di `%APPDATA%/<nama aplikasi>`. Karena `productName` saat ini adalah `BRILink POS`, folder umumnya adalah:
+
+```text
+%APPDATA%/BRILink POS/
+```
+
+File yang relevan:
+
+```text
+%APPDATA%/BRILink POS/pos-brilink.db
+%APPDATA%/BRILink POS/.auth-secret
+%APPDATA%/BRILink POS/logs/next-server.log
+%APPDATA%/BRILink POS/printer-config.json
+```
+
+> Lokasi aktual dapat berbeda tergantung OS dan metadata aplikasi.
+
+## AUTH_SECRET di Electron
+
+Pada production Electron:
+
+- `AUTH_SECRET` dibuat otomatis saat first run.
+- Secret disimpan di `userData/.auth-secret`.
+- Jika file sudah ada dan valid, secret lama dipakai ulang.
+- Jika gagal disimpan, aplikasi membuat secret per proses sebagai fallback, tetapi session dapat reset setelah restart.
+
+Untuk production web/server non-Electron, `AUTH_SECRET` wajib disediakan lewat environment variable.
 
 ## Printer Thermal
 
-Didukung:
-- **Network (LAN/WiFi)** — recommended, paling stabil
-- **USB Direct** — perlu driver dari pabrikan
-- **Serial (COM)** — untuk printer legacy
+Printer thermal diintegrasikan melalui:
 
-Protocol: ESC/POS (mayoritas printer thermal China).
+```text
+electron/printer.ts
+src/app/api/hardware/printer/route.ts
+src/components/PrinterSettings.tsx
+```
 
-Konfigurasi via menu **Pengaturan → Printer Thermal**.
+Koneksi yang didukung:
 
-Test printer: tombol "Test Print" akan mencetak 1 baris "Test Printer OK".
+- Network/LAN/WiFi.
+- USB direct, tergantung driver.
+- Serial/COM.
+
+Konfigurasi printer disimpan di:
+
+```text
+userData/printer-config.json
+```
+
+Gunakan menu berikut di aplikasi:
+
+```text
+Pengaturan → Printer Thermal
+```
 
 ## Barcode Scanner
 
-Didukung: **USB HID Keyboard Wedge** (mayoritas scanner di pasar Indonesia).
+Barcode scanner didukung melalui pola keyboard wedge. Scanner USB HID biasanya bertindak seperti keyboard yang mengetik barcode dan menekan Enter.
 
-Cara kerja: scanner "mengetik" barcode diakhiri Enter, dengan kecepatan
->50 karakter/detik. Hook `useBarcodeScanner` mendeteksi pola ini dan
-trigger callback `onScan`.
+Hook tersedia di:
 
-Pemakaian:
+```text
+src/lib/hardware/use-barcode-scanner.ts
+```
+
+Contoh:
+
 ```tsx
 import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
 
 function POSPage() {
-  const { barcode } = useBarcodeScanner({
+  useBarcodeScanner({
     onScan: (code) => addToCartByBarcode(code),
   });
-  // ...
+
+  return null;
 }
 ```
 
 ## Auto-Update
 
-Konfigurasi:
-1. Set `GH_TOKEN` environment variable (GitHub Personal Access Token dengan scope `repo`)
-2. Update version di `package.json`
-3. Jalankan: `npm run build:electron:publish`
-4. electron-builder akan upload otomatis ke GitHub Releases dengan:
-   - `BRILink POS-Setup-x.y.z.exe` (NSIS installer)
-   - `BRILink POS-Portable-x.y.z.exe` (portable)
-   - `latest.yml` (metadata untuk auto-update)
+Auto-update memakai:
 
-Aplikasi akan otomatis cek update saat startup (delay 10 detik),
-download di background, lalu muncul notifikasi "Install & Restart"
-di pojok kanan bawah.
+```text
+electron-updater
+```
 
-## Database Path
+Konfigurasi publish di `electron-builder.yml`:
 
-| Mode | Path |
-|------|------|
-| Dev (npm run dev) | `./data.db` |
-| Production Windows | `%APPDATA%/BRILink POS/pos-brilink.db` |
-| Production macOS | `~/Library/Application Support/BRILink POS/pos-brilink.db` |
-| Production Linux | `~/.config/BRILink POS/pos-brilink.db` |
+```yml
+publish:
+  provider: github
+  owner: herdianrony
+  repo: pos-and-brilink-application
+  releaseType: release
+```
 
-Database persisten antar update aplikasi.
+Alur release:
+
+1. Update `version` di `package.json`.
+2. Pastikan repository dan token GitHub benar.
+3. Jalankan:
+
+```bash
+npm run build:electron:publish
+```
+
+4. Artifact dan metadata update diunggah ke GitHub Releases.
+5. Aplikasi installed dapat mengecek dan mengunduh update.
+
+## Security Notes
+
+Konfigurasi penting di `electron/main.ts`:
+
+- `contextIsolation: true`.
+- `nodeIntegration: false`.
+- Preload expose API via contextBridge.
+- Single instance lock.
+- Production server bind ke `127.0.0.1`, bukan `0.0.0.0`.
+- Production window hanya mengizinkan koneksi ke port internal yang ditentukan.
+- External URL dibuka melalui shell, bukan langsung di dalam app tanpa kontrol.
 
 ## Troubleshooting
 
-### "Next.js standalone server tidak ditemukan"
-Jalankan `npm run build:web` dulu sebelum `npm run build:electron`.
+### Next.js standalone server tidak ditemukan
+
+Pastikan build desktop dijalankan melalui:
+
+```bash
+npm run build:electron
+```
+
+Jangan menjalankan build Electron tanpa `npm run build:web` karena server standalone dibutuhkan untuk production.
+
+### Electron dev gagal connect ke localhost:3000
+
+Pastikan Next.js dev server hidup:
+
+```bash
+npm run dev
+```
+
+Lalu jalankan Electron manual:
+
+```bash
+npm run compile:electron
+npx electron .
+```
+
+### Port 43219 sudah dipakai
+
+Production Electron memakai port internal `43219`. Tutup proses yang memakai port tersebut lalu jalankan ulang aplikasi.
+
+### Aplikasi blank atau gagal load
+
+Cek log:
+
+```text
+userData/logs/next-server.log
+```
+
+Penyebab umum:
+
+- File standalone tidak ikut terbundle.
+- Port internal dipakai aplikasi lain.
+- Antivirus memblokir eksekusi.
+- Database tidak bisa dibuat/ditulis.
+- Module runtime tidak ditemukan.
 
 ### Printer tidak terdeteksi
-1. Pastikan printer & komputer di network yang sama (untuk network printer)
-2. Cek IP printer di pengaturan → test ping
-3. Coba port 9100 (default ESC/POS) atau 9101
-4. Untuk USB: pastikan driver terinstall di Windows Device Manager
 
-### App tidak bisa cek update
-1. Pastikan terhubung internet
-2. Cek firewall — aplikasi butuh akses ke `github.com`
-3. Lihat log di DevTools (Ctrl+Shift+I) → Console
+1. Untuk network printer, pastikan IP dan port benar.
+2. Coba port `9100` atau `9101`.
+3. Untuk USB, pastikan driver terinstall.
+4. Jalankan Test Print dari menu pengaturan.
 
-### Data hilang setelah update
-Database disimpan di `%APPDATA%/BRILink POS/pos-brilink.db`. Jangan hapus
-folder ini saat uninstall (installer akan tanya konfirmasi).
+### Auto-update tidak bekerja
 
-## Code Signing (Opsional)
+1. Pastikan aplikasi berjalan sebagai packaged app, bukan dev mode.
+2. Pastikan koneksi ke GitHub tidak diblokir firewall.
+3. Pastikan GitHub Release memiliki file update yang lengkap.
+4. Pastikan `publish.owner` dan `publish.repo` benar.
+5. Pastikan version baru lebih tinggi dari version terinstall.
 
-Untuk hindari SmartScreen warning di Windows:
-1. Beli code signing certificate (OV/EV) dari DigiCert/Sectigo/GlobalSign
-2. Set env:
-   ```
-   CSC_LINK=path/to/cert.p12
-   CSC_KEY_PASSWORD=your_password
-   ```
-3. Build: `npm run build:electron`
+## Catatan Konsistensi Nama
 
-Tanpa signing, user akan lihat "Windows protected your PC" — klik
-"More info" → "Run anyway" untuk install.
+Kode/UI banyak memakai nama default **POS & Agen Bisnis**, sedangkan konfigurasi desktop saat ini memakai `productName: BRILink POS`. Jika ingin branding konsisten, samakan nilai berikut:
+
+- `electron-builder.yml` → `productName`, `shortcutName`, `appId` jika perlu.
+- `src/app/layout.tsx` → metadata title.
+- Default setting/seed di API setup.
+- Teks di komponen UI.
+- Dokumentasi release dan nama artifact.
+
+Dokumen ini tidak mengubah konfigurasi aplikasi; hanya menjelaskan kondisi project saat ini.

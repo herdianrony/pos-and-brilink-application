@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, dbReady } from "@/db";
 import { users } from "@/db/schema";
 import { hasUsers, hashPassword, signToken, setSessionCookie } from "@/lib/auth";
+import { validatePasswordPolicy } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,9 +36,10 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (password.length < 6) {
+    const passwordPolicy = validatePasswordPolicy(password);
+    if (!passwordPolicy.ok) {
       return NextResponse.json(
-        { error: "Password minimal 6 karakter" },
+        { error: passwordPolicy.error },
         { status: 400 }
       );
     }

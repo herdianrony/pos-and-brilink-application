@@ -4,7 +4,7 @@
  * Runs ONCE before any test. Responsibilities:
  *   1. Delete the test DB file to ensure a clean state.
  *   2. Wait for the Next.js dev server to be ready.
- *   3. Call /api/auth/setup to create the admin user (admin/admin123).
+ *   3. Call /api/auth/setup to create the admin user (admin/Admin123).
  *   4. Call /api/seed to populate products, services, accounts.
  *   5. Log in via /api/auth/login and save the session cookie to
  *      .playwright-auth.json so all tests start already authenticated.
@@ -58,7 +58,7 @@ async function globalSetup(config: FullConfig) {
     body: JSON.stringify({
       name: "Admin Test",
       username: "admin",
-      password: "admin123",
+      password: "Admin123",
       role: "admin",
     }),
   });
@@ -76,7 +76,7 @@ async function globalSetup(config: FullConfig) {
   const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: "admin", password: "admin123" }),
+    body: JSON.stringify({ username: "admin", password: "Admin123" }),
   });
   if (!loginRes.ok) {
     throw new Error(`Login failed: ${loginRes.status}`);

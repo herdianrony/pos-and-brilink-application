@@ -18,30 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
-
-interface Account {
-  id: number;
-  code: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-  balance: string;
-  minBalance: string | null;
-}
-
-interface Mutation {
-  id: number;
-  accountId: number;
-  accountName: string | null;
-  accountIcon: string | null;
-  accountColor: string | null;
-  type: string;
-  amount: string | number;
-  balanceAfter: string | number;
-  notes: string | null;
-  referenceId: number | null;
-  createdAt: string;
-}
+import type { Account, AccountMutation as Mutation } from "@/types/models";
 
 interface Summary {
   count: number;
@@ -98,7 +75,7 @@ export default function RekeningKoran() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [selectedAccountId]);
 
   // Load mutations when filter changes
   useEffect(() => {

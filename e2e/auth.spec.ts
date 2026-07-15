@@ -42,7 +42,7 @@ test.describe("Auth Flow", () => {
     await page.waitForSelector('input[placeholder*="username" i]', { timeout: 15000 });
 
     await page.fill('input[placeholder*="username" i]', "admin");
-    await page.fill('input[type="password"]', "admin123");
+    await page.fill('input[type="password"]', "Admin123");
     await page.click('button[type="submit"]');
 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 10000 });

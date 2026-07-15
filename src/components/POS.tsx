@@ -5,21 +5,26 @@ import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Badge, Spinner, EmptyState, Card, useToast } from "@/components/ui";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DynamicIcon } from "@/components/DynamicIcon";
-import { ReceiptPreview, type ReceiptData } from "@/components/ReceiptPreview";
+import type { ReceiptData } from "@/components/ReceiptPreview";
 import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
-import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, CheckCircle, X, Pause, Play, Tag, ScanLine, Printer } from "lucide-react";
-
-interface Product {
-  id: number; name: string; barcode: string | null;
-  categoryId: number | null; categoryName: string | null; categoryIcon: string | null;
-  buyPrice: string; sellPrice: string; stock: number; unit: string | null;
-}
-interface CartItem {
-  productId: number; productName: string; unitPrice: string; buyPrice: string;
-  quantity: number; subtotal: string; stock: number; unit: string | null;
-}
-interface Category { id: number; name: string; icon: string | null; }
-interface HeldCart { id: string; cart: CartItem[]; customerName: string; timestamp: number; }
+import HeldCartsModal from "@/components/pos/HeldCartsModal";
+import PaymentModal from "@/components/pos/PaymentModal";
+import DiscountModal from "@/components/pos/DiscountModal";
+import SuccessReceiptModal from "@/components/pos/SuccessReceiptModal";
+import { Search, Plus, Minus, Trash2, CreditCard, ShoppingBag, X, Pause, Play, Tag, ScanLine } from "lucide-react";
+import type { Product, CartItem, Category } from "@/types/models";
+import {
+  addProductToCart,
+  calculateCartTotal,
+  calculateChange,
+  calculateDiscountAmount,
+  calculateGrandTotal,
+  calculateTotalItems,
+  createHeldCart,
+  updateCartQuantity,
+  type DiscountType,
+  type HeldCart,
+} from "@/lib/pos-cart";
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -54,7 +59,7 @@ export default function POS() {
     } catch {}
   }, [heldCarts]);
   const [showHeld, setShowHeld] = useState(false);
-  const [discountType, setDiscountType] = useState<"none" | "percent" | "rupiah">("none");
+  const [discountType, setDiscountType] = useState<DiscountType>("none");
   const [discountValue, setDiscountValue] = useState("");
   const [discountReason, setDiscountReason] = useState("");
   const [discountAdminPin, setDiscountAdminPin] = useState("");
@@ -99,6 +104,16 @@ export default function POS() {
     enabled: !showPay && !showDone, // disable saat modal terbuka
   });
 
+  const holdCart = useCallback(() => {
+    if (cart.length === 0) return;
+    const held = createHeldCart(cart, customerName);
+    if (!held) return;
+    setHeldCarts(prev => [...prev, held]);
+    setCart([]);
+    setCustomerName("");
+    toast.success("Transaksi ditahan (Hold)");
+  }, [cart, customerName, toast]);
+
   // ── Keyboard Shortcuts ────────────────────────
   // F1 = Bayar (open payment modal)
   // F2 = Hold cart
@@ -135,22 +150,7 @@ export default function POS() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [cart, showPay, showDone, showHeld, showDiscount]);
-
-  // ── Hold Cart ─────────────────────────────────
-  function holdCart() {
-    if (cart.length === 0) return;
-    const held: HeldCart = {
-      id: Date.now().toString(),
-      cart: [...cart],
-      customerName,
-      timestamp: Date.now(),
-    };
-    setHeldCarts(prev => [...prev, held]);
-    setCart([]);
-    setCustomerName("");
-    toast.success("Transaksi ditahan (Hold)");
-  }
+  }, [cart, showPay, showDone, showHeld, showDiscount, holdCart, toast]);
 
   // ── Resume Held Cart ───────────────────────────
   function resumeCart(held: HeldCart) {
@@ -168,46 +168,18 @@ export default function POS() {
   // total & discountAmount calculated below after cart totals
 
   function addToCart(p: Product) {
-    setCart(prev => {
-      const ex = prev.find(c => c.productId === p.id);
-      if (ex) {
-        if (ex.quantity >= p.stock) return prev;
-        return prev.map(c => c.productId === p.id
-          ? { ...c, quantity: c.quantity + 1, subtotal: ((c.quantity + 1) * parseFloat(c.unitPrice)).toString() }
-          : c);
-      }
-      if (p.stock <= 0) return prev;
-      return [...prev, {
-        productId: p.id, productName: p.name, unitPrice: p.sellPrice,
-        buyPrice: p.buyPrice, quantity: 1, subtotal: p.sellPrice, stock: p.stock, unit: p.unit,
-      }];
-    });
+    setCart(prev => addProductToCart(prev, p));
   }
 
   function updateQty(id: number, d: number) {
-    setCart(prev => prev.map(c => {
-      if (c.productId !== id) return c;
-      const q = c.quantity + d;
-      if (q <= 0 || q > c.stock) return c;
-      return { ...c, quantity: q, subtotal: (q * parseFloat(c.unitPrice)).toString() };
-    }));
+    setCart(prev => updateCartQuantity(prev, id, d));
   }
 
-  const total = cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
-  const totalItems = cart.reduce((s, c) => s + c.quantity, 0);
-  const discountAmount = (() => {
-    if (discountType === "none" || !discountValue) return 0;
-    const val = parseFloat(discountValue) || 0;
-    if (discountType === "percent") {
-      // P0-2: Cap percent at 100%
-      const cappedVal = Math.min(val, 100);
-      return (total * cappedVal) / 100;
-    }
-    // P0-2: Cap rupiah discount at total
-    return Math.min(val, total);
-  })();
-  const grandTotal = total - discountAmount;
-  const change = parseFloat(cashAmt || "0") - grandTotal;
+  const total = calculateCartTotal(cart);
+  const totalItems = calculateTotalItems(cart);
+  const discountAmount = calculateDiscountAmount(total, discountType, discountValue);
+  const grandTotal = calculateGrandTotal(total, discountAmount);
+  const change = calculateChange(cashAmt, grandTotal);
 
   async function doCheckout() {
     if (!cart.length) return;
@@ -464,279 +436,63 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Held Carts Modal */}
-      <Modal open={showHeld} onClose={() => setShowHeld(false)} size="md">
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-extrabold text-slate-900">Transaksi Ditahan</h3>
-            <button onClick={() => setShowHeld(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-          </div>
-          {heldCarts.length === 0 ? (
-            <EmptyState icon="clipboard-list" title="Belum ada transaksi ditahan" />
-          ) : (
-            <div className="space-y-2">
-              {heldCarts.map((held) => {
-                const heldTotal = held.cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
-                return (
-                  <div key={held.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div>
-                      <p className="font-bold text-slate-700">{held.customerName || "Pelanggan"}</p>
-                      <p className="text-xs text-slate-400">{held.cart.length} item • {formatRupiah(heldTotal)}</p>
-                      <p className="text-[10px] text-slate-400">{new Date(held.timestamp).toLocaleTimeString("id-ID")}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="primary" size="sm" onClick={() => resumeCart(held)}>
-                        <Play size={14} /> Lanjut
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => setHeldCarts(prev => prev.filter(h => h.id !== held.id))}>
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </Modal>
+      <HeldCartsModal
+        open={showHeld}
+        heldCarts={heldCarts}
+        onClose={() => setShowHeld(false)}
+        onResume={resumeCart}
+        onDelete={(id) => setHeldCarts(prev => prev.filter(held => held.id !== id))}
+      />
 
-      {/* Discount Modal — P0: with reason + admin PIN */}
-      <Modal open={showDiscount} onClose={() => setShowDiscount(false)} size="sm">
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-extrabold text-slate-900">Diskon</h3>
-            <button onClick={() => setShowDiscount(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-          </div>
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <button onClick={() => setDiscountType("none")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "none" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Tanpa</button>
-              <button onClick={() => setDiscountType("percent")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "percent" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Persen (%)</button>
-              <button onClick={() => setDiscountType("rupiah")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${discountType === "rupiah" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>Rupiah</button>
-            </div>
-            {discountType !== "none" && (
-              <>
-                <Input
-                  label={discountType === "percent" ? "Diskon (%)" : "Diskon (Rp)"}
-                  type="number"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
-                  placeholder={discountType === "percent" ? "10" : "5000"}
-                  autoFocus
-                />
-                {discountAmount > 0 && (
-                  <div className="p-3 bg-emerald-50 rounded-xl text-sm flex justify-between">
-                    <span className="font-semibold text-emerald-700">Total Diskon:</span>
-                    <span className="font-bold text-emerald-700">{formatRupiah(discountAmount)}</span>
-                  </div>
-                )}
-                {/* P0: Alasan diskon wajib */}
-                <Input
-                  label="Alasan Diskon *"
-                  value={discountReason}
-                  onChange={(e) => setDiscountReason(e.target.value)}
-                  placeholder="Pelanggan loyal / barang rusak / promo"
-                />
-                {/* P0: PIN admin untuk diskon besar */}
-                {discountAmount > 0 && (() => {
-                  const total = cart.reduce((s, c) => s + parseFloat(c.subtotal), 0);
-                  const percent = total > 0 ? (discountAmount / total) * 100 : 0;
-                  const maxAmount = 100000; // default policy
-                  const maxPercent = 10; // default policy
-                  const isFullDiscount = discountAmount >= total;
-                  const needsPin = discountAmount > maxAmount || percent > maxPercent || isFullDiscount;
-                  if (needsPin) {
-                    return (
-                      <div className="space-y-2">
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-                          Diskon {formatRupiah(discountAmount)} memerlukan otorisasi admin.
-                          Masukkan PIN admin untuk melanjutkan.
-                        </div>
-                        <Input
-                          label="PIN Admin"
-                          type="password"
-                          value={discountAdminPin}
-                          onChange={(e) => setDiscountAdminPin(e.target.value)}
-                          placeholder="••••••"
-                        />
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </>
-            )}
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={() => {
-                if (discountType !== "none" && discountAmount > 0 && !discountReason.trim()) {
-                  toast.error("Alasan diskon wajib diisi");
-                  return;
-                }
-                setShowDiscount(false);
-              }}
-            >
-              Terapkan
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <DiscountModal
+        open={showDiscount}
+        discountType={discountType}
+        discountValue={discountValue}
+        discountReason={discountReason}
+        discountAdminPin={discountAdminPin}
+        discountAmount={discountAmount}
+        cartTotal={total}
+        onClose={() => setShowDiscount(false)}
+        onDiscountTypeChange={setDiscountType}
+        onDiscountValueChange={setDiscountValue}
+        onDiscountReasonChange={setDiscountReason}
+        onDiscountAdminPinChange={setDiscountAdminPin}
+        onValidationError={toast.error}
+      />
 
-      {/* Pay Modal */}
-      <Modal open={showPay} onClose={() => setShowPay(false)}>
-        <div className="p-5 space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-extrabold text-slate-800">Pembayaran</h3>
-            <button onClick={() => setShowPay(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-          </div>
-          <Input label="Nama Pelanggan (opsional)" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nama pelanggan" />
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-600">Metode Pembayaran</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { m: "cash", icon: "banknote", label: "Tunai" },
-                { m: "transfer", icon: "landmark", label: "Transfer" },
-                { m: "qris", icon: "smartphone", label: "QRIS" },
-              ] as const).map(({ m, icon, label }) => (
-                <button key={m} onClick={() => setPayMethod(m)}
-                  className={cn(
-                    "py-3 rounded-xl text-sm font-semibold border-2 transition-all flex flex-col items-center gap-1.5",
-                    payMethod === m ? "bg-primary/5 border-primary text-primary" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                  )}>
-                  <DynamicIcon name={icon} size={20} className={payMethod === m ? "text-primary" : "text-slate-500"} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* P0: Reference field for non-cash payments */}
-          {payMethod !== "cash" && (
-            <Input
-              label="No. Referensi Pembayaran (opsional)"
-              value={paymentReference}
-              onChange={e => setPaymentReference(e.target.value)}
-              placeholder="Contoh: TRX-12345 dari M-Banking / QRIS"
-            />
-          )}
-          <Card className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 border-primary/10">
-            <div className="flex justify-between text-lg font-extrabold">
-              <span className="text-slate-600">Total</span>
-              <span className="text-primary">{formatRupiah(grandTotal)}</span>
-            </div>
-          </Card>
-          {payMethod === "cash" && (
-            <div className="space-y-2">
-              <CurrencyInput label="Uang Diterima" value={cashAmt} onChange={(v) => setCashAmt(String(v))} placeholder="0" autoFocus />
-              {parseFloat(cashAmt || "0") >= total && parseFloat(cashAmt || "0") > 0 && (
-                <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                  <span className="text-emerald-600 font-bold text-lg">Kembalian: {formatRupiah(change)}</span>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="flex gap-3 pt-2">
-            <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowPay(false)}>Batal</Button>
-            <Button variant="success" size="lg" className="flex-1" onClick={doCheckout}
-              disabled={submitting || (payMethod === "cash" && parseFloat(cashAmt || "0") < grandTotal)}>
-              {submitting ? "Memproses..." : "Konfirmasi Bayar"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <PaymentModal
+        open={showPay}
+        customerName={customerName}
+        payMethod={payMethod}
+        cashAmt={cashAmt}
+        paymentReference={paymentReference}
+        total={total}
+        grandTotal={grandTotal}
+        change={change}
+        submitting={submitting}
+        onClose={() => setShowPay(false)}
+        onCustomerNameChange={setCustomerName}
+        onPayMethodChange={setPayMethod}
+        onCashAmountChange={setCashAmt}
+        onPaymentReferenceChange={setPaymentReference}
+        onCheckout={doCheckout}
+      />
 
-      {/* Done Modal — Sprint 1: Receipt success screen */}
-      <Modal open={showDone} onClose={() => setShowDone(false)} size="sm">
-        <div className="p-8 text-center space-y-5">
-          <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center animate-bounceIn">
-            <CheckCircle size={40} className="text-emerald-500" />
-          </div>
-          <div>
-            <h3 className="text-xl font-extrabold text-slate-900">Transaksi Berhasil!</h3>
-            <p className="text-sm text-slate-400 mt-1">Struk siap dicetak</p>
-          </div>
-
-          {/* Receipt Preview — collapsible */}
-          {lastTrxData && (
-            <div className="space-y-2">
-              <button
-                onClick={() => setShowReceiptPreview(!showReceiptPreview)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex items-center justify-between text-sm font-medium text-slate-700"
-              >
-                <span className="flex items-center gap-2"><Printer size={14} /> Preview Struk</span>
-                <span className="text-xs text-slate-400">{showReceiptPreview ? "Sembunyikan" : "Tampilkan"}</span>
-              </button>
-              {showReceiptPreview && (
-                <div className="overflow-auto max-h-64 p-2 bg-slate-100 rounded-xl">
-                  <ReceiptPreview data={lastTrxData} width={58} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Summary — quick glance */}
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-semibold">No. Invoice</span>
-              <span className="font-mono font-bold text-primary">{lastInv}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-semibold">Total</span>
-              <span className="font-bold text-slate-800">{formatRupiah(lastTrxData?.summary.total ?? grandTotal)}</span>
-            </div>
-            {lastTrxData?.summary.discount && lastTrxData.summary.discount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-semibold">Diskon</span>
-                <span className="font-bold text-emerald-600">-{formatRupiah(lastTrxData.summary.discount)}</span>
-              </div>
-            )}
-            {lastTrxData?.summary.paid && lastTrxData.summary.paid > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-semibold">Bayar</span>
-                <span className="font-bold text-slate-800">{formatRupiah(lastTrxData.summary.paid)}</span>
-              </div>
-            )}
-            {lastTrxData?.summary.change && lastTrxData.summary.change > 0 && (
-              <div className="flex justify-between text-sm border-t border-slate-200 pt-2">
-                <span className="text-slate-500 font-semibold">Kembalian</span>
-                <span className="font-bold text-emerald-600">{formatRupiah(lastTrxData.summary.change)}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full"
-              disabled={!lastTrxData}
-              onClick={() => {
-                if (!lastTrxData) return;
-                // Try print via Electron thermal printer
-                if (typeof window !== "undefined" && window.electronAPI) {
-                  window.electronAPI.printer.print(lastTrxData);
-                } else {
-                  // Fallback: browser print with receipt preview
-                  window.print();
-                }
-              }}
-            >
-              <Printer size={18} /> Cetak Struk
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="md" className="flex-1" onClick={() => { setShowDone(false); setShowReceiptPreview(false); }}>
-                Transaksi Baru
-              </Button>
-              <Button variant="ghost" size="md" className="flex-1" onClick={() => {
-                setShowDone(false);
-                setShowReceiptPreview(false);
-                window.location.hash = "history";
-              }}>
-                Lihat Riwayat
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <SuccessReceiptModal
+        open={showDone}
+        invoiceNo={lastInv}
+        receiptData={lastTrxData}
+        grandTotal={grandTotal}
+        showReceiptPreview={showReceiptPreview}
+        onClose={() => setShowDone(false)}
+        onToggleReceiptPreview={() => setShowReceiptPreview(value => !value)}
+        onNewTransaction={() => { setShowDone(false); setShowReceiptPreview(false); }}
+        onGoToHistory={() => {
+          setShowDone(false);
+          setShowReceiptPreview(false);
+          window.location.hash = "history";
+        }}
+      />
     </div>
   );
 }

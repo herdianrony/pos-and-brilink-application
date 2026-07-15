@@ -2,50 +2,19 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
-import { Modal, Button, Input, Card, Spinner, EmptyState, Badge, useToast } from "@/components/ui";
+import { Modal, Button, Input, Card, Spinner, Badge, useToast } from "@/components/ui";
 import { CurrencyInput } from "@/components/CurrencyInput";
-import { Landmark, CheckCircle, X, Search, Banknote, AlertTriangle, Wallet, Layers, TrendingDown, TrendingUp, ArrowRight, ChevronDown, ChevronUp, Building2, Star } from "lucide-react";
+import { Landmark, CheckCircle, X, Banknote, AlertTriangle, Layers, TrendingDown, TrendingUp, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
+import ServiceQuickLists from "@/components/brilink/ServiceQuickLists";
+import ServiceFilters from "@/components/brilink/ServiceFilters";
+import ServiceGrid from "@/components/brilink/ServiceGrid";
+import SuccessModal from "@/components/brilink/SuccessModal";
 import { useSettings } from "@/lib/use-settings";
 import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, type FeeMethod } from "@/lib/service-flow";
-
-interface FeeTier {
-  id: number;
-  serviceId: number;
-  minAmount: string;
-  maxAmount: string | null;
-  adminFee: string;
-  agentFee: string;
-}
-
-interface Service {
-  id: number; name: string; categoryId: number | null; categoryName: string | null;
-  categoryIcon: string | null; categoryColor: string | null;
-  icon: string | null; adminFee: string; agentFee: string;
-  useTieredFee: boolean;
-  feeTiers: FeeTier[];
-  cashEffect: string; bankEffect: string;
-  flowType?: string | null;
-  defaultFeeMethod?: string | null;
-  description: string | null; isActive: boolean;
-}
-interface ServiceCat { id: number; name: string; icon: string | null; color: string | null; }
-interface Account { id: number; code: string; name: string; icon: string | null; color: string | null; balance: string; minBalance: string | null; isActive?: boolean; }
-
-function calculateFee(amount: number, service: Service): { adminFee: number; agentFee: number; tier: FeeTier | null } {
-  if (!service.useTieredFee || service.feeTiers.length === 0) {
-    return { adminFee: parseFloat(service.adminFee), agentFee: parseFloat(service.agentFee), tier: null };
-  }
-  for (const tier of service.feeTiers) {
-    const min = parseFloat(tier.minAmount);
-    const max = tier.maxAmount ? parseFloat(tier.maxAmount) : Infinity;
-    if (amount >= min && amount <= max) {
-      return { adminFee: parseFloat(tier.adminFee), agentFee: parseFloat(tier.agentFee), tier };
-    }
-  }
-  return { adminFee: parseFloat(service.adminFee), agentFee: parseFloat(service.agentFee), tier: null };
-}
+import { calculateServiceFee } from "@/lib/service-fees";
+import type { Account, AgentService as Service, ServiceCategory as ServiceCat } from "@/types/models";
 
 type Step = "input" | "review" | "confirm";
 
@@ -122,7 +91,7 @@ export default function BRILink() {
   const { adminFee, agentFee, tier: currentTier } = useMemo(() => {
     if (!sel) return { adminFee: 0, agentFee: 0, tier: null };
     const amount = parseFloat(form.amount || "0");
-    return calculateFee(amount, sel);
+    return calculateServiceFee(amount, sel);
   }, [sel, form.amount]);
 
   const nominalAmount = parseFloat(form.amount || "0");
@@ -282,103 +251,27 @@ export default function BRILink() {
         <p className="text-sm text-slate-400">Pilih layanan dan catat transaksi nasabah</p>
       </div>
 
-      {/* P1: Favorit + Terakhir Dipakai first */}
-      {favoriteSvcObjects.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1">
-            <Star size={12} className="text-amber-400 fill-amber-400" /> Favorit
-          </h3>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {favoriteSvcObjects.map(s => (
-              <button key={s.id} onClick={() => selectService(s)}
-                className="shrink-0 p-3 rounded-2xl bg-white border-2 border-amber-200 hover:border-amber-400 hover:shadow-card transition-all flex flex-col items-center gap-1.5 min-w-[100px]">
-                {isBankIcon(s.icon) ? <BankIcon name={s.icon} size={28} /> : <DynamicIcon name={s.icon} fallback="credit-card" size={28} className="text-amber-500" />}
-                <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{s.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <ServiceQuickLists
+        favorites={favoriteSvcObjects}
+        recent={recentSvcObjects}
+        onSelect={selectService}
+      />
 
-      {recentSvcObjects.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Terakhir Dipakai</h3>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {recentSvcObjects.map(s => (
-              <button key={s.id} onClick={() => selectService(s)}
-                className="shrink-0 p-3 rounded-2xl bg-white border-2 border-transparent hover:border-purple-300 hover:shadow-card transition-all flex flex-col items-center gap-1.5 min-w-[100px]">
-                {isBankIcon(s.icon) ? <BankIcon name={s.icon} size={28} /> : <DynamicIcon name={s.icon} fallback="credit-card" size={28} className="text-purple-500" />}
-                <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{s.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <ServiceFilters
+        search={search}
+        catFilter={catFilter}
+        categories={cats}
+        onSearchChange={setSearch}
+        onCategoryChange={setCatFilter}
+      />
 
-      {/* Search + Category filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input type="text" placeholder="Cari layanan..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm shadow-soft" />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <button onClick={() => setCatFilter("all")}
-            className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              catFilter === "all" ? "bg-primary text-white shadow-card" : "bg-white text-slate-600 border border-slate-200")}>
-            Semua
-          </button>
-          {cats.map(c => (
-            <button key={c.id} onClick={() => setCatFilter(c.id.toString())}
-              className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
-                catFilter === c.id.toString() ? "bg-primary text-white shadow-card" : "bg-white text-slate-600 border border-slate-200")}>
-              <DynamicIcon name={c.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />{c.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Services grid */}
-      {Object.keys(grouped).length === 0 ? (
-        <EmptyState icon="search" title="Layanan tidak ditemukan" />
-      ) : (
-        Object.entries(grouped).map(([cat, svcs]) => (
-          <div key={cat}>
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{cat}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {svcs.map(s => (
-                <div key={s.id} className="relative group">
-                  <button onClick={() => selectService(s)}
-                    className={cn(
-                      "w-full p-4 rounded-2xl text-left transition-all duration-200 border-2 group hover:shadow-pop flex flex-col items-center text-center gap-2",
-                      sel?.id === s.id ? "bg-purple-50 border-purple-400 shadow-card" : "bg-white border-transparent hover:border-slate-200"
-                    )}>
-                    {isBankIcon(s.icon) ? (
-                      <BankIcon name={s.icon} size={36} className="group-hover:scale-110 transition-transform" />
-                    ) : (
-                      <DynamicIcon name={s.icon} fallback="credit-card" size={32} className="text-primary group-hover:scale-110 transition-transform" />
-                    )}
-                    <p className="font-semibold text-sm text-slate-800 leading-tight">{s.name}</p>
-                    {s.useTieredFee ? (
-                      <Badge variant="purple"><Layers size={10} className="mr-0.5" /> Berjenjang</Badge>
-                    ) : (
-                      parseFloat(s.adminFee) > 0 && <Badge variant="warning">Fee: {formatRupiah(s.adminFee)}</Badge>
-                    )}
-                  </button>
-                  {/* Favorite toggle */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(s.id); }}
-                    className="absolute top-2 right-2 p-1 rounded-lg hover:bg-slate-100 transition-colors"
-                    title={favorites.includes(s.id) ? "Hapus dari favorit" : "Tambah ke favorit"}
-                  >
-                    <Star size={14} className={cn(favorites.includes(s.id) ? "text-amber-400 fill-amber-400" : "text-slate-300")} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))
-      )}
+      <ServiceGrid
+        grouped={grouped}
+        selectedServiceId={sel?.id}
+        favorites={favorites}
+        onSelect={selectService}
+        onToggleFavorite={toggleFavorite}
+      />
 
       {/* ── 3-Step Transaction Modal ── */}
       <Modal open={!!sel} onClose={closeModal} size="lg">
@@ -727,28 +620,12 @@ export default function BRILink() {
         )}
       </Modal>
 
-      {/* Success */}
-      <Modal open={showDone} onClose={() => setShowDone(false)} size="sm">
-        <div className="p-8 text-center space-y-4">
-          <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
-            <CheckCircle size={40} className="text-emerald-500" />
-          </div>
-          <h3 className="text-xl font-extrabold text-slate-800">Pencatatan Berhasil</h3>
-          <div className="bg-slate-50 rounded-xl p-3">
-            <p className="text-xs text-slate-400">No. Invoice</p>
-            <p className="font-mono font-bold text-lg text-primary">{lastInv}</p>
-          </div>
-          {flowConfig?.involvesExternalProvider ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-              <p className="font-semibold">Penting:</p>
-              <p>Pencatatan lokal berhasil. Pastikan transfer/pembayaran ke provider sudah dilakukan via M-Banking/EDC.</p>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400">Saldo kas & rekening telah diperbarui otomatis</p>
-          )}
-          <Button variant="primary" size="lg" className="w-full" onClick={() => setShowDone(false)}>OK</Button>
-        </div>
-      </Modal>
+      <SuccessModal
+        open={showDone}
+        invoiceNo={lastInv}
+        involvesExternalProvider={flowConfig?.involvesExternalProvider}
+        onClose={() => setShowDone(false)}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hasUsers, hashPassword, signToken, setSessionCookie } from "@/lib/auth";
+import { validatePasswordPolicy } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,9 +82,10 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (adminPassword.length < 6) {
+  const passwordPolicy = validatePasswordPolicy(adminPassword);
+  if (!passwordPolicy.ok) {
     return NextResponse.json(
-      { error: "Password minimal 6 karakter" },
+      { error: passwordPolicy.error },
       { status: 400 }
     );
   }
@@ -243,10 +245,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Setup complete error:", error);
     return NextResponse.json(
-      {
-        error: "Gagal menyelesaikan setup",
-        detail: error instanceof Error ? error.message : String(error),
-      },
+      { error: "Gagal menyelesaikan setup" },
       { status: 500 }
     );
   }

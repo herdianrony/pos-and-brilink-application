@@ -14,16 +14,7 @@ import {
   ArrowUpRight,
   CheckCircle2,
 } from "lucide-react";
-
-interface Account {
-  id: number;
-  code: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-  balance: string;
-  minBalance: string | null;
-}
+import type { Account } from "@/types/models";
 
 interface DashboardData {
   today: {

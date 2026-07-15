@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { sanitizeInternalRedirect } from "@/lib/security";
 import {
   Landmark,
   User,
@@ -61,7 +62,7 @@ function LoginForm() {
         setError(data.error || "Gagal login");
         return;
       }
-      const from = params.get("from") || "/";
+      const from = sanitizeInternalRedirect(params.get("from"));
       router.replace(from);
       router.refresh();
     } catch {
@@ -122,15 +123,15 @@ function LoginForm() {
 
           <div className="space-y-3">
             {[
-              { icon: Zap, text: "Transaksi 3 detik — cepat &amp; mudah" },
-              { icon: ShieldCheck, text: "Aman dengan JWT &amp; bcrypt" },
-              { icon: Wallet, text: "Multi-rekening &amp; rekening koran instan" },
+              { icon: Zap, text: "Transaksi 3 detik — cepat & mudah" },
+              { icon: ShieldCheck, text: "Aman dengan JWT & bcrypt" },
+              { icon: Wallet, text: "Multi-rekening & rekening koran instan" },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-3 text-slate-200">
                 <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
                   <f.icon size={18} className="text-emerald-400" />
                 </div>
-                <span className="text-sm font-semibold" dangerouslySetInnerHTML={{ __html: f.text }} />
+                <span className="text-sm font-semibold">{f.text}</span>
               </div>
             ))}
           </div>

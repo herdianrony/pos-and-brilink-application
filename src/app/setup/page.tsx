@@ -23,6 +23,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { validatePasswordPolicy } from "@/lib/security";
 
 type Step = "welcome" | "store" | "admin" | "saldo" | "printer" | "done";
 
@@ -134,7 +135,8 @@ function SetupWizardForm() {
         if (!adminName.trim()) return setError("Nama admin wajib diisi");
         if (!adminUsername.trim()) return setError("Username wajib diisi");
         if (adminUsername.length < 3) return setError("Username minimal 3 karakter");
-        if (adminPassword.length < 6) return setError("Password minimal 6 karakter");
+        const passwordPolicy = validatePasswordPolicy(adminPassword);
+        if (!passwordPolicy.ok) return setError(passwordPolicy.error || "Password tidak valid");
         if (adminPassword !== adminConfirm) return setError("Konfirmasi password tidak cocok");
       }
       if (step === "saldo") {

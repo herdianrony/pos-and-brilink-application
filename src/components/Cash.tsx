@@ -8,17 +8,9 @@ import { AccountCard } from "@/components/AccountCard";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Clock, X, Banknote, Building2, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { BankIcon, isBankIcon } from "@/components/BankIcon";
-
-interface Account {
-  id: number; code: string; name: string; icon: string | null; color: string | null;
-  balance: string; minBalance: string | null; isActive?: boolean;
-}
-
-interface Mutation {
-  id: number; accountId: number; accountName: string | null; accountIcon: string | null;
-  type: string; amount: string; balanceAfter: string; notes: string | null;
-  referenceId: number | null; createdAt: string;
-}
+import AccountBalanceOverview, { type CashModalType } from "@/components/cash/AccountBalanceOverview";
+import MutationHistory from "@/components/cash/MutationHistory";
+import type { Account, AccountMutation as Mutation } from "@/types/models";
 
 const bankIcons = ["landmark", "wallet", "banknote", "credit-card", "smartphone", "piggy-bank", "building", "coins", "cash", "safe"];
 const bankColors = ["#0F172A", "#003366", "#0066cc", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#ec4899"];
@@ -29,7 +21,7 @@ export default function Cash() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   
-  const [modal, setModal] = useState<"adjust" | "transfer" | "add_account" | "edit_account" | null>(null);
+  const [modal, setModal] = useState<CashModalType>(null);
   const [selAccount, setSelAccount] = useState<Account | null>(null);
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -57,9 +49,6 @@ export default function Cash() {
   }
   useEffect(() => { load(); }, []);
 
-  const filteredMutations = activeTab === "all" 
-    ? mutations 
-    : mutations.filter(m => m.accountId.toString() === activeTab);
 
   async function handleAdjust() {
     if (!selAccount || !amount) return;
@@ -217,17 +206,7 @@ export default function Cash() {
     setModal("edit_account");
   }
 
-  const typeLabels: Record<string, { label: string; color: "success" | "danger" | "primary" | "warning" | "purple" | "default" }> = {
-    opening: { label: "Saldo Awal", color: "primary" },
-    pos: { label: "POS", color: "success" },
-    brilink: { label: "BRILink", color: "purple" },
-    brilink_fee: { label: "Fee BRILink", color: "success" },
-    transfer_in: { label: "Transfer Masuk", color: "success" },
-    transfer_out: { label: "Transfer Keluar", color: "danger" },
-    adjustment_in: { label: "Penambahan", color: "success" },
-    adjustment_out: { label: "Pengurangan", color: "danger" },
-    adjustment: { label: "Penyesuaian", color: "warning" },
-  };
+
 
   if (loading) return <Spinner />;
 
@@ -250,73 +229,16 @@ export default function Cash() {
         </Button>
       </div>
 
-      {/* Total Balance — only active accounts */}
-      <Card className="p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-        <p className="text-emerald-100 text-sm">Total Saldo Aktif</p>
-        <p className="text-3xl font-extrabold">{formatRupiah(totalBalance)}</p>
-        <p className="text-emerald-200 text-xs mt-1">{activeAccounts.length} akun aktif</p>
-      </Card>
-
-      {/* Account Cards — Aktif */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {activeAccounts.map(acc => (
-          <AccountCard
-            key={acc.id}
-            account={acc}
-            onEdit={() => openEditAccount(acc)}
-            onDelete={!acc.code || acc.code !== "cash" ? () => handleDeleteAccount(acc) : undefined}
-            actions={
-              <>
-                <button
-                  onClick={() => { setSelAccount(acc); setModal("adjust"); }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Plus size={14} /> Sesuaikan
-                </button>
-                <button
-                  onClick={() => { setSelAccount(acc); setModal("transfer"); }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <ArrowRightLeft size={14} /> Transfer
-                </button>
-              </>
-            }
-          />
-        ))}
-      </div>
-
-      {/* Inactive Accounts — collapsible */}
-      {inactiveAccounts.length > 0 && (
-        <div className="space-y-3">
-          <button
-            onClick={() => setShowInactive(!showInactive)}
-            className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex items-center justify-between text-sm font-medium text-slate-600"
-          >
-            <span>Rekening Nonaktif ({inactiveAccounts.length})</span>
-            <span className="text-xs text-slate-400">{showInactive ? "Sembunyikan" : "Tampilkan"}</span>
-          </button>
-          {showInactive && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
-              {inactiveAccounts.map(acc => (
-                <AccountCard
-                  key={acc.id}
-                  account={acc}
-                  onEdit={() => openEditAccount(acc)}
-                  onDelete={undefined}
-                  actions={
-                    <button
-                      onClick={() => openEditAccount(acc)}
-                      className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors"
-                    >
-                      Aktifkan
-                    </button>
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <AccountBalanceOverview
+        activeAccounts={activeAccounts}
+        inactiveAccounts={inactiveAccounts}
+        showInactive={showInactive}
+        onToggleInactive={() => setShowInactive((value) => !value)}
+        onEditAccount={openEditAccount}
+        onDeleteAccount={handleDeleteAccount}
+        onSelectAccount={setSelAccount}
+        onOpenModal={setModal}
+      />
 
       {/* Info Box */}
       <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-sm">
@@ -328,69 +250,12 @@ export default function Cash() {
         </ul>
       </div>
 
-      {/* Mutation History */}
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-3">
-          <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
-            <Clock size={16} className="text-slate-400" /> Riwayat Mutasi
-          </h3>
-          <div className="flex gap-1 flex-wrap">
-            <button 
-              onClick={() => setActiveTab("all")}
-              className={cn("px-3 py-1 rounded-xl text-xs font-medium", activeTab === "all" ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
-            >
-              Semua
-            </button>
-            {accounts.map(a => (
-              <button
-                key={a.id}
-                onClick={() => setActiveTab(a.id.toString())}
-                className={cn("px-3 py-1 rounded-xl text-xs font-medium", activeTab === a.id.toString() ? "bg-primary text-white" : "bg-slate-100 text-slate-600")}
-              >
-                {isBankIcon(a.icon) ? <BankIcon name={a.icon} size={16} className="inline-block -mt-0.5 mr-1" /> : <DynamicIcon name={a.icon} fallback="package" size={14} className="inline-block -mt-0.5 mr-1" />}
-                {a.name.split(" ")[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-        {filteredMutations.length === 0 ? <EmptyState icon="clipboard-list" title="Belum ada mutasi" /> : (
-          <div className="overflow-x-auto max-h-96">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white"><tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
-                <th className="text-left p-3 font-medium">Waktu</th>
-                <th className="text-left p-3 font-medium">Akun</th>
-                <th className="text-left p-3 font-medium">Tipe</th>
-                <th className="text-right p-3 font-medium">Jumlah</th>
-                <th className="text-right p-3 font-medium">Saldo</th>
-                <th className="text-left p-3 font-medium">Catatan</th>
-              </tr></thead>
-              <tbody>
-                {filteredMutations.map(m => {
-                  const tl = typeLabels[m.type] || { label: m.type, color: "default" as const };
-                  const isPositive = parseFloat(m.amount) >= 0;
-                  return (
-                    <tr key={m.id} className="border-t border-slate-50 hover:bg-emerald-50/30">
-                      <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
-                      <td className="p-3">
-                        <span className="flex items-center gap-1.5 text-slate-600">
-                          <span>{m.accountIcon}</span>
-                          <span className="text-xs truncate max-w-[80px]">{m.accountName}</span>
-                        </span>
-                      </td>
-                      <td className="p-3"><Badge variant={tl.color}>{tl.label}</Badge></td>
-                      <td className={cn("p-3 text-right font-semibold", isPositive ? "text-emerald-600" : "text-red-500")}>
-                        {isPositive ? "+" : ""}{formatRupiah(m.amount)}
-                      </td>
-                      <td className="p-3 text-right font-bold text-slate-700">{formatRupiah(m.balanceAfter)}</td>
-                      <td className="p-3 text-slate-500 text-xs max-w-xs truncate">{m.notes || "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      <MutationHistory
+        accounts={accounts}
+        mutations={mutations}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       {/* Adjust Modal */}
       <Modal open={modal === "adjust"} onClose={() => setModal(null)} size="sm">

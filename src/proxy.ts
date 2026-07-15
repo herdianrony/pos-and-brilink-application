@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getAuthSecretBytes } from "@/lib/auth-secret";
 
 const COOKIE_NAME = "brilink_pos_session";
 
@@ -25,26 +26,9 @@ const EXCLUDED_PREFIXES = [
   "/sitemap.xml",
 ];
 
-let generatedSecret: Uint8Array | null = null;
-
-function getSecret(): Uint8Array {
-  const envSecret = process.env.AUTH_SECRET;
-  if (envSecret && envSecret.length >= 32) {
-    return new TextEncoder().encode(envSecret);
-  }
-  // R-04: In production, fail-closed
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET wajib di production");
-  }
-  // Dev: use fixed dev secret (same as auth.ts) so proxy and API routes
-  // share the same key across different runtimes (edge vs nodejs)
-  const DEV_SECRET = "dev_secret_pos_agen_bisnis_2024_not_for_production_use";
-  return new TextEncoder().encode(DEV_SECRET);
-}
-
 async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, getSecret(), {
+    const { payload } = await jwtVerify(token, getAuthSecretBytes(), {
       algorithms: ["HS256"],
     });
     return payload;
@@ -67,6 +51,16 @@ export async function proxy(req: NextRequest) {
   const isPublic = PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
+
+  if (pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const origin = req.headers.get("origin");
+    if (origin && origin !== req.nextUrl.origin) {
+      return NextResponse.json(
+        { error: "Forbidden", code: "BAD_ORIGIN" },
+        { status: 403 }
+      );
+    }
+  }
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
   const payload = token ? await verifyToken(token) : null;

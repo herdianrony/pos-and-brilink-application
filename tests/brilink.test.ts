@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { calculateAgentProfit, calculateServiceFee, calculateTotalWithAdminFee } from "@/lib/service-fees";
 
 // ── BRILink Business Logic Tests ─────────────────
 // Test fee calculation, tier lookup, transaction effects
@@ -34,23 +35,30 @@ function findTier(tiers: FeeTier[], amount: number): FeeTier | null {
 
 // ── Calculate Fee ────────────────────────────────
 function calculateFee(service: Service, tiers: FeeTier[], amount: number): { adminFee: number; agentFee: number } {
-  if (service.useTieredFee && tiers.length > 0) {
-    const tier = findTier(tiers, amount);
-    if (tier) return { adminFee: tier.adminFee, agentFee: tier.agentFee };
-  }
-  return { adminFee: service.adminFee, agentFee: service.agentFee };
+  const calculated = calculateServiceFee(amount, {
+    adminFee: String(service.adminFee),
+    agentFee: String(service.agentFee),
+    useTieredFee: service.useTieredFee,
+    feeTiers: tiers.map((tier) => ({
+      minAmount: String(tier.minAmount),
+      maxAmount: tier.maxAmount === null ? null : String(tier.maxAmount),
+      adminFee: String(tier.adminFee),
+      agentFee: String(tier.agentFee),
+    })),
+  });
+  return { adminFee: calculated.adminFee, agentFee: calculated.agentFee };
 }
 
 // ── Calculate Profit ─────────────────────────────
 function calculateProfit(service: Service, amount: number, fee: { adminFee: number; agentFee: number }): number {
   // Profit = agentFee (untuk layanan agen)
   // Untuk POS, profit = margin (sellPrice - buyPrice) — tidak di-test di sini
-  return fee.agentFee;
+  return calculateAgentProfit(fee.agentFee);
 }
 
 // ── Calculate Total Amount ───────────────────────
 function calculateTotalAmount(amount: number, adminFee: number): number {
-  return amount + adminFee;
+  return calculateTotalWithAdminFee(amount, adminFee);
 }
 
 // ── Account Effect ───────────────────────────────

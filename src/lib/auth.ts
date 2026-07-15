@@ -4,32 +4,11 @@ import { cookies } from "next/headers";
 import { db, dbReady } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getAuthSecretBytes } from "@/lib/auth-secret";
 
 const COOKIE_NAME = "brilink_pos_session";
-const SESSION_DURATION = "7d"; // 7 hari
-const SESSION_DURATION_SEC = 60 * 60 * 24 * 7; // 7 hari dalam detik
-
-// Cache generated secret per process
-let generatedSecret: Uint8Array | null = null;
-
-function getSecret(): Uint8Array {
-  const envSecret = process.env.AUTH_SECRET;
-  if (envSecret && envSecret.length >= 32) {
-    return new TextEncoder().encode(envSecret);
-  }
-
-  // R-04: In production, fail-closed if no AUTH_SECRET
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET wajib di production (min 32 chars). Set env var atau jalankan via Electron.");
-  }
-
-  // Dev only: use fixed dev secret so proxy and API routes share the same key
-  // across different runtimes (edge proxy vs nodejs server).
-  // This is NOT secure for production — only for local development.
-  const DEV_SECRET = "dev_secret_pos_agen_bisnis_2024_not_for_production_use";
-  console.warn("[auth] WARNING: AUTH_SECRET tidak diset. Dev mode dengan fixed dev secret.");
-  return new TextEncoder().encode(DEV_SECRET);
-}
+const SESSION_DURATION = "12h";
+const SESSION_DURATION_SEC = 60 * 60 * 12;
 
 export interface SessionPayload {
   sub: string; // user id
@@ -57,12 +36,12 @@ export async function signToken(payload: SessionPayload): Promise<string> {
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime(SESSION_DURATION)
-    .sign(getSecret());
+    .sign(getAuthSecretBytes());
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecret(), {
+    const { payload } = await jwtVerify(token, getAuthSecretBytes(), {
       algorithms: ["HS256"],
     });
     return {

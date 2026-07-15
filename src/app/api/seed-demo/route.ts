@@ -152,7 +152,7 @@ export async function POST() {
     console.error("Demo seed error:", error);
     return NextResponse.json({
       error: "Failed to create demo data",
-      detail: error instanceof Error ? error.message : String(error),
+      detail: process.env.NODE_ENV === "development" && error instanceof Error ? error.message : undefined,
     }, { status: 500 });
   }
 }

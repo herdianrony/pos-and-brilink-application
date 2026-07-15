@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import UpdateNotification from "@/components/UpdateNotification";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ui";
+
+const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "POS & Agen Bisnis — Point of Sale & Layanan Agen",
@@ -12,16 +16,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="id">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-      </head>
-      <body className="text-slate-900 antialiased">
-        <ToastProvider>
-          {children}
-          <UpdateNotification />
-        </ToastProvider>
+      <body className={`${inter.className} text-slate-900 antialiased`}>
+        <ErrorBoundary>
+          <ToastProvider>
+            {children}
+            <UpdateNotification />
+          </ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -1,126 +1,166 @@
 # POS & Agen Bisnis
 
-Aplikasi Point of Sale & Layanan Agen Bisnis yang lengkap dengan manajemen produk, transaksi, multi-rekening, dan laporan keuangan. Dirancang untuk berbagai jenis bisnis seperti BRILink, Counter HP, Agen Pulsa, Agen Pembayaran, dan toko retail di Indonesia.
+Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplikasi ini mendukung transaksi kasir, layanan agen seperti transfer/tarik/setor tunai, manajemen produk, multi-rekening, laporan transaksi, printer thermal, barcode scanner, serta mode desktop berbasis Electron.
+
+> **Status dokumentasi:** README ini disesuaikan dengan konfigurasi project saat ini: Next.js 16, React 19, Node.js >= 22.12.0, Electron 43, dan build desktop Windows x64.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%207%2F8%2F10%2F11-lightgrey.svg)
-![Electron](https://img.shields.io/badge/Electron-22.3.27-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.6-black.svg)
+![Electron](https://img.shields.io/badge/Electron-43.1.0-blue.svg)
 
 ## Daftar Isi
 
 - [Fitur Utama](#fitur-utama)
+- [Batasan Penting](#batasan-penting)
 - [Tech Stack](#tech-stack)
 - [Persyaratan Sistem](#persyaratan-sistem)
 - [Instalasi](#instalasi)
+- [Konfigurasi Environment](#konfigurasi-environment)
 - [Pengembangan](#pengembangan)
-- [Build Desktop (Windows)](#build-desktop-windows)
+- [Testing](#testing)
+- [Build Desktop Windows](#build-desktop-windows)
 - [Target Bisnis](#target-bisnis)
 - [Integrasi Hardware](#integrasi-hardware)
 - [Auto-Update](#auto-update)
 - [Database](#database)
+- [API Routes](#api-routes)
 - [Keamanan](#keamanan)
 - [Troubleshooting](#troubleshooting)
-- [Dukung Pengembangan](#dukung-pengembangan)
+- [Scripts](#scripts)
+- [Struktur Project](#struktur-project)
 - [Lisensi](#lisensi)
+- [Author](#author)
 
 ## Fitur Utama
 
 ### POS & Kasir
-- Transaksi penjualan cepat dengan dukungan barcode scanner
-- Manajemen keranjang, checkout multi-pembayaran (Tunai, Transfer, QRIS)
-- Cetak struk otomatis via printer thermal
-- Kalkulasi kembalian otomatis
+
+- Transaksi penjualan produk.
+- Dukungan barcode scanner USB HID keyboard wedge.
+- Manajemen keranjang dan checkout.
+- Metode pembayaran tunai, transfer, dan QRIS.
+- Kalkulasi kembalian otomatis.
+- Cetak struk via printer thermal ESC/POS.
 
 ### Layanan Agen Bisnis
-- Transfer antar bank dan sesama bank
-- Penarikan tunai
-- Setor tunai
-- Pembayaran tagihan (PLN, PDAM, Telkom, BPJS, cicilan)
-- Pulsa & paket data
-- Top up game dan e-wallet
-- Voucher game
-- Biaya admin berjenjang (tiered fee) per layanan
+
+> **Penting:** Modul Layanan Agen Bisnis adalah fitur **pencatatan operasional/manual bookkeeping**, bukan sistem transaksi perbankan atau payment switching. Aplikasi ini **tidak melakukan transfer bank otomatis**, **tidak terhubung ke API bank/BRILink/PPOB/QRIS**, dan **tidak memproses pembayaran real-time**. Transaksi aktual tetap dilakukan operator melalui kanal resmi masing-masing, lalu dicatat di aplikasi ini untuk laporan, saldo internal, profit, dan struk.
+
+- Pencatatan layanan transfer antar bank dan sesama bank.
+- Pencatatan tarik tunai dan setor tunai.
+- Pencatatan pembayaran tagihan seperti PLN, PDAM, Telkom, BPJS, dan cicilan.
+- Pencatatan pulsa, paket data, top up game/e-wallet, dan voucher.
+- Perhitungan biaya admin dan fee agen.
+- Update saldo internal kas/rekening berdasarkan efek transaksi.
+- Mutasi rekening internal dan laporan profit.
 
 ### Manajemen Produk
-- CRUD produk dengan barcode, kategori, harga beli/jual, stok
-- Manajemen kategori produk dengan icon dan warna
-- Alert stok menipis
-- Pencarian produk cepat
+
+- CRUD produk.
+- Barcode, kategori, harga beli, harga jual, dan stok.
+- Kategori produk dengan icon dan warna.
+- Alert stok menipis.
+- Pencarian produk.
 
 ### Manajemen Kas & Saldo
-- Multi-rekening (Kas Tunai, M-Banking BRI, Mandiri, BCA, BNI, dll)
-- Kartu saldo bergaya kartu kredit (dengan chip, contactless icon)
-- Transfer antar rekening
-- Penyesuaian saldo
-- Mutasi rekening dengan running balance
 
-### Rekening Koran Instan
-- Halaman rekening koran per rekening (seperti mutasi BCA/BRI)
-- Filter date range dengan quick presets (Hari Ini, 7 Hari, Bulan Ini, dll)
-- Summary: Saldo Awal, Total Masuk, Total Keluar, Saldo Akhir
-- Export CSV
-- Print mode
+- Multi-rekening: kas tunai, bank, dan akun lain.
+- Transfer antar rekening.
+- Penyesuaian saldo.
+- Mutasi rekening dengan running balance.
+
+### Rekening Koran
+
+- Mutasi per rekening.
+- Filter rentang tanggal dan preset cepat.
+- Ringkasan saldo awal, total masuk, total keluar, dan saldo akhir.
+- Export CSV dan mode print.
 
 ### Dashboard & Laporan
-- Ringkasan aktivitas harian (omzet POS, volume layanan agen, profit)
-- Grafik pendapatan 7 hari
-- Stok menipis alert
-- Transaksi terakhir
-- Multi-rekening balance overview
+
+- Ringkasan aktivitas harian.
+- Omzet POS, volume layanan agen, dan profit.
+- Grafik pendapatan.
+- Stok menipis.
+- Transaksi terakhir.
 
 ### Otentikasi & Multi-User
-- Login dengan JWT + bcrypt password hashing
-- Role-based access (Admin & Kasir)
-- Setup wizard untuk first-run configuration
-- Session cookie httpOnly (7 hari)
 
-### Aplikasi Desktop (Electron)
-- Target Windows 7/8/10/11 (Electron 22 untuk kompatibilitas Win 7/8)
-- Auto-update dari GitHub Releases
-- Integrasi printer thermal ESC/POS
-- Integrasi barcode scanner (USB HID keyboard wedge)
-- Database lokal SQLite (offline-first)
-- Single instance lock
+- Login dengan JWT.
+- Password hashing menggunakan bcryptjs.
+- Role admin dan kasir.
+- Setup wizard saat first run.
+- Session cookie `httpOnly`.
+
+### Desktop App
+
+- Desktop app berbasis Electron.
+- Build saat ini menargetkan Windows x64.
+- Next.js standalone server dijalankan secara lokal di dalam aplikasi desktop.
+- Database SQLite lokal/offline-first.
+- Single instance lock.
+- Auto-update via GitHub Releases.
+
+## Batasan Penting
+
+Aplikasi ini adalah aplikasi POS dan pencatatan agen bisnis. Untuk modul layanan agen:
+
+- Tidak ada integrasi transaksi langsung ke bank.
+- Tidak ada koneksi ke API resmi BRI/BRILink, BCA, Mandiri, BNI, PPOB, QRIS, e-wallet, atau payment gateway.
+- Tidak ada validasi rekening/tagihan secara online.
+- Tidak ada settlement otomatis.
+- Saldo bank/kas yang tampil adalah **saldo internal/catatan aplikasi**, bukan saldo real-time dari bank.
+
+Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC, aplikasi BRILink/PPOB resmi, atau kanal resmi lain. Setelah itu transaksi dicatat di aplikasi ini untuk kebutuhan pembukuan, struk, dan laporan.
 
 ## Tech Stack
 
 ### Frontend
-- **Next.js 16.2.6** (App Router, Turbopack)
-- **React 19.2.6**
-- **TypeScript 5.9.3**
-- **Tailwind CSS 4.1.17**
-- **Lucide React** (icon set)
-- **Recharts** (grafik)
+
+- **Next.js 16.2.6** dengan App Router.
+- **React 19.2.6**.
+- **TypeScript 5.9.3**.
+- **Tailwind CSS 4.1.17**.
+- **Lucide React** untuk icon.
+- **Recharts** untuk grafik.
 
 ### Backend
-- **Next.js API Routes** (Node.js runtime)
-- **Drizzle ORM 0.45.2**
-- **libSQL/SQLite** (database lokal)
-- **JWT (jose)** untuk otentikasi
-- **bcryptjs** untuk password hashing
+
+- **Next.js API Routes**.
+- **Drizzle ORM 0.45.2**.
+- **libSQL/SQLite**.
+- **JWT** menggunakan `jose`.
+- **bcryptjs** untuk password hashing.
 
 ### Desktop
-- **Electron 22.3.27** (terakhir support Windows 7/8)
-- **electron-builder** untuk packaging
-- **electron-updater** untuk auto-update
-- **node-thermal-printer** untuk printer thermal
+
+- **Electron 43.1.0**.
+- **electron-builder** untuk packaging.
+- **electron-updater** untuk auto-update.
+- **node-thermal-printer** untuk printer thermal.
 
 ## Persyaratan Sistem
 
-### Untuk Development
-- Node.js 18+ (recommended 20+)
-- npm 9+ atau pnpm
-- Windows 10/11, macOS, atau Linux
+### Development
 
-### Untuk End User (Runtime)
-- **Windows 7 SP1** / 8 / 8.1 / 10 / 11
-- RAM minimal 2GB (recommended 4GB)
-- Disk space 250MB (setelah install)
-- Printer thermal (opsional, untuk cetak struk)
-- Barcode scanner USB (opsional, untuk kasir cepat)
+- **Node.js >= 22.12.0**.
+- npm sesuai bawaan Node.js 22.
+- Windows, macOS, atau Linux.
 
-> **Catatan:** Untuk Windows 7/8, gunakan installer `ia32` (32-bit). Electron 22 adalah versi terakhir yang mendukung Windows 7/8/8.1.
+> Project ini mendefinisikan engine Node di `package.json` sebagai `>=22.12.0`. CI juga berjalan dengan Node.js 22.
+
+### Runtime Desktop
+
+Konfigurasi desktop saat ini menggunakan Electron 43 dan target build Windows x64.
+
+- Windows 10/11 64-bit direkomendasikan.
+- RAM minimal 2GB, direkomendasikan 4GB.
+- Disk space minimal sekitar 250MB setelah install.
+- Printer thermal opsional.
+- Barcode scanner USB opsional.
+
+> **Catatan penting:** Dokumentasi versi lama menyebut Windows 7/8 dan Electron 22. Konfigurasi project saat ini memakai Electron 43, sehingga klaim Windows 7/8 tidak berlaku untuk build saat ini.
 
 ## Instalasi
 
@@ -137,70 +177,153 @@ cd pos-and-brilink-application
 npm install
 ```
 
-### Konfigurasi Environment (Opsional)
+## Konfigurasi Environment
 
-Buat file `.env.local` di root project:
+Salin file contoh environment:
+
+```bash
+cp .env.example .env.local
+```
+
+Isi utama:
 
 ```env
-# Auth secret (WAJIB untuk produksi — generate dengan: openssl rand -hex 32)
-AUTH_SECRET=your-secret-key-here
-
-# Database URL (default: file:./data.db untuk dev)
+AUTH_SECRET=
 DATABASE_URL=file:./data.db
 ```
 
-> Jika `AUTH_SECRET` tidak diset, akan menggunakan default (tidak aman untuk produksi).
+### `AUTH_SECRET`
+
+- Development/test: boleh kosong; aplikasi membuat random secret per proses, tanpa fixed secret di source code.
+- Production web/server: wajib diisi, minimal 32 karakter.
+- Production Electron: dibuat otomatis saat first run dan disimpan di `userData/.auth-secret`.
+
+Generate secret manual:
+
+```bash
+openssl rand -hex 48
+```
+
+### `DATABASE_URL`
+
+Default development:
+
+```env
+DATABASE_URL=file:./data.db
+```
+
+Pada mode Electron packaged, `DATABASE_URL` otomatis diarahkan ke database di folder `userData` aplikasi.
 
 ## Pengembangan
 
-### Mode Web (Browser)
+### Mode Web
 
 ```bash
 npm run dev
 ```
 
-Akses di `http://localhost:3000`
+Akses aplikasi di:
 
-### Mode Desktop (Electron + Hot Reload)
+```text
+http://localhost:3000
+```
+
+### Mode Desktop Electron
 
 ```bash
 npm run dev:electron
 ```
 
-Ini akan menjalankan:
-1. `next dev` di port 3000
-2. Electron window yang load `http://localhost:3000`
-3. Hot reload aktif
+Command ini akan:
+
+1. Compile TypeScript untuk Electron.
+2. Menjalankan Next.js dev server di port 3000.
+3. Membuka window Electron yang memuat `http://localhost:3000`.
 
 ### Typecheck
 
 ```bash
 npm run typecheck
+npm run typecheck:electron
 ```
 
-### Build Web Saja
+### Lint
 
 ```bash
-npm run build
+npm run lint
 ```
 
-Output: `.next/standalone/` (self-contained server)
+## Testing
 
-## Build Desktop (Windows)
+### Unit/Integration Test
 
-### Prasyarat
-- Windows 10/11 (untuk build installer Windows)
-- Atau Linux/macOS dengan Wine (untuk cross-compile)
+```bash
+npm test
+```
 
-### Build NSIS Installer + Portable
+### Watch Mode
+
+```bash
+npm run test:watch
+```
+
+### Coverage
+
+```bash
+npm run test:coverage
+```
+
+### E2E Test Playwright
+
+Install browser Playwright jika belum tersedia:
+
+```bash
+npx playwright install
+```
+
+Jalankan E2E test:
+
+```bash
+npm run test:e2e
+```
+
+Mode UI:
+
+```bash
+npm run test:e2e:ui
+```
+
+## Build Desktop Windows
+
+### Build Web/Standalone untuk Desktop
+
+```bash
+npm run build:web
+```
+
+Command ini menjalankan `next build` dan script post-build.
+
+### Build Installer + Portable
 
 ```bash
 npm run build:electron
 ```
 
-Output di `dist-electron/`:
-- `POS & Agen Bisnis-Setup-1.0.0.exe` — NSIS installer (x64 + ia32)
-- `POS & Agen Bisnis-Portable-1.0.0.exe` — Portable (USB-stick, no install)
+Konfigurasi build saat ini ada di `electron-builder.yml`:
+
+- `productName`: **BRILink POS**.
+- Output folder: `dist-electron/`.
+- Target Windows: NSIS installer x64 dan Portable x64.
+- Build ia32/32-bit tidak aktif pada konfigurasi saat ini.
+
+Perkiraan output:
+
+```text
+dist-electron/BRILink POS Setup <version>.exe
+dist-electron/BRILink POS-Portable-<version>.exe
+```
+
+Nama final dapat berubah mengikuti format artifact bawaan `electron-builder`.
 
 ### Build Portable Saja
 
@@ -208,281 +331,320 @@ Output di `dist-electron/`:
 npm run build:electron:portable
 ```
 
-### Publish ke GitHub Releases (Auto-Update)
+### Publish ke GitHub Releases
 
 ```bash
-# Set GitHub token di environment
+# Windows PowerShell/CMD
 set GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-
-# Build + upload ke GitHub Releases
 npm run build:electron:publish
 ```
 
-Setelah publish, aplikasi yang sudah terinstall akan otomatis cek update dan menawarkan instalasi versi baru.
+Atau di Linux/macOS:
+
+```bash
+export GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+npm run build:electron:publish
+```
+
+`GH_TOKEN` harus memiliki permission untuk membuat atau mengunggah GitHub Release pada repository ini.
 
 ## Target Bisnis
 
-Aplikasi ini dirancang fleksibel untuk berbagai jenis bisnis agen:
+Aplikasi ini dirancang fleksibel untuk berbagai jenis usaha:
 
-| Tipe Bisnis | Preset di Setup Wizard |
-|-------------|------------------------|
-| **Agen BRILink** | Branding: "BRILink POS", Menu: "Layanan BRILink" |
-| **Counter HP** | Branding: "Counter HP POS", Menu: "Layanan Counter" |
-| **Agen Pulsa** | Branding: "Agen Pulsa POS", Menu: "Layanan Pulsa" |
-| **Agen Pembayaran** | Branding: "Agen Bayar POS", Menu: "Layanan Pembayaran" |
-| **Toko Kelontong** | Branding: "Toko POS", Menu: "Layanan Tambahan" |
-| **Lainnya** | Branding custom |
+| Tipe Bisnis | Contoh Branding |
+|-------------|-----------------|
+| Agen BRILink | BRILink POS |
+| Counter HP | Counter HP POS |
+| Agen Pulsa | Agen Pulsa POS |
+| Agen Pembayaran | Agen Bayar POS |
+| Toko Kelontong | Toko POS |
+| Lainnya | Branding custom |
 
-### Cara Ganti Branding
+Branding dapat diubah melalui menu pengaturan aplikasi, termasuk nama aplikasi, tipe bisnis, dan label menu layanan.
 
-1. Buka **Pengaturan → Branding & Tipe Bisnis**
-2. Pilih preset atau isi manual:
-   - **Nama Aplikasi** — tampil di sidebar, title bar, struk
-   - **Tipe Bisnis** — tampil di subtitle
-   - **Label Menu Layanan** — tampil di sidebar menu, dashboard, history
-3. Klik **Simpan** — branding langsung berubah di seluruh app (real-time)
+> Walaupun tersedia preset seperti Agen BRILink, Agen Pulsa, dan Agen Pembayaran, preset tersebut hanya mengubah konteks pencatatan/branding. Preset tidak mengaktifkan koneksi langsung ke layanan perbankan atau provider pembayaran.
 
 ## Integrasi Hardware
 
-### Printer Thermal (ESC/POS)
+### Printer Thermal ESC/POS
 
-Didukung:
-- **Network (LAN/WiFi)** — recommended, paling stabil
-- **USB Direct** — perlu driver dari pabrikan
-- **Serial (COM)** — untuk printer legacy
+Jenis koneksi yang didukung:
 
-Protocol: ESC/POS (mayoritas printer thermal China).
+- Network/LAN/WiFi.
+- USB direct, tergantung driver pabrikan.
+- Serial/COM untuk printer legacy.
 
-#### Konfigurasi
-1. Buka **Pengaturan → Printer Thermal**
-2. Pilih tipe koneksi (Network/USB/Serial)
-3. Untuk Network: masukkan IP printer (default port 9100)
-4. Pilih lebar kertas: 58mm (32 karakter) atau 80mm (48 karakter)
-5. Klik **Test Print** untuk verifikasi
+Konfigurasi tersedia di:
 
-#### Struk yang Dicetak
-- Header: nama toko, alamat, telepon, ID agen
-- Info invoice: nomor, tanggal, kasir, pelanggan
-- Item transaksi (auto-wrap nama panjang)
-- Summary: subtotal, admin fee, total, pembayaran, kembalian
-- Footer: pesan terima kasih
+```text
+Pengaturan → Printer Thermal
+```
+
+Fitur printer:
+
+- Test print.
+- Cetak struk transaksi.
+- Konfigurasi ukuran kertas 58mm/80mm.
+- Integrasi melalui Electron IPC dan `node-thermal-printer`.
 
 ### Barcode Scanner
 
-Didukung: **USB HID Keyboard Wedge** (mayoritas scanner di pasar Indonesia).
+Jenis scanner yang didukung:
 
-Cara kerja: scanner "mengetik" barcode diakhiri Enter, dengan kecepatan >50 karakter/detik. Hook `useBarcodeScanner` mendeteksi pola ini dan trigger callback.
+- USB HID keyboard wedge.
 
-#### Pemakaian di Code
+Cara kerja: scanner bertindak seperti keyboard, mengetik kode barcode lalu mengirim Enter. Hook `useBarcodeScanner` mendeteksi pola input cepat dan memanggil callback.
+
+Contoh penggunaan:
 
 ```tsx
 import { useBarcodeScanner } from "@/lib/hardware/use-barcode-scanner";
 
 function POSPage() {
-  const { barcode } = useBarcodeScanner({
+  useBarcodeScanner({
     onScan: (code) => addToCartByBarcode(code),
   });
-  // ...
+
+  return null;
 }
 ```
 
 ## Auto-Update
 
-Aplikasi desktop otomatis cek update saat startup (delay 10 detik).
+Auto-update berjalan pada aplikasi Electron packaged melalui `electron-updater` dan GitHub Releases.
 
-### Cara Kerja
-1. Cek update dari GitHub Releases
-2. Jika ada versi baru, download di background
-3. Tampilkan notifikasi "Update v.X.Y.Z Tersedia"
-4. Setelah download selesai, tampilkan "Install & Restart"
-5. User klik → aplikasi restart & install update
+Alur umum:
 
-### Setup Auto-Update
-1. Push kode baru ke GitHub
-2. Update version di `package.json`
-3. Jalankan: `npm run build:electron:publish` (dengan `GH_TOKEN` set)
-4. electron-builder upload otomatis ke GitHub Releases
-5. User yang sudah install akan terima notifikasi update
+1. Aplikasi cek update saat startup.
+2. Jika ada versi baru di GitHub Releases, aplikasi mengunduh update.
+3. User mendapat notifikasi update.
+4. User dapat memilih install dan restart.
+
+Setup release:
+
+1. Update `version` di `package.json`.
+2. Pastikan `publish` di `electron-builder.yml` mengarah ke repository yang benar.
+3. Set `GH_TOKEN`.
+4. Jalankan `npm run build:electron:publish`.
 
 ## Database
+
+Database menggunakan SQLite/libSQL melalui Drizzle ORM.
 
 ### Lokasi Database
 
 | Mode | Path |
 |------|------|
-| Dev (npm run dev) | `./data.db` |
-| Production Windows | `%APPDATA%/POS & Agen Bisnis/pos-brilink.db` |
-| Production macOS | `~/Library/Application Support/POS & Agen Bisnis/pos-brilink.db` |
-| Production Linux | `~/.config/POS & Agen Bisnis/pos-brilink.db` |
+| Development web | `./data.db` atau nilai `DATABASE_URL` |
+| Production Electron | `userData/pos-brilink.db` |
 
-Database persisten antar update aplikasi. Saat uninstall, installer akan tanya konfirmasi hapus data.
+Pada Windows, lokasi `userData` biasanya berada di bawah `%APPDATA%` sesuai nama aplikasi desktop. Dengan `productName` saat ini, lokasinya umumnya berada di folder aplikasi **BRILink POS**.
 
-### Schema
+### Tabel Utama
 
-Tabel utama:
-- `users` — akun admin/kasir
-- `categories` — kategori produk
-- `products` — produk dengan stok
-- `service_categories` — kategori layanan agen
-- `brilink_services` — layanan agen (transfer, tarik, setor, dll)
-- `fee_tiers` — biaya admin berjenjang
-- `transactions` — transaksi POS & layanan
-- `transaction_items` — item transaksi POS
-- `accounts` — rekening (kas, bank)
-- `account_mutations` — mutasi rekening
-- `settings` — konfigurasi aplikasi (key-value)
-- `cash_balance` — legacy (backward compat)
+Schema berada di `src/db/schema.ts`. Tabel utama:
+
+- `users`
+- `categories`
+- `products`
+- `service_categories`
+- `brilink_services`
+- `fee_tiers`
+- `transactions`
+- `transaction_items`
+- `transaction_denominations`
+- `accounts`
+- `account_mutations`
+- `settings`
+- `cash_balance` legacy/backward compatibility
+
+### Migration
+
+File migration ada di folder `drizzle/`. Konfigurasi Drizzle berada di:
+
+```text
+drizzle.config.json
+```
+
+## API Routes
+
+API berada di `src/app/api/`. Endpoint yang tersedia antara lain:
+
+| Area | Route |
+|------|-------|
+| Health | `/api/health` |
+| Auth | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/setup`, `/api/auth/users` |
+| Setup | `/api/setup/complete`, `/api/setup/templates` |
+| Produk | `/api/products`, `/api/categories` |
+| Layanan agen | `/api/service-categories`, `/api/brilink-services`, `/api/fee-tiers` |
+| Transaksi | `/api/transactions`, `/api/transactions/[id]` |
+| Rekening/kas | `/api/accounts`, `/api/accounts/mutations`, `/api/cash` |
+| Dashboard | `/api/dashboard` |
+| Settings | `/api/settings` |
+| Hardware | `/api/hardware/printer` |
+| Data utility | `/api/backup`, `/api/seed`, `/api/seed-demo` |
+
+> Dokumentasi detail request/response API belum dipisahkan ke file khusus.
 
 ## Keamanan
 
 ### Otentikasi
-- Password di-hash dengan **bcryptjs** (10 rounds)
-- Session token **JWT** via `jose` di cookie `httpOnly`
-- Session expired 7 hari
-- Cookie flag: `httpOnly`, `sameSite=lax`, `secure` di production
 
-### Content Security Policy (Electron)
-- **Production**: CSP strict (`script-src 'self'`, no inline, no eval)
-- **Dev mode**: CSP disabled (Next.js butuh inline scripts untuk HMR)
-- `frame-ancestors 'none'` (anti clickjacking)
+- Password di-hash dengan `bcryptjs`.
+- Session menggunakan JWT dari `jose`.
+- Cookie session memakai `httpOnly`.
+- Production web/server wajib punya `AUTH_SECRET` kuat.
+- Electron production membuat secret unik per instalasi.
 
 ### Electron Security
-- `contextIsolation: true`
-- `nodeIntegration: false`
-- `sandbox: false` (diperlukan untuk preload IPC)
-- Preload script expose API via `contextBridge` (aman)
+
+Konfigurasi utama di `electron/main.ts`:
+
+- `contextIsolation: true`.
+- `nodeIntegration: false`.
+- API native diekspos lewat preload/contextBridge.
+- Single instance lock.
+- Pada production, koneksi dibatasi ke server lokal internal.
+- Next.js standalone server production bind ke `127.0.0.1` pada port `43219`.
 
 ## Troubleshooting
 
-### Aplikasi tidak bisa start
-- **Error "Next.js standalone server tidak ditemukan"**
-  - Jalankan `npm run build:electron` (bukan `electron .` langsung)
-  - Atau untuk dev: `npm run dev:electron`
+### Aplikasi web tidak jalan
 
-### Warna putih/blank di Electron
-- **Penyebab**: Tailwind CSS 4 menggunakan `color-mix()` yang tidak didukung Chromium 108 (Electron 22)
-- **Sudah di-fix** dengan inline fallback colors
-- Jika masih terjadi, pastikan menggunakan versi terbaru (`git pull`)
+Cek versi Node.js:
+
+```bash
+node --version
+```
+
+Pastikan minimal `22.12.0`, lalu install ulang dependency:
+
+```bash
+npm install
+npm run dev
+```
+
+### Electron dev tidak membuka aplikasi
+
+Pastikan port 3000 tidak dipakai aplikasi lain. Jalankan:
+
+```bash
+npm run dev:electron
+```
+
+Jika masih gagal, coba jalankan terpisah:
+
+```bash
+npm run dev
+npm run compile:electron
+npx electron .
+```
+
+### Next.js standalone server tidak ditemukan
+
+Untuk build desktop, gunakan command resmi:
+
+```bash
+npm run build:electron
+```
+
+Jangan menjalankan `electron .` sebagai production build tanpa menjalankan build web/standalone terlebih dahulu.
+
+### Port 43219 sudah dipakai
+
+Aplikasi Electron production memakai port internal `43219`. Tutup aplikasi lain yang memakai port tersebut, lalu jalankan ulang aplikasi.
 
 ### Printer thermal tidak terdeteksi
-1. **Network**: Pastikan printer & komputer di network yang sama, cek IP printer
-2. **USB**: Pastikan driver terinstall di Windows Device Manager
-3. Coba port 9100 (default ESC/POS) atau 9101
-4. Test print dari Pengaturan → Printer Thermal
 
-### Login gagal
-- Pastikan sudah setup akun via Setup Wizard (`/setup`)
-- Jika lupa password admin, hapus file database:
-  - Dev: `rm data.db`
-  - Production: hapus `%APPDATA%/POS & Agen Bisnis/pos-brilink.db`
-  - Lalu jalankan ulang → setup wizard muncul lagi
+1. Untuk network printer, pastikan komputer dan printer berada dalam jaringan yang sama.
+2. Cek IP printer dan port, biasanya `9100`.
+3. Untuk USB, pastikan driver printer terpasang di Windows.
+4. Gunakan tombol Test Print di pengaturan printer.
 
-### Auto-update tidak berfungsi
-1. Pastikan terhubung internet
-2. Cek firewall — aplikasi butuh akses ke `github.com`
-3. Lihat log di DevTools (Ctrl+Shift+I) → Console
+### Login gagal atau lupa password admin
 
-### Electron Security Warning (unsafe-eval)
-- **Normal di dev mode** — Next.js Turbopack pakai `eval()` untuk HMR
-- **Tidak muncul di production** (sesuai pesan: "This warning will not show up once the app is packaged")
-- Bukan bug, hanya dev-only reminder
+Jika masih development dan ingin reset total, hapus database development:
+
+```bash
+rm data.db
+```
+
+Untuk production Electron, backup dulu data penting sebelum menghapus database di folder `userData`.
+
+### Auto-update tidak berjalan
+
+1. Pastikan aplikasi adalah hasil build/publish, bukan dev mode.
+2. Pastikan koneksi internet tersedia.
+3. Pastikan GitHub Releases berisi artifact update yang valid.
+4. Pastikan konfigurasi `publish` di `electron-builder.yml` benar.
 
 ## Scripts
 
 | Command | Deskripsi |
 |---------|-----------|
-| `npm run dev` | Web dev mode (browser) |
-| `npm run dev:electron` | Desktop dev mode (Electron + hot reload) |
-| `npm run build` | Build Next.js standalone |
-| `npm run build:electron` | Build installer Windows (NSIS + portable) |
-| `npm run build:electron:portable` | Build portable saja |
-| `npm run build:electron:publish` | Build + upload ke GitHub Releases |
-| `npm run typecheck` | TypeScript type check |
+| `npm run dev` | Menjalankan Next.js dev server |
+| `npm run dev:web` | Alias mode web dev |
+| `npm run dev:electron` | Menjalankan Electron + Next.js dev server |
+| `npm run build` | Build Next.js |
+| `npm run build:web` | Build Next.js standalone + post-build script |
+| `npm run build:electron` | Build desktop Windows NSIS + portable |
+| `npm run build:electron:portable` | Build desktop portable saja |
+| `npm run build:electron:publish` | Build dan publish ke GitHub Releases |
+| `npm run dist` | Alias build Electron |
 | `npm run lint` | ESLint |
-| `npm run compile:electron` | Compile Electron TypeScript |
+| `npm run typecheck` | TypeScript check untuk web |
+| `npm run typecheck:electron` | TypeScript check untuk Electron |
+| `npm run compile:electron` | Compile Electron TypeScript dan copy preload |
+| `npm test` | Menjalankan Vitest |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:coverage` | Vitest dengan coverage |
+| `npm run test:e2e` | Playwright E2E test |
+| `npm run test:e2e:ui` | Playwright E2E UI mode |
 
 ## Struktur Project
 
-```
+```text
 pos-and-brilink-application/
-├── electron/                  # Electron main process
-│   ├── main.ts               # Main entry (spawn Next.js, window, IPC)
-│   ├── preload.ts            # Preload script (contextBridge)
-│   ├── printer.ts            # Thermal printer integration
-│   ├── updater.ts            # Auto-update logic
-│   ├── db-path.ts            # Database path resolver
-│   └── build/                # Build assets (icon)
+├── .github/workflows/        # CI workflow
+├── drizzle/                  # Drizzle migrations dan metadata
+├── e2e/                      # Playwright E2E tests
+├── electron/                 # Electron main/preload/printer/updater
+│   ├── main.ts
+│   ├── preload.ts
+│   ├── printer.ts
+│   ├── updater.ts
+│   └── db-path.ts
+├── scripts/                  # Build helper scripts
 ├── src/
-│   ├── app/                  # Next.js App Router
-│   │   ├── page.tsx          # Main page (sidebar + content)
-│   │   ├── layout.tsx        # Root layout
-│   │   ├── login/            # Login page
-│   │   ├── setup/            # Setup wizard
-│   │   ├── about/            # About developer page
-│   │   ├── api/              # API routes
-│   │   │   ├── auth/         # Login, logout, setup, me
-│   │   │   ├── accounts/     # Rekening & mutasi
-│   │   │   ├── transactions/ # Transaksi
-│   │   │   ├── products/     # Produk
-│   │   │   ├── categories/   # Kategori
-│   │   │   ├── brilink-services/ # Layanan agen
-│   │   │   ├── dashboard/    # Dashboard summary
-│   │   │   ├── settings/     # App settings
-│   │   │   └── hardware/     # Printer bridge
-│   │   └── globals.css       # Global styles + design tokens
+│   ├── app/                  # Next.js App Router dan API routes
 │   ├── components/           # React components
-│   │   ├── Sidebar.tsx       # Navigation sidebar
-│   │   ├── Dashboard.tsx     # Dashboard page
-│   │   ├── POS.tsx           # Kasir POS
-│   │   ├── BRILink.tsx       # Layanan agen
-│   │   ├── Products.tsx      # Manajemen produk
-│   │   ├── History.tsx       # Riwayat transaksi
-│   │   ├── Cash.tsx          # Kas & saldo
-│   │   ├── RekeningKoran.tsx # Rekening koran
-│   │   ├── Settings.tsx      # Pengaturan
-│   │   ├── AccountCard.tsx   # Kartu saldo (gaya kartu kredit)
-│   │   ├── DynamicIcon.tsx   # Lucide icon mapper
-│   │   ├── PrinterSettings.tsx # Printer config UI
-│   │   ├── UpdateNotification.tsx # Auto-update banner
-│   │   └── ui.tsx            # Reusable UI components
-│   ├── lib/
-│   │   ├── auth.ts           # JWT + bcrypt utilities
-│   │   ├── use-settings.ts   # Settings hook (branding dinamis)
-│   │   ├── utils.ts          # Format rupiah, date, dll
-│   │   └── hardware/         # Electron hardware bridge
-│   ├── db/
-│   │   ├── index.ts          # Drizzle client + DB bootstrap
-│   │   └── schema.ts         # Database schema
-│   ├── types/
-│   │   └── electron.d.ts     # Electron API type declarations
-│   └── proxy.ts              # Next.js proxy (auth middleware)
-├── drizzle/                  # Drizzle migrations
-├── electron-builder.yml      # Electron build config
-├── next.config.ts            # Next.js config (standalone output)
-├── tsconfig.json             # TypeScript config (Next.js)
-├── tsconfig.electron.json    # TypeScript config (Electron)
-└── package.json
+│   ├── db/                   # Drizzle client dan schema
+│   ├── lib/                  # Auth, utility, hardware hook, settings
+│   └── types/                # Type declarations
+├── tests/                    # Vitest tests
+├── electron-builder.yml      # Konfigurasi desktop build
+├── next.config.ts            # Konfigurasi Next.js
+├── package.json
+├── playwright.config.ts
+├── tsconfig.json
+├── tsconfig.electron.json
+└── vitest.config.ts
 ```
-
-## Dukung Pengembangan
-
-Aplikasi ini gratis & open-source. Dukungan Anda sangat berarti untuk pengembangan fitur baru, perbaikan bug, dan biaya operasional.
-
-[Dukung via Sociabuzz](https://sociabuzz.com/herdianrony/tribe)
-
-Setiap kontribusi — sekecil apapun — sangat dihargai.
 
 ## Lisensi
 
-MIT License — bebas digunakan, dimodifikasi, dan didistribusikan.
+Project ini menggunakan lisensi MIT sesuai `package.json`.
+
+> Disarankan menambahkan file `LICENSE` berisi teks MIT License agar informasi lisensi lengkap untuk distribusi open-source.
 
 ## Author
 
 **Herdian Rony**
+
 - GitHub: [@herdianrony](https://github.com/herdianrony)
-- Email: herdianrony@gmail.com
-- Support: [Sociabuzz](https://sociabuzz.com/herdianrony/tribe)
+- Email: herdianrony@users.noreply.github.com
 
 ---
 
-Dibuat dengan untuk pelaku UMKM Indonesia.
+Dibuat untuk membantu pelaku UMKM Indonesia menjalankan transaksi POS dan layanan agen secara offline-first.

@@ -11,7 +11,7 @@ test.describe("F-01: Discount policy", () => {
   test("should reject 100% discount without admin PIN", async ({ request }) => {
     // Get auth cookie first
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
     expect(loginRes.ok()).toBeTruthy();
 
@@ -39,7 +39,7 @@ test.describe("F-01: Discount policy", () => {
 
   test("should accept discount within policy with reason", async ({ request }) => {
     await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
 
     const productsRes = await request.get(`${BASE_URL}/api/products`);
@@ -73,7 +73,7 @@ test.describe("F-01: Discount policy", () => {
 
   test("should reject discount without reason", async ({ request }) => {
     await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
 
     const productsRes = await request.get(`${BASE_URL}/api/products`);
@@ -104,7 +104,7 @@ test.describe("F-01: Discount policy", () => {
 test.describe("F-02: Insufficient balance protection", () => {
   test("should reject BRILink Tarik Tunai if cash balance insufficient", async ({ request }) => {
     await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
 
     // Get services list
@@ -133,7 +133,7 @@ test.describe("F-02: Insufficient balance protection", () => {
 
   test("should reject BRILink Setor Tunai if bank balance insufficient", async ({ request }) => {
     await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
 
     const svcRes = await request.get(`${BASE_URL}/api/brilink-services`);
@@ -162,7 +162,7 @@ test.describe("F-02: Insufficient balance protection", () => {
 test.describe("F-04: Atomic seed recovery", () => {
   test("should be idempotent — running seed twice does not error", async ({ request }) => {
     await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { username: "admin", password: "admin123" },
+      data: { username: "admin", password: "Admin123" },
     });
 
     const res1 = await request.post(`${BASE_URL}/api/seed`);
