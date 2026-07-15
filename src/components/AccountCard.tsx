@@ -49,7 +49,9 @@ export function AccountCard({
   onDelete?: () => void;
 }) {
   const balance = parseFloat(String(account.balance)) || 0;
-  const minBalance = account.minBalance ? parseFloat(String(account.minBalance)) || 0 : 0;
+  const minBalance = account.minBalance
+    ? parseFloat(String(account.minBalance)) || 0
+    : 0;
   const isLow = balance < minBalance;
   const isCash = account.code === "cash";
 
@@ -80,7 +82,7 @@ export function AccountCard({
         "group relative text-left w-full overflow-hidden block",
         "rounded-2xl shadow-pop hover:shadow-float transition-all duration-300",
         "hover:-translate-y-0.5",
-        !onClick && "cursor-default"
+        !onClick && "cursor-default",
       )}
       style={{
         background: `linear-gradient(135deg, ${cardColor} 0%, ${cardColorDark} 100%)`,
@@ -137,7 +139,10 @@ export function AccountCard({
 
           <div className="flex items-center gap-1">
             {isLow && (
-              <div className="w-7 h-7 rounded-xl bg-amber-400/30 backdrop-blur-sm flex items-center justify-center" title={`Saldo di bawah minimum: ${minBalance}`}>
+              <div
+                className="w-7 h-7 rounded-xl bg-amber-400/30 backdrop-blur-sm flex items-center justify-center"
+                title={`Saldo di bawah minimum: ${minBalance}`}
+              >
                 <AlertTriangle size={14} className="text-amber-200" />
               </div>
             )}
@@ -153,7 +158,10 @@ export function AccountCard({
                 {onEdit && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit();
+                    }}
                     className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center text-white"
                     title="Edit rekening"
                   >
@@ -163,7 +171,10 @@ export function AccountCard({
                 {onDelete && !isCash && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
                     className="w-7 h-7 rounded-xl bg-red-500/30 hover:bg-red-500/50 backdrop-blur-sm flex items-center justify-center text-white"
                     title="Nonaktifkan rekening"
                   >
@@ -204,7 +215,8 @@ export function AccountCard({
           </p>
           {!compact && account.minBalance && (
             <p className="text-[10px] text-white/50 mt-0.5">
-              Min: {new Intl.NumberFormat("id-ID", {
+              Batas aman:{" "}
+              {new Intl.NumberFormat("id-ID", {
                 style: "currency",
                 currency: "IDR",
                 minimumFractionDigits: 0,
@@ -224,9 +236,7 @@ export function AccountCard({
 
       {/* Shine effect on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-        <div
-          className="absolute -inset-x-12 -top-12 h-24 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 group-hover:translate-x-[300%] transition-transform duration-1000"
-        />
+        <div className="absolute -inset-x-12 -top-12 h-24 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 group-hover:translate-x-[300%] transition-transform duration-1000" />
       </div>
     </Wrapper>
   );
@@ -243,8 +253,14 @@ function maskCardNumber(code: string): string {
 function darkenColor(hex: string, percent: number): string {
   try {
     const num = parseInt(hex.replace("#", ""), 16);
-    const r = Math.max(0, ((num >> 16) & 0xff) - Math.round(255 * (percent / 100)));
-    const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(255 * (percent / 100)));
+    const r = Math.max(
+      0,
+      ((num >> 16) & 0xff) - Math.round(255 * (percent / 100)),
+    );
+    const g = Math.max(
+      0,
+      ((num >> 8) & 0xff) - Math.round(255 * (percent / 100)),
+    );
     const b = Math.max(0, (num & 0xff) - Math.round(255 * (percent / 100)));
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
   } catch {
@@ -255,8 +271,14 @@ function darkenColor(hex: string, percent: number): string {
 function lightenColor(hex: string, percent: number): string {
   try {
     const num = parseInt(hex.replace("#", ""), 16);
-    const r = Math.min(255, ((num >> 16) & 0xff) + Math.round(255 * (percent / 100)));
-    const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(255 * (percent / 100)));
+    const r = Math.min(
+      255,
+      ((num >> 16) & 0xff) + Math.round(255 * (percent / 100)),
+    );
+    const g = Math.min(
+      255,
+      ((num >> 8) & 0xff) + Math.round(255 * (percent / 100)),
+    );
     const b = Math.min(255, (num & 0xff) + Math.round(255 * (percent / 100)));
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
   } catch {

@@ -67,3 +67,4 @@ playwright/.cache/
 .playwright-auth.json
 USB
 COM1
+.wwebjs_cache/
