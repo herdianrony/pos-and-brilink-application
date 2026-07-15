@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/components/Dashboard";
 import POS from "@/components/POS";
@@ -19,6 +19,24 @@ export default function Home() {
     fetch("/api/seed", { method: "POST" })
       .then(() => setReady(true))
       .catch(() => setReady(true));
+  }, []);
+
+  // P1-02: Listen for hashchange to support navigation from child components
+  useEffect(() => {
+    function handleHashChange() {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        // Map hash to page IDs
+        const validPages = ["dashboard", "pos", "brilink", "products", "history", "rekeningKoran", "cash", "settings"];
+        if (validPages.includes(hash)) {
+          setPage(hash);
+          // Clear hash so it doesn't loop
+          window.location.hash = "";
+        }
+      }
+    }
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   if (!ready) {

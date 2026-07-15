@@ -3,6 +3,7 @@ import { db, runTransaction } from "@/db";
 import {
   transactions,
   transactionItems,
+  products,
   accounts,
   accountMutations,
   transactionDenominations,
@@ -100,9 +101,9 @@ export async function PATCH(
   }
 
   // ── Action: void (pending → void) ──
-  // Void hanya untuk pending. Saldo belum berubah karena transaksi belum completed.
+  // P0-01: Void must create counter-mutations because ledger was already posted
+  // when the transaction was created (cash/bank already moved).
   if (action === "void") {
-    // Void requires admin
     const adminAuth = await requireAdmin();
     if (!adminAuth.ok) return adminAuth.response;
 
@@ -121,19 +122,58 @@ export async function PATCH(
       }, { status: 400 });
     }
 
-    const [updated] = await db.update(transactions).set({
-      status: "void",
-      notes: trx.notes ? `${trx.notes} | VOID: ${reason}` : `VOID: ${reason}`,
-      confirmedAt: new Date(),
-      confirmedByUserId: auth.user.id,
-    }).where(eq(transactions.id, trxId)).returning();
+    // P0-01: Atomic void — update status + create counter-mutations + restore stock
+    return await runTransaction(async (tx) => {
+      const [updated] = await tx.update(transactions).set({
+        status: "void",
+        notes: trx.notes ? `${trx.notes} | VOID: ${reason}` : `VOID: ${reason}`,
+        confirmedAt: new Date(),
+        confirmedByUserId: auth.user.id,
+      }).where(eq(transactions.id, trxId)).returning();
 
-    return NextResponse.json(updated);
+      // Create counter-mutations (same as reverse)
+      const originalMutations = await tx.select().from(accountMutations)
+        .where(eq(accountMutations.referenceId, trxId));
+
+      for (const mut of originalMutations) {
+        const [acc] = await tx.select().from(accounts).where(eq(accounts.id, mut.accountId));
+        if (!acc) continue;
+
+        const counterAmount = -Number(mut.amount);
+        const newBalance = Number(acc.balance) + counterAmount;
+
+        await tx.update(accounts)
+          .set({ balance: newBalance, updatedAt: new Date() })
+          .where(eq(accounts.id, acc.id));
+        await tx.insert(accountMutations).values({
+          accountId: acc.id,
+          type: `${mut.type}_void`,
+          amount: counterAmount,
+          balanceAfter: newBalance,
+          notes: `VOID: ${reason} (ref: ${trx.invoiceNo})`,
+          referenceId: trxId,
+        });
+      }
+
+      // P0-02: Restore stock for POS transactions
+      if (trx.type === "pos") {
+        const items = await tx.select().from(transactionItems)
+          .where(eq(transactionItems.transactionId, trxId));
+        for (const item of items) {
+          if (item.productId) {
+            await tx.update(products)
+              .set({ stock: sql`${products.stock} + ${item.quantity}`, updatedAt: new Date() })
+              .where(eq(products.id, item.productId));
+          }
+        }
+      }
+
+      return NextResponse.json(updated);
+    });
   }
 
   // ── Action: reverse (completed → reversed) ──
-  // Reverse membuat counter-mutation untuk mengembalikan saldo.
-  // Saldo historis TIDAK diubah — reversal dicatat sebagai mutasi baru.
+  // P0-02: Reverse creates counter-mutations AND restores stock for POS
   if (action === "reverse") {
     const adminAuth = await requireAdmin();
     if (!adminAuth.ok) return adminAuth.response;
@@ -153,9 +193,7 @@ export async function PATCH(
       }, { status: 400 });
     }
 
-    // P2: Atomic reversal — update status + create counter-mutations
     return await runTransaction(async (tx) => {
-      // Update transaction status
       const [updated] = await tx.update(transactions).set({
         status: "reversed",
         notes: trx.notes ? `${trx.notes} | REVERSED: ${reason}` : `REVERSED: ${reason}`,
@@ -163,18 +201,15 @@ export async function PATCH(
         confirmedByUserId: auth.user.id,
       }).where(eq(transactions.id, trxId)).returning();
 
-      // Create counter-mutations to reverse the cash/bank effects
-      // Find the original mutations for this transaction
+      // Create counter-mutations
       const originalMutations = await tx.select().from(accountMutations)
         .where(eq(accountMutations.referenceId, trxId));
 
-      // For each original mutation, create a counter-mutation with opposite sign
       for (const mut of originalMutations) {
         const [acc] = await tx.select().from(accounts).where(eq(accounts.id, mut.accountId));
         if (!acc) continue;
 
-        // Counter-mutation: opposite amount
-        const counterAmount = -mut.amount;
+        const counterAmount = -Number(mut.amount);
         const newBalance = Number(acc.balance) + counterAmount;
 
         await tx.update(accounts)
@@ -188,6 +223,19 @@ export async function PATCH(
           notes: `REVERSAL: ${reason} (ref: ${trx.invoiceNo})`,
           referenceId: trxId,
         });
+      }
+
+      // P0-02: Restore stock for POS transactions
+      if (trx.type === "pos") {
+        const items = await tx.select().from(transactionItems)
+          .where(eq(transactionItems.transactionId, trxId));
+        for (const item of items) {
+          if (item.productId) {
+            await tx.update(products)
+              .set({ stock: sql`${products.stock} + ${item.quantity}`, updatedAt: new Date() })
+              .where(eq(products.id, item.productId));
+          }
+        }
       }
 
       return NextResponse.json(updated);

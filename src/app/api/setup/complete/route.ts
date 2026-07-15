@@ -106,6 +106,15 @@ export async function POST(req: Request) {
     // Don't block — user can add later
   }
 
+  // P1-03: Validate that seed templates exist (cash account + service templates)
+  const [cashAcc] = await db.select().from(accounts).where(eq(accounts.code, "cash")).limit(1);
+  if (!cashAcc) {
+    return NextResponse.json(
+      { error: "Template seed belum tersedia. Jalankan /api/seed terlebih dahulu." },
+      { status: 400 }
+    );
+  }
+
   try {
     const result = await runTransaction(async (tx) => {
       // ── 1. Create admin user ──

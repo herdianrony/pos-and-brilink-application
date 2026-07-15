@@ -14,16 +14,16 @@ const SENSITIVE_KEYS = ["discount_admin_pin"];
 const HASHED_KEYS = ["discount_admin_pin"];
 
 export async function GET() {
-  // F-07: properly check auth result
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
 
   const rows = await db.select().from(settings);
   const map: Record<string, string> = {};
   for (const r of rows) {
-    // Don't leak sensitive values
-    if (SENSITIVE_KEYS.includes(r.key)) {
-      map[r.key] = r.value ? "****" : "";
+    // P1-01: Don't send hashed PIN value — send a flag instead
+    if (r.key === "discount_admin_pin") {
+      map["discount_admin_pin_set"] = r.value ? "true" : "false";
+      // Don't include the actual hash
     } else {
       map[r.key] = r.value;
     }
@@ -36,25 +36,24 @@ export async function PUT(req: Request) {
   if (!auth.ok) return auth.response;
   const body: Record<string, string> = await req.json();
 
-  // F-07: Hash sensitive keys before storing
+  // P1-01: Only hash and store PIN if user actually entered a new value
+  // Skip "****" or empty — don't overwrite existing PIN
   const processed: Record<string, string> = {};
   for (const [key, rawValue] of Object.entries(body)) {
     if (HASHED_KEYS.includes(key)) {
       const value = String(rawValue || "").trim();
-      if (!value) {
-        // Empty value → clear the key
-        processed[key] = "";
-      } else {
-        // Hash the PIN
-        const bcrypt = require("bcryptjs");
-        processed[key] = await bcrypt.hash(value, 10);
+      if (!value || value === "****") {
+        // Empty or sentinel — skip, don't overwrite existing PIN
+        continue;
       }
+      // Hash the new PIN
+      const bcrypt = require("bcryptjs");
+      processed[key] = await bcrypt.hash(value, 10);
     } else {
       processed[key] = String(rawValue);
     }
   }
 
-  // F-04: Atomic upsert within transaction
   await runTransaction(async (tx) => {
     for (const [key, value] of Object.entries(processed)) {
       const existing = await tx.select().from(settings).where(eq(settings.key, key)).limit(1);

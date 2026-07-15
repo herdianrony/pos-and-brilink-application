@@ -213,15 +213,15 @@ export default function SettingsPage() {
               />
             </div>
             <Input
-              label="PIN Otorisasi Diskon Besar"
+              label={data.discount_admin_pin_set === "true" ? "PIN Otorisasi Diskon (sudah diset — kosongkan untuk pertahankan)" : "PIN Otorisasi Diskon Besar"}
               type="password"
-              value={data.discount_admin_pin ? "****" : ""}
+              value={data.discount_admin_pin || ""}
               onChange={e => update("discount_admin_pin", e.target.value, "discount")}
-              placeholder="Kosongkan jika tidak ada PIN"
+              placeholder={data.discount_admin_pin_set === "true" ? "•••••• (biarkan kosong untuk tidak ubah)" : "Kosongkan jika tidak ada PIN"}
             />
             <p className="text-xs text-slate-400">
               Diskon di atas batas nominal/persentase atau diskon 100% wajib PIN admin.
-              Masukkan PIN baru untuk mengganti, atau biarkan **** untuk mempertahankan.
+              {data.discount_admin_pin_set === "true" ? " PIN sudah diset. Kosongkan field untuk mempertahankan PIN yang ada." : " Masukkan PIN baru untuk mengaktifkan."}
             </p>
             <SaveButton
               saving={saving === "discount"}
