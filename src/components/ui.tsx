@@ -33,14 +33,14 @@ export function Modal({
 }) {
   if (!open) return null;
   const w = {
-    sm: "max-w-sm",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl",
   }[size];
   return (
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -50,7 +50,7 @@ export function Modal({
         aria-hidden="true"
       />
       <div
-        className={`relative bg-white rounded-3xl shadow-float w-full ${w} max-h-[90vh] overflow-y-auto animate-bounceIn border border-slate-200/50`}
+        className={`relative bg-white rounded-3xl shadow-float w-full ${w} max-h-[92vh] overflow-y-auto animate-bounceIn border border-slate-200/50`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

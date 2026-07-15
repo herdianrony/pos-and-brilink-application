@@ -161,7 +161,7 @@ export default function BLServicesTab() {
       </Card>
 
       {/* Edit/Add Service Modal */}
-      <Modal open={modal} onClose={() => setModal(false)}>
+      <Modal open={modal} onClose={() => setModal(false)} size="xl">
         <div className="p-5 space-y-4">
           <h3 className="text-lg font-extrabold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -284,7 +284,7 @@ export default function BLServicesTab() {
       </Modal>
       
       {/* Fee Tiers Modal */}
-      <Modal open={tiersModal} onClose={() => setTiersModal(false)} size="lg">
+      <Modal open={tiersModal} onClose={() => setTiersModal(false)} size="xl">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
