@@ -17,20 +17,49 @@ export interface ElectronAPI {
     loadConfig: () => Promise<PrinterConfig | null>;
   };
   whatsapp: {
-    status: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
-    start: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
-    restart: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
-    logout: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
-    send: (payload: { to: string; message: string }) => Promise<{ ok: boolean; error?: string }>;
+    status: () => Promise<{
+      status: string;
+      qrDataUrl: string | null;
+      lastError: string | null;
+      hasClient: boolean;
+    }>;
+    start: () => Promise<{
+      status: string;
+      qrDataUrl: string | null;
+      lastError: string | null;
+      hasClient: boolean;
+    }>;
+    restart: () => Promise<{
+      status: string;
+      qrDataUrl: string | null;
+      lastError: string | null;
+      hasClient: boolean;
+    }>;
+    logout: () => Promise<{
+      status: string;
+      qrDataUrl: string | null;
+      lastError: string | null;
+      hasClient: boolean;
+    }>;
+    send: (payload: {
+      to: string;
+      message: string;
+      token?: string;
+      expiresAt?: number;
+    }) => Promise<{ ok: boolean; error?: string }>;
   };
   update: {
     check: () => Promise<{ version?: string; error?: string } | null>;
     install: () => Promise<boolean>;
-    onUpdateAvailable: (cb: (info: { version: string; releaseNotes?: string }) => void) => void;
-    onUpdateDownloaded: (cb: (info: { version: string }) => void) => void;
-    onUpdateProgress: (cb: (p: { percent: number; transferred: number; total: number }) => void) => void;
-    onUpdateError: (cb: (e: { message: string }) => void) => void;
-    onUpdateNotAvailable: (cb: () => void) => void;
+    onUpdateAvailable: (
+      cb: (info: { version: string; releaseNotes?: string }) => void,
+    ) => () => void;
+    onUpdateDownloaded: (cb: (info: { version: string }) => void) => () => void;
+    onUpdateProgress: (
+      cb: (p: { percent: number; transferred: number; total: number }) => void,
+    ) => () => void;
+    onUpdateError: (cb: (e: { message: string }) => void) => () => void;
+    onUpdateNotAvailable: (cb: () => void) => () => void;
   };
   window: {
     minimize: () => Promise<void>;

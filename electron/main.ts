@@ -32,6 +32,7 @@ import { registerWhatsAppIpc } from "./whatsapp";
 
 // Port internal untuk Next.js standalone server (production only)
 const INTERNAL_PORT = 43219;
+const ALLOWED_APP_PATHS = new Set(["userData", "documents", "desktop"]);
 // Port Next.js dev server (development)
 const DEV_PORT = 3000;
 
@@ -72,28 +73,51 @@ function findWhatsAppBrowserExecutable(): string | undefined {
   if (process.platform === "win32") {
     const localAppData = process.env.LOCALAPPDATA || "";
     const programFiles = process.env.PROGRAMFILES || "C:\\Program Files";
-    const programFilesX86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+    const programFilesX86 =
+      process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
     candidates.push(
       path.join(programFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
-      path.join(programFilesX86, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(
+        programFilesX86,
+        "Microsoft",
+        "Edge",
+        "Application",
+        "msedge.exe",
+      ),
       path.join(localAppData, "Microsoft", "Edge", "Application", "msedge.exe"),
       path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
-      path.join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
-      path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe")
+      path.join(
+        programFilesX86,
+        "Google",
+        "Chrome",
+        "Application",
+        "chrome.exe",
+      ),
+      path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
     );
   } else if (process.platform === "darwin") {
     candidates.push(
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-      "/Applications/Chromium.app/Contents/MacOS/Chromium"
+      "/Applications/Chromium.app/Contents/MacOS/Chromium",
     );
   } else {
-    candidates.push("/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser", "/snap/bin/chromium");
+    candidates.push(
+      "/usr/bin/google-chrome",
+      "/usr/bin/chromium",
+      "/usr/bin/chromium-browser",
+      "/snap/bin/chromium",
+    );
   }
 
-  const found = candidates.find((candidate) => candidate && fs.existsSync(candidate));
+  const found = candidates.find(
+    (candidate) => candidate && fs.existsSync(candidate),
+  );
   if (found) console.log(`[main] WhatsApp browser executable: ${found}`);
-  else console.warn("[main] WhatsApp browser executable not found; puppeteer will use its default browser if available.");
+  else
+    console.warn(
+      "[main] WhatsApp browser executable not found; puppeteer will use its default browser if available.",
+    );
   return found;
 }
 
@@ -107,8 +131,8 @@ async function startNextServer(): Promise<void> {
     if (!existsSync(serverPath)) {
       reject(
         new Error(
-          `Next.js standalone server tidak ditemukan di:\n${serverPath}\n\nAplikasi mungkin corrupt. Coba reinstall.`
-        )
+          `Next.js standalone server tidak ditemukan di:\n${serverPath}\n\nAplikasi mungkin corrupt. Coba reinstall.`,
+        ),
       );
       return;
     }
@@ -147,7 +171,12 @@ async function startNextServer(): Promise<void> {
       console.error("[main] Failed to persist AUTH_SECRET:", e);
     }
 
-    const whatsappSessionDir = path.join(app.getPath("userData"), "whatsapp-session");
+    process.env.AUTH_SECRET = authSecret;
+
+    const whatsappSessionDir = path.join(
+      app.getPath("userData"),
+      "whatsapp-session",
+    );
     const whatsappBrowserPath = findWhatsAppBrowserExecutable();
 
     const spawnEnv: Record<string, string | undefined> = {
@@ -201,7 +230,12 @@ async function startNextServer(): Promise<void> {
       const msg = data.toString();
       console.log(`[next] ${msg.trim()}`);
       writeLog(`[stdout] ${msg}`);
-      if (!resolved && (msg.includes("Ready") || msg.includes("started server") || msg.includes("Local:"))) {
+      if (
+        !resolved &&
+        (msg.includes("Ready") ||
+          msg.includes("started server") ||
+          msg.includes("Local:"))
+      ) {
         resolved = true;
         resolve();
       }
@@ -218,14 +252,16 @@ async function startNextServer(): Promise<void> {
       writeLog(`[ERROR] ${err.message}\n${err.stack || ""}`);
       if (!resolved) {
         resolved = true;
-        reject(new Error(
-          `Gagal start Next.js server: ${err.message}\n\n` +
-          `Kemungkinan penyebab:\n` +
-          `• Antivirus memblokir eksekusi\n` +
-          `• Permission denied\n` +
-          `• Aplikasi corrupt\n\n` +
-          `Log file: ${logFile}`
-        ));
+        reject(
+          new Error(
+            `Gagal start Next.js server: ${err.message}\n\n` +
+              `Kemungkinan penyebab:\n` +
+              `• Antivirus memblokir eksekusi\n` +
+              `• Permission denied\n` +
+              `• Aplikasi corrupt\n\n` +
+              `Log file: ${logFile}`,
+          ),
+        );
       }
     });
 
@@ -235,15 +271,17 @@ async function startNextServer(): Promise<void> {
       nextServer = null;
       if (!resolved && code !== 0) {
         resolved = true;
-        reject(new Error(
-          `Next.js server exit dengan kode ${code}. Mungkin ada error di startup.\n\n` +
-          `Kemungkinan penyebab:\n` +
-          `• File static assets (.next/static) atau public/ tidak ada\n` +
-          `• Database permission denied\n` +
-          `• Port ${INTERNAL_PORT} sudah dipakai\n` +
-          `• Module not found\n\n` +
-          `Log file: ${logFile}`
-        ));
+        reject(
+          new Error(
+            `Next.js server exit dengan kode ${code}. Mungkin ada error di startup.\n\n` +
+              `Kemungkinan penyebab:\n` +
+              `• File static assets (.next/static) atau public/ tidak ada\n` +
+              `• Database permission denied\n` +
+              `• Port ${INTERNAL_PORT} sudah dipakai\n` +
+              `• Module not found\n\n` +
+              `Log file: ${logFile}`,
+          ),
+        );
       }
     });
 
@@ -258,7 +296,11 @@ async function startNextServer(): Promise<void> {
 }
 
 // ── Tunggu port siap ─────────────────────────────
-async function waitForPort(port: number, maxRetries = 120, intervalMs = 500): Promise<void> {
+async function waitForPort(
+  port: number,
+  maxRetries = 120,
+  intervalMs = 500,
+): Promise<void> {
   const net = require("net");
   const http = require("http");
   const maxSeconds = (maxRetries * intervalMs) / 1000;
@@ -269,16 +311,29 @@ async function waitForPort(port: number, maxRetries = 120, intervalMs = 500): Pr
       const ok = await new Promise<boolean>((resolve) => {
         const socket = new net.Socket();
         socket.setTimeout(1000);
-        socket.once("connect", () => { socket.destroy(); resolve(true); });
-        socket.once("error", () => { socket.destroy(); resolve(false); });
-        socket.once("timeout", () => { socket.destroy(); resolve(false); });
+        socket.once("connect", () => {
+          socket.destroy();
+          resolve(true);
+        });
+        socket.once("error", () => {
+          socket.destroy();
+          resolve(false);
+        });
+        socket.once("timeout", () => {
+          socket.destroy();
+          resolve(false);
+        });
         socket.connect(port, "127.0.0.1");
       });
       if (ok) {
-        console.log(`[main] TCP port ${port} siap setelah ${i * intervalMs / 1000}s`);
+        console.log(
+          `[main] TCP port ${port} siap setelah ${(i * intervalMs) / 1000}s`,
+        );
         break;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     if (i === maxRetries - 1) {
       throw new Error(`TCP port ${port} tidak siap dalam ${maxSeconds} detik`);
     }
@@ -289,19 +344,27 @@ async function waitForPort(port: number, maxRetries = 120, intervalMs = 500): Pr
   for (let i = 0; i < 30; i++) {
     try {
       const ok = await new Promise<boolean>((resolve) => {
-        const req = http.get(`http://127.0.0.1:${port}/api/health`, (res: any) => {
-          res.destroy();
-          resolve(res.statusCode === 200);
-        });
+        const req = http.get(
+          `http://127.0.0.1:${port}/api/health`,
+          (res: any) => {
+            res.destroy();
+            resolve(res.statusCode === 200);
+          },
+        );
         req.setTimeout(2000);
         req.on("error", () => resolve(false));
-        req.on("timeout", () => { req.destroy(); resolve(false); });
+        req.on("timeout", () => {
+          req.destroy();
+          resolve(false);
+        });
       });
       if (ok) {
-        console.log(`[main] HTTP health check OK setelah ${i * 500 / 1000}s`);
+        console.log(`[main] HTTP health check OK setelah ${(i * 500) / 1000}s`);
         return;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     await new Promise((r) => setTimeout(r, 500));
   }
   console.warn("[main] HTTP health check timeout — lanjutkan anyway");
@@ -341,24 +404,28 @@ function createWindow() {
   // F-07: Restrict connect-src to specific port, not wildcard
   // F-07: Remove 'unsafe-eval' (only needed in dev for HMR)
   if (isPackaged) {
-    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-      const csp = [
-        "default-src 'self'",
-        // Production: Next.js standalone still uses some inline scripts for hydration
-        "script-src 'self' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "font-src 'self' https://fonts.gstatic.com data:",
-        "img-src 'self' data: blob:",
-        // F-07: Restrict to app port only, not localhost:*
-        `connect-src 'self' http://127.0.0.1:${INTERNAL_PORT}`,
-        "frame-ancestors 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-      ].join("; ");
-      const responseHeaders: Record<string, string> = { ...details.responseHeaders as Record<string, string> };
-      responseHeaders["Content-Security-Policy"] = csp;
-      callback({ responseHeaders });
-    });
+    mainWindow.webContents.session.webRequest.onHeadersReceived(
+      (details, callback) => {
+        const csp = [
+          "default-src 'self'",
+          // Production: Next.js standalone still uses some inline scripts for hydration
+          "script-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com data:",
+          "img-src 'self' data: blob:",
+          // F-07: Restrict to app port only, not localhost:*
+          `connect-src 'self' http://127.0.0.1:${INTERNAL_PORT}`,
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; ");
+        const responseHeaders: Record<string, string> = {
+          ...(details.responseHeaders as Record<string, string>),
+        };
+        responseHeaders["Content-Security-Policy"] = csp;
+        callback({ responseHeaders });
+      },
+    );
   }
 
   Menu.setApplicationMenu(null);
@@ -387,7 +454,9 @@ function createWindow() {
     try {
       const parsed = new URL(url);
       const allowedHosts = ["localhost", "127.0.0.1"];
-      const allowedPorts = isDevMode ? [String(DEV_PORT)] : [String(INTERNAL_PORT)];
+      const allowedPorts = isDevMode
+        ? [String(DEV_PORT)]
+        : [String(INTERNAL_PORT)];
       const isAllowed =
         allowedHosts.includes(parsed.hostname) &&
         (parsed.port === "" || allowedPorts.includes(parsed.port)) &&
@@ -417,19 +486,28 @@ function createWindow() {
   mainWindow.webContents.on("did-finish-load", () => {
     console.log("[main] Page finished loading");
   });
-  mainWindow.webContents.on("did-fail-load", (_evt, errorCode, errorDescription, validatedURL) => {
-    console.error(`[main] Page failed to load: ${errorCode} ${errorDescription} URL: ${validatedURL}`);
-    // Retry setelah 2 detik
-    if (errorCode !== -3) { // -3 = aborted (user navigation), skip retry
-      setTimeout(() => {
-        console.log("[main] Retrying page load...");
-        mainWindow?.loadURL(getLoadUrl());
-      }, 2000);
-    }
-  });
-  mainWindow.webContents.on("console-message", (_evt, level, message, line, sourceId) => {
-    console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`);
-  });
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (_evt, errorCode, errorDescription, validatedURL) => {
+      console.error(
+        `[main] Page failed to load: ${errorCode} ${errorDescription} URL: ${validatedURL}`,
+      );
+      // Retry setelah 2 detik
+      if (errorCode !== -3) {
+        // -3 = aborted (user navigation), skip retry
+        setTimeout(() => {
+          console.log("[main] Retrying page load...");
+          mainWindow?.loadURL(getLoadUrl());
+        }, 2000);
+      }
+    },
+  );
+  mainWindow.webContents.on(
+    "console-message",
+    (_evt, level, message, line, sourceId) => {
+      console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`);
+    },
+  );
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -452,6 +530,16 @@ function showErrorWindow(errorMessage: string) {
     // ignore
   }
 
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  const safeErrorMessage = escapeHtml(errorMessage);
+  const safeLogPath = logPath ? escapeHtml(logPath) : "";
+
   mainWindow = new BrowserWindow({
     width: 700,
     height: 560,
@@ -470,13 +558,17 @@ function showErrorWindow(errorMessage: string) {
           .log-info { background: #fff; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 11px; color: #7f1d1d; }
         </style></head><body>
           <h1>Gagal Memulai Aplikasi</h1>
-          <p>${errorMessage}</p>
-          ${logPath ? `<div class="log-info">
+          <p>${safeErrorMessage}</p>
+          ${
+            safeLogPath
+              ? `<div class="log-info">
             <strong>Log file:</strong><br>
-            <code>${logPath}</code><br><br>
+            <code>${safeLogPath}</code><br><br>
             Buka file di atas dengan Notepad untuk melihat detail error,
             lalu kirim ke developer untuk dianalisis.
-          </div>` : ""}
+          </div>`
+              : ""
+          }
           <div class="footer">
             <strong>Solusi yang bisa dicoba:</strong><br>
             • Tutup aplikasi lain yang mungkin pakai port 43219<br>
@@ -485,8 +577,8 @@ function showErrorWindow(errorMessage: string) {
             • Reinstall aplikasi<br>
             • Hubungi developer dengan menyertakan log file di atas
           </div>
-        </body></html>`
-      )
+        </body></html>`,
+      ),
   );
 }
 
@@ -496,7 +588,8 @@ function registerAppIpc() {
   ipcMain.handle("app:isPackaged", () => app.isPackaged);
   ipcMain.handle("app:getPath", (_evt, name: string) => {
     try {
-      return app.getPath(name as any);
+      if (!ALLOWED_APP_PATHS.has(name)) return null;
+      return app.getPath(name as "userData" | "documents" | "desktop");
     } catch {
       return null;
     }
@@ -510,7 +603,10 @@ function registerAppIpc() {
     return mainWindow.isMaximized();
   });
   ipcMain.handle("window:close", () => mainWindow?.close());
-  ipcMain.handle("window:isMaximized", () => mainWindow?.isMaximized() || false);
+  ipcMain.handle(
+    "window:isMaximized",
+    () => mainWindow?.isMaximized() || false,
+  );
 
   ipcMain.handle("update:check", async () => {
     const { autoUpdater } = require("electron-updater");
@@ -536,7 +632,10 @@ app.whenReady().then(async () => {
 
   // ── Mode DEV: langsung load Next.js dev server ──
   if (isDevMode) {
-    console.log("[main] Mode DEV: connecting to Next.js dev server at http://localhost:" + DEV_PORT);
+    console.log(
+      "[main] Mode DEV: connecting to Next.js dev server at http://localhost:" +
+        DEV_PORT,
+    );
     try {
       // Tunggu Next.js dev server siap (di-spawn oleh concurrently di package.json)
       await waitForPort(DEV_PORT, 120, 1000); // 120 detik timeout (Next.js dev butuh compile)
@@ -546,8 +645,8 @@ app.whenReady().then(async () => {
       console.error("[main] Next.js dev server tidak siap:", err);
       showErrorWindow(
         `Tidak dapat terhubung ke Next.js dev server di http://localhost:${DEV_PORT}.\n\n` +
-        `Pastikan Anda menjalankan 'npm run dev:electron' (bukan 'electron .' langsung),\n` +
-        `atau jalankan 'npm run dev' di terminal terpisah dahulu.`
+          `Pastikan Anda menjalankan 'npm run dev:electron' (bukan 'electron .' langsung),\n` +
+          `atau jalankan 'npm run dev' di terminal terpisah dahulu.`,
       );
     }
     return;
@@ -561,9 +660,7 @@ app.whenReady().then(async () => {
     mainWindow?.loadURL(getLoadUrl());
   } catch (err) {
     console.error("[main] Gagal start Next.js:", err);
-    showErrorWindow(
-      err instanceof Error ? err.message : String(err)
-    );
+    showErrorWindow(err instanceof Error ? err.message : String(err));
   }
 });
 

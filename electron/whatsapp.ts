@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from "electron";
+import crypto from "crypto";
 
 // IMPORTANT: require wwebjs-electron from Electron main process before app.whenReady().
 // It appends the remote debugging switch needed to attach to Electron Chromium.
@@ -7,7 +8,14 @@ const { Client } = require("wwebjs-electron");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const qrcode = require("qrcode");
 
-type WhatsAppStatus = "idle" | "initializing" | "qr" | "authenticated" | "ready" | "disconnected" | "error";
+type WhatsAppStatus =
+  | "idle"
+  | "initializing"
+  | "qr"
+  | "authenticated"
+  | "ready"
+  | "disconnected"
+  | "error";
 
 interface State {
   status: WhatsAppStatus;
@@ -27,8 +35,65 @@ const state: State = {
   initializing: false,
 };
 
-let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null = null;
+let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null =
+  null;
 let qrTimeout: NodeJS.Timeout | null = null;
+let lastRestartAt = 0;
+const restartCooldownMs = 10_000;
+const sendTimestamps: number[] = [];
+const maxSendsPerMinute = 10;
+const maxMessageLength = 4096;
+
+function normalizeWhatsAppNumber(input: string) {
+  const digits = String(input || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  return digits;
+}
+
+function timingSafeEqualString(a: string, b: string) {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+  return (
+    aBuffer.length === bBuffer.length &&
+    crypto.timingSafeEqual(aBuffer, bBuffer)
+  );
+}
+
+function signSendPayload(to: string, message: string, expiresAt: number) {
+  const secret = process.env.AUTH_SECRET || "";
+  if (secret.length < 32) return "";
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`${to}\n${expiresAt}\n${message}`)
+    .digest("hex");
+}
+
+function verifySendToken(payload: {
+  to: string;
+  message: string;
+  token?: string;
+  expiresAt?: number;
+}) {
+  if (!payload.token || !payload.expiresAt) return false;
+  if (!Number.isFinite(payload.expiresAt) || payload.expiresAt < Date.now())
+    return false;
+  const expected = signSendPayload(
+    normalizeWhatsAppNumber(payload.to),
+    payload.message,
+    payload.expiresAt,
+  );
+  return Boolean(expected) && timingSafeEqualString(expected, payload.token);
+}
+
+function checkSendRateLimit() {
+  const now = Date.now();
+  while (sendTimestamps.length && sendTimestamps[0] <= now - 60_000)
+    sendTimestamps.shift();
+  if (sendTimestamps.length >= maxSendsPerMinute) return false;
+  sendTimestamps.push(now);
+  return true;
+}
 
 function log(message: string, extra?: unknown) {
   if (extra !== undefined) console.log(`[whatsapp-electron] ${message}`, extra);
@@ -154,6 +219,15 @@ async function startWhatsAppClientLocked() {
 }
 
 export async function restartWhatsAppClient() {
+  const now = Date.now();
+  if (now - lastRestartAt < restartCooldownMs) {
+    return {
+      ...(await getWhatsAppStatus()),
+      error:
+        "Restart WhatsApp terlalu sering. Tunggu beberapa detik lalu coba lagi.",
+    };
+  }
+  lastRestartAt = now;
   try {
     if (state.client) {
       await state.client.destroy().catch(() => {});
@@ -188,21 +262,42 @@ export async function logoutWhatsAppClient() {
     state.client = null;
     state.window = null;
     state.qrDataUrl = null;
+    state.lastError = null;
     state.status = "disconnected";
   }
   return getWhatsAppStatus();
 }
 
 export async function sendWhatsAppMessage(to: string, message: string) {
+  if (!message || message.length > maxMessageLength) {
+    return {
+      ok: false,
+      error: `Pesan WhatsApp wajib diisi dan maksimal ${maxMessageLength} karakter`,
+    };
+  }
+  if (!checkSendRateLimit()) {
+    return {
+      ok: false,
+      error:
+        "Batas kirim WhatsApp tercapai (maks 10 pesan/menit). Tunggu sebentar.",
+    };
+  }
+
   if (!state.client || state.status !== "ready") {
     const status = await startWhatsAppClient();
     if (status.status !== "ready") {
-      return { ok: false, error: `WhatsApp belum siap (status: ${status.status})`, status };
+      return {
+        ok: false,
+        error: `WhatsApp belum siap (status: ${status.status})`,
+        status,
+      };
     }
   }
 
   try {
-    const number = String(to || "").replace(/\D/g, "");
+    const number = normalizeWhatsAppNumber(to);
+    if (!number)
+      return { ok: false, error: "Nomor WhatsApp tujuan tidak valid" };
     const chatId = `${number}@c.us`;
     await state.client.sendMessage(chatId, message);
     return { ok: true };
@@ -219,7 +314,33 @@ export function registerWhatsAppIpc() {
   ipcMain.handle("whatsapp:start", () => startWhatsAppClient());
   ipcMain.handle("whatsapp:restart", () => restartWhatsAppClient());
   ipcMain.handle("whatsapp:logout", () => logoutWhatsAppClient());
-  ipcMain.handle("whatsapp:send", (_evt, payload: { to: string; message: string }) =>
-    sendWhatsAppMessage(payload.to, payload.message)
+  ipcMain.handle(
+    "whatsapp:send",
+    (
+      _evt,
+      payload: {
+        to: string;
+        message: string;
+        token?: string;
+        expiresAt?: number;
+      },
+    ) => {
+      const normalizedTo = normalizeWhatsAppNumber(payload?.to || "");
+      const message = String(payload?.message || "");
+      if (
+        !verifySendToken({
+          to: normalizedTo,
+          message,
+          token: payload?.token,
+          expiresAt: payload?.expiresAt,
+        })
+      ) {
+        return {
+          ok: false,
+          error: "Token pengiriman WhatsApp tidak valid atau sudah kedaluwarsa",
+        };
+      }
+      return sendWhatsAppMessage(normalizedTo, message);
+    },
   );
 }

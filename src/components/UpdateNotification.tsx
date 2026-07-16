@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DownloadCloud, X, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  DownloadCloud,
+  X,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { isElectron } from "@/lib/hardware";
 
 interface UpdateInfo {
@@ -31,21 +37,28 @@ export default function UpdateNotification() {
     if (!electronAvail || !window.electronAPI) return;
 
     const api = window.electronAPI;
-    api.update.onUpdateAvailable((info) => {
+    const cleanupAvailable = api.update.onUpdateAvailable((info) => {
       setAvailable(info);
       setDismissed(false);
     });
-    api.update.onUpdateDownloaded((info) => {
+    const cleanupDownloaded = api.update.onUpdateDownloaded((info) => {
       setDownloaded(info);
       setAvailable(null);
       setProgress(null);
     });
-    api.update.onUpdateProgress((p) => {
+    const cleanupProgress = api.update.onUpdateProgress((p) => {
       setProgress(p);
     });
-    api.update.onUpdateError((e) => {
+    const cleanupError = api.update.onUpdateError((e) => {
       setError(e.message);
     });
+
+    return () => {
+      cleanupAvailable();
+      cleanupDownloaded();
+      cleanupProgress();
+      cleanupError();
+    };
   }, [electronAvail]);
 
   // Auto-dismiss error after 10s
@@ -104,9 +117,13 @@ export default function UpdateNotification() {
           <div className="flex items-center gap-3 mb-3">
             <RefreshCw size={18} className="text-emerald-500 animate-spin" />
             <div>
-              <h4 className="font-extrabold text-slate-900 text-sm">Mengunduh Update...</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm">
+                Mengunduh Update...
+              </h4>
               <p className="text-xs text-slate-500">
-                {progress.percent.toFixed(0)}% • {(progress.transferred / 1024 / 1024).toFixed(1)}MB / {(progress.total / 1024 / 1024).toFixed(1)}MB
+                {progress.percent.toFixed(0)}% •{" "}
+                {(progress.transferred / 1024 / 1024).toFixed(1)}MB /{" "}
+                {(progress.total / 1024 / 1024).toFixed(1)}MB
               </p>
             </div>
           </div>
@@ -165,7 +182,9 @@ export default function UpdateNotification() {
               <AlertCircle size={20} className="text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-extrabold text-slate-900 text-sm">Gagal Cek Update</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm">
+                Gagal Cek Update
+              </h4>
               <p className="text-xs text-slate-500 mt-1">{error}</p>
             </div>
             <button

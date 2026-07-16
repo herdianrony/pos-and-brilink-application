@@ -2,11 +2,23 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { db, dbReady } from "@/db";
-import { accountMutations, accounts, settings, transactions } from "@/db/schema";
+import {
+  accountMutations,
+  accounts,
+  settings,
+  transactions,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { formatRupiah, formatDate } from "@/lib/utils";
 
-export type WhatsAppConnectionStatus = "idle" | "initializing" | "qr" | "authenticated" | "ready" | "disconnected" | "error";
+export type WhatsAppConnectionStatus =
+  | "idle"
+  | "initializing"
+  | "qr"
+  | "authenticated"
+  | "ready"
+  | "disconnected"
+  | "error";
 
 interface WhatsAppState {
   status: WhatsAppConnectionStatus;
@@ -24,7 +36,8 @@ const state: WhatsAppState = {
   initializing: false,
 };
 
-let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null = null;
+let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null =
+  null;
 let qrTimeout: NodeJS.Timeout | null = null;
 
 function setQrWithTtl(qrDataUrl: string) {
@@ -44,9 +57,13 @@ function getSessionDir(): string {
   // copy browser profile files into .next/standalone and hit EBUSY on Windows.
   // Electron injects WHATSAPP_SESSION_DIR=userData/whatsapp-session. For web/dev
   // fallback, keep it outside the project directory in the OS home folder.
-  const dir = process.env.WHATSAPP_SESSION_DIR || path.join(os.homedir(), ".pos-brilink", "whatsapp-session");
+  const dir =
+    process.env.WHATSAPP_SESSION_DIR ||
+    path.join(os.homedir(), ".pos-brilink", "whatsapp-session");
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  try { fs.chmodSync(dir, 0o700); } catch {}
+  try {
+    fs.chmodSync(dir, 0o700);
+  } catch {}
   return dir;
 }
 
@@ -80,10 +97,18 @@ async function isClientSendReady(): Promise<boolean> {
     if (!page) return false;
     return await page.evaluate(() => {
       const w = window as any;
-      return Boolean(w.Store?.Chat && w.Store?.Msg && w.WWebJS?.getChat && w.WWebJS?.sendMessage);
+      return Boolean(
+        w.Store?.Chat &&
+        w.Store?.Msg &&
+        w.WWebJS?.getChat &&
+        w.WWebJS?.sendMessage,
+      );
     });
   } catch (error) {
-    logWhatsApp("send readiness check failed", error instanceof Error ? error.message : String(error));
+    logWhatsApp(
+      "send readiness check failed",
+      error instanceof Error ? error.message : String(error),
+    );
     return false;
   }
 }
@@ -101,14 +126,20 @@ async function refreshClientReadiness() {
     }
 
     const clientState = await getRawClientState();
-    if (clientState === "CONNECTED" && !["qr", "error", "disconnected"].includes(state.status)) {
+    if (
+      clientState === "CONNECTED" &&
+      !["qr", "error", "disconnected"].includes(state.status)
+    ) {
       // Auth succeeded and WA is connected, but the WhatsApp Web injection layer
       // is not ready yet. Do not mark as ready because sendMessage would fail
       // with errors like: Cannot read properties of undefined (reading 'getChat').
       state.status = "authenticated";
     }
   } catch (error) {
-    logWhatsApp("failed to refresh readiness", error instanceof Error ? error.message : String(error));
+    logWhatsApp(
+      "failed to refresh readiness",
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }
 
@@ -135,7 +166,11 @@ export async function getWhatsAppSettings() {
 
 export async function getWhatsAppStatus() {
   await refreshClientReadiness();
-  const cfg = await getWhatsAppSettings().catch(() => ({ enabled: false, autoNotifyOwner: false, ownerNumber: "" }));
+  const cfg = await getWhatsAppSettings().catch(() => ({
+    enabled: false,
+    autoNotifyOwner: false,
+    ownerNumber: "",
+  }));
   return {
     status: state.status,
     qrDataUrl: state.qrDataUrl,
@@ -177,7 +212,11 @@ async function initWhatsAppClientLocked() {
       puppeteer: {
         headless: true,
         executablePath: getBrowserExecutablePath(),
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+        ],
       },
     });
 
@@ -267,7 +306,12 @@ async function waitForWhatsAppReady(timeoutMs = 20_000): Promise<boolean> {
   while (Date.now() - startedAt < timeoutMs) {
     await refreshClientReadiness();
     if (state.client && state.status === "ready") return true;
-    if (state.status === "qr" || state.status === "error" || state.status === "disconnected") return false;
+    if (
+      state.status === "qr" ||
+      state.status === "error" ||
+      state.status === "disconnected"
+    )
+      return false;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   await refreshClientReadiness();
@@ -279,7 +323,8 @@ export async function sendWhatsAppMessage(to: string, message: string) {
   if (!number) throw new Error("Nomor WhatsApp tujuan belum diatur");
 
   const ready = await waitForWhatsAppReady();
-  if (!state.client || !ready) throw new Error(`WhatsApp belum siap mengirim (status: ${state.status})`);
+  if (!state.client || !ready)
+    throw new Error(`WhatsApp belum siap mengirim (status: ${state.status})`);
 
   const chatId = `${number}@c.us`;
   try {
@@ -288,7 +333,11 @@ export async function sendWhatsAppMessage(to: string, message: string) {
     const msg = error instanceof Error ? error.message : String(error);
     // Some packaged Electron runs report CONNECTED before WWebJS injection is ready.
     // Wait once more and retry to avoid transient getChat/sendMessage failures.
-    if (msg.includes("getChat") || msg.includes("sendMessage") || msg.includes("undefined")) {
+    if (
+      msg.includes("getChat") ||
+      msg.includes("sendMessage") ||
+      msg.includes("WWebJS")
+    ) {
       logWhatsApp("send failed before WA injection ready; retrying", msg);
       state.status = "authenticated";
       const retryReady = await waitForWhatsAppReady(15_000);
@@ -303,22 +352,33 @@ export async function sendWhatsAppMessage(to: string, message: string) {
 
 function ownerActionLabel(flowType: string | null | undefined) {
   switch (flowType) {
-    case "cash_withdrawal": return "CEK TRANSFER MASUK - TARIK TUNAI";
-    case "cash_deposit": return "MOHON TRANSFER - SETOR TUNAI";
-    case "transfer": return "MOHON TRANSFER";
-    case "payment": return "MOHON BAYAR PROVIDER";
-    case "topup": return "MOHON PROSES TOP UP";
-    default: return "NOTIFIKASI TRANSAKSI";
+    case "cash_withdrawal":
+      return "CEK TRANSFER MASUK - TARIK TUNAI";
+    case "cash_deposit":
+      return "MOHON TRANSFER - SETOR TUNAI";
+    case "transfer":
+      return "MOHON TRANSFER";
+    case "payment":
+      return "MOHON BAYAR PROVIDER";
+    case "topup":
+      return "MOHON PROSES TOP UP";
+    default:
+      return "NOTIFIKASI TRANSAKSI";
   }
 }
 
 function statusLabel(status: string | null | undefined): string {
   switch (status || "completed") {
-    case "pending": return "Pending - perlu tindak lanjut";
-    case "completed": return "Selesai";
-    case "void": return "Dibatalkan";
-    case "reversed": return "Di-reverse";
-    default: return status || "Selesai";
+    case "pending":
+      return "Pending - perlu tindak lanjut";
+    case "completed":
+      return "Selesai";
+    case "void":
+      return "Dibatalkan";
+    case "reversed":
+      return "Di-reverse";
+    default:
+      return status || "Selesai";
   }
 }
 
@@ -328,21 +388,44 @@ function signedRupiah(value: number): string {
   return formatRupiah(0);
 }
 
-export function shouldNotifyOwner(flowType: string | null | undefined): boolean {
-  return ["cash_withdrawal", "cash_deposit", "transfer", "payment", "topup"].includes(flowType || "");
+export function shouldNotifyOwner(
+  flowType: string | null | undefined,
+): boolean {
+  return [
+    "cash_withdrawal",
+    "cash_deposit",
+    "transfer",
+    "payment",
+    "topup",
+  ].includes(flowType || "");
 }
 
-export async function buildOwnerNotificationMessage(transactionId: number): Promise<string> {
+export async function buildOwnerNotificationMessage(
+  transactionId: number,
+): Promise<string> {
   await dbReady;
-  const [trx] = await db.select().from(transactions).where(eq(transactions.id, transactionId)).limit(1);
+  const [trx] = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, transactionId))
+    .limit(1);
   if (!trx) throw new Error("Transaksi tidak ditemukan");
 
   const [settlement] = trx.settlementAccountId
-    ? await db.select().from(accounts).where(eq(accounts.id, trx.settlementAccountId)).limit(1)
+    ? await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, trx.settlementAccountId))
+        .limit(1)
     : [null];
 
-  const muts = await db.select().from(accountMutations).where(eq(accountMutations.referenceId, trx.id));
-  const cashMut = muts.find((m) => m.type.startsWith("brilink_out") || m.type.startsWith("brilink_in"));
+  const muts = await db
+    .select()
+    .from(accountMutations)
+    .where(eq(accountMutations.referenceId, trx.id));
+  const cashMut = muts.find(
+    (m) => m.type.startsWith("brilink_out") || m.type.startsWith("brilink_in"),
+  );
   const bankMut = muts.find((m) => m.accountId === trx.settlementAccountId);
 
   const nominal = Number(trx.totalAmount || 0);
@@ -376,33 +459,51 @@ export async function buildOwnerNotificationMessage(transactionId: number): Prom
       const transferIn = Math.abs(bankImpact || nominal + admin);
       lines.push(`Nominal tarik: ${formatRupiah(nominal)}`);
       if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
-      lines.push(`Cash diserahkan kasir: ${formatRupiah(cashDispensed || nominal)}`);
-      lines.push(`Total yang harus masuk rekening: ${formatRupiah(transferIn)}`);
+      lines.push(
+        `Cash diserahkan kasir: ${formatRupiah(cashDispensed || nominal)}`,
+      );
+      lines.push(
+        `Total yang harus masuk rekening: ${formatRupiah(transferIn)}`,
+      );
       lines.push("");
       lines.push("Instruksi owner:");
-      lines.push(`Mohon cek mutasi rekening apakah ${formatRupiah(transferIn)} sudah masuk.`);
-      lines.push("Jika belum masuk, segera koordinasikan dengan kasir sebelum transaksi dianggap aman.");
+      lines.push(
+        `Mohon cek mutasi rekening apakah ${formatRupiah(transferIn)} sudah masuk.`,
+      );
+      lines.push(
+        "Jika belum masuk, segera koordinasikan dengan kasir sebelum transaksi dianggap aman.",
+      );
       break;
     }
     case "cash_deposit": {
       lines.push(`Nominal setor/transfer: ${formatRupiah(nominal)}`);
       if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
-      lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`);
+      lines.push(
+        `Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`,
+      );
       lines.push("");
       lines.push("Instruksi owner:");
-      lines.push("Mohon lakukan transfer/setor ke rekening tujuan melalui kanal resmi.");
-      if (trx.customerPhone) lines.push(`Tujuan/Rekening: ${trx.customerPhone}`);
+      lines.push(
+        "Mohon lakukan transfer/setor ke rekening tujuan melalui kanal resmi.",
+      );
+      if (trx.customerPhone)
+        lines.push(`Tujuan/Rekening: ${trx.customerPhone}`);
       lines.push("Isi nomor referensi setelah transaksi berhasil.");
       break;
     }
     case "transfer": {
       lines.push(`Nominal transfer: ${formatRupiah(nominal)}`);
       if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
-      lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`);
+      lines.push(
+        `Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`,
+      );
       lines.push("");
       lines.push("Instruksi owner:");
-      lines.push("Mohon lakukan transfer dari rekening agen melalui kanal resmi.");
-      if (trx.customerPhone) lines.push(`Rekening/tujuan: ${trx.customerPhone}`);
+      lines.push(
+        "Mohon lakukan transfer dari rekening agen melalui kanal resmi.",
+      );
+      if (trx.customerPhone)
+        lines.push(`Rekening/tujuan: ${trx.customerPhone}`);
       lines.push("Kirim atau isi nomor referensi setelah berhasil.");
       break;
     }
@@ -410,11 +511,13 @@ export async function buildOwnerNotificationMessage(transactionId: number): Prom
       lines.push(`Layanan: ${serviceName}`);
       lines.push(`Nominal tagihan: ${formatRupiah(nominal)}`);
       if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
-      if (cashReceived > 0) lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
+      if (cashReceived > 0)
+        lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
       lines.push("");
       lines.push("Instruksi owner:");
       lines.push("Mohon proses pembayaran di provider resmi.");
-      if (trx.customerPhone) lines.push(`ID/No pelanggan: ${trx.customerPhone}`);
+      if (trx.customerPhone)
+        lines.push(`ID/No pelanggan: ${trx.customerPhone}`);
       lines.push("Isi nomor referensi/transaksi setelah berhasil.");
       break;
     }
@@ -422,7 +525,8 @@ export async function buildOwnerNotificationMessage(transactionId: number): Prom
       lines.push(`Layanan: ${serviceName}`);
       lines.push(`Nominal top up: ${formatRupiah(nominal)}`);
       if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
-      if (cashReceived > 0) lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
+      if (cashReceived > 0)
+        lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
       lines.push("");
       lines.push("Instruksi owner:");
       lines.push("Mohon proses top up melalui provider resmi.");
@@ -448,17 +552,25 @@ export async function buildOwnerNotificationMessage(transactionId: number): Prom
   if (trx.referenceNo) lines.push(`Ref: ${trx.referenceNo}`);
 
   lines.push("");
-  lines.push("Catatan: aplikasi hanya mencatat transaksi. Eksekusi aktual tetap melalui kanal resmi.");
+  lines.push(
+    "Catatan: aplikasi hanya mencatat transaksi. Eksekusi aktual tetap melalui kanal resmi.",
+  );
   return lines.join("\n");
 }
 
 export async function notifyOwnerForTransaction(transactionId: number) {
   const cfg = await getWhatsAppSettings();
-  if (!cfg.enabled || !cfg.autoNotifyOwner) return { sent: false, reason: "disabled" };
+  if (!cfg.enabled || !cfg.autoNotifyOwner)
+    return { sent: false, reason: "disabled" };
   if (!cfg.ownerNumber) return { sent: false, reason: "missing_owner_number" };
 
-  const [trx] = await db.select({ flowType: transactions.flowType }).from(transactions).where(eq(transactions.id, transactionId)).limit(1);
-  if (!trx || !shouldNotifyOwner(trx.flowType)) return { sent: false, reason: "not_required" };
+  const [trx] = await db
+    .select({ flowType: transactions.flowType })
+    .from(transactions)
+    .where(eq(transactions.id, transactionId))
+    .limit(1);
+  if (!trx || !shouldNotifyOwner(trx.flowType))
+    return { sent: false, reason: "not_required" };
 
   // In Electron production, the Next.js child process starts with no in-memory
   // WhatsApp client even when a LocalAuth session already exists on disk.
@@ -471,7 +583,9 @@ export async function notifyOwnerForTransaction(transactionId: number) {
         sent: false,
         reason: "not_ready",
         status: state.status,
-        error: state.lastError || "WhatsApp belum terhubung. Buka Pengaturan → WhatsApp Owner lalu scan/refresh status.",
+        error:
+          state.lastError ||
+          "WhatsApp belum terhubung. Buka Pengaturan → WhatsApp Owner lalu scan/refresh status.",
       };
     }
   }

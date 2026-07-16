@@ -62,7 +62,8 @@ const api = {
     test: () => ipcRenderer.invoke("printer:test"),
     status: () => ipcRenderer.invoke("printer:status"),
     getConfig: () => ipcRenderer.invoke("printer:getConfig"),
-    saveConfig: (config: PrinterConfig) => ipcRenderer.invoke("printer:saveConfig", config),
+    saveConfig: (config: PrinterConfig) =>
+      ipcRenderer.invoke("printer:saveConfig", config),
     loadConfig: () => ipcRenderer.invoke("printer:loadConfig"),
   },
 
@@ -72,23 +73,59 @@ const api = {
     start: () => ipcRenderer.invoke("whatsapp:start"),
     restart: () => ipcRenderer.invoke("whatsapp:restart"),
     logout: () => ipcRenderer.invoke("whatsapp:logout"),
-    send: (payload: { to: string; message: string }) => ipcRenderer.invoke("whatsapp:send", payload),
+    send: (payload: {
+      to: string;
+      message: string;
+      token?: string;
+      expiresAt?: number;
+    }) => ipcRenderer.invoke("whatsapp:send", payload),
   },
 
   // ── Auto-update ───────────────────────────────
   update: {
     check: () => ipcRenderer.invoke("update:check"),
     install: () => ipcRenderer.invoke("update:install"),
-    onUpdateAvailable: (cb: (info: { version: string; releaseNotes?: string }) => void) =>
-      ipcRenderer.on("update:available", (_evt, info) => cb(info)),
-    onUpdateDownloaded: (cb: (info: { version: string }) => void) =>
-      ipcRenderer.on("update:downloaded", (_evt, info) => cb(info)),
-    onUpdateProgress: (cb: (p: { percent: number; transferred: number; total: number }) => void) =>
-      ipcRenderer.on("update:progress", (_evt, p) => cb(p)),
-    onUpdateError: (cb: (e: { message: string }) => void) =>
-      ipcRenderer.on("update:error", (_evt, e) => cb(e)),
-    onUpdateNotAvailable: (cb: () => void) =>
-      ipcRenderer.on("update:not-available", () => cb()),
+    onUpdateAvailable: (
+      cb: (info: { version: string; releaseNotes?: string }) => void,
+    ) => {
+      const handler = (
+        _evt: Electron.IpcRendererEvent,
+        info: { version: string; releaseNotes?: string },
+      ) => cb(info);
+      ipcRenderer.on("update:available", handler);
+      return () => ipcRenderer.removeListener("update:available", handler);
+    },
+    onUpdateDownloaded: (cb: (info: { version: string }) => void) => {
+      const handler = (
+        _evt: Electron.IpcRendererEvent,
+        info: { version: string },
+      ) => cb(info);
+      ipcRenderer.on("update:downloaded", handler);
+      return () => ipcRenderer.removeListener("update:downloaded", handler);
+    },
+    onUpdateProgress: (
+      cb: (p: { percent: number; transferred: number; total: number }) => void,
+    ) => {
+      const handler = (
+        _evt: Electron.IpcRendererEvent,
+        p: { percent: number; transferred: number; total: number },
+      ) => cb(p);
+      ipcRenderer.on("update:progress", handler);
+      return () => ipcRenderer.removeListener("update:progress", handler);
+    },
+    onUpdateError: (cb: (e: { message: string }) => void) => {
+      const handler = (
+        _evt: Electron.IpcRendererEvent,
+        e: { message: string },
+      ) => cb(e);
+      ipcRenderer.on("update:error", handler);
+      return () => ipcRenderer.removeListener("update:error", handler);
+    },
+    onUpdateNotAvailable: (cb: () => void) => {
+      const handler = () => cb();
+      ipcRenderer.on("update:not-available", handler);
+      return () => ipcRenderer.removeListener("update:not-available", handler);
+    },
   },
 
   // ── Window controls ───────────────────────────
@@ -100,7 +137,8 @@ const api = {
   },
 
   // ── Receipt printer shortcut untuk web app ────
-  printReceipt: (data: ReceiptData) => ipcRenderer.invoke("printer:print", data),
+  printReceipt: (data: ReceiptData) =>
+    ipcRenderer.invoke("printer:print", data),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

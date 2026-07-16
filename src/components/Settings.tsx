@@ -2,15 +2,35 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useState } from "react";
-import { Card, Button, Input, Spinner, Tabs, Badge, useToast } from "@/components/ui";
-import { Settings as SettingsIcon, Save, Store, CreditCard, ShieldCheck, AlertTriangle, Check, MessageCircle, LogOut, RefreshCw, QrCode } from "lucide-react";
-import { DynamicIcon } from "@/components/DynamicIcon";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Card,
+  Button,
+  Input,
+  Spinner,
+  Tabs,
+  Badge,
+  useToast,
+} from "@/components/ui";
+import {
+  Settings as SettingsIcon,
+  Save,
+  Store,
+  CreditCard,
+  ShieldCheck,
+  AlertTriangle,
+  Check,
+  MessageCircle,
+  LogOut,
+  RefreshCw,
+  QrCode,
+} from "lucide-react";
 import PrinterSettings from "@/components/PrinterSettings";
 import UserManagement from "@/components/UserManagement";
 import { updateSettings } from "@/lib/use-settings";
 
-type SettingsTab = "profil" | "transaksi" | "whatsapp" | "printer" | "pengguna" | "lanjutan";
+type SettingsTab =
+  "profil" | "transaksi" | "whatsapp" | "printer" | "pengguna" | "lanjutan";
 
 interface WhatsAppStatus {
   status: string;
@@ -34,38 +54,49 @@ export default function SettingsPage() {
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
   const [waLoading, setWaLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ role: string; name?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    role: string;
+    name?: string;
+  } | null>(null);
   const toast = useToast();
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const mergeWhatsAppStatus = useCallback((status: Partial<WhatsAppStatus>) => {
+    const current = dataRef.current;
     return {
       status: status.status || "idle",
       qrDataUrl: status.qrDataUrl ?? null,
       lastError: status.lastError ?? null,
-      enabled: status.enabled ?? data.whatsapp_enabled === "true",
-      autoNotifyOwner: status.autoNotifyOwner ?? data.whatsapp_auto_notify_owner === "true",
-      ownerNumber: status.ownerNumber ?? (data.whatsapp_owner_number || ""),
+      enabled: status.enabled ?? current.whatsapp_enabled === "true",
+      autoNotifyOwner:
+        status.autoNotifyOwner ?? current.whatsapp_auto_notify_owner === "true",
+      ownerNumber: status.ownerNumber ?? (current.whatsapp_owner_number || ""),
     };
-  }, [data.whatsapp_auto_notify_owner, data.whatsapp_enabled, data.whatsapp_owner_number]);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(user => setCurrentUser(user))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((user) => setCurrentUser(user))
       .catch(() => setCurrentUser(null));
 
-    fetch("/api/settings").then(r => r.json()).then(d => {
-      setData({
-        app_name: "POS & Agen Bisnis",
-        business_type: "Agen Bisnis",
-        services_label: "Layanan Agen",
-        ...d,
-        // Never bind an existing bcrypt hash to the PIN input.
-        // Backend only updates the PIN when this field is non-empty.
-        discount_admin_pin: "",
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        setData({
+          app_name: "POS & Agen Bisnis",
+          business_type: "Agen Bisnis",
+          services_label: "Layanan Agen",
+          ...d,
+          // Never bind an existing bcrypt hash to the PIN input.
+          // Backend only updates the PIN when this field is non-empty.
+          discount_admin_pin: "",
+        });
+        setLoading(false);
       });
-      setLoading(false);
-    });
   }, []);
 
   const refreshWhatsAppStatus = useCallback(async () => {
@@ -91,10 +122,13 @@ export default function SettingsPage() {
     try {
       const data = hasElectronWhatsApp()
         ? await window.electronAPI!.whatsapp.start()
-        : await fetch("/api/whatsapp/start", { method: "POST" }).then(r => r.json());
+        : await fetch("/api/whatsapp/start", { method: "POST" }).then((r) =>
+            r.json(),
+          );
       setWaStatus(mergeWhatsAppStatus(data));
       if (data.status === "ready") toast.success("WhatsApp terhubung");
-      else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan");
+      else if (data.qrDataUrl)
+        toast.info("Scan QR WhatsApp untuk menghubungkan");
       else if (data.lastError) toast.error(data.lastError);
     } catch {
       toast.error("Gagal memulai WhatsApp");
@@ -108,13 +142,17 @@ export default function SettingsPage() {
     try {
       const response = hasElectronWhatsApp()
         ? { ok: true, data: await window.electronAPI!.whatsapp.restart() }
-        : await fetch("/api/whatsapp/restart", { method: "POST" }).then(async r => ({ ok: r.ok, data: await r.json() }));
+        : await fetch("/api/whatsapp/restart", { method: "POST" }).then(
+            async (r) => ({ ok: r.ok, data: await r.json() }),
+          );
       const data = response.data;
       if (response.ok) {
         setWaStatus(mergeWhatsAppStatus(data));
         if (data.status === "ready") toast.success("WhatsApp siap digunakan");
-        else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan ulang");
-        else toast.info("Koneksi WhatsApp direstart, tunggu lalu refresh status");
+        else if (data.qrDataUrl)
+          toast.info("Scan QR WhatsApp untuk menghubungkan ulang");
+        else
+          toast.info("Koneksi WhatsApp direstart, tunggu lalu refresh status");
       } else {
         toast.error(data.error || "Gagal restart WhatsApp");
       }
@@ -145,19 +183,26 @@ export default function SettingsPage() {
 
   function whatsappStatusText(status?: string) {
     switch (status) {
-      case "ready": return "Siap mengirim pesan otomatis.";
-      case "authenticated": return "QR sudah berhasil discan. WhatsApp sedang menyiapkan session; jika lebih dari 1-2 menit, klik Restart Koneksi.";
-      case "qr": return "Scan QR dengan WhatsApp kasir/operasional.";
-      case "initializing": return "Sedang memulai WhatsApp Web. Tunggu beberapa saat.";
-      case "disconnected": return "WhatsApp terputus. Klik mulai atau restart untuk menghubungkan.";
-      case "error": return "WhatsApp error. Lihat detail error atau klik restart/logout lalu scan ulang.";
-      default: return "Belum terhubung. Klik Mulai / Tampilkan QR.";
+      case "ready":
+        return "Siap mengirim pesan otomatis.";
+      case "authenticated":
+        return "QR sudah berhasil discan. WhatsApp sedang menyiapkan session; jika lebih dari 1-2 menit, klik Restart Koneksi.";
+      case "qr":
+        return "Scan QR dengan WhatsApp kasir/operasional.";
+      case "initializing":
+        return "Sedang memulai WhatsApp Web. Tunggu beberapa saat.";
+      case "disconnected":
+        return "WhatsApp terputus. Klik mulai atau restart untuk menghubungkan.";
+      case "error":
+        return "WhatsApp error. Lihat detail error atau klik restart/logout lalu scan ulang.";
+      default:
+        return "Belum terhubung. Klik Mulai / Tampilkan QR.";
     }
   }
 
   function update(key: string, value: string, section: string) {
-    setData(prev => ({ ...prev, [key]: value }));
-    setDirty(prev => ({ ...prev, [section]: true }));
+    setData((prev) => ({ ...prev, [key]: value }));
+    setDirty((prev) => ({ ...prev, [section]: true }));
   }
 
   async function saveSection(section: string, keys: string[]) {
@@ -177,8 +222,8 @@ export default function SettingsPage() {
         return;
       }
       await updateSettings(data);
-      setSavedAt(prev => ({ ...prev, [section]: Date.now() }));
-      setDirty(prev => ({ ...prev, [section]: false }));
+      setSavedAt((prev) => ({ ...prev, [section]: Date.now() }));
+      setDirty((prev) => ({ ...prev, [section]: false }));
       toast.success("Pengaturan berhasil disimpan");
     } catch {
       toast.error("Gagal menyimpan pengaturan");
@@ -189,7 +234,10 @@ export default function SettingsPage() {
 
   const formatSavedTime = (ts?: number) => {
     if (!ts) return null;
-    return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    return new Date(ts).toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   if (loading) return <Spinner />;
@@ -197,9 +245,12 @@ export default function SettingsPage() {
   if (currentUser && currentUser.role !== "admin") {
     return (
       <Card className="p-6 border-amber-200 bg-amber-50">
-        <h2 className="text-xl font-extrabold text-amber-800">Akses Admin Diperlukan</h2>
+        <h2 className="text-xl font-extrabold text-amber-800">
+          Akses Admin Diperlukan
+        </h2>
         <p className="mt-2 text-sm text-amber-700">
-          Halaman Pengaturan hanya tersedia untuk administrator. Hubungi owner/admin untuk mengubah konfigurasi aplikasi.
+          Halaman Pengaturan hanya tersedia untuk administrator. Hubungi
+          owner/admin untuk mengubah konfigurasi aplikasi.
         </p>
       </Card>
     );
@@ -211,14 +262,20 @@ export default function SettingsPage() {
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <SettingsIcon size={24} className="text-slate-500" /> Pengaturan
         </h2>
-        <p className="text-sm text-slate-400">Konfigurasi bisnis, transaksi, dan aplikasi</p>
+        <p className="text-sm text-slate-400">
+          Konfigurasi bisnis, transaksi, dan aplikasi
+        </p>
       </div>
 
       {/* Tab navigation */}
       <Tabs
         tabs={[
           { id: "profil", label: "Profil Usaha", icon: "store" },
-          { id: "transaksi", label: "Transaksi & Settlement", icon: "credit-card" },
+          {
+            id: "transaksi",
+            label: "Transaksi & Settlement",
+            icon: "credit-card",
+          },
           { id: "whatsapp", label: "WhatsApp Owner", icon: "message-circle" },
           { id: "printer", label: "Printer & Struk", icon: "printer" },
           { id: "pengguna", label: "Pengguna", icon: "users" },
@@ -241,19 +298,54 @@ export default function SettingsPage() {
               savedAt={formatSavedTime(savedAt.profil)}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Nama Toko" value={data.store_name || ""} onChange={e => update("store_name", e.target.value, "profil")} placeholder="Nama toko Anda" />
-              <Input label="ID Agen / Kode Bisnis" value={data.agent_id || ""} onChange={e => update("agent_id", e.target.value, "profil")} placeholder="Mis. BRL-xxxx (opsional)" />
+              <Input
+                label="Nama Toko"
+                value={data.store_name || ""}
+                onChange={(e) => update("store_name", e.target.value, "profil")}
+                placeholder="Nama toko Anda"
+              />
+              <Input
+                label="ID Agen / Kode Bisnis"
+                value={data.agent_id || ""}
+                onChange={(e) => update("agent_id", e.target.value, "profil")}
+                placeholder="Mis. BRL-xxxx (opsional)"
+              />
             </div>
-            <Input label="Alamat" value={data.store_address || ""} onChange={e => update("store_address", e.target.value, "profil")} placeholder="Alamat lengkap toko" />
+            <Input
+              label="Alamat"
+              value={data.store_address || ""}
+              onChange={(e) =>
+                update("store_address", e.target.value, "profil")
+              }
+              placeholder="Alamat lengkap toko"
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Nama Pemilik" value={data.owner_name || ""} onChange={e => update("owner_name", e.target.value, "profil")} placeholder="Nama pemilik" />
-              <Input label="No. Telepon" value={data.phone || ""} onChange={e => update("phone", e.target.value, "profil")} placeholder="08xxxxxxxxxx" />
+              <Input
+                label="Nama Pemilik"
+                value={data.owner_name || ""}
+                onChange={(e) => update("owner_name", e.target.value, "profil")}
+                placeholder="Nama pemilik"
+              />
+              <Input
+                label="No. Telepon"
+                value={data.phone || ""}
+                onChange={(e) => update("phone", e.target.value, "profil")}
+                placeholder="08xxxxxxxxxx"
+              />
             </div>
             <SaveButton
               saving={saving === "profil"}
               dirty={dirty.profil}
               savedAt={formatSavedTime(savedAt.profil)}
-              onClick={() => saveSection("profil", ["store_name", "store_address", "agent_id", "owner_name", "phone"])}
+              onClick={() =>
+                saveSection("profil", [
+                  "store_name",
+                  "store_address",
+                  "agent_id",
+                  "owner_name",
+                  "phone",
+                ])
+              }
               label="Simpan Informasi Usaha"
             />
           </Card>
@@ -268,14 +360,28 @@ export default function SettingsPage() {
               savedAt={formatSavedTime(savedAt.branding)}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Nama Aplikasi" value={data.app_name || ""} onChange={e => update("app_name", e.target.value, "branding")} placeholder="POS & Agen Bisnis" />
-              <Input label="Label Menu Layanan" value={data.services_label || ""} onChange={e => update("services_label", e.target.value, "branding")} placeholder="Layanan Agen" />
+              <Input
+                label="Nama Aplikasi"
+                value={data.app_name || ""}
+                onChange={(e) => update("app_name", e.target.value, "branding")}
+                placeholder="POS & Agen Bisnis"
+              />
+              <Input
+                label="Label Menu Layanan"
+                value={data.services_label || ""}
+                onChange={(e) =>
+                  update("services_label", e.target.value, "branding")
+                }
+                placeholder="Layanan Agen"
+              />
             </div>
             <SaveButton
               saving={saving === "branding"}
               dirty={dirty.branding}
               savedAt={formatSavedTime(savedAt.branding)}
-              onClick={() => saveSection("branding", ["app_name", "services_label"])}
+              onClick={() =>
+                saveSection("branding", ["app_name", "services_label"])
+              }
               label="Simpan Branding"
             />
           </Card>
@@ -299,26 +405,53 @@ export default function SettingsPage() {
                 label="Wajib konfirmasi uang fisik"
                 desc="Kasir harus konfirmasi sebelum transaksi tunai disimpan."
                 checked={data.require_cash_confirmation === "true"}
-                onChange={(v) => update("require_cash_confirmation", v ? "true" : "false", "policy")}
+                onChange={(v) =>
+                  update(
+                    "require_cash_confirmation",
+                    v ? "true" : "false",
+                    "policy",
+                  )
+                }
               />
               <ToggleRow
                 label="Wajib nomor referensi untuk transfer/pembayaran"
                 desc="Transaksi external provider wajib diisi nomor referensi saat diselesaikan."
                 checked={data.require_transaction_reference === "true"}
-                onChange={(v) => update("require_transaction_reference", v ? "true" : "false", "policy")}
+                onChange={(v) =>
+                  update(
+                    "require_transaction_reference",
+                    v ? "true" : "false",
+                    "policy",
+                  )
+                }
               />
               <ToggleRow
                 label="Transfer/pembayaran dibuat sebagai Pending"
                 desc="Transaksi external provider dibuat dengan status 'pending' hingga dikonfirmasi."
-                checked={data.default_service_status === "recorded" || data.default_service_status === "pending"}
-                onChange={(v) => update("default_service_status", v ? "recorded" : "completed", "policy")}
+                checked={
+                  data.default_service_status === "recorded" ||
+                  data.default_service_status === "pending"
+                }
+                onChange={(v) =>
+                  update(
+                    "default_service_status",
+                    v ? "recorded" : "completed",
+                    "policy",
+                  )
+                }
               />
             </div>
             <SaveButton
               saving={saving === "policy"}
               dirty={dirty.policy}
               savedAt={formatSavedTime(savedAt.policy)}
-              onClick={() => saveSection("policy", ["require_cash_confirmation", "require_transaction_reference", "default_service_status"])}
+              onClick={() =>
+                saveSection("policy", [
+                  "require_cash_confirmation",
+                  "require_transaction_reference",
+                  "default_service_status",
+                ])
+              }
               label="Simpan Aturan Pencatatan"
             />
           </Card>
@@ -337,33 +470,56 @@ export default function SettingsPage() {
                 label="Maksimal Diskon Nominal (Rp)"
                 type="number"
                 value={data.max_discount_amount || "100000"}
-                onChange={e => update("max_discount_amount", e.target.value, "discount")}
+                onChange={(e) =>
+                  update("max_discount_amount", e.target.value, "discount")
+                }
                 placeholder="100000"
               />
               <Input
                 label="Maksimal Diskon Persentase (%)"
                 type="number"
                 value={data.max_discount_percent || "10"}
-                onChange={e => update("max_discount_percent", e.target.value, "discount")}
+                onChange={(e) =>
+                  update("max_discount_percent", e.target.value, "discount")
+                }
                 placeholder="10"
               />
             </div>
             <Input
-              label={data.discount_admin_pin_set === "true" ? "PIN Otorisasi Diskon (sudah diset — kosongkan untuk pertahankan)" : "PIN Otorisasi Diskon Besar"}
+              label={
+                data.discount_admin_pin_set === "true"
+                  ? "PIN Otorisasi Diskon (sudah diset — kosongkan untuk pertahankan)"
+                  : "PIN Otorisasi Diskon Besar"
+              }
               type="password"
               value={data.discount_admin_pin || ""}
-              onChange={e => update("discount_admin_pin", e.target.value, "discount")}
-              placeholder={data.discount_admin_pin_set === "true" ? "•••••• (biarkan kosong untuk tidak ubah)" : "Kosongkan jika tidak ada PIN"}
+              onChange={(e) =>
+                update("discount_admin_pin", e.target.value, "discount")
+              }
+              placeholder={
+                data.discount_admin_pin_set === "true"
+                  ? "•••••• (biarkan kosong untuk tidak ubah)"
+                  : "Kosongkan jika tidak ada PIN"
+              }
             />
             <p className="text-xs text-slate-400">
-              Diskon di atas batas nominal/persentase atau diskon 100% wajib PIN admin.
-              {data.discount_admin_pin_set === "true" ? " PIN sudah diset. Kosongkan field untuk mempertahankan PIN yang ada." : " Masukkan PIN baru untuk mengaktifkan."}
+              Diskon di atas batas nominal/persentase atau diskon 100% wajib PIN
+              admin.
+              {data.discount_admin_pin_set === "true"
+                ? " PIN sudah diset. Kosongkan field untuk mempertahankan PIN yang ada."
+                : " Masukkan PIN baru untuk mengaktifkan."}
             </p>
             <SaveButton
               saving={saving === "discount"}
               dirty={dirty.discount}
               savedAt={formatSavedTime(savedAt.discount)}
-              onClick={() => saveSection("discount", ["max_discount_amount", "max_discount_percent", "discount_admin_pin"])}
+              onClick={() =>
+                saveSection("discount", [
+                  "max_discount_amount",
+                  "max_discount_percent",
+                  "discount_admin_pin",
+                ])
+              }
               label="Simpan Policy Diskon"
             />
           </Card>
@@ -376,10 +532,15 @@ export default function SettingsPage() {
               desc="Kelola rekening bank/e-wallet aktif untuk transaksi."
             />
             <p className="text-sm text-slate-600">
-              Rekening settlement dikelola di halaman <strong>Kas & Saldo</strong>.
-              Anda bisa menambah, mengaktifkan, menonaktifkan, dan mengatur saldo rekening di sana.
+              Rekening settlement dikelola di halaman{" "}
+              <strong>Kas & Saldo</strong>. Anda bisa menambah, mengaktifkan,
+              menonaktifkan, dan mengatur saldo rekening di sana.
             </p>
-            <Button variant="secondary" size="sm" onClick={() => window.location.hash = "cash"}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => (window.location.hash = "cash")}
+            >
               Kelola Rekening & Saldo
             </Button>
           </Card>
@@ -387,12 +548,16 @@ export default function SettingsPage() {
           {/* Info: Opening Balance */}
           <Card className="p-4 bg-amber-50 border-amber-100">
             <div className="flex items-start gap-3">
-              <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle
+                size={18}
+                className="text-amber-500 flex-shrink-0 mt-0.5"
+              />
               <div className="text-sm">
                 <p className="font-semibold text-amber-800">Saldo Kas</p>
                 <p className="text-amber-700 text-xs mt-0.5">
-                  Saldo kas nyata dikelola di menu <strong>Kas & Saldo</strong> melalui fitur "Sesuaikan".
-                  Pengaturan opening_balance di sini hanya referensi setup awal dan tidak mengubah saldo aktual.
+                  Saldo kas nyata dikelola di menu <strong>Kas & Saldo</strong>{" "}
+                  melalui fitur "Sesuaikan". Pengaturan opening_balance di sini
+                  hanya referensi setup awal dan tidak mengubah saldo aktual.
                 </p>
               </div>
             </div>
@@ -412,31 +577,49 @@ export default function SettingsPage() {
               savedAt={formatSavedTime(savedAt.whatsapp)}
             />
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              Gunakan nomor WhatsApp kasir/operasional untuk scan QR. Fitur ini memakai WhatsApp Web otomatis, jadi jangan dipakai untuk spam/broadcast massal.
+              Gunakan nomor WhatsApp kasir/operasional untuk scan QR. Fitur ini
+              memakai WhatsApp Web otomatis, jadi jangan dipakai untuk
+              spam/broadcast massal.
             </div>
             <ToggleRow
               label="Aktifkan WhatsApp Owner"
               desc="Jika aktif, aplikasi dapat mengirim pesan WhatsApp otomatis saat transaksi tertentu dicatat."
               checked={data.whatsapp_enabled === "true"}
-              onChange={(v) => update("whatsapp_enabled", v ? "true" : "false", "whatsapp")}
+              onChange={(v) =>
+                update("whatsapp_enabled", v ? "true" : "false", "whatsapp")
+              }
             />
             <ToggleRow
               label="Kirim otomatis setelah transaksi layanan agen"
               desc="Tarik Tunai, Transfer, Setor, Pembayaran, dan Top Up akan mengirim notifikasi ke owner jika WhatsApp siap."
               checked={data.whatsapp_auto_notify_owner === "true"}
-              onChange={(v) => update("whatsapp_auto_notify_owner", v ? "true" : "false", "whatsapp")}
+              onChange={(v) =>
+                update(
+                  "whatsapp_auto_notify_owner",
+                  v ? "true" : "false",
+                  "whatsapp",
+                )
+              }
             />
             <Input
               label="Nomor WhatsApp Owner"
               value={data.whatsapp_owner_number || ""}
-              onChange={e => update("whatsapp_owner_number", e.target.value, "whatsapp")}
+              onChange={(e) =>
+                update("whatsapp_owner_number", e.target.value, "whatsapp")
+              }
               placeholder="081234567890"
             />
             <SaveButton
               saving={saving === "whatsapp"}
               dirty={dirty.whatsapp}
               savedAt={formatSavedTime(savedAt.whatsapp)}
-              onClick={() => saveSection("whatsapp", ["whatsapp_enabled", "whatsapp_auto_notify_owner", "whatsapp_owner_number"])}
+              onClick={() =>
+                saveSection("whatsapp", [
+                  "whatsapp_enabled",
+                  "whatsapp_auto_notify_owner",
+                  "whatsapp_owner_number",
+                ])
+              }
               label="Simpan Pengaturan WhatsApp"
             />
           </Card>
@@ -449,35 +632,82 @@ export default function SettingsPage() {
             />
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={waStatus?.status === "ready" ? "success" : waStatus?.status === "qr" || waStatus?.status === "authenticated" ? "warning" : waStatus?.status === "error" ? "danger" : "default"}>
+                <Badge
+                  variant={
+                    waStatus?.status === "ready"
+                      ? "success"
+                      : waStatus?.status === "qr" ||
+                          waStatus?.status === "authenticated"
+                        ? "warning"
+                        : waStatus?.status === "error"
+                          ? "danger"
+                          : "default"
+                  }
+                >
                   Status: {waStatus?.status || "idle"}
                 </Badge>
-                {waStatus?.lastError && <span className="text-xs text-red-600">{waStatus.lastError}</span>}
+                {waStatus?.lastError && (
+                  <span className="text-xs text-red-600">
+                    {waStatus.lastError}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-500">{whatsappStatusText(waStatus?.status)}</p>
+              <p className="text-xs text-slate-500">
+                {whatsappStatusText(waStatus?.status)}
+              </p>
               {waStatus?.status === "authenticated" && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                  QR sudah diterima WhatsApp, tetapi client belum siap kirim. Tunggu sebentar lalu klik Refresh Status. Jika tetap authenticated lebih dari 1-2 menit, klik Restart Koneksi.
+                  QR sudah diterima WhatsApp, tetapi client belum siap kirim.
+                  Tunggu sebentar lalu klik Refresh Status. Jika tetap
+                  authenticated lebih dari 1-2 menit, klik Restart Koneksi.
                 </div>
               )}
             </div>
             {waStatus?.qrDataUrl && (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <img src={waStatus.qrDataUrl} alt="QR WhatsApp" className="h-64 w-64 rounded-xl bg-white p-2" />
-                <p className="text-xs text-slate-500 text-center">Buka WhatsApp kasir → Perangkat tertaut → Tautkan perangkat → scan QR ini.</p>
+                <img
+                  src={waStatus.qrDataUrl}
+                  alt="QR WhatsApp"
+                  className="h-64 w-64 rounded-xl bg-white p-2"
+                />
+                <p className="text-xs text-slate-500 text-center">
+                  Buka WhatsApp kasir → Perangkat tertaut → Tautkan perangkat →
+                  scan QR ini.
+                </p>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
-              <Button variant="primary" size="sm" onClick={startWhatsApp} disabled={waLoading}>
-                <MessageCircle size={14} /> {waLoading ? "Memproses..." : "Mulai / Tampilkan QR"}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={startWhatsApp}
+                disabled={waLoading}
+              >
+                <MessageCircle size={14} />{" "}
+                {waLoading ? "Memproses..." : "Mulai / Tampilkan QR"}
               </Button>
-              <Button variant="secondary" size="sm" onClick={refreshWhatsAppStatus} disabled={waLoading}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={refreshWhatsAppStatus}
+                disabled={waLoading}
+              >
                 <RefreshCw size={14} /> Refresh Status
               </Button>
-              <Button variant="secondary" size="sm" onClick={restartWhatsApp} disabled={waLoading}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={restartWhatsApp}
+                disabled={waLoading}
+              >
                 <RefreshCw size={14} /> Restart Koneksi
               </Button>
-              <Button variant="danger" size="sm" onClick={logoutWhatsApp} disabled={waLoading}>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={logoutWhatsApp}
+                disabled={waLoading}
+              >
                 <LogOut size={14} /> Logout WhatsApp
               </Button>
             </div>
@@ -486,14 +716,10 @@ export default function SettingsPage() {
       )}
 
       {/* ══════ TAB: Printer & Struk ══════ */}
-      {activeTab === "printer" && (
-        <PrinterSettings />
-      )}
+      {activeTab === "printer" && <PrinterSettings />}
 
       {/* ══════ TAB: Pengguna ══════ */}
-      {activeTab === "pengguna" && (
-        <UserManagement />
-      )}
+      {activeTab === "pengguna" && <UserManagement />}
 
       {/* ══════ TAB: Lanjutan ══════ */}
       {activeTab === "lanjutan" && (
@@ -508,8 +734,12 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">Export Backup</p>
-                  <p className="text-xs text-slate-400">Download seluruh database dalam format .db</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    Export Backup
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Download seluruh database dalam format .db
+                  </p>
                 </div>
                 <Button
                   variant="secondary"
@@ -517,7 +747,10 @@ export default function SettingsPage() {
                   onClick={async () => {
                     try {
                       const res = await fetch("/api/backup");
-                      if (!res.ok) { toast.error("Gagal export backup"); return; }
+                      if (!res.ok) {
+                        toast.error("Gagal export backup");
+                        return;
+                      }
                       const blob = await res.blob();
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
@@ -526,7 +759,9 @@ export default function SettingsPage() {
                       a.click();
                       URL.revokeObjectURL(url);
                       toast.success("Backup berhasil diunduh");
-                    } catch { toast.error("Gagal export backup"); }
+                    } catch {
+                      toast.error("Gagal export backup");
+                    }
                   }}
                 >
                   Download Backup
@@ -535,8 +770,13 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">Restore Database</p>
-                  <p className="text-xs text-slate-400">Restore dari file backup .db. Database saat ini akan ditimpa.</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    Restore Database
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Restore dari file backup .db. Database saat ini akan
+                    ditimpa.
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -547,16 +787,35 @@ export default function SettingsPage() {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      if (!confirm("Restore database akan MENGGANTI semua data saat ini. Lanjutkan?")) return;
+                      if (
+                        !confirm(
+                          "Restore database akan MENGGANTI semua data saat ini. Lanjutkan?",
+                        )
+                      )
+                        return;
                       try {
-                        const res = await fetch("/api/backup", { method: "POST", body: file });
+                        const res = await fetch("/api/backup", {
+                          method: "POST",
+                          body: file,
+                        });
                         const d = await res.json();
-                        if (res.ok) toast.success("Database berhasil di-restore. Mulai ulang aplikasi.");
+                        if (res.ok)
+                          toast.success(
+                            "Database berhasil di-restore. Mulai ulang aplikasi.",
+                          );
                         else toast.error(d.error || "Gagal restore");
-                      } catch { toast.error("Gagal restore database"); }
+                      } catch {
+                        toast.error("Gagal restore database");
+                      }
                     }}
                   />
-                  <Button variant="secondary" size="sm" onClick={() => document.getElementById("restore-file")?.click()}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      document.getElementById("restore-file")?.click()
+                    }
+                  >
                     Upload & Restore
                   </Button>
                 </div>
@@ -574,15 +833,26 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">Reset Demo Data</p>
-                  <p className="text-xs text-slate-400">Hapus produk contoh dan fee tier demo.</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    Reset Demo Data
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Hapus produk contoh dan fee tier demo.
+                  </p>
                 </div>
                 <Button
                   variant="danger"
                   size="sm"
                   onClick={async () => {
-                    if (!confirm("Hapus semua data demo? Data user tidak terpengaruh.")) return;
-                    const res = await fetch("/api/seed-demo", { method: "DELETE" });
+                    if (
+                      !confirm(
+                        "Hapus semua data demo? Data user tidak terpengaruh.",
+                      )
+                    )
+                      return;
+                    const res = await fetch("/api/seed-demo", {
+                      method: "DELETE",
+                    });
                     const d = await res.json();
                     if (res.ok) toast.success("Demo data dihapus");
                     else toast.error(d.error || "Gagal menghapus demo data");
@@ -601,7 +871,13 @@ export default function SettingsPage() {
 
 // ── Helper Components ─────────────────────────────
 
-function SectionHeader({ icon, title, desc, dirty, savedAt }: {
+function SectionHeader({
+  icon,
+  title,
+  desc,
+  dirty,
+  savedAt,
+}: {
   icon: React.ReactNode;
   title: string;
   desc: string;
@@ -614,14 +890,24 @@ function SectionHeader({ icon, title, desc, dirty, savedAt }: {
         {icon}
         <h3 className="font-extrabold text-slate-700">{title}</h3>
         {dirty && <Badge variant="warning">Belum disimpan</Badge>}
-        {savedAt && !dirty && <span className="text-xs text-emerald-600 flex items-center gap-1"><Check size={10} /> Tersimpan {savedAt}</span>}
+        {savedAt && !dirty && (
+          <span className="text-xs text-emerald-600 flex items-center gap-1">
+            <Check size={10} /> Tersimpan {savedAt}
+          </span>
+        )}
       </div>
       <p className="text-xs text-slate-400">{desc}</p>
     </div>
   );
 }
 
-function SaveButton({ saving, dirty, savedAt, onClick, label }: {
+function SaveButton({
+  saving,
+  dirty,
+  savedAt,
+  onClick,
+  label,
+}: {
   saving: boolean;
   dirty?: boolean;
   savedAt?: string | null;
@@ -633,12 +919,19 @@ function SaveButton({ saving, dirty, savedAt, onClick, label }: {
       <Button onClick={onClick} disabled={saving || !dirty} size="sm">
         <Save size={14} /> {saving ? "Menyimpan..." : label}
       </Button>
-      {savedAt && !dirty && <span className="text-xs text-emerald-600">✓ Tersimpan {savedAt}</span>}
+      {savedAt && !dirty && (
+        <span className="text-xs text-emerald-600">✓ Tersimpan {savedAt}</span>
+      )}
     </div>
   );
 }
 
-function ToggleRow({ label, desc, checked, onChange }: {
+function ToggleRow({
+  label,
+  desc,
+  checked,
+  onChange,
+}: {
   label: string;
   desc: string;
   checked: boolean;
