@@ -11,6 +11,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Simulasi auto-update Electron untuk QA/demo tanpa perlu publish GitHub Release sungguhan.
 - Script release/check versi untuk workflow rilis Windows Electron.
 - Tombol cek update dan simulasi update di halaman Tentang saat berjalan di Electron.
+- Panel **Log & Monitoring Aplikasi** di Pengaturan > Lanjutan untuk memantau error API, error tampilan, log server Electron, download log, dan membersihkan log aktif.
 
 ### Security
 - Mengamankan IPC `whatsapp:send` Electron dengan token HMAC yang terikat ke nomor owner, isi pesan, dan masa kedaluwarsa.

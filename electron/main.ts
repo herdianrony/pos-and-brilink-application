@@ -179,6 +179,7 @@ async function startNextServer(): Promise<void> {
 
     process.env.AUTH_SECRET = authSecret;
 
+    const appLogDir = path.join(app.getPath("userData"), "logs");
     const whatsappSessionDir = path.join(
       app.getPath("userData"),
       "whatsapp-session",
@@ -195,11 +196,12 @@ async function startNextServer(): Promise<void> {
       AUTH_SECRET: authSecret, // C-01: secret unik per instalasi
       WHATSAPP_SESSION_DIR: whatsappSessionDir,
       WHATSAPP_BROWSER_PATH: whatsappBrowserPath,
+      APP_LOG_DIR: appLogDir,
       PATH: process.env.PATH,
     };
 
     // ── Buat log file untuk debug ─────────────────
-    const logDir = path.join(app.getPath("userData"), "logs");
+    const logDir = appLogDir;
     try {
       const fs = require("fs");
       fs.mkdirSync(logDir, { recursive: true });

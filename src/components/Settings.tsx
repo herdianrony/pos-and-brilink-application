@@ -24,10 +24,14 @@ import {
   LogOut,
   RefreshCw,
   QrCode,
+  FileText,
+  Download,
+  Trash2,
 } from "lucide-react";
 import PrinterSettings from "@/components/PrinterSettings";
 import UserManagement from "@/components/UserManagement";
 import { updateSettings } from "@/lib/use-settings";
+import { cn } from "@/lib/utils";
 
 type SettingsTab =
   "profil" | "transaksi" | "whatsapp" | "printer" | "pengguna" | "lanjutan";
@@ -39,6 +43,14 @@ interface WhatsAppStatus {
   enabled: boolean;
   autoNotifyOwner: boolean;
   ownerNumber: string;
+}
+
+interface AppLogEntry {
+  ts: string;
+  level: "debug" | "info" | "warn" | "error";
+  source: string;
+  message: string;
+  details?: unknown;
 }
 
 function hasElectronWhatsApp() {
@@ -724,6 +736,8 @@ export default function SettingsPage() {
       {/* ══════ TAB: Lanjutan ══════ */}
       {activeTab === "lanjutan" && (
         <div className="space-y-5">
+          <SystemLogsPanel />
+
           {/* Backup & Restore */}
           <Card className="p-5 space-y-4">
             <SectionHeader
@@ -870,6 +884,194 @@ export default function SettingsPage() {
 }
 
 // ── Helper Components ─────────────────────────────
+
+function SystemLogsPanel() {
+  const [logs, setLogs] = useState<AppLogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [level, setLevel] = useState("all");
+  const [query, setQuery] = useState("");
+  const toast = useToast();
+
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "250", level, q: query });
+      const res = await fetch(`/api/system/logs?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Gagal memuat log");
+      setLogs(body.entries || []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal memuat log");
+    } finally {
+      setLoading(false);
+    }
+  }, [level, query, toast]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
+
+  async function clearLogs() {
+    if (
+      !confirm(
+        "Bersihkan log aplikasi? Log aktif akan dikosongkan, tetapi log backup/rotasi tetap bisa ada di folder logs.",
+      )
+    )
+      return;
+    try {
+      const res = await fetch("/api/system/logs", { method: "DELETE" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Gagal membersihkan log");
+      toast.success("Log aplikasi dibersihkan");
+      await loadLogs();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal membersihkan log",
+      );
+    }
+  }
+
+  function downloadLogs() {
+    const content = logs
+      .map((entry) => {
+        const header = `[${new Date(entry.ts).toLocaleString("id-ID")}] ${entry.level.toUpperCase()} ${entry.source}: ${entry.message}`;
+        return entry.details
+          ? `${header}\n${JSON.stringify(entry.details, null, 2)}`
+          : header;
+      })
+      .join("\n\n");
+    const blob = new Blob([content || "Tidak ada log"], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pos-brilink-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const counters = logs.reduce(
+    (acc, entry) => {
+      acc[entry.level] = (acc[entry.level] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  return (
+    <Card className="p-5 space-y-4">
+      <SectionHeader
+        icon={<FileText size={18} className="text-slate-600" />}
+        title="Log & Monitoring Aplikasi"
+        desc="Pantau error API, error tampilan, WhatsApp, update, dan log server Electron. Hanya admin yang dapat melihat log."
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          ["error", "Error", "bg-red-50 text-red-700 border-red-100"],
+          ["warn", "Warning", "bg-amber-50 text-amber-700 border-amber-100"],
+          ["info", "Info", "bg-blue-50 text-blue-700 border-blue-100"],
+          ["debug", "Debug", "bg-slate-50 text-slate-600 border-slate-100"],
+        ].map(([key, label, cls]) => (
+          <div key={key} className={`rounded-xl border px-3 py-2 ${cls}`}>
+            <p className="text-[11px] font-bold uppercase tracking-wide">
+              {label}
+            </p>
+            <p className="text-lg font-extrabold">{counters[key] || 0}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-2">
+        <select
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
+        >
+          <option value="all">Semua Level</option>
+          <option value="error">Error</option>
+          <option value="warn">Warning</option>
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+        </select>
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Cari sumber/pesan log..."
+        />
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadLogs}
+            disabled={loading}
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
+            Refresh
+          </Button>
+          <Button variant="secondary" size="sm" onClick={downloadLogs}>
+            <Download size={14} /> Download
+          </Button>
+          <Button variant="danger" size="sm" onClick={clearLogs}>
+            <Trash2 size={14} /> Bersihkan
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-950 text-slate-100">
+        <div className="max-h-[420px] overflow-auto divide-y divide-slate-800">
+          {loading ? (
+            <div className="p-4">
+              <Spinner />
+            </div>
+          ) : logs.length === 0 ? (
+            <p className="p-4 text-sm text-slate-400">
+              Belum ada log untuk filter ini.
+            </p>
+          ) : (
+            logs.map((entry, idx) => (
+              <div
+                key={`${entry.ts}-${idx}`}
+                className="p-3 font-mono text-xs space-y-1"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-slate-400">
+                    {new Date(entry.ts).toLocaleString("id-ID")}
+                  </span>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase",
+                      entry.level === "error" && "bg-red-500/20 text-red-300",
+                      entry.level === "warn" &&
+                        "bg-amber-500/20 text-amber-300",
+                      entry.level === "info" && "bg-blue-500/20 text-blue-300",
+                      entry.level === "debug" &&
+                        "bg-slate-500/20 text-slate-300",
+                    )}
+                  >
+                    {entry.level}
+                  </span>
+                  <span className="text-emerald-300">{entry.source}</span>
+                </div>
+                <p className="whitespace-pre-wrap break-words text-slate-100">
+                  {entry.message}
+                </p>
+                {entry.details !== undefined && (
+                  <pre className="whitespace-pre-wrap break-words rounded-xl bg-slate-900 p-2 text-slate-300">
+                    {JSON.stringify(entry.details, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function SectionHeader({
   icon,
