@@ -199,32 +199,32 @@ export default function BLServicesTab() {
   async function save() {
     if (!f.name) return;
     setSaving(true);
-    let createdServiceId: number | null = null;
     try {
       const agentFee = f.profitDifferent ? (f.agentFee || "0") : (f.adminFee || "0");
       const res = await fetch("/api/brilink-services", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, flowType: f.flowType, defaultFeeMethod: f.defaultFeeMethod, description: f.description || null })
+        body: JSON.stringify({
+          ...(edit ? { id: edit.id } : {}),
+          name: f.name,
+          categoryId: f.categoryId ? parseInt(f.categoryId) : null,
+          icon: f.icon,
+          adminFee: f.adminFee || "0",
+          agentFee,
+          useTieredFee: f.useTieredFee,
+          feeTiers: f.useTieredFee ? tiers : [],
+          cashEffect: f.cashEffect,
+          bankEffect: f.bankEffect,
+          flowType: f.flowType,
+          defaultFeeMethod: f.defaultFeeMethod,
+          description: f.description || null,
+        })
       });
       const svc = await res.json();
       if (!res.ok) throw new Error(svc.error || "Gagal menyimpan layanan");
-      if (!edit) createdServiceId = svc.id;
-
-      if (f.useTieredFee && tiers.length > 0) {
-        const tierRes = await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "save_tiers", serviceId: edit?.id || svc.id, tiers })
-        });
-        const tierBody = await tierRes.json().catch(() => ({}));
-        if (!tierRes.ok) throw new Error(tierBody.error || "Gagal menyimpan fee berjenjang");
-      }
 
       setModal(false);
       await load();
       toast.success(edit ? "Layanan berhasil diupdate" : "Layanan berhasil ditambahkan");
     } catch (error) {
-      // Best-effort rollback for newly created service when tier save fails.
-      if (createdServiceId) {
-        await fetch("/api/brilink-services", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: createdServiceId }) }).catch(() => {});
-      }
       toast.error(error instanceof Error ? error.message : "Gagal menyimpan layanan");
     } finally {
       setSaving(false);
@@ -235,17 +235,26 @@ export default function BLServicesTab() {
     if (!edit) return;
     setSaving(true);
     try {
-      const tierRes = await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save_tiers", serviceId: edit.id, tiers })
-      });
-      const tierBody = await tierRes.json().catch(() => ({}));
-      if (!tierRes.ok) throw new Error(tierBody.error || "Gagal menyimpan fee berjenjang");
-
       const svcRes = await fetch("/api/brilink-services", { method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: edit.id, name: edit.name, useTieredFee: tiers.length > 0, adminFee: edit.adminFee, agentFee: edit.agentFee, cashEffect: edit.cashEffect, bankEffect: edit.bankEffect, flowType: edit.flowType, defaultFeeMethod: edit.defaultFeeMethod })
+        body: JSON.stringify({
+          id: edit.id,
+          name: edit.name,
+          categoryId: edit.categoryId,
+          categoryCode: edit.categoryCode,
+          icon: edit.icon,
+          useTieredFee: tiers.length > 0,
+          feeTiers: tiers,
+          adminFee: edit.adminFee,
+          agentFee: edit.agentFee,
+          cashEffect: edit.cashEffect,
+          bankEffect: edit.bankEffect,
+          flowType: edit.flowType,
+          defaultFeeMethod: edit.defaultFeeMethod,
+          description: edit.description,
+        })
       });
       const svcBody = await svcRes.json().catch(() => ({}));
-      if (!svcRes.ok) throw new Error(svcBody.error || "Gagal update status fee layanan");
+      if (!svcRes.ok) throw new Error(svcBody.error || "Gagal menyimpan fee berjenjang");
 
       setTiersModal(false);
       await load();
