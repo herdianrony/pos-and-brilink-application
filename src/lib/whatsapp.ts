@@ -55,6 +55,32 @@ function getBrowserExecutablePath(): string | undefined {
   return browserPath && fs.existsSync(browserPath) ? browserPath : undefined;
 }
 
+function logWhatsApp(message: string, extra?: unknown) {
+  if (extra !== undefined) console.log(`[whatsapp] ${message}`, extra);
+  else console.log(`[whatsapp] ${message}`);
+}
+
+async function refreshClientReadiness() {
+  if (!state.client) return;
+  try {
+    const clientState = await state.client.getState().catch(() => null);
+    if (clientState) {
+      logWhatsApp(`client state: ${clientState}`);
+    }
+    // whatsapp-web.js can occasionally miss/delay the "ready" event in packaged
+    // Electron even though the underlying WA state is already CONNECTED. Treat
+    // CONNECTED as ready so notifications can be sent after a successful scan.
+    if (clientState === "CONNECTED") {
+      state.status = "ready";
+      state.qrDataUrl = null;
+      state.lastError = null;
+      if (qrTimeout) clearTimeout(qrTimeout);
+    }
+  } catch (error) {
+    logWhatsApp("failed to read client state", error instanceof Error ? error.message : String(error));
+  }
+}
+
 export function normalizeWhatsAppNumber(value: string): string {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
@@ -77,6 +103,7 @@ export async function getWhatsAppSettings() {
 }
 
 export async function getWhatsAppStatus() {
+  await refreshClientReadiness();
   const cfg = await getWhatsAppSettings().catch(() => ({ enabled: false, autoNotifyOwner: false, ownerNumber: "" }));
   return {
     status: state.status,
@@ -124,27 +151,43 @@ async function initWhatsAppClientLocked() {
     });
 
     client.on("qr", async (qr: string) => {
+      logWhatsApp("QR received");
       setQrWithTtl(await qrcode.toDataURL(qr, { margin: 1, width: 320 }));
     });
     client.on("authenticated", () => {
+      logWhatsApp("authenticated");
       state.status = "authenticated";
       state.qrDataUrl = null;
       if (qrTimeout) clearTimeout(qrTimeout);
     });
     client.on("ready", () => {
+      logWhatsApp("ready");
       state.status = "ready";
       state.qrDataUrl = null;
       if (qrTimeout) clearTimeout(qrTimeout);
       state.lastError = null;
     });
     client.on("disconnected", (reason: string) => {
+      logWhatsApp("disconnected", reason);
       state.status = "disconnected";
       state.lastError = reason || null;
       state.client = null;
     });
     client.on("auth_failure", (msg: string) => {
+      logWhatsApp("auth failure", msg);
       state.status = "error";
       state.lastError = msg || "Auth failure";
+    });
+    client.on("loading_screen", (percent: string, message: string) => {
+      logWhatsApp(`loading ${percent}% ${message || ""}`.trim());
+    });
+    client.on("change_state", (waState: string) => {
+      logWhatsApp("change_state", waState);
+      if (waState === "CONNECTED") {
+        state.status = "ready";
+        state.qrDataUrl = null;
+        state.lastError = null;
+      }
     });
 
     state.client = client;
@@ -203,7 +246,8 @@ async function waitForWhatsAppReady(timeoutMs = 10_000): Promise<boolean> {
 export async function sendWhatsAppMessage(to: string, message: string) {
   const number = normalizeWhatsAppNumber(to);
   if (!number) throw new Error("Nomor WhatsApp tujuan belum diatur");
-  if (!state.client || state.status !== "ready") throw new Error("WhatsApp belum terhubung");
+  await refreshClientReadiness();
+  if (!state.client || state.status !== "ready") throw new Error(`WhatsApp belum terhubung (status: ${state.status})`);
   const chatId = `${number}@c.us`;
   await state.client.sendMessage(chatId, message);
 }
