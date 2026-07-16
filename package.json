@@ -1,7 +1,7 @@
 {
   "name": "pos-and-brilink-application",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Aplikasi POS dan BRILink dengan dukungan printer thermal, scanner barcode, dan auto-update",
   "author": {
     "name": "herdianrony",

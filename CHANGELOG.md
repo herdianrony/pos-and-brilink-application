@@ -2,7 +2,15 @@
 
 Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik umum [Keep a Changelog](https://keepachangelog.com/) dan versi mengikuti Semantic Versioning.
 
-## [1.0.1] - 2026-07-17
+## [1.0.0] - 2026-07-17
+
+### Added
+- Rilis produksi awal aplikasi POS & Agen Bisnis/BRILink POS untuk Windows Electron.
+- POS kasir, layanan agen, multi akun kas/rekening, laporan, printer thermal, dan WhatsApp Owner notification.
+- Production seed bersih/dinamis: tidak membuat produk, kategori produk, kategori layanan, atau template layanan bisnis.
+- Simulasi auto-update Electron untuk QA/demo tanpa perlu publish GitHub Release sungguhan.
+- Script release/check versi untuk workflow rilis Windows Electron.
+- Tombol cek update dan simulasi update di halaman Tentang saat berjalan di Electron.
 
 ### Security
 - Mengamankan IPC `whatsapp:send` Electron dengan token HMAC yang terikat ke nomor owner, isi pesan, dan masa kedaluwarsa.
@@ -18,15 +26,3 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Memastikan `categoryCode` ikut tersimpan saat membuat/mengedit layanan BRILink.
 - Membersihkan error lama WhatsApp saat logout.
 - Membersihkan listener auto-update saat komponen unmount.
-
-### Added
-- Simulasi auto-update Electron untuk QA/demo tanpa perlu publish GitHub Release sungguhan.
-- Script release/check versi untuk workflow rilis Windows Electron.
-- Tombol cek update dan simulasi update di halaman Tentang saat berjalan di Electron.
-
-## [1.0.0] - 2026-07-16
-
-### Added
-- Rilis produksi awal aplikasi POS & Agen Bisnis/BRILink POS untuk Windows Electron.
-- POS kasir, layanan agen, multi akun kas/rekening, laporan, printer thermal, dan WhatsApp Owner notification.
-- Production seed bersih/dinamis: tidak membuat produk, kategori produk, kategori layanan, atau template layanan bisnis.
