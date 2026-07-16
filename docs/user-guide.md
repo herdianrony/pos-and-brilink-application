@@ -219,24 +219,46 @@ Anda dapat mengatur:
 
 - nama layanan,
 - kategori layanan,
-- biaya admin,
-- fee agen,
+- biaya admin yang dibayar pelanggan,
+- profit agen opsional jika berbeda dari biaya admin,
 - fee berjenjang,
 - efek kas,
 - efek saldo bank,
 - deskripsi.
 
-### Fee Berjenjang
+### Biaya Admin dan Profit Agen
 
-Fee berjenjang digunakan jika biaya admin berubah berdasarkan nominal transaksi.
+Secara default aplikasi menyederhanakan fee layanan menjadi satu input:
+
+```txt
+Biaya Admin yang dibayar pelanggan
+```
+
+Nilai ini otomatis dicatat juga sebagai profit agen. Jika profit agen berbeda dari biaya admin, aktifkan opsi:
+
+```txt
+Profit agen berbeda dari biaya admin
+```
 
 Contoh:
 
-| Nominal | Admin | Fee Agen |
-|---|---:|---:|
-| 0–500.000 | 5.000 | 3.000 |
-| 500.001–2.000.000 | 7.500 | 4.500 |
-| >2.000.000 | 10.000 | 6.000 |
+```txt
+Biaya Admin pelanggan: Rp7.000
+Profit Agen:           Rp5.000
+Selisih/provider:      Rp2.000
+```
+
+### Fee Berjenjang
+
+Fee berjenjang digunakan jika biaya admin berubah berdasarkan nominal transaksi. Profit agen pada tier otomatis mengikuti biaya admin.
+
+Contoh:
+
+| Nominal | Biaya Admin |
+|---|---:|
+| 0–500.000 | 5.000 |
+| 500.001–2.000.000 | 7.500 |
+| >2.000.000 | 10.000 |
 
 ---
 
@@ -365,8 +387,8 @@ Fitur WhatsApp Owner digunakan untuk mengirim notifikasi internal ke owner, misa
 
 Cara mengaktifkan:
 
-1. Buka **Pengaturan → WhatsApp Owner**.
-2. Isi nomor WhatsApp owner.
+1. Isi nomor WhatsApp owner saat **Setup Wizard** atau buka **Pengaturan → WhatsApp Owner**.
+2. Pastikan nomor WhatsApp owner sudah benar.
 3. Aktifkan **WhatsApp Owner** dan **Kirim otomatis** jika diperlukan.
 4. Klik **Simpan Pengaturan WhatsApp**.
 5. Klik **Mulai / Tampilkan QR**.

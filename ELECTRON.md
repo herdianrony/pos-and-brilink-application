@@ -221,6 +221,36 @@ Pada production Electron:
 
 Untuk production web/server non-Electron, `AUTH_SECRET` wajib disediakan lewat environment variable.
 
+
+## WhatsApp Owner di Electron
+
+Fitur WhatsApp Owner memakai `whatsapp-web.js` untuk mengirim notifikasi internal ke owner. Di mode Electron production, session WhatsApp disimpan di folder `userData`:
+
+```text
+%APPDATA%/BRILink POS/whatsapp-session
+```
+
+Pengaturan tersedia di:
+
+```text
+Pengaturan → WhatsApp Owner
+```
+
+Alur penggunaan:
+
+1. Isi nomor WhatsApp owner saat Setup Wizard atau di Pengaturan.
+2. Aktifkan WhatsApp Owner.
+3. Klik **Mulai / Tampilkan QR**.
+4. Scan QR menggunakan WhatsApp kasir/operasional.
+5. Jika status `ready`, notifikasi otomatis akan dikirim untuk layanan yang memerlukan aksi/cek owner.
+6. Gunakan **Logout WhatsApp** jika ingin memutus session dan scan ulang.
+
+Catatan:
+
+- WhatsApp ini untuk notifikasi internal, bukan broadcast massal.
+- Jika session bermasalah, logout lalu scan ulang.
+- Tutup proses WhatsApp/Chromium sebelum build jika pernah menjalankan WhatsApp dari folder project lama.
+
 ## Printer Thermal
 
 Printer thermal diintegrasikan melalui:
@@ -317,6 +347,26 @@ Konfigurasi penting di `electron/main.ts`:
 - External URL dibuka melalui shell, bukan langsung di dalam app tanpa kontrol.
 
 ## Troubleshooting
+
+
+### Build gagal karena `.next/dev/types/validator.ts`
+
+Jika setelah menjalankan `npm run dev` lalu build muncul error dari `.next/dev/types`, hapus `.next` dan build ulang. Script build terbaru sudah menjalankan `scripts/pre-build.js` otomatis.
+
+```bat
+rmdir /s /q .next
+npm run build:electron
+```
+
+### Build gagal karena `.whatsapp-session` terkunci
+
+Jika pernah menjalankan WhatsApp Web.js sebelum perubahan session path, folder `.whatsapp-session` di root project bisa terkunci oleh Chromium. Tutup proses `chrome.exe`, `node.exe`, atau `electron.exe`, lalu hapus:
+
+```bat
+rmdir /s /q .whatsapp-session
+```
+
+Session Electron yang benar berada di `%APPDATA%/BRILink POS/whatsapp-session`.
 
 ### Next.js standalone server tidak ditemukan
 

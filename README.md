@@ -119,10 +119,10 @@ Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC,
 
 ### Frontend
 
-- **Next.js 16.2.6** dengan App Router.
-- **React 19.2.6**.
+- **Next.js 16.2.10** dengan App Router.
+- **React 19.2.7**.
 - **TypeScript 5.9.3**.
-- **Tailwind CSS 4.1.17**.
+- **Tailwind CSS 4.3.2**.
 - **Lucide React** untuk icon.
 - **Recharts** untuk grafik.
 
@@ -136,10 +136,11 @@ Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC,
 
 ### Desktop
 
-- **Electron 43.1.0**.
+- **Electron 43.1.1**.
 - **electron-builder** untuk packaging.
 - **electron-updater** untuk auto-update.
 - **node-thermal-printer** untuk printer thermal.
+- **whatsapp-web.js** + **qrcode** untuk notifikasi WhatsApp Owner opsional.
 
 ## Persyaratan Sistem
 
@@ -411,6 +412,26 @@ function POSPage() {
 }
 ```
 
+
+## WhatsApp Owner
+
+Aplikasi mendukung notifikasi WhatsApp otomatis ke owner melalui **WhatsApp Web** (`whatsapp-web.js`). Fitur ini bersifat opsional dan ditujukan untuk notifikasi internal, misalnya saat kasir mencatat Tarik Tunai dan owner perlu mengecek transfer masuk di m-banking.
+
+Fitur utama:
+
+- nomor WhatsApp owner dapat diisi saat Setup Wizard atau Pengaturan,
+- scan QR menggunakan WhatsApp kasir/operasional,
+- tombol logout WhatsApp,
+- notifikasi otomatis untuk flow `cash_withdrawal`, `cash_deposit`, `transfer`, `payment`, dan `topup`,
+- tidak mengirim untuk inquiry/cek saldo.
+
+Catatan penting:
+
+- ini memakai WhatsApp Web automation, bukan API resmi Meta/WhatsApp Business Cloud API,
+- jangan digunakan untuk spam/broadcast massal,
+- jika WhatsApp belum terhubung, transaksi tetap tersimpan; hanya notifikasi yang gagal/tidak terkirim,
+- session Electron disimpan di `userData/whatsapp-session`, bukan di root project.
+
 ## Auto-Update
 
 Auto-update berjalan pada aplikasi Electron packaged melalui `electron-updater` dan GitHub Releases.
@@ -588,6 +609,31 @@ rm data.db
 ```
 
 Untuk production Electron, backup dulu data penting sebelum menghapus database di folder `userData`.
+
+
+### Build gagal karena file `.next/dev/types` atau validator rusak
+
+Build production sekarang otomatis menjalankan `scripts/pre-build.js` untuk membersihkan `.next`. Jika masih gagal setelah menjalankan dev server, hapus manual:
+
+```bash
+rm -rf .next
+```
+
+Windows CMD:
+
+```bat
+rmdir /s /q .next
+```
+
+### Build gagal karena `.whatsapp-session` terkunci
+
+Folder session WhatsApp lama di root project dapat mengganggu build. Tutup proses Chrome/Chromium/Node/Electron yang terkait WhatsApp, lalu hapus folder lama:
+
+```bat
+rmdir /s /q .whatsapp-session
+```
+
+Session produksi Electron sekarang disimpan di `userData/whatsapp-session`.
 
 ### Auto-update tidak berjalan
 

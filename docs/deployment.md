@@ -424,7 +424,36 @@ Jika printer thermal USB dipakai, lebih mudah jalankan aplikasi desktop di Windo
 
 ---
 
-## 10. Backup Web/LAN Mode
+
+## 10. WhatsApp Owner di Deployment
+
+Fitur WhatsApp Owner memakai `whatsapp-web.js` dan membutuhkan Chromium/Puppeteer. Untuk Windows Desktop, session WhatsApp disimpan di:
+
+```text
+%APPDATA%/BRILink POS/whatsapp-session
+```
+
+Untuk Web/LAN mode, jika `WHATSAPP_SESSION_DIR` tidak diatur, session disimpan di folder home user:
+
+```text
+~/.pos-brilink/whatsapp-session
+```
+
+Anda dapat mengatur lokasi session secara eksplisit:
+
+```env
+WHATSAPP_SESSION_DIR=/opt/pos-and-brilink-data/whatsapp-session
+```
+
+Catatan produksi:
+
+- WhatsApp Web otomatis bukan API resmi Meta.
+- Gunakan hanya untuk notifikasi internal owner.
+- Jangan digunakan untuk spam/broadcast massal.
+- Jika QR/session gagal, logout WhatsApp dari Pengaturan lalu scan ulang.
+- Jangan menyimpan folder session WhatsApp di root project karena dapat mengganggu build dan backup source code.
+
+## 11. Backup Web/LAN Mode
 
 Database default contoh:
 
@@ -459,7 +488,7 @@ Saran:
 
 ---
 
-## 11. Update Aplikasi
+## 12. Update Aplikasi
 
 ### Windows Desktop
 
@@ -490,7 +519,7 @@ journalctl -u pos-brilink -f
 
 ---
 
-## 12. Keamanan Deployment Web/LAN
+## 13. Keamanan Deployment Web/LAN
 
 Jika hanya untuk jaringan lokal:
 
@@ -517,7 +546,7 @@ bukan membuka port publik langsung.
 
 ---
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 ### Node version tidak sesuai
 
@@ -551,13 +580,27 @@ Cek `DATABASE_URL` di `.env.local`.
 
 Pastikan `AUTH_SECRET` tetap sama jika membawa database lama. Jika `AUTH_SECRET` berubah, session lama tidak valid dan user perlu login ulang.
 
+### WhatsApp session mengganggu build
+
+Pastikan session WhatsApp tidak berada di root project. Jika ada folder lama, hapus setelah menutup proses Chrome/Node/Electron:
+
+```bash
+rm -rf .whatsapp-session
+```
+
+Windows:
+
+```bat
+rmdir /s /q .whatsapp-session
+```
+
 ### Printer tidak muncul di Web/LAN
 
 Gunakan browser print atau jalankan mode Windows Desktop untuk integrasi printer thermal native.
 
 ---
 
-## 14. Rekomendasi Final
+## 15. Rekomendasi Final
 
 Untuk produksi UMKM/toko:
 
