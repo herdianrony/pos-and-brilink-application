@@ -244,7 +244,11 @@ export default function BRILink() {
         .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
         .then(({ ok, data }) => {
           if (data?.sent) toast.success("Notifikasi WhatsApp owner terkirim");
-          else if (!ok && data?.error) toast.warning(`WhatsApp owner tidak terkirim: ${data.error}`);
+          else if (data?.reason && !["disabled", "not_required"].includes(data.reason)) {
+            toast.warning(`WhatsApp owner tidak terkirim: ${data.error || data.reason}`);
+          } else if (!ok && data?.error) {
+            toast.warning(`WhatsApp owner tidak terkirim: ${data.error}`);
+          }
         })
         .catch(() => toast.warning("WhatsApp owner tidak terkirim. Cek koneksi WhatsApp di Pengaturan."));
       closeModal();

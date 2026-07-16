@@ -174,6 +174,16 @@ export async function logoutWhatsAppClient() {
   return getWhatsAppStatus();
 }
 
+async function waitForWhatsAppReady(timeoutMs = 10_000): Promise<boolean> {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (state.client && state.status === "ready") return true;
+    if (state.status === "qr" || state.status === "error") return false;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  return Boolean(state.client && state.status === "ready");
+}
+
 export async function sendWhatsAppMessage(to: string, message: string) {
   const number = normalizeWhatsAppNumber(to);
   if (!number) throw new Error("Nomor WhatsApp tujuan belum diatur");
@@ -341,7 +351,32 @@ export async function notifyOwnerForTransaction(transactionId: number) {
   const [trx] = await db.select({ flowType: transactions.flowType }).from(transactions).where(eq(transactions.id, transactionId)).limit(1);
   if (!trx || !shouldNotifyOwner(trx.flowType)) return { sent: false, reason: "not_required" };
 
-  const message = await buildOwnerNotificationMessage(transactionId);
-  await sendWhatsAppMessage(cfg.ownerNumber, message);
-  return { sent: true };
+  // In Electron production, the Next.js child process starts with no in-memory
+  // WhatsApp client even when a LocalAuth session already exists on disk.
+  // Auto-initialize here so owner notifications work after app restart.
+  if (!state.client || state.status !== "ready") {
+    await initWhatsAppClient();
+    const ready = await waitForWhatsAppReady();
+    if (!ready) {
+      return {
+        sent: false,
+        reason: "not_ready",
+        status: state.status,
+        error: state.lastError || "WhatsApp belum terhubung. Buka Pengaturan → WhatsApp Owner lalu scan/refresh status.",
+      };
+    }
+  }
+
+  try {
+    const message = await buildOwnerNotificationMessage(transactionId);
+    await sendWhatsAppMessage(cfg.ownerNumber, message);
+    return { sent: true };
+  } catch (error) {
+    return {
+      sent: false,
+      reason: "send_failed",
+      status: state.status,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
