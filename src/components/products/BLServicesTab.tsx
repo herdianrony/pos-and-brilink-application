@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatRupiah, cn } from "@/lib/utils";
 import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, ConfirmDialog, useToast } from "@/components/ui";
 import { Plus, Pencil, Trash2, X, Layers } from "lucide-react";
@@ -118,7 +118,7 @@ export default function BLServicesTab() {
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
   const toast = useToast();
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [svcRes, catRes] = await Promise.all([fetch("/api/brilink-services"), fetch("/api/service-categories")]);
@@ -133,8 +133,8 @@ export default function BLServicesTab() {
     } finally {
       setLoading(false);
     }
-  }
-  useEffect(() => { load(); }, []);
+  }, [toast]);
+  useEffect(() => { load(); }, [load]);
 
   function openAdd() { 
     setEdit(null); 
