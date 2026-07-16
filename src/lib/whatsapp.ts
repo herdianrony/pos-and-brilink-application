@@ -60,24 +60,55 @@ function logWhatsApp(message: string, extra?: unknown) {
   else console.log(`[whatsapp] ${message}`);
 }
 
+async function getRawClientState(): Promise<string | null> {
+  if (!state.client) return null;
+  try {
+    return await state.client.getState().catch(() => null);
+  } catch {
+    return null;
+  }
+}
+
+async function isClientSendReady(): Promise<boolean> {
+  if (!state.client) return false;
+  const clientState = await getRawClientState();
+  if (clientState) logWhatsApp(`client state: ${clientState}`);
+  if (clientState !== "CONNECTED") return false;
+
+  try {
+    const page = state.client.pupPage;
+    if (!page) return false;
+    return await page.evaluate(() => {
+      const w = window as any;
+      return Boolean(w.Store?.Chat && w.Store?.Msg && w.WWebJS?.getChat && w.WWebJS?.sendMessage);
+    });
+  } catch (error) {
+    logWhatsApp("send readiness check failed", error instanceof Error ? error.message : String(error));
+    return false;
+  }
+}
+
 async function refreshClientReadiness() {
   if (!state.client) return;
   try {
-    const clientState = await state.client.getState().catch(() => null);
-    if (clientState) {
-      logWhatsApp(`client state: ${clientState}`);
-    }
-    // whatsapp-web.js can occasionally miss/delay the "ready" event in packaged
-    // Electron even though the underlying WA state is already CONNECTED. Treat
-    // CONNECTED as ready so notifications can be sent after a successful scan.
-    if (clientState === "CONNECTED") {
+    const ready = await isClientSendReady();
+    if (ready) {
       state.status = "ready";
       state.qrDataUrl = null;
       state.lastError = null;
       if (qrTimeout) clearTimeout(qrTimeout);
+      return;
+    }
+
+    const clientState = await getRawClientState();
+    if (clientState === "CONNECTED" && !["qr", "error", "disconnected"].includes(state.status)) {
+      // Auth succeeded and WA is connected, but the WhatsApp Web injection layer
+      // is not ready yet. Do not mark as ready because sendMessage would fail
+      // with errors like: Cannot read properties of undefined (reading 'getChat').
+      state.status = "authenticated";
     }
   } catch (error) {
-    logWhatsApp("failed to read client state", error instanceof Error ? error.message : String(error));
+    logWhatsApp("failed to refresh readiness", error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -181,12 +212,10 @@ async function initWhatsAppClientLocked() {
     client.on("loading_screen", (percent: string, message: string) => {
       logWhatsApp(`loading ${percent}% ${message || ""}`.trim());
     });
-    client.on("change_state", (waState: string) => {
+    client.on("change_state", async (waState: string) => {
       logWhatsApp("change_state", waState);
       if (waState === "CONNECTED") {
-        state.status = "ready";
-        state.qrDataUrl = null;
-        state.lastError = null;
+        await refreshClientReadiness();
       }
     });
 
@@ -233,23 +262,43 @@ export async function restartWhatsAppClient() {
   return initWhatsAppClient();
 }
 
-async function waitForWhatsAppReady(timeoutMs = 10_000): Promise<boolean> {
+async function waitForWhatsAppReady(timeoutMs = 20_000): Promise<boolean> {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
+    await refreshClientReadiness();
     if (state.client && state.status === "ready") return true;
-    if (state.status === "qr" || state.status === "error") return false;
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (state.status === "qr" || state.status === "error" || state.status === "disconnected") return false;
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
+  await refreshClientReadiness();
   return Boolean(state.client && state.status === "ready");
 }
 
 export async function sendWhatsAppMessage(to: string, message: string) {
   const number = normalizeWhatsAppNumber(to);
   if (!number) throw new Error("Nomor WhatsApp tujuan belum diatur");
-  await refreshClientReadiness();
-  if (!state.client || state.status !== "ready") throw new Error(`WhatsApp belum terhubung (status: ${state.status})`);
+
+  const ready = await waitForWhatsAppReady();
+  if (!state.client || !ready) throw new Error(`WhatsApp belum siap mengirim (status: ${state.status})`);
+
   const chatId = `${number}@c.us`;
-  await state.client.sendMessage(chatId, message);
+  try {
+    await state.client.sendMessage(chatId, message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    // Some packaged Electron runs report CONNECTED before WWebJS injection is ready.
+    // Wait once more and retry to avoid transient getChat/sendMessage failures.
+    if (msg.includes("getChat") || msg.includes("sendMessage") || msg.includes("undefined")) {
+      logWhatsApp("send failed before WA injection ready; retrying", msg);
+      state.status = "authenticated";
+      const retryReady = await waitForWhatsAppReady(15_000);
+      if (state.client && retryReady) {
+        await state.client.sendMessage(chatId, message);
+        return;
+      }
+    }
+    throw error;
+  }
 }
 
 function ownerActionLabel(flowType: string | null | undefined) {
