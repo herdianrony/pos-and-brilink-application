@@ -34,6 +34,11 @@ function getSessionDir(): string {
   return dir;
 }
 
+function getBrowserExecutablePath(): string | undefined {
+  const browserPath = process.env.WHATSAPP_BROWSER_PATH;
+  return browserPath && fs.existsSync(browserPath) ? browserPath : undefined;
+}
+
 export function normalizeWhatsAppNumber(value: string): string {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
@@ -87,6 +92,7 @@ export async function initWhatsAppClient() {
       }),
       puppeteer: {
         headless: true,
+        executablePath: getBrowserExecutablePath(),
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       },
     });

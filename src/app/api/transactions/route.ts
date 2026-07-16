@@ -19,6 +19,7 @@ import {
   getFlowConfig,
   calculateCashFlow,
   calculateBankFlow,
+  shouldForceChargedFeeMethod,
   FEE_METHOD_LABELS,
   type FeeMethod,
   type FlowType,
@@ -332,8 +333,9 @@ export async function POST(req: Request) {
         }
         // Tarik Tunai dengan rekening masuk memakai skenario operasional utama:
         // nasabah transfer nominal + admin ke rekening agen, kasir menyerahkan cash nominal.
-        // Paksa charged agar bank mutation mencatat nominal + admin, termasuk untuk data layanan lama.
-        const feeMethod: FeeMethod = flowConfig.flowType === "cash_withdrawal" && bankEffect === "in"
+        // Paksa charged hanya untuk layanan Tarik Tunai aktual, bukan semua flow cash_withdrawal
+        // (mis. Terima Transfer/Pencairan dapat tetap memakai deducted).
+        const feeMethod: FeeMethod = shouldForceChargedFeeMethod(service)
           ? "charged"
           : requestedFeeMethod;
 

@@ -57,8 +57,10 @@ export interface FeeTier {
 
 export interface AgentService {
   id: number;
+  code?: string | null;
   name: string;
   categoryId: number | null;
+  categoryCode?: string | null;
   categoryName: string | null;
   categoryIcon?: string | null;
   categoryColor?: string | null;

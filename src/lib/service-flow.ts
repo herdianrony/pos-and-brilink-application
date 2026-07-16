@@ -340,6 +340,27 @@ export interface BankFlowResult {
   bankMutationAmount: number;
 }
 
+export function isTarikTunaiService(service: {
+  code?: string | null;
+  categoryCode?: string | null;
+  name: string;
+}): boolean {
+  const name = service.name.toLowerCase();
+  return service.code === "cash_withdrawal" || service.categoryCode === "cash_withdrawal" || name.includes("tarik tunai");
+}
+
+export function shouldForceChargedFeeMethod(service: {
+  code?: string | null;
+  categoryCode?: string | null;
+  name: string;
+  cashEffect: string;
+  bankEffect: string;
+  flowType?: string | null;
+}): boolean {
+  const flow = getFlowConfig(service);
+  return flow.flowType === "cash_withdrawal" && service.bankEffect === "in" && isTarikTunaiService(service);
+}
+
 export function calculateBankFlow(
   cashEffect: string,
   bankEffect: string,
@@ -353,7 +374,7 @@ export function calculateBankFlow(
 
   let amount = nominal;
 
-  // Tarik Tunai skenario umum:
+  // Tarik Tunai charged scenario:
   // nasabah transfer nominal + admin ke rekening agen, agen menyerahkan cash nominal.
   if (cashEffect === "out" && bankEffect === "in" && feeMethod === "charged") {
     amount = nominal + fee;

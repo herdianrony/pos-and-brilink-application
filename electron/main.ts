@@ -24,6 +24,7 @@ import { app, BrowserWindow, ipcMain, shell, Menu } from "electron";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { existsSync } from "fs";
+import fs from "fs";
 import { applyDatabaseUrl } from "./db-path";
 import { registerPrinterIpc, loadPrinterConfig } from "./printer";
 import { initAutoUpdater, startUpdateCheck, quitAndInstall } from "./updater";
@@ -59,6 +60,41 @@ app.on("second-instance", () => {
     mainWindow.focus();
   }
 });
+
+function findWhatsAppBrowserExecutable(): string | undefined {
+  const candidates: string[] = [];
+
+  if (process.env.WHATSAPP_BROWSER_PATH) {
+    candidates.push(process.env.WHATSAPP_BROWSER_PATH);
+  }
+
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || "";
+    const programFiles = process.env.PROGRAMFILES || "C:\\Program Files";
+    const programFilesX86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+    candidates.push(
+      path.join(programFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(programFilesX86, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(localAppData, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe")
+    );
+  } else if (process.platform === "darwin") {
+    candidates.push(
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+      "/Applications/Chromium.app/Contents/MacOS/Chromium"
+    );
+  } else {
+    candidates.push("/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser", "/snap/bin/chromium");
+  }
+
+  const found = candidates.find((candidate) => candidate && fs.existsSync(candidate));
+  if (found) console.log(`[main] WhatsApp browser executable: ${found}`);
+  else console.warn("[main] WhatsApp browser executable not found; puppeteer will use its default browser if available.");
+  return found;
+}
 
 // ── Spawn Next.js standalone server (production only) ──
 async function startNextServer(): Promise<void> {
@@ -111,6 +147,7 @@ async function startNextServer(): Promise<void> {
     }
 
     const whatsappSessionDir = path.join(app.getPath("userData"), "whatsapp-session");
+    const whatsappBrowserPath = findWhatsAppBrowserExecutable();
 
     const spawnEnv: Record<string, string | undefined> = {
       ...process.env,
@@ -121,6 +158,7 @@ async function startNextServer(): Promise<void> {
       ELECTRON_SECURE_WARNINGS: "1",
       AUTH_SECRET: authSecret, // C-01: secret unik per instalasi
       WHATSAPP_SESSION_DIR: whatsappSessionDir,
+      WHATSAPP_BROWSER_PATH: whatsappBrowserPath,
       PATH: process.env.PATH,
     };
 

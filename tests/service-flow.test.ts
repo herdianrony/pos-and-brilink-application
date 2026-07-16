@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow } from "@/lib/service-flow";
+import { getFlowType, getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow, shouldForceChargedFeeMethod } from "@/lib/service-flow";
 
 // ── Flow type detection ───────────────────────────
 describe("service-flow: getFlowType", () => {
@@ -313,5 +313,29 @@ describe("service-flow: legacy flowType correction", () => {
       flowType: "payment",
     });
     expect(config.flowType).toBe("cash_withdrawal");
+  });
+});
+
+describe("service-flow: fee method forcing", () => {
+  it("forces charged only for actual Tarik Tunai service", () => {
+    expect(shouldForceChargedFeeMethod({
+      code: "cash_withdrawal",
+      categoryCode: "cash_withdrawal",
+      name: "Tarik Tunai",
+      cashEffect: "out",
+      bankEffect: "in",
+      flowType: "cash_withdrawal",
+    })).toBe(true);
+  });
+
+  it("does not force charged for Terima Transfer / Pencairan", () => {
+    expect(shouldForceChargedFeeMethod({
+      code: "transfer_receive",
+      categoryCode: "transfer",
+      name: "Terima Transfer / Pencairan",
+      cashEffect: "out",
+      bankEffect: "in",
+      flowType: "cash_withdrawal",
+    })).toBe(false);
   });
 });

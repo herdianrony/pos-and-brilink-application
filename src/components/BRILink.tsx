@@ -12,7 +12,7 @@ import ServiceFilters from "@/components/brilink/ServiceFilters";
 import ServiceGrid from "@/components/brilink/ServiceGrid";
 import SuccessModal from "@/components/brilink/SuccessModal";
 import { useSettings } from "@/lib/use-settings";
-import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow, type FeeMethod } from "@/lib/service-flow";
+import { getFlowConfig, getToneClasses, FEE_METHOD_LABELS, calculateCashFlow, calculateBankFlow, shouldForceChargedFeeMethod, type FeeMethod } from "@/lib/service-flow";
 import { calculateServiceFee } from "@/lib/service-fees";
 import type { Account, AgentService as Service, ServiceCategory as ServiceCat } from "@/types/models";
 
@@ -160,7 +160,7 @@ export default function BRILink() {
     setShowDetails(false);
     trackRecent(s.id);
     const flow = getFlowConfig(s);
-    const defaultFeeMethod = flow.flowType === "cash_withdrawal" && s.bankEffect === "in"
+    const defaultFeeMethod = shouldForceChargedFeeMethod(s)
       ? "charged"
       : ((s.defaultFeeMethod as FeeMethod) || "cash");
     setForm(f => ({
@@ -237,9 +237,12 @@ export default function BRILink() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transactionId: trx.id }),
       })
-        .then(r => r.ok ? r.json() : null)
-        .then(result => { if (result?.sent) toast.success("Notifikasi WhatsApp owner terkirim"); })
-        .catch(() => {});
+        .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+        .then(({ ok, data }) => {
+          if (data?.sent) toast.success("Notifikasi WhatsApp owner terkirim");
+          else if (!ok && data?.error) toast.warning(`WhatsApp owner tidak terkirim: ${data.error}`);
+        })
+        .catch(() => toast.warning("WhatsApp owner tidak terkirim. Cek koneksi WhatsApp di Pengaturan."));
       closeModal();
       setShowDone(true);
       const newAccs = await fetch("/api/accounts").then(r => r.json());
