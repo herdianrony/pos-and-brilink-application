@@ -184,13 +184,29 @@ export async function sendWhatsAppMessage(to: string, message: string) {
 
 function ownerActionLabel(flowType: string | null | undefined) {
   switch (flowType) {
-    case "cash_withdrawal": return "CEK TRANSFER MASUK";
-    case "cash_deposit": return "MOHON TRANSFER/SETOR";
+    case "cash_withdrawal": return "CEK TRANSFER MASUK - TARIK TUNAI";
+    case "cash_deposit": return "MOHON TRANSFER - SETOR TUNAI";
     case "transfer": return "MOHON TRANSFER";
     case "payment": return "MOHON BAYAR PROVIDER";
-    case "topup": return "MOHON TOP UP PROVIDER";
+    case "topup": return "MOHON PROSES TOP UP";
     default: return "NOTIFIKASI TRANSAKSI";
   }
+}
+
+function statusLabel(status: string | null | undefined): string {
+  switch (status || "completed") {
+    case "pending": return "Pending - perlu tindak lanjut";
+    case "completed": return "Selesai";
+    case "void": return "Dibatalkan";
+    case "reversed": return "Di-reverse";
+    default: return status || "Selesai";
+  }
+}
+
+function signedRupiah(value: number): string {
+  if (value > 0) return `+${formatRupiah(value)}`;
+  if (value < 0) return `-${formatRupiah(Math.abs(value))}`;
+  return formatRupiah(0);
 }
 
 export function shouldNotifyOwner(flowType: string | null | undefined): boolean {
@@ -213,36 +229,107 @@ export async function buildOwnerNotificationMessage(transactionId: number): Prom
   const nominal = Number(trx.totalAmount || 0);
   const admin = Number(trx.adminFee || 0);
   const profit = Number(trx.profit || 0);
+  const cashReceived = Number(trx.cashReceived || 0);
+  const cashDispensed = Number(trx.cashDispensed || 0);
+  const bankImpact = Number(bankMut?.amount || 0);
+  const cashImpact = Number(cashMut?.amount || 0);
+  const serviceName = trx.subType || "Layanan Agen";
   const title = ownerActionLabel(trx.flowType);
 
-  const lines = [
+  const lines: string[] = [
     `[${title}]`,
     "",
-    `Kasir mencatat transaksi ${trx.subType || trx.type}.`,
+    `Kasir mencatat ${serviceName}.`,
     `Invoice: ${trx.invoiceNo}`,
     `Tanggal: ${formatDate(trx.createdAt as unknown as string)}`,
-    `Nominal: ${formatRupiah(nominal)}`,
+    `Status aplikasi: ${statusLabel(trx.status)}`,
   ];
 
-  if (admin > 0) lines.push(`Admin/Fee: ${formatRupiah(admin)}`);
-  if (profit > 0) lines.push(`Profit Agen: ${formatRupiah(profit)}`);
-
-  if (trx.flowType === "cash_withdrawal") {
-    lines.push(`Cash diserahkan kasir: ${formatRupiah(Number(trx.cashDispensed || 0))}`);
-    lines.push(`Transfer masuk yang perlu dicek: ${formatRupiah(Math.abs(Number(bankMut?.amount || nominal + admin)))}`);
-  } else if (trx.cashReceived && Number(trx.cashReceived) > 0) {
-    lines.push(`Cash diterima kasir: ${formatRupiah(Number(trx.cashReceived))}`);
-  }
-
-  if (settlement) lines.push(`Rekening settlement: ${settlement.name}`);
-  if (bankMut) lines.push(`Dampak rekening: ${Number(bankMut.amount) >= 0 ? "+" : "-"}${formatRupiah(Math.abs(Number(bankMut.amount)))}`);
-  if (cashMut) lines.push(`Dampak kas: ${Number(cashMut.amount) >= 0 ? "+" : "-"}${formatRupiah(Math.abs(Number(cashMut.amount)))}`);
   if (trx.customerName) lines.push(`Pelanggan: ${trx.customerName}`);
   if (trx.customerPhone) lines.push(`Tujuan/No HP/Rek: ${trx.customerPhone}`);
+  if (settlement) lines.push(`Rekening terkait: ${settlement.name}`);
+
+  lines.push("");
+  lines.push("Rincian nominal:");
+
+  switch (trx.flowType) {
+    case "cash_withdrawal": {
+      const transferIn = Math.abs(bankImpact || nominal + admin);
+      lines.push(`Nominal tarik: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      lines.push(`Cash diserahkan kasir: ${formatRupiah(cashDispensed || nominal)}`);
+      lines.push(`Total yang harus masuk rekening: ${formatRupiah(transferIn)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push(`Mohon cek mutasi rekening apakah ${formatRupiah(transferIn)} sudah masuk.`);
+      lines.push("Jika belum masuk, segera koordinasikan dengan kasir sebelum transaksi dianggap aman.");
+      break;
+    }
+    case "cash_deposit": {
+      lines.push(`Nominal setor/transfer: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push("Mohon lakukan transfer/setor ke rekening tujuan melalui kanal resmi.");
+      if (trx.customerPhone) lines.push(`Tujuan/Rekening: ${trx.customerPhone}`);
+      lines.push("Isi nomor referensi setelah transaksi berhasil.");
+      break;
+    }
+    case "transfer": {
+      lines.push(`Nominal transfer: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived || nominal + admin)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push("Mohon lakukan transfer dari rekening agen melalui kanal resmi.");
+      if (trx.customerPhone) lines.push(`Rekening/tujuan: ${trx.customerPhone}`);
+      lines.push("Kirim atau isi nomor referensi setelah berhasil.");
+      break;
+    }
+    case "payment": {
+      lines.push(`Layanan: ${serviceName}`);
+      lines.push(`Nominal tagihan: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      if (cashReceived > 0) lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push("Mohon proses pembayaran di provider resmi.");
+      if (trx.customerPhone) lines.push(`ID/No pelanggan: ${trx.customerPhone}`);
+      lines.push("Isi nomor referensi/transaksi setelah berhasil.");
+      break;
+    }
+    case "topup": {
+      lines.push(`Layanan: ${serviceName}`);
+      lines.push(`Nominal top up: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      if (cashReceived > 0) lines.push(`Cash diterima kasir: ${formatRupiah(cashReceived)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push("Mohon proses top up melalui provider resmi.");
+      if (trx.customerPhone) lines.push(`Tujuan: ${trx.customerPhone}`);
+      lines.push("Isi nomor referensi jika tersedia.");
+      break;
+    }
+    default: {
+      lines.push(`Nominal: ${formatRupiah(nominal)}`);
+      if (admin > 0) lines.push(`Admin: ${formatRupiah(admin)}`);
+      lines.push("");
+      lines.push("Instruksi owner:");
+      lines.push("Mohon cek/proses melalui kanal resmi.");
+      break;
+    }
+  }
+
+  lines.push("");
+  lines.push("Dampak pencatatan:");
+  if (cashMut) lines.push(`Kas Tunai: ${signedRupiah(cashImpact)}`);
+  if (bankMut) lines.push(`Rekening: ${signedRupiah(bankImpact)}`);
+  if (profit > 0) lines.push(`Profit Agen: +${formatRupiah(profit)}`);
   if (trx.referenceNo) lines.push(`Ref: ${trx.referenceNo}`);
 
   lines.push("");
-  lines.push("Mohon cek/proses melalui kanal resmi. Aplikasi hanya mencatat transaksi.");
+  lines.push("Catatan: aplikasi hanya mencatat transaksi. Eksekusi aktual tetap melalui kanal resmi.");
   return lines.join("\n");
 }
 
