@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatRupiah, formatDate, formatDateShort, cn } from "@/lib/utils";
 import { Card, StatCard, Badge, Spinner, EmptyState } from "@/components/ui";
 import { AccountCard } from "@/components/AccountCard";
@@ -14,6 +14,18 @@ import {
   ArrowUpRight,
   CheckCircle2,
 } from "lucide-react";
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { Account } from "@/types/models";
 
 interface DashboardData {
@@ -24,14 +36,83 @@ interface DashboardData {
     pos: { count: number; total: string; profit: string };
     brilink: { count: number; total: string; fee: string; profit: string };
   };
-  lowStock: Array<{ id: number; name: string; stock: number; minStock: number; unit: string | null }>;
-  recent: Array<{
-    id: number; invoiceNo: string; type: string; subType: string | null;
-    totalAmount: string; profit: string | null; createdAt: string; customerName: string | null;
+  lowStock: Array<{
+    id: number;
+    name: string;
+    stock: number;
+    minStock: number;
+    unit: string | null;
   }>;
-  last7: Array<{ date: string; revenue: string; profit: string; count: number }>;
+  recent: Array<{
+    id: number;
+    invoiceNo: string;
+    type: string;
+    subType: string | null;
+    totalAmount: string;
+    profit: string | null;
+    createdAt: string;
+    customerName: string | null;
+  }>;
+  last7: Array<{
+    date: string;
+    revenue: string;
+    profit: string;
+    count: number;
+  }>;
   accounts: Account[];
   pendingCount?: number;
+}
+
+function compactRupiah(value: number) {
+  if (value >= 1_000_000_000) return `Rp${(value / 1_000_000_000).toFixed(1)}M`;
+  if (value >= 1_000_000) return `Rp${(value / 1_000_000).toFixed(1)}jt`;
+  if (value >= 1_000) return `Rp${Math.round(value / 1_000)}rb`;
+  return `Rp${value}`;
+}
+
+function DashboardChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: string | number;
+    name?: string;
+    value?: number | string;
+    color?: string;
+  }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const values = Object.fromEntries(
+    payload.map((item) => [item.dataKey, item.value]),
+  );
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm">
+      <p className="mb-2 text-xs font-extrabold text-slate-700">{label}</p>
+      <div className="space-y-1.5 text-xs">
+        <div className="flex items-center justify-between gap-5">
+          <span className="font-semibold text-slate-500">Omzet</span>
+          <span className="font-extrabold text-emerald-700">
+            {formatRupiah(String(values.revenue || 0))}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-5">
+          <span className="font-semibold text-slate-500">Profit</span>
+          <span className="font-extrabold text-emerald-600">
+            {formatRupiah(String(values.profit || 0))}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-5">
+          <span className="font-semibold text-slate-500">Transaksi</span>
+          <span className="font-extrabold text-amber-600">
+            {Number(values.count || 0)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -41,24 +122,52 @@ export default function Dashboard() {
   const servicesLabel = settings.services_label || "Layanan Agen";
 
   useEffect(() => {
-    fetch("/api/dashboard").then(r => r.json()).then(setD).finally(() => setLoading(false));
+    fetch("/api/dashboard")
+      .then((r) => r.json())
+      .then(setD)
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Spinner />;
-  if (!d || !d.today) return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
+  const chartData = useMemo(() => {
+    return (d?.last7 || []).map((day) => ({
+      date: day.date,
+      label: formatDateShort(day.date),
+      revenue: Number(day.revenue || 0),
+      profit: Number(day.profit || 0),
+      count: Number(day.count || 0),
+    }));
+  }, [d?.last7]);
+  const chartHasActivity = chartData.some(
+    (day) => day.revenue > 0 || day.profit > 0 || day.count > 0,
+  );
+  const chartTotals = chartData.reduce(
+    (acc, day) => ({
+      revenue: acc.revenue + day.revenue,
+      profit: acc.profit + day.profit,
+      count: acc.count + day.count,
+    }),
+    { revenue: 0, profit: 0, count: 0 },
+  );
 
-  const maxRev = d.last7?.length ? Math.max(...d.last7.map(x => parseFloat(x.revenue)), 1) : 1;
+  if (loading) return <Spinner />;
+  if (!d || !d.today)
+    return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
 
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-extrabold text-slate-900">Dashboard</h2>
-        <p className="text-sm text-slate-400">Ringkasan aktivitas bisnis Anda</p>
+        <p className="text-sm text-slate-400">
+          Ringkasan aktivitas bisnis Anda
+        </p>
       </div>
 
       {/* Profit Hero + Stats — combined */}
-      <Card className="p-6 gradient-dark text-white relative overflow-hidden border-0" style={{ backgroundColor: "#0F172A" }}>
+      <Card
+        className="p-6 gradient-dark text-white relative overflow-hidden border-0"
+        style={{ backgroundColor: "#0F172A" }}
+      >
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl" />
         <div className="relative">
@@ -66,9 +175,13 @@ export default function Dashboard() {
             <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
               <Wallet size={18} className="text-white" />
             </div>
-            <span className="text-slate-200 text-sm font-semibold">Keuntungan Hari Ini</span>
+            <span className="text-slate-200 text-sm font-semibold">
+              Keuntungan Hari Ini
+            </span>
           </div>
-          <p className="text-4xl font-extrabold tracking-tight">{formatRupiah(d.today.profit)}</p>
+          <p className="text-4xl font-extrabold tracking-tight">
+            {formatRupiah(d.today.profit)}
+          </p>
           <div className="flex items-center gap-3 mt-4">
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <ShoppingCart size={12} />
@@ -76,7 +189,9 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <Landmark size={12} />
-              <span>{servicesLabel}: {formatRupiah(d.today.brilink.profit)}</span>
+              <span>
+                {servicesLabel}: {formatRupiah(d.today.brilink.profit)}
+              </span>
             </div>
           </div>
         </div>
@@ -84,24 +199,76 @@ export default function Dashboard() {
 
       {/* Stats Grid — 4 compact cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={<ShoppingCart size={20} />} label="Total Transaksi" value={(d.today.count ?? 0).toString()} sub="hari ini" color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={<ArrowUpRight size={20} />} label="Omzet POS" value={formatRupiah(d.today.pos?.total ?? "0")} sub={`${d.today.pos?.count ?? 0} trx`} color="bg-blue-50 text-blue-600" />
-        <StatCard icon={<Landmark size={20} />} label={`Volume ${servicesLabel}`} value={formatRupiah(d.today.brilink?.total ?? "0")} sub={`${d.today.brilink?.count ?? 0} trx`} color="bg-violet-50 text-violet-600" />
-        <StatCard icon={<TrendingUp size={20} />} label={`Fee ${servicesLabel}`} value={formatRupiah(d.today.brilink?.profit ?? "0")} sub="100% profit" color="bg-amber-50 text-amber-600" />
+        <StatCard
+          icon={<ShoppingCart size={20} />}
+          label="Total Transaksi"
+          value={(d.today.count ?? 0).toString()}
+          sub="hari ini"
+          color="bg-emerald-50 text-emerald-600"
+        />
+        <StatCard
+          icon={<ArrowUpRight size={20} />}
+          label="Omzet POS"
+          value={formatRupiah(d.today.pos?.total ?? "0")}
+          sub={`${d.today.pos?.count ?? 0} trx`}
+          color="bg-blue-50 text-blue-600"
+        />
+        <StatCard
+          icon={<Landmark size={20} />}
+          label={`Volume ${servicesLabel}`}
+          value={formatRupiah(d.today.brilink?.total ?? "0")}
+          sub={`${d.today.brilink?.count ?? 0} trx`}
+          color="bg-violet-50 text-violet-600"
+        />
+        <StatCard
+          icon={<TrendingUp size={20} />}
+          label={`Fee ${servicesLabel}`}
+          value={formatRupiah(d.today.brilink?.profit ?? "0")}
+          sub="100% profit"
+          color="bg-amber-50 text-amber-600"
+        />
       </div>
 
       {/* Action Required block — production-focused, high visibility */}
       {(() => {
-        const actions: Array<{ icon: typeof AlertTriangle; label: string; detail: string; color: "amber" | "red"; action: () => void }> = [];
+        const actions: Array<{
+          icon: typeof AlertTriangle;
+          label: string;
+          detail: string;
+          color: "amber" | "red";
+          action: () => void;
+        }> = [];
         if (d.pendingCount && d.pendingCount > 0) {
-          actions.push({ icon: AlertTriangle, label: `${d.pendingCount} transaksi pending`, detail: "Selesaikan, void, atau reverse transaksi yang belum final.", color: "amber", action: () => window.location.hash = "history" });
+          actions.push({
+            icon: AlertTriangle,
+            label: `${d.pendingCount} transaksi pending`,
+            detail:
+              "Selesaikan, void, atau reverse transaksi yang belum final.",
+            color: "amber",
+            action: () => (window.location.hash = "history"),
+          });
         }
         if (d.lowStock.length > 0) {
-          actions.push({ icon: AlertTriangle, label: `${d.lowStock.length} produk stok menipis`, detail: "Cek stok fisik dan update stok produk sebelum habis.", color: "amber", action: () => window.location.hash = "products" });
+          actions.push({
+            icon: AlertTriangle,
+            label: `${d.lowStock.length} produk stok menipis`,
+            detail: "Cek stok fisik dan update stok produk sebelum habis.",
+            color: "amber",
+            action: () => (window.location.hash = "products"),
+          });
         }
-        const lowBalanceAccounts = d.accounts.filter(a => parseFloat(a.balance) < parseFloat(a.minBalance || "0"));
+        const lowBalanceAccounts = d.accounts.filter(
+          (a) => parseFloat(a.balance) < parseFloat(a.minBalance || "0"),
+        );
         if (lowBalanceAccounts.length > 0) {
-          actions.push({ icon: AlertTriangle, label: `${lowBalanceAccounts.length} rekening di bawah minimum`, detail: "Top up atau sesuaikan saldo agar transaksi tidak terhambat.", color: "red", action: () => window.location.hash = "cash" });
+          actions.push({
+            icon: AlertTriangle,
+            label: `${lowBalanceAccounts.length} rekening di bawah minimum`,
+            detail:
+              "Top up atau sesuaikan saldo agar transaksi tidak terhambat.",
+            color: "red",
+            action: () => (window.location.hash = "cash"),
+          });
         }
 
         if (actions.length === 0) {
@@ -112,8 +279,13 @@ export default function Dashboard() {
                   <CheckCircle2 size={22} className="text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-emerald-800">Semua aman hari ini</h3>
-                  <p className="text-xs text-emerald-700">Tidak ada transaksi pending, stok kritis, atau rekening di bawah minimum.</p>
+                  <h3 className="font-extrabold text-emerald-800">
+                    Semua aman hari ini
+                  </h3>
+                  <p className="text-xs text-emerald-700">
+                    Tidak ada transaksi pending, stok kritis, atau rekening di
+                    bawah minimum.
+                  </p>
                 </div>
               </div>
             </Card>
@@ -128,11 +300,17 @@ export default function Dashboard() {
                   <AlertTriangle size={24} className="text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-amber-800">Perlu Tindakan</h3>
-                  <p className="text-xs text-amber-700">Prioritaskan item berikut sebelum lanjut operasional.</p>
+                  <h3 className="text-lg font-extrabold text-amber-800">
+                    Perlu Tindakan
+                  </h3>
+                  <p className="text-xs text-amber-700">
+                    Prioritaskan item berikut sebelum lanjut operasional.
+                  </p>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{actions.length} item</span>
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                {actions.length} item
+              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {actions.map((a, i) => (
@@ -140,14 +318,33 @@ export default function Dashboard() {
                   key={i}
                   onClick={a.action}
                   className={`text-left rounded-2xl border p-4 transition-all hover:shadow-card ${
-                    a.color === "red" ? "border-red-200 bg-red-50/80 hover:bg-red-50" : "border-amber-200 bg-white hover:bg-amber-50/70"
+                    a.color === "red"
+                      ? "border-red-200 bg-red-50/80 hover:bg-red-50"
+                      : "border-amber-200 bg-white hover:bg-amber-50/70"
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <a.icon size={18} className={a.color === "red" ? "text-red-500 mt-0.5" : "text-amber-500 mt-0.5"} />
+                    <a.icon
+                      size={18}
+                      className={
+                        a.color === "red"
+                          ? "text-red-500 mt-0.5"
+                          : "text-amber-500 mt-0.5"
+                      }
+                    />
                     <div>
-                      <p className={a.color === "red" ? "font-extrabold text-red-700" : "font-extrabold text-amber-700"}>{a.label}</p>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{a.detail}</p>
+                      <p
+                        className={
+                          a.color === "red"
+                            ? "font-extrabold text-red-700"
+                            : "font-extrabold text-amber-700"
+                        }
+                      >
+                        {a.label}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        {a.detail}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -160,11 +357,15 @@ export default function Dashboard() {
       {/* Account Balances — compact horizontal scroll */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Saldo Rekening</h3>
-          <span className="text-xs text-slate-400">{d.accounts.length} akun</span>
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+            Saldo Rekening
+          </h3>
+          <span className="text-xs text-slate-400">
+            {d.accounts.length} akun
+          </span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {d.accounts.map(acc => (
+          {d.accounts.map((acc) => (
             <div key={acc.id} className="shrink-0 w-[200px]">
               <AccountCard account={acc} compact />
             </div>
@@ -175,32 +376,147 @@ export default function Dashboard() {
       {/* Chart + Low Stock */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
-              <TrendingUp size={16} className="text-primary" /> Pendapatan 7 Hari
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-extrabold text-slate-700 flex items-center gap-2">
+                <TrendingUp size={16} className="text-primary" /> Pendapatan 7
+                Hari
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Omzet, profit, dan jumlah transaksi harian.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-right">
+              <div className="rounded-xl bg-blue-50 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-blue-500">
+                  Omzet
+                </p>
+                <p className="text-xs font-extrabold text-blue-700">
+                  {formatRupiah(chartTotals.revenue)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-emerald-50 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-emerald-500">
+                  Profit
+                </p>
+                <p className="text-xs font-extrabold text-emerald-700">
+                  {formatRupiah(chartTotals.profit)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-slate-500">
+                  Trx
+                </p>
+                <p className="text-xs font-extrabold text-slate-700">
+                  {chartTotals.count}
+                </p>
+              </div>
+            </div>
           </div>
-          {d.last7.length === 0 ? (
-            <EmptyState icon="bar-chart-3" title="Belum ada data" />
+          {!chartHasActivity ? (
+            <div className="h-[280px] flex items-center justify-center rounded-2xl bg-slate-50/70 border border-dashed border-slate-200">
+              <EmptyState
+                icon="bar-chart-3"
+                title="Belum ada transaksi 7 hari terakhir"
+              />
+            </div>
           ) : (
-            <div className="flex items-end gap-3 h-44 px-2">
-              {d.last7.map((day, i) => {
-                const pct = (parseFloat(day.revenue) / maxRev) * 100;
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group">
-                    <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                      {formatRupiah(day.revenue)}
-                    </span>
-                    <div className="w-full relative">
-                      <div
-                        className="w-full bg-gradient-to-t from-primary to-primary-light rounded-xl transition-all duration-700 hover:from-accent hover:to-accent-light cursor-pointer"
-                        style={{ height: `${Math.max(pct, 4)}px`, maxHeight: "140px", minHeight: "6px" }}
+            <div className="h-[300px] w-full rounded-2xl border border-slate-100 bg-gradient-to-b from-slate-50/70 to-white p-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={chartData}
+                  margin={{ top: 12, right: 12, bottom: 4, left: 0 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="dashboardRevenueGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="#00875A"
+                        stopOpacity={0.22}
                       />
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium">{formatDateShort(day.date)}</span>
-                  </div>
-                );
-              })}
+                      <stop
+                        offset="95%"
+                        stopColor="#00875A"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#e2e8f0"
+                  />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                    minTickGap={8}
+                  />
+                  <YAxis
+                    yAxisId="money"
+                    axisLine={false}
+                    tickLine={false}
+                    width={72}
+                    tick={{ fill: "#94a3b8", fontSize: 10 }}
+                    tickFormatter={(value) => compactRupiah(Number(value))}
+                  />
+                  <YAxis
+                    yAxisId="count"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    width={34}
+                    allowDecimals={false}
+                    tick={{ fill: "#94a3b8", fontSize: 10 }}
+                  />
+                  <Tooltip
+                    content={<DashboardChartTooltip />}
+                    cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      paddingTop: 8,
+                    }}
+                  />
+                  <Area
+                    yAxisId="money"
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Omzet"
+                    stroke="#00875A"
+                    strokeWidth={2}
+                    fill="url(#dashboardRevenueGradient)"
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                  <Bar
+                    yAxisId="money"
+                    dataKey="profit"
+                    name="Profit"
+                    fill="#10b981"
+                    radius={[8, 8, 0, 0]}
+                    maxBarSize={36}
+                  />
+                  <Line
+                    yAxisId="count"
+                    type="monotone"
+                    dataKey="count"
+                    name="Transaksi"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    dot={{ r: 3, strokeWidth: 2 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
           )}
         </Card>
@@ -216,10 +532,17 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-2 max-h-44 overflow-y-auto">
-              {d.lowStock.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
-                  <span className="text-sm text-slate-700 truncate flex-1">{p.name}</span>
-                  <Badge variant="danger">{p.stock} {p.unit}</Badge>
+              {d.lowStock.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between p-2.5 bg-amber-50/50 rounded-xl border border-amber-100"
+                >
+                  <span className="text-sm text-slate-700 truncate flex-1">
+                    {p.name}
+                  </span>
+                  <Badge variant="danger">
+                    {p.stock} {p.unit}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -248,14 +571,31 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {d.recent.map(t => (
-                  <tr key={t.id} className="border-b border-slate-50/50 hover:bg-emerald-50/30 transition-colors">
-                    <td className="p-3 font-mono text-xs text-slate-500">{t.invoiceNo}</td>
-                    <td className="p-3"><Badge variant={t.type === "pos" ? "primary" : "purple"}>{t.type === "pos" ? "POS" : servicesLabel}</Badge></td>
-                    <td className="p-3 text-slate-600">{t.customerName || "—"}</td>
-                    <td className="p-3 text-right font-semibold">{formatRupiah(t.totalAmount)}</td>
-                    <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.profit || "0")}</td>
-                    <td className="p-3 text-slate-400 text-xs">{formatDate(t.createdAt)}</td>
+                {d.recent.map((t) => (
+                  <tr
+                    key={t.id}
+                    className="border-b border-slate-50/50 hover:bg-emerald-50/30 transition-colors"
+                  >
+                    <td className="p-3 font-mono text-xs text-slate-500">
+                      {t.invoiceNo}
+                    </td>
+                    <td className="p-3">
+                      <Badge variant={t.type === "pos" ? "primary" : "purple"}>
+                        {t.type === "pos" ? "POS" : servicesLabel}
+                      </Badge>
+                    </td>
+                    <td className="p-3 text-slate-600">
+                      {t.customerName || "—"}
+                    </td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatRupiah(t.totalAmount)}
+                    </td>
+                    <td className="p-3 text-right font-bold text-emerald-600">
+                      {formatRupiah(t.profit || "0")}
+                    </td>
+                    <td className="p-3 text-slate-400 text-xs">
+                      {formatDate(t.createdAt)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

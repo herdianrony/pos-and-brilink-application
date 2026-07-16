@@ -4,9 +4,35 @@ import { transactions, products, accounts } from "@/db/schema";
 import { sql, eq, gte, and, desc, asc, ne } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function toLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildLast7Days(
+  raw: Array<{ date: string; revenue: string; profit: string; count: number }>,
+) {
+  const byDate = new Map(raw.map((row) => [row.date, row]));
+  return Array.from({ length: 7 }, (_, idx) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (6 - idx));
+    const key = toLocalDateKey(date);
+    const row = byDate.get(key);
+    return {
+      date: key,
+      revenue: row?.revenue || "0",
+      profit: row?.profit || "0",
+      count: row?.count || 0,
+    };
+  });
+}
+
 export async function GET() {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
@@ -20,47 +46,88 @@ export async function GET() {
   const validProfit = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.profit} ELSE 0 END`;
   const validFee = sql`CASE WHEN ${transactions.status} != 'void' AND ${transactions.status} != 'reversed' THEN ${transactions.adminFee} ELSE 0 END`;
 
-  const [todayAll] = await db.select({
-    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
-    revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
-  }).from(transactions).where(gte(transactions.createdAt, today));
+  const [todayAll] = await db
+    .select({
+      count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+      revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+      profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
+    })
+    .from(transactions)
+    .where(gte(transactions.createdAt, today));
 
-  const [todayPos] = await db.select({
-    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
-    total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
-  }).from(transactions).where(and(gte(transactions.createdAt, today), eq(transactions.type, "pos")));
+  const [todayPos] = await db
+    .select({
+      count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+      total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+      profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
+    })
+    .from(transactions)
+    .where(
+      and(gte(transactions.createdAt, today), eq(transactions.type, "pos")),
+    );
 
-  const [todayBrilink] = await db.select({
-    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
-    total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
-    fee: sql<string>`CAST(coalesce(sum(${validFee}),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
-  }).from(transactions).where(and(gte(transactions.createdAt, today), eq(transactions.type, "brilink")));
+  const [todayBrilink] = await db
+    .select({
+      count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+      total: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+      fee: sql<string>`CAST(coalesce(sum(${validFee}),0) AS TEXT)`,
+      profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
+    })
+    .from(transactions)
+    .where(
+      and(gte(transactions.createdAt, today), eq(transactions.type, "brilink")),
+    );
 
-  const lowStock = await db.select().from(products)
-    .where(and(sql`${products.stock} <= ${products.minStock}`, eq(products.isActive, true)))
+  const lowStock = await db
+    .select()
+    .from(products)
+    .where(
+      and(
+        sql`${products.stock} <= ${products.minStock}`,
+        eq(products.isActive, true),
+      ),
+    )
     .limit(10);
 
-  const recent = await db.select().from(transactions)
-    .orderBy(desc(transactions.createdAt)).limit(8);
+  const recent = await db
+    .select()
+    .from(transactions)
+    .orderBy(desc(transactions.createdAt))
+    .limit(8);
 
-  const last7 = await db.select({
-    date: sql<string>`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch')`,
-    revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
-    profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
-    count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
-  }).from(transactions)
-    .where(sql`${transactions.createdAt} >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()}`)
-    .groupBy(sql`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch')`)
-    .orderBy(sql`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch') asc`);
+  const last7Start = new Date();
+  last7Start.setHours(0, 0, 0, 0);
+  last7Start.setDate(last7Start.getDate() - 6);
 
-  const accountBalances = await db.select().from(accounts).where(eq(accounts.isActive, true)).orderBy(asc(accounts.id));
+  const last7Rows = await db
+    .select({
+      date: sql<string>`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch', 'localtime')`,
+      revenue: sql<string>`CAST(coalesce(sum(${validAmount}),0) AS TEXT)`,
+      profit: sql<string>`CAST(coalesce(sum(${validProfit}),0) AS TEXT)`,
+      count: sql<number>`CAST(sum(${validCount}) AS INTEGER)`,
+    })
+    .from(transactions)
+    .where(sql`${transactions.createdAt} >= ${last7Start.getTime()}`)
+    .groupBy(
+      sql`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch', 'localtime')`,
+    )
+    .orderBy(
+      sql`strftime('%Y-%m-%d', ${transactions.createdAt} / 1000, 'unixepoch', 'localtime') asc`,
+    );
+  const last7 = buildLast7Days(last7Rows);
 
-  const [pendingResult] = await db.select({
-    count: sql<number>`CAST(count(*) AS INTEGER)`,
-  }).from(transactions).where(eq(transactions.status, "pending"));
+  const accountBalances = await db
+    .select()
+    .from(accounts)
+    .where(eq(accounts.isActive, true))
+    .orderBy(asc(accounts.id));
+
+  const [pendingResult] = await db
+    .select({
+      count: sql<number>`CAST(count(*) AS INTEGER)`,
+    })
+    .from(transactions)
+    .where(eq(transactions.status, "pending"));
 
   return NextResponse.json({
     today: { ...todayAll, pos: todayPos, brilink: todayBrilink },

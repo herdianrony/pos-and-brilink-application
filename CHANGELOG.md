@@ -12,6 +12,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Script release/check versi untuk workflow rilis Windows Electron.
 - Tombol cek update dan simulasi update di halaman Tentang saat berjalan di Electron.
 - Panel **Log & Monitoring Aplikasi** di Pengaturan > Lanjutan untuk memantau error API, error tampilan, log server Electron, download log, dan membersihkan log aktif.
+- Chart Dashboard 7 hari yang lebih informatif dengan omzet, profit, jumlah transaksi, tooltip, ringkasan total, dan data tanggal kosong tetap tampil.
 
 ### Security
 - Mengamankan IPC `whatsapp:send` Electron dengan token HMAC yang terikat ke nomor owner, isi pesan, dan masa kedaluwarsa.
