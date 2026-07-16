@@ -6,9 +6,104 @@ import { Modal, Button, Input, Select, Card, Badge, Spinner, EmptyState, Confirm
 import { Plus, Pencil, Trash2, X, Layers } from "lucide-react";
 import { DynamicIcon, AVAILABLE_ICONS } from "@/components/DynamicIcon";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { calculateBankFlow, calculateCashFlow, type FeeMethod, type FlowType } from "@/lib/service-flow";
 import type { ServiceCategory as ServiceCat, FeeTier, AgentService as BLService } from "@/types/models";
 
 const icons = AVAILABLE_ICONS;
+
+type ServicePresetId = "cash_withdrawal" | "cash_deposit" | "transfer" | "payment" | "topup" | "inquiry" | "custom";
+
+interface ServicePreset {
+  id: ServicePresetId;
+  title: string;
+  desc: string;
+  icon: string;
+  cashEffect: "in" | "out" | "none";
+  bankEffect: "in" | "out" | "none";
+  flowType: FlowType;
+  defaultFeeMethod: FeeMethod;
+  example: string;
+}
+
+const SERVICE_PRESETS: ServicePreset[] = [
+  {
+    id: "cash_withdrawal",
+    title: "Tarik Tunai",
+    desc: "Pelanggan transfer ke rekening agen, kasir menyerahkan cash.",
+    icon: "banknote",
+    cashEffect: "out",
+    bankEffect: "in",
+    flowType: "cash_withdrawal",
+    defaultFeeMethod: "charged",
+    example: "Kas -100rb, rekening +105rb jika admin 5rb",
+  },
+  {
+    id: "cash_deposit",
+    title: "Setor Tunai",
+    desc: "Kasir menerima cash, owner/agen transfer dari rekening.",
+    icon: "wallet",
+    cashEffect: "in",
+    bankEffect: "out",
+    flowType: "cash_deposit",
+    defaultFeeMethod: "cash",
+    example: "Kas +105rb, rekening -100rb jika admin 5rb",
+  },
+  {
+    id: "transfer",
+    title: "Transfer Tunai",
+    desc: "Pelanggan bayar cash, agen mengirim transfer dari rekening.",
+    icon: "arrow-up-right",
+    cashEffect: "in",
+    bankEffect: "out",
+    flowType: "transfer",
+    defaultFeeMethod: "cash",
+    example: "Kas +105rb, rekening -100rb jika admin 5rb",
+  },
+  {
+    id: "payment",
+    title: "Pembayaran Tagihan",
+    desc: "Pelanggan bayar cash, agen membayar provider dari rekening.",
+    icon: "file-text",
+    cashEffect: "in",
+    bankEffect: "out",
+    flowType: "payment",
+    defaultFeeMethod: "cash",
+    example: "Kas +total bayar, rekening -nominal tagihan",
+  },
+  {
+    id: "topup",
+    title: "Top Up / Pulsa",
+    desc: "Pelanggan bayar cash, agen memproses top up dari saldo/rekening.",
+    icon: "smartphone",
+    cashEffect: "in",
+    bankEffect: "out",
+    flowType: "topup",
+    defaultFeeMethod: "cash",
+    example: "Kas +total bayar, rekening -nominal top up",
+  },
+  {
+    id: "inquiry",
+    title: "Inquiry / Cek Saldo",
+    desc: "Hanya pencatatan informasi, tanpa perubahan kas/rekening.",
+    icon: "search",
+    cashEffect: "none",
+    bankEffect: "none",
+    flowType: "inquiry",
+    defaultFeeMethod: "cash",
+    example: "Kas dan rekening tidak berubah",
+  },
+  {
+    id: "custom",
+    title: "Custom",
+    desc: "Atur sendiri efek kas, rekening, dan jenis flow layanan.",
+    icon: "settings",
+    cashEffect: "in",
+    bankEffect: "out",
+    flowType: "payment",
+    defaultFeeMethod: "cash",
+    example: "Untuk SOP khusus bisnis Anda",
+  },
+];
 
 export default function BLServicesTab() {
   const [svcs, setSvcs] = useState<BLService[]>([]);
@@ -17,7 +112,7 @@ export default function BLServicesTab() {
   const [modal, setModal] = useState(false);
   const [tiersModal, setTiersModal] = useState(false);
   const [edit, setEdit] = useState<BLService | null>(null);
-  const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" });
+  const [f, setF] = useState({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash", presetId: "custom" as ServicePresetId, description: "" });
   const [tiers, setTiers] = useState<FeeTier[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<number | null>(null);
@@ -31,13 +126,13 @@ export default function BLServicesTab() {
 
   function openAdd() { 
     setEdit(null); 
-    setF({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", description: "" }); 
+    setF({ name: "", categoryId: "", icon: "credit-card", adminFee: "", agentFee: "", profitDifferent: false, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash", presetId: "custom", description: "" }); 
     setTiers([]);
     setModal(true); 
   }
   function openEdit(s: BLService) {
     setEdit(s); 
-    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "credit-card", adminFee: s.adminFee, agentFee: s.agentFee, profitDifferent: Number(s.adminFee) !== Number(s.agentFee), useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", description: s.description || "" }); 
+    setF({ name: s.name, categoryId: s.categoryId?.toString() || "", icon: s.icon || "credit-card", adminFee: s.adminFee, agentFee: s.agentFee, profitDifferent: Number(s.adminFee) !== Number(s.agentFee), useTieredFee: s.useTieredFee, cashEffect: s.cashEffect || "in", bankEffect: s.bankEffect || "out", flowType: (s.flowType || "payment") as FlowType, defaultFeeMethod: (s.defaultFeeMethod || "cash") as FeeMethod, presetId: "custom", description: s.description || "" }); 
     setTiers(s.feeTiers || []);
     setModal(true);
   }
@@ -46,6 +141,25 @@ export default function BLServicesTab() {
     setTiers(s.feeTiers || []);
     setTiersModal(true);
   }
+
+  function applyPreset(preset: ServicePreset) {
+    setF(prev => ({
+      ...prev,
+      presetId: preset.id,
+      name: prev.name || (preset.id === "custom" ? "" : preset.title),
+      icon: preset.icon,
+      cashEffect: preset.cashEffect,
+      bankEffect: preset.bankEffect,
+      flowType: preset.flowType,
+      defaultFeeMethod: preset.defaultFeeMethod,
+    }));
+  }
+
+  const simulationNominal = 100000;
+  const simulationAdminFee = Number(f.adminFee || 0);
+  const simulationAgentFee = f.profitDifferent ? Number(f.agentFee || 0) : simulationAdminFee;
+  const simulationCash = calculateCashFlow(f.cashEffect, simulationNominal, simulationAdminFee, f.defaultFeeMethod as FeeMethod);
+  const simulationBank = calculateBankFlow(f.cashEffect, f.bankEffect, simulationNominal, simulationAdminFee, f.defaultFeeMethod as FeeMethod);
   
   function addTier() {
     const lastMax = tiers.length > 0 ? tiers[tiers.length - 1].maxAmount : "0";
@@ -74,7 +188,7 @@ export default function BLServicesTab() {
     if (!f.name) return; setSaving(true);
     const agentFee = f.profitDifferent ? (f.agentFee || "0") : (f.adminFee || "0");
     const res = await fetch("/api/brilink-services", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, description: f.description || null })
+      body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, flowType: f.flowType, defaultFeeMethod: f.defaultFeeMethod, description: f.description || null })
     });
     const svc = await res.json();
     
@@ -97,7 +211,7 @@ export default function BLServicesTab() {
     });
     // Update useTieredFee flag
     await fetch("/api/brilink-services", { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: edit.id, name: edit.name, useTieredFee: tiers.length > 0, adminFee: edit.adminFee, agentFee: edit.agentFee, cashEffect: edit.cashEffect, bankEffect: edit.bankEffect })
+      body: JSON.stringify({ id: edit.id, name: edit.name, useTieredFee: tiers.length > 0, adminFee: edit.adminFee, agentFee: edit.agentFee, cashEffect: edit.cashEffect, bankEffect: edit.bankEffect, flowType: edit.flowType, defaultFeeMethod: edit.defaultFeeMethod })
     });
     setTiersModal(false); load(); setSaving(false);
   }
@@ -112,7 +226,12 @@ export default function BLServicesTab() {
     <>
       <div className="flex justify-end"><Button onClick={openAdd}><Plus size={16} /> Tambah Layanan</Button></div>
       <Card className="overflow-hidden">
-        {loading ? <Spinner /> : svcs.length === 0 ? <EmptyState icon="landmark" title="Belum ada layanan" /> : (
+        {loading ? <Spinner /> : svcs.length === 0 ? (
+          <div className="p-8 text-center space-y-3">
+            <EmptyState icon="landmark" title="Belum ada layanan agen" subtitle="Buat layanan pertama sesuai SOP usaha Anda: Tarik Tunai, Setor Tunai, Transfer, Pembayaran, Top Up, atau layanan custom." />
+            <Button onClick={openAdd}><Plus size={16} /> Buat Layanan Pertama</Button>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
@@ -164,6 +283,31 @@ export default function BLServicesTab() {
       <Modal open={modal} onClose={() => setModal(false)} size="xl">
         <div className="p-5 space-y-4">
           <h3 className="text-lg font-extrabold">{edit ? "Edit Layanan" : "Tambah Layanan"}</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-bold text-slate-700">Pilih Pola Layanan</p>
+              <p className="text-xs text-slate-400">Pilih preset agar efek kas/rekening otomatis benar. Anda masih bisa menyesuaikan setelahnya.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {SERVICE_PRESETS.map(preset => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyPreset(preset)}
+                  className={cn("rounded-2xl border-2 p-3 text-left transition-all", f.presetId === preset.id ? "border-primary bg-primary/5 shadow-card" : "border-slate-200 bg-white hover:border-slate-300")}
+                >
+                  <div className="flex items-start gap-2">
+                    <DynamicIcon name={preset.icon} fallback="credit-card" size={18} className={f.presetId === preset.id ? "text-primary" : "text-slate-500"} />
+                    <div>
+                      <p className="text-sm font-extrabold text-slate-800">{preset.title}</p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">{preset.desc}</p>
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-1">{preset.example}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Nama Layanan *" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Nama layanan" />
             <Select label="Kategori" value={f.categoryId} onChange={e => setF({ ...f, categoryId: e.target.value })}>
@@ -248,16 +392,49 @@ export default function BLServicesTab() {
           )}
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select label="Efek Kas Tunai" value={f.cashEffect} onChange={e => setF({ ...f, cashEffect: e.target.value })}>
-              <option value="in">Masuk (nasabah bayar cash)</option>
-              <option value="out">Keluar (kasih cash ke nasabah)</option>
-              <option value="none">— Tidak ada efek</option>
+            <Select label="Kas Tunai" value={f.cashEffect} onChange={e => setF({ ...f, cashEffect: e.target.value })}>
+              <option value="in">Kas masuk / pelanggan bayar cash</option>
+              <option value="out">Kas keluar / kasir menyerahkan cash</option>
+              <option value="none">Tidak ada perubahan kas</option>
             </Select>
-            <Select label="Efek Saldo M-Banking" value={f.bankEffect} onChange={e => setF({ ...f, bankEffect: e.target.value })}>
-              <option value="in">Masuk (terima transfer dari nasabah)</option>
-              <option value="out">Keluar (transfer/bayar via mbanking)</option>
-              <option value="none">— Tidak ada efek</option>
+            <Select label="Rekening / M-Banking" value={f.bankEffect} onChange={e => setF({ ...f, bankEffect: e.target.value })}>
+              <option value="in">Rekening masuk / terima transfer</option>
+              <option value="out">Rekening keluar / transfer atau bayar provider</option>
+              <option value="none">Tidak ada perubahan rekening</option>
             </Select>
+            <Select label="Jenis Flow" value={f.flowType} onChange={e => setF({ ...f, flowType: e.target.value })}>
+              <option value="cash_withdrawal">Tarik Tunai / Cash keluar</option>
+              <option value="cash_deposit">Setor Tunai / Cash masuk</option>
+              <option value="transfer">Transfer</option>
+              <option value="payment">Pembayaran Tagihan</option>
+              <option value="topup">Top Up / Pulsa</option>
+              <option value="inquiry">Inquiry / Cek Saldo</option>
+            </Select>
+            <Select label="Cara Admin Dibayar" value={f.defaultFeeMethod} onChange={e => setF({ ...f, defaultFeeMethod: e.target.value })}>
+              <option value="cash">Dibayar cash oleh pelanggan</option>
+              <option value="charged">Ditambahkan ke transfer/saldo pelanggan</option>
+              <option value="deducted">Dipotong dari nominal yang diterima pelanggan</option>
+            </Select>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+            <div>
+              <p className="text-sm font-bold text-slate-700">Simulasi Dampak Saldo</p>
+              <p className="text-xs text-slate-400">Contoh nominal {formatRupiah(simulationNominal)} dengan admin {formatRupiah(simulationAdminFee || 0)}.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className={cn("rounded-xl p-3", simulationCash.cashDelta < 0 ? "bg-red-50 text-red-700" : simulationCash.cashDelta > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-600")}>
+                <p className="text-[10px] font-bold uppercase opacity-70">Kas Tunai</p>
+                <p className="text-lg font-extrabold">{simulationCash.cashDelta > 0 ? "+" : simulationCash.cashDelta < 0 ? "−" : ""}{formatRupiah(Math.abs(simulationCash.cashDelta))}</p>
+              </div>
+              <div className={cn("rounded-xl p-3", simulationBank.bankDelta < 0 ? "bg-red-50 text-red-700" : simulationBank.bankDelta > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-600")}>
+                <p className="text-[10px] font-bold uppercase opacity-70">Rekening</p>
+                <p className="text-lg font-extrabold">{simulationBank.bankDelta > 0 ? "+" : simulationBank.bankDelta < 0 ? "−" : ""}{formatRupiah(Math.abs(simulationBank.bankDelta))}</p>
+              </div>
+              <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">
+                <p className="text-[10px] font-bold uppercase opacity-70">Profit Agen</p>
+                <p className="text-lg font-extrabold">+{formatRupiah(Math.max(0, simulationAgentFee))}</p>
+              </div>
+            </div>
           </div>
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-700">
             <p className="font-medium mb-1">Panduan Efek Saldo:</p>
