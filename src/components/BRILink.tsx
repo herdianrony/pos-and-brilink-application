@@ -236,21 +236,41 @@ export default function BRILink() {
         return;
       }
       setLastInv(trx.invoiceNo);
-      fetch("/api/whatsapp/notify-owner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transactionId: trx.id }),
-      })
-        .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
-        .then(({ ok, data }) => {
+      (async () => {
+        try {
+          if (typeof window !== "undefined" && window.electronAPI?.whatsapp) {
+            const preparedRes = await fetch("/api/whatsapp/notify-owner", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ transactionId: trx.id, prepareOnly: true }),
+            });
+            const prepared = await preparedRes.json().catch(() => null);
+            if (prepared?.prepared && prepared.to && prepared.message) {
+              const sent = await window.electronAPI.whatsapp.send({ to: prepared.to, message: prepared.message });
+              if (sent.ok) toast.success("Notifikasi WhatsApp owner terkirim");
+              else toast.warning(`WhatsApp owner tidak terkirim: ${sent.error || "WhatsApp belum siap"}`);
+            } else if (prepared?.reason && !["disabled", "not_required"].includes(prepared.reason)) {
+              toast.warning(`WhatsApp owner tidak terkirim: ${prepared.reason}`);
+            }
+            return;
+          }
+
+          const r = await fetch("/api/whatsapp/notify-owner", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transactionId: trx.id }),
+          });
+          const data = await r.json().catch(() => null);
           if (data?.sent) toast.success("Notifikasi WhatsApp owner terkirim");
           else if (data?.reason && !["disabled", "not_required"].includes(data.reason)) {
             toast.warning(`WhatsApp owner tidak terkirim: ${data.error || data.reason}`);
-          } else if (!ok && data?.error) {
+          } else if (!r.ok && data?.error) {
             toast.warning(`WhatsApp owner tidak terkirim: ${data.error}`);
           }
-        })
-        .catch(() => toast.warning("WhatsApp owner tidak terkirim. Cek koneksi WhatsApp di Pengaturan."));
+        } catch {
+          toast.warning("WhatsApp owner tidak terkirim. Cek koneksi WhatsApp di Pengaturan.");
+        }
+      })();
       closeModal();
       setShowDone(true);
       const newAccs = await fetch("/api/accounts").then(r => r.json());

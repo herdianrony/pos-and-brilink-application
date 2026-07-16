@@ -66,6 +66,15 @@ const api = {
     loadConfig: () => ipcRenderer.invoke("printer:loadConfig"),
   },
 
+  // ── WhatsApp Owner (Electron native) ─────────
+  whatsapp: {
+    status: () => ipcRenderer.invoke("whatsapp:status"),
+    start: () => ipcRenderer.invoke("whatsapp:start"),
+    restart: () => ipcRenderer.invoke("whatsapp:restart"),
+    logout: () => ipcRenderer.invoke("whatsapp:logout"),
+    send: (payload: { to: string; message: string }) => ipcRenderer.invoke("whatsapp:send", payload),
+  },
+
   // ── Auto-update ───────────────────────────────
   update: {
     check: () => ipcRenderer.invoke("update:check"),

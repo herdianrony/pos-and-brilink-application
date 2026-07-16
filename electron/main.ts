@@ -28,6 +28,7 @@ import fs from "fs";
 import { applyDatabaseUrl } from "./db-path";
 import { registerPrinterIpc, loadPrinterConfig } from "./printer";
 import { initAutoUpdater, startUpdateCheck, quitAndInstall } from "./updater";
+import { registerWhatsAppIpc } from "./whatsapp";
 
 // Port internal untuk Next.js standalone server (production only)
 const INTERNAL_PORT = 43219;
@@ -530,6 +531,7 @@ function registerAppIpc() {
 app.whenReady().then(async () => {
   registerAppIpc();
   registerPrinterIpc(() => mainWindow);
+  registerWhatsAppIpc();
   await loadPrinterConfig();
 
   // ── Mode DEV: langsung load Next.js dev server ──

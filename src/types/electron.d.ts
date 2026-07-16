@@ -16,6 +16,13 @@ export interface ElectronAPI {
     saveConfig: (config: PrinterConfig) => Promise<{ ok: true }>;
     loadConfig: () => Promise<PrinterConfig | null>;
   };
+  whatsapp: {
+    status: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
+    start: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
+    restart: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
+    logout: () => Promise<{ status: string; qrDataUrl: string | null; lastError: string | null; hasClient: boolean }>;
+    send: (payload: { to: string; message: string }) => Promise<{ ok: boolean; error?: string }>;
+  };
   update: {
     check: () => Promise<{ version?: string; error?: string } | null>;
     install: () => Promise<boolean>;

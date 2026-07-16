@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, Button, Input, Spinner, Tabs, Badge, useToast } from "@/components/ui";
 import { Settings as SettingsIcon, Save, Store, CreditCard, ShieldCheck, AlertTriangle, Check, MessageCircle, LogOut, RefreshCw, QrCode } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
@@ -19,6 +19,10 @@ interface WhatsAppStatus {
   enabled: boolean;
   autoNotifyOwner: boolean;
   ownerNumber: string;
+}
+
+function hasElectronWhatsApp() {
+  return typeof window !== "undefined" && Boolean(window.electronAPI?.whatsapp);
 }
 
 export default function SettingsPage() {
@@ -47,25 +51,31 @@ export default function SettingsPage() {
     });
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "whatsapp") refreshWhatsAppStatus();
-  }, [activeTab]);
-
-  async function refreshWhatsAppStatus() {
+  const refreshWhatsAppStatus = useCallback(async () => {
     try {
+      if (hasElectronWhatsApp()) {
+        const status = await window.electronAPI!.whatsapp.status();
+        setWaStatus({ ...status, enabled: data.whatsapp_enabled === "true", autoNotifyOwner: data.whatsapp_auto_notify_owner === "true", ownerNumber: data.whatsapp_owner_number || "" });
+        return;
+      }
       const res = await fetch("/api/whatsapp/status", { cache: "no-store" });
       if (res.ok) setWaStatus(await res.json());
     } catch {
       // ignore status refresh failures
     }
-  }
+  }, [data.whatsapp_auto_notify_owner, data.whatsapp_enabled, data.whatsapp_owner_number]);
+
+  useEffect(() => {
+    if (activeTab === "whatsapp") refreshWhatsAppStatus();
+  }, [activeTab, refreshWhatsAppStatus]);
 
   async function startWhatsApp() {
     setWaLoading(true);
     try {
-      const res = await fetch("/api/whatsapp/start", { method: "POST" });
-      const data = await res.json();
-      setWaStatus(data);
+      const data = hasElectronWhatsApp()
+        ? await window.electronAPI!.whatsapp.start()
+        : await fetch("/api/whatsapp/start", { method: "POST" }).then(r => r.json());
+      setWaStatus({ ...data, enabled: data.whatsapp_enabled ?? data.enabled ?? data.whatsapp_enabled, autoNotifyOwner: data.autoNotifyOwner ?? data.whatsapp_auto_notify_owner, ownerNumber: data.ownerNumber ?? data.whatsapp_owner_number });
       if (data.status === "ready") toast.success("WhatsApp terhubung");
       else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan");
       else if (data.lastError) toast.error(data.lastError);
@@ -79,10 +89,12 @@ export default function SettingsPage() {
   async function restartWhatsApp() {
     setWaLoading(true);
     try {
-      const res = await fetch("/api/whatsapp/restart", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        setWaStatus(data);
+      const response = hasElectronWhatsApp()
+        ? { ok: true, data: await window.electronAPI!.whatsapp.restart() }
+        : await fetch("/api/whatsapp/restart", { method: "POST" }).then(async r => ({ ok: r.ok, data: await r.json() }));
+      const data = response.data;
+      if (response.ok) {
+        setWaStatus({ ...data, enabled: data.enabled ?? data.whatsapp_enabled, autoNotifyOwner: data.autoNotifyOwner ?? data.whatsapp_auto_notify_owner, ownerNumber: data.ownerNumber ?? data.whatsapp_owner_number });
         if (data.status === "ready") toast.success("WhatsApp siap digunakan");
         else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan ulang");
         else toast.info("Koneksi WhatsApp direstart, tunggu lalu refresh status");
@@ -99,8 +111,13 @@ export default function SettingsPage() {
   async function logoutWhatsApp() {
     setWaLoading(true);
     try {
-      const res = await fetch("/api/whatsapp/logout", { method: "POST" });
-      if (res.ok) setWaStatus(await res.json());
+      if (hasElectronWhatsApp()) {
+        const status = await window.electronAPI!.whatsapp.logout();
+        setWaStatus({ ...status, enabled: data.whatsapp_enabled === "true", autoNotifyOwner: data.whatsapp_auto_notify_owner === "true", ownerNumber: data.whatsapp_owner_number || "" });
+      } else {
+        const res = await fetch("/api/whatsapp/logout", { method: "POST" });
+        if (res.ok) setWaStatus(await res.json());
+      }
       toast.success("WhatsApp berhasil logout");
     } catch {
       toast.error("Gagal logout WhatsApp");
