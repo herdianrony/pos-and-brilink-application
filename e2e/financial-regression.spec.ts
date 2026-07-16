@@ -123,6 +123,7 @@ test.describe("F-02: Insufficient balance protection", () => {
         serviceId: tarikService.id,
         totalAmount: 1_000_000_000, // 1 billion
         paymentMethod: "cash",
+        cashConfirmed: true,
       },
     });
     expect(res.status()).toBe(400);
@@ -150,6 +151,7 @@ test.describe("F-02: Insufficient balance protection", () => {
         serviceId: setorService.id,
         totalAmount: 1_000_000_000,
         paymentMethod: "cash",
+        cashConfirmed: true,
       },
     });
     expect(res.status()).toBe(400);

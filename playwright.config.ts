@@ -31,7 +31,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npx cross-env PORT=3001 npm run dev",
+    command: "npx cross-env PORT=3001 AUTH_SECRET=e2e_local_auth_secret_32_chars_min npm run dev",
     url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,

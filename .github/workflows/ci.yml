@@ -12,6 +12,8 @@ jobs:
     name: Lint + Typecheck + Unit Tests + Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      AUTH_SECRET: ci_test_auth_secret_32_chars_minimum_value
 
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +55,8 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      AUTH_SECRET: ci_e2e_auth_secret_32_chars_minimum_value
 
     steps:
       - uses: actions/checkout@v4

@@ -4,13 +4,11 @@ import { test, expect } from "@playwright/test";
 // Test: service categories, service selection, transaction form
 
 test.beforeEach(async ({ page }) => {
-  // F-06: Auth via storageState. Just navigate to / and then to services.
-  await page.goto("/");
+  // F-06: Auth via storageState. Navigate directly by hash to avoid
+  // brittle sidebar text matching after branding/menu changes.
+  await page.goto("/#brilink");
   await page.waitForLoadState("domcontentloaded");
-
-  // Navigate to services page
-  await page.click('button:has-text("Layanan"), button:has-text("BRILink"), button:has-text("Agen")');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 });
 
 test.describe("BRILink Flow", () => {
@@ -51,10 +49,12 @@ test.describe("BRILink Flow", () => {
     await page.waitForTimeout(1000);
 
     // Modal should open with service name as heading
-    const modalHeading = page.locator('h3:has-text("Transfer"), h3:has-text("Tarik"), h3:has-text("Tagihan")').first();
-    await expect(modalHeading).toBeVisible({ timeout: 5000 });
-    // Form label should be visible
-    await expect(page.locator("label:has-text('Nama Pelanggan')")).toBeVisible({ timeout: 5000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.locator('h3:has-text("Transfer"), h3:has-text("Tarik"), h3:has-text("Tagihan")').first()).toBeVisible({ timeout: 5000 });
+    // Form label/text should be visible. Use text matching instead of label-only
+    // selector because the shared Input component may wrap label markup.
+    await expect(dialog.getByText(/Nama Pelanggan/i)).toBeVisible({ timeout: 5000 });
   });
 
   test("should show BPJS periode field for BPJS service", async ({ page }) => {

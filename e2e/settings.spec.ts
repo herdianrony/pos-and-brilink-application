@@ -4,10 +4,9 @@ import { test, expect } from "@playwright/test";
 // F-06: Auth via storageState. Settings now uses tabs.
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#settings");
   await page.waitForLoadState("domcontentloaded");
-  await page.click('button:has-text("Pengaturan")');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 });
 
 test.describe("Settings Flow", () => {
@@ -80,8 +79,9 @@ test.describe("User Management Flow", () => {
 
 test.describe("Cash & Saldo Flow", () => {
   test.beforeEach(async ({ page }) => {
-    await page.click('button:has-text("Kas"), button:has-text("Saldo")');
-    await page.waitForTimeout(2000);
+    await page.goto("/#cash");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(1000);
   });
 
   test("should display account cards", async ({ page }) => {
@@ -107,8 +107,9 @@ test.describe("Cash & Saldo Flow", () => {
 
 test.describe("Rekening Koran Flow", () => {
   test.beforeEach(async ({ page }) => {
-    await page.click('button:has-text("Rekening Koran")');
-    await page.waitForTimeout(2000);
+    await page.goto("/#rekeningKoran");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(1000);
   });
 
   test("should display rekening koran page", async ({ page }) => {
