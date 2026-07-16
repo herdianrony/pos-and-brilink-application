@@ -445,10 +445,13 @@ Alur umum:
 
 Setup release:
 
-1. Update `version` di `package.json`.
-2. Pastikan `publish` di `electron-builder.yml` mengarah ke repository yang benar.
-3. Set `GH_TOKEN`.
-4. Jalankan `npm run build:electron:publish`.
+1. Naikkan versi dengan `npm run version:patch`, `npm run version:minor`, atau `npm run version:major`.
+2. Update `CHANGELOG.md`.
+3. Jalankan `npm run release:check`.
+4. Build installer lokal dengan `npm run build:electron`, atau publish GitHub Release dengan `GH_TOKEN=... npm run build:electron:publish`.
+5. Untuk simulasi UI update tanpa publish release, jalankan `npm run dev:electron:update-sim` lalu klik **Simulasi Update** di halaman Tentang.
+
+Panduan lengkap ada di `docs/release.md`.
 
 ## Database
 

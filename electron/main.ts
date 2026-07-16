@@ -27,7 +27,13 @@ import { existsSync } from "fs";
 import fs from "fs";
 import { applyDatabaseUrl } from "./db-path";
 import { registerPrinterIpc, loadPrinterConfig } from "./printer";
-import { initAutoUpdater, startUpdateCheck, quitAndInstall } from "./updater";
+import {
+  initAutoUpdater,
+  startUpdateCheck,
+  quitAndInstall,
+  checkForUpdatesNow,
+  simulateUpdate,
+} from "./updater";
 import { registerWhatsAppIpc } from "./whatsapp";
 
 // Port internal untuk Next.js standalone server (production only)
@@ -609,18 +615,20 @@ function registerAppIpc() {
   );
 
   ipcMain.handle("update:check", async () => {
-    const { autoUpdater } = require("electron-updater");
     try {
-      const result = await autoUpdater.checkForUpdates();
-      return result ? { version: result.updateInfo.version } : null;
+      return await checkForUpdatesNow();
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) };
     }
   });
-  ipcMain.handle("update:install", () => {
-    quitAndInstall();
-    return true;
+  ipcMain.handle("update:simulate", async (_evt, version?: string) => {
+    try {
+      return await simulateUpdate(version);
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
   });
+  ipcMain.handle("update:install", () => quitAndInstall());
 }
 
 // ── App lifecycle ────────────────────────────────

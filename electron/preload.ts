@@ -84,6 +84,8 @@ const api = {
   // ── Auto-update ───────────────────────────────
   update: {
     check: () => ipcRenderer.invoke("update:check"),
+    simulate: (version?: string) =>
+      ipcRenderer.invoke("update:simulate", version),
     install: () => ipcRenderer.invoke("update:install"),
     onUpdateAvailable: (
       cb: (info: { version: string; releaseNotes?: string }) => void,
@@ -125,6 +127,12 @@ const api = {
       const handler = () => cb();
       ipcRenderer.on("update:not-available", handler);
       return () => ipcRenderer.removeListener("update:not-available", handler);
+    },
+    onUpdateSimulatedInstalled: (cb: () => void) => {
+      const handler = () => cb();
+      ipcRenderer.on("update:simulated-installed", handler);
+      return () =>
+        ipcRenderer.removeListener("update:simulated-installed", handler);
     },
   },
 

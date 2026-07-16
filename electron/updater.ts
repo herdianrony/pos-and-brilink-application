@@ -17,6 +17,64 @@ import type { BrowserWindow } from "electron";
 
 let mainWindow: BrowserWindow | null = null;
 let updateAvailable: { version: string; releaseNotes?: string } | null = null;
+let simulatedUpdateDownloaded = false;
+let simulationRunning = false;
+
+function isUpdateSimulationEnabled() {
+  return (
+    process.env.ELECTRON_UPDATE_SIMULATION === "1" ||
+    process.env.UPDATE_SIMULATION === "1"
+  );
+}
+
+function getSimulationVersion() {
+  return process.env.ELECTRON_UPDATE_SIMULATION_VERSION || "999.0.0-simulasi";
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Simulasi update untuk QA/demo tanpa benar-benar mengunduh installer.
+ * Dipakai untuk memastikan UI update Electron, IPC listener, dan tombol install
+ * berjalan sebelum release GitHub sungguhan diterbitkan.
+ */
+export async function simulateUpdate(version = getSimulationVersion()) {
+  if (simulationRunning) return { version, simulated: true, running: true };
+  simulationRunning = true;
+  simulatedUpdateDownloaded = false;
+
+  try {
+    sendToRenderer("update:checking", {});
+    await wait(500);
+
+    const info = {
+      version,
+      releaseNotes:
+        "Simulasi update Electron. Tidak ada file installer yang benar-benar diunduh.",
+    };
+    updateAvailable = info;
+    sendToRenderer("update:available", info);
+
+    for (const percent of [10, 25, 45, 65, 85, 100]) {
+      await wait(250);
+      sendToRenderer("update:progress", {
+        percent,
+        transferred: Math.round((percent / 100) * 50 * 1024 * 1024),
+        total: 50 * 1024 * 1024,
+        bytesPerSecond: 8 * 1024 * 1024,
+        simulated: true,
+      });
+    }
+
+    simulatedUpdateDownloaded = true;
+    sendToRenderer("update:downloaded", { version, simulated: true });
+    return { version, simulated: true, downloaded: true };
+  } finally {
+    simulationRunning = false;
+  }
+}
 
 export function initAutoUpdater(window: BrowserWindow) {
   mainWindow = window;
@@ -77,10 +135,7 @@ export function initAutoUpdater(window: BrowserWindow) {
 export function startUpdateCheck(delay = 10000) {
   setTimeout(async () => {
     try {
-      const result = await autoUpdater.checkForUpdates();
-      if (!result) {
-        sendToRenderer("update:not-available", {});
-      }
+      await checkForUpdatesNow();
     } catch (err) {
       // Silent fail — jangan ganggu user saat startup
       console.error("Update check failed:", err);
@@ -88,12 +143,29 @@ export function startUpdateCheck(delay = 10000) {
   }, delay);
 }
 
+export async function checkForUpdatesNow() {
+  if (isUpdateSimulationEnabled()) return simulateUpdate();
+
+  const result = await autoUpdater.checkForUpdates();
+  if (!result) {
+    sendToRenderer("update:not-available", {});
+    return null;
+  }
+  return { version: result.updateInfo.version };
+}
+
 /**
  * Install update yang sudah didownload — dipanggil dari renderer
  * lewat IPC saat user klik tombol "Install Sekarang".
  */
 export function quitAndInstall() {
+  if (simulatedUpdateDownloaded) {
+    simulatedUpdateDownloaded = false;
+    sendToRenderer("update:simulated-installed", { ok: true });
+    return { ok: true, simulated: true };
+  }
   autoUpdater.quitAndInstall(true, true);
+  return { ok: true };
 }
 
 function sendToRenderer(channel: string, payload: unknown) {

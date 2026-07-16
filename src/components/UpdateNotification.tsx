@@ -28,6 +28,7 @@ export default function UpdateNotification() {
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [electronAvail, setElectronAvail] = useState(false);
+  const [simulationDone, setSimulationDone] = useState(false);
 
   useEffect(() => {
     setElectronAvail(isElectron());
@@ -52,12 +53,22 @@ export default function UpdateNotification() {
     const cleanupError = api.update.onUpdateError((e) => {
       setError(e.message);
     });
+    const cleanupSimulatedInstalled = api.update.onUpdateSimulatedInstalled(
+      () => {
+        setSimulationDone(true);
+        setDownloaded(null);
+        setAvailable(null);
+        setProgress(null);
+        setDismissed(false);
+      },
+    );
 
     return () => {
       cleanupAvailable();
       cleanupDownloaded();
       cleanupProgress();
       cleanupError();
+      cleanupSimulatedInstalled();
     };
   }, [electronAvail]);
 
@@ -69,8 +80,44 @@ export default function UpdateNotification() {
     }
   }, [error]);
 
+  useEffect(() => {
+    if (simulationDone) {
+      const t = setTimeout(() => setSimulationDone(false), 10000);
+      return () => clearTimeout(t);
+    }
+  }, [simulationDone]);
+
   if (!electronAvail) return null;
   if (dismissed && !downloaded) return null;
+
+  if (simulationDone) {
+    return (
+      <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-slideUp">
+        <div className="bg-white rounded-2xl shadow-float border border-emerald-200 p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={20} className="text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-extrabold text-slate-900 text-sm">
+                Simulasi Update Selesai
+              </h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Alur notifikasi, download progress, dan tombol install sudah
+                berjalan.
+              </p>
+            </div>
+            <button
+              onClick={() => setSimulationDone(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Update sudah didownload — prompt install
   if (downloaded) {
@@ -90,7 +137,13 @@ export default function UpdateNotification() {
               </p>
               <div className="flex gap-2 mt-3">
                 <button
-                  onClick={() => window.electronAPI?.update.install()}
+                  onClick={async () => {
+                    const result = await window.electronAPI?.update.install();
+                    if (typeof result === "object" && result?.simulated) {
+                      setSimulationDone(true);
+                      setDownloaded(null);
+                    }
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
                 >
                   Install & Restart

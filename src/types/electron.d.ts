@@ -49,8 +49,20 @@ export interface ElectronAPI {
     }) => Promise<{ ok: boolean; error?: string }>;
   };
   update: {
-    check: () => Promise<{ version?: string; error?: string } | null>;
-    install: () => Promise<boolean>;
+    check: () => Promise<{
+      version?: string;
+      error?: string;
+      simulated?: boolean;
+    } | null>;
+    simulate: (
+      version?: string,
+    ) => Promise<{
+      version?: string;
+      error?: string;
+      simulated?: boolean;
+      downloaded?: boolean;
+    }>;
+    install: () => Promise<boolean | { ok: boolean; simulated?: boolean }>;
     onUpdateAvailable: (
       cb: (info: { version: string; releaseNotes?: string }) => void,
     ) => () => void;
@@ -60,6 +72,7 @@ export interface ElectronAPI {
     ) => () => void;
     onUpdateError: (cb: (e: { message: string }) => void) => () => void;
     onUpdateNotAvailable: (cb: () => void) => () => void;
+    onUpdateSimulatedInstalled: (cb: () => void) => () => void;
   };
   window: {
     minimize: () => Promise<void>;

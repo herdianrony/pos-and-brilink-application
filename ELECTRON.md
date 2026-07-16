@@ -321,18 +321,21 @@ publish:
   releaseType: release
 ```
 
-Alur release:
+Alur release singkat:
 
-1. Update `version` di `package.json`.
-2. Pastikan repository dan token GitHub benar.
-3. Jalankan:
+1. Naikkan versi dengan `npm run version:patch` / `version:minor` / `version:major`.
+2. Update `CHANGELOG.md`.
+3. Jalankan `npm run release:check`.
+4. Commit, tag `vX.Y.Z`, dan push.
+5. Publish installer dan `latest.yml` ke GitHub Releases dengan `GH_TOKEN=... npm run build:electron:publish`.
+
+Simulasi update UI/IPC tanpa publish release:
 
 ```bash
-npm run build:electron:publish
+npm run dev:electron:update-sim
 ```
 
-4. Artifact dan metadata update diunggah ke GitHub Releases.
-5. Aplikasi installed dapat mengecek dan mengunduh update.
+Panduan lengkap: `docs/release.md`.
 
 ## Security Notes
 

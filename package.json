@@ -1,7 +1,7 @@
 {
   "name": "pos-and-brilink-application",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aplikasi POS dan BRILink dengan dukungan printer thermal, scanner barcode, dan auto-update",
   "author": {
     "name": "herdianrony",
@@ -32,7 +32,14 @@
     "build:electron:portable": "npm run build:web && npm run compile:electron && electron-builder --win portable",
     "build:electron:publish": "npm run build:web && npm run compile:electron && electron-builder --win -p always",
     "dist": "npm run build:electron",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "dev:electron:update-sim": "npm run compile:electron && cross-env ELECTRON_DEV=1 ELECTRON_UPDATE_SIMULATION=1 concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major",
+    "release:check": "npm run typecheck && npm run lint && npm test && npm run build && npm run compile:electron && npm audit --audit-level=moderate",
+    "release:win": "npm run release:check && npm run build:electron",
+    "release:publish": "npm run release:check && npm run build:electron:publish"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
