@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 function normalizeFeeTiers(rawTiers: unknown, serviceId: number) {
   if (!Array.isArray(rawTiers)) return [];
-  return rawTiers.map((tier) => {
+  const tiers = rawTiers.map((tier) => {
     const t = tier as Record<string, unknown>;
     const minAmount = parseSafeNumber(t.minAmount, { min: 0, default: 0 });
     const maxAmount = t.maxAmount == null || t.maxAmount === ""
@@ -20,7 +20,20 @@ function normalizeFeeTiers(rawTiers: unknown, serviceId: number) {
     const adminFee = parseSafeNumber(t.adminFee, { min: 0, default: 0 });
     const agentFee = parseSafeNumber(t.agentFee ?? t.adminFee, { min: 0, default: adminFee });
     return { serviceId, minAmount, maxAmount, adminFee, agentFee };
-  });
+  }).sort((a, b) => a.minAmount - b.minAmount);
+
+  let previousMax: number | null = null;
+  for (const tier of tiers) {
+    if (tier.maxAmount !== null && tier.maxAmount < tier.minAmount) {
+      throw new Error(`Tier tidak valid: nominal max ${tier.maxAmount} lebih kecil dari nominal min ${tier.minAmount}`);
+    }
+    if (previousMax !== null && tier.minAmount <= previousMax) {
+      throw new Error("Tier fee berjenjang overlap. Pastikan nominal min lebih besar dari max tier sebelumnya.");
+    }
+    previousMax = tier.maxAmount;
+  }
+
+  return tiers;
 }
 
 export async function GET() {

@@ -34,9 +34,26 @@ export default function SettingsPage() {
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
   const [waLoading, setWaLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ role: string; name?: string } | null>(null);
   const toast = useToast();
 
+  const mergeWhatsAppStatus = useCallback((status: Partial<WhatsAppStatus>) => {
+    return {
+      status: status.status || "idle",
+      qrDataUrl: status.qrDataUrl ?? null,
+      lastError: status.lastError ?? null,
+      enabled: status.enabled ?? data.whatsapp_enabled === "true",
+      autoNotifyOwner: status.autoNotifyOwner ?? data.whatsapp_auto_notify_owner === "true",
+      ownerNumber: status.ownerNumber ?? (data.whatsapp_owner_number || ""),
+    };
+  }, [data.whatsapp_auto_notify_owner, data.whatsapp_enabled, data.whatsapp_owner_number]);
+
   useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(user => setCurrentUser(user))
+      .catch(() => setCurrentUser(null));
+
     fetch("/api/settings").then(r => r.json()).then(d => {
       setData({
         app_name: "POS & Agen Bisnis",
@@ -55,7 +72,7 @@ export default function SettingsPage() {
     try {
       if (hasElectronWhatsApp()) {
         const status = await window.electronAPI!.whatsapp.status();
-        setWaStatus({ ...status, enabled: data.whatsapp_enabled === "true", autoNotifyOwner: data.whatsapp_auto_notify_owner === "true", ownerNumber: data.whatsapp_owner_number || "" });
+        setWaStatus(mergeWhatsAppStatus(status));
         return;
       }
       const res = await fetch("/api/whatsapp/status", { cache: "no-store" });
@@ -63,7 +80,7 @@ export default function SettingsPage() {
     } catch {
       // ignore status refresh failures
     }
-  }, [data.whatsapp_auto_notify_owner, data.whatsapp_enabled, data.whatsapp_owner_number]);
+  }, [mergeWhatsAppStatus]);
 
   useEffect(() => {
     if (activeTab === "whatsapp") refreshWhatsAppStatus();
@@ -75,7 +92,7 @@ export default function SettingsPage() {
       const data = hasElectronWhatsApp()
         ? await window.electronAPI!.whatsapp.start()
         : await fetch("/api/whatsapp/start", { method: "POST" }).then(r => r.json());
-      setWaStatus({ ...data, enabled: data.whatsapp_enabled ?? data.enabled ?? data.whatsapp_enabled, autoNotifyOwner: data.autoNotifyOwner ?? data.whatsapp_auto_notify_owner, ownerNumber: data.ownerNumber ?? data.whatsapp_owner_number });
+      setWaStatus(mergeWhatsAppStatus(data));
       if (data.status === "ready") toast.success("WhatsApp terhubung");
       else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan");
       else if (data.lastError) toast.error(data.lastError);
@@ -94,7 +111,7 @@ export default function SettingsPage() {
         : await fetch("/api/whatsapp/restart", { method: "POST" }).then(async r => ({ ok: r.ok, data: await r.json() }));
       const data = response.data;
       if (response.ok) {
-        setWaStatus({ ...data, enabled: data.enabled ?? data.whatsapp_enabled, autoNotifyOwner: data.autoNotifyOwner ?? data.whatsapp_auto_notify_owner, ownerNumber: data.ownerNumber ?? data.whatsapp_owner_number });
+        setWaStatus(mergeWhatsAppStatus(data));
         if (data.status === "ready") toast.success("WhatsApp siap digunakan");
         else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan ulang");
         else toast.info("Koneksi WhatsApp direstart, tunggu lalu refresh status");
@@ -113,7 +130,7 @@ export default function SettingsPage() {
     try {
       if (hasElectronWhatsApp()) {
         const status = await window.electronAPI!.whatsapp.logout();
-        setWaStatus({ ...status, enabled: data.whatsapp_enabled === "true", autoNotifyOwner: data.whatsapp_auto_notify_owner === "true", ownerNumber: data.whatsapp_owner_number || "" });
+        setWaStatus(mergeWhatsAppStatus(status));
       } else {
         const res = await fetch("/api/whatsapp/logout", { method: "POST" });
         if (res.ok) setWaStatus(await res.json());
@@ -176,6 +193,17 @@ export default function SettingsPage() {
   };
 
   if (loading) return <Spinner />;
+
+  if (currentUser && currentUser.role !== "admin") {
+    return (
+      <Card className="p-6 border-amber-200 bg-amber-50">
+        <h2 className="text-xl font-extrabold text-amber-800">Akses Admin Diperlukan</h2>
+        <p className="mt-2 text-sm text-amber-700">
+          Halaman Pengaturan hanya tersedia untuk administrator. Hubungi owner/admin untuk mengubah konfigurasi aplikasi.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-fadeIn">
