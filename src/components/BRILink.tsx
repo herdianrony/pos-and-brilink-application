@@ -159,9 +159,13 @@ export default function BRILink() {
     setShowDenomination(false);
     setShowDetails(false);
     trackRecent(s.id);
+    const flow = getFlowConfig(s);
+    const defaultFeeMethod = flow.flowType === "cash_withdrawal" && s.bankEffect === "in"
+      ? "charged"
+      : ((s.defaultFeeMethod as FeeMethod) || "cash");
     setForm(f => ({
       ...f,
-      feeMethod: (s.defaultFeeMethod as FeeMethod) || "cash",
+      feeMethod: defaultFeeMethod,
       customerName: "", customerPhone: "", amount: "", notes: "", periode: "", referenceNo: "",
     }));
     setDenomination({});

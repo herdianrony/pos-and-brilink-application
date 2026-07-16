@@ -303,3 +303,15 @@ describe("service-flow: calculateBankFlow", () => {
     expect(calculateBankFlow("out", "none", 100000, 5000, "charged")).toEqual({ bankDelta: 0, bankMutationAmount: 0 });
   });
 });
+
+describe("service-flow: legacy flowType correction", () => {
+  it("should infer Tarik Tunai as cash_withdrawal even if legacy flowType is payment", () => {
+    const config = getFlowConfig({
+      cashEffect: "out",
+      bankEffect: "in",
+      name: "Tarik Tunai",
+      flowType: "payment",
+    });
+    expect(config.flowType).toBe("cash_withdrawal");
+  });
+});

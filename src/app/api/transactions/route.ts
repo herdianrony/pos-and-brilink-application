@@ -330,7 +330,12 @@ export async function POST(req: Request) {
             }, { status: 400 });
           }
         }
-        const feeMethod: FeeMethod = requestedFeeMethod;
+        // Tarik Tunai dengan rekening masuk memakai skenario operasional utama:
+        // nasabah transfer nominal + admin ke rekening agen, kasir menyerahkan cash nominal.
+        // Paksa charged agar bank mutation mencatat nominal + admin, termasuk untuk data layanan lama.
+        const feeMethod: FeeMethod = flowConfig.flowType === "cash_withdrawal" && bankEffect === "in"
+          ? "charged"
+          : requestedFeeMethod;
 
         // S-04: Inquiry flow — no nominal, no fee, no cash effect
         if (flowConfig.flowType === "inquiry") {

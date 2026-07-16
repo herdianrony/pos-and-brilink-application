@@ -294,13 +294,24 @@ export function getFlowConfig(service: {
   categoryName?: string | null;
   flowType?: string | null;
 }): FlowConfig {
-  // S-04: Prefer explicit flowType from DB if available
+  // Infer from name/category/effects first so legacy rows with stale
+  // flowType="payment" but name="Tarik Tunai" still get the correct flow.
+  const inferredFlowType = getFlowType(service);
+
+  // S-04: Prefer explicit flowType from DB if available, except generic
+  // "payment" that conflicts with a more specific inferred flow.
   if (service.flowType && service.flowType in FLOW_CONFIGS) {
-    return FLOW_CONFIGS[service.flowType as FlowType];
+    const explicitFlowType = service.flowType as FlowType;
+    if (
+      explicitFlowType === "payment" &&
+      (inferredFlowType === "cash_withdrawal" || inferredFlowType === "cash_deposit")
+    ) {
+      return FLOW_CONFIGS[inferredFlowType];
+    }
+    return FLOW_CONFIGS[explicitFlowType];
   }
-  // Fallback: infer from name/category/cashEffect/bankEffect
-  const flowType = getFlowType(service);
-  return FLOW_CONFIGS[flowType];
+
+  return FLOW_CONFIGS[inferredFlowType];
 }
 
 // ── Fee method labels ─────────────────────────────
