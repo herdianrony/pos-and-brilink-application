@@ -24,13 +24,29 @@ const state: WhatsAppState = {
   initializing: false,
 };
 
+let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null = null;
+let qrTimeout: NodeJS.Timeout | null = null;
+
+function setQrWithTtl(qrDataUrl: string) {
+  state.qrDataUrl = qrDataUrl;
+  state.status = "qr";
+  if (qrTimeout) clearTimeout(qrTimeout);
+  qrTimeout = setTimeout(() => {
+    if (state.status === "qr") {
+      state.qrDataUrl = null;
+      state.status = "idle";
+    }
+  }, 60_000);
+}
+
 function getSessionDir(): string {
   // Never default to process.cwd() because Next standalone tracing may try to
   // copy browser profile files into .next/standalone and hit EBUSY on Windows.
   // Electron injects WHATSAPP_SESSION_DIR=userData/whatsapp-session. For web/dev
   // fallback, keep it outside the project directory in the OS home folder.
   const dir = process.env.WHATSAPP_SESSION_DIR || path.join(os.homedir(), ".pos-brilink", "whatsapp-session");
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try { fs.chmodSync(dir, 0o700); } catch {}
   return dir;
 }
 
@@ -50,7 +66,6 @@ export function normalizeWhatsAppNumber(value: string): string {
 
 export async function getWhatsAppSettings() {
   await dbReady;
-  const rows = await db.select().from(settings).where(eq(settings.key, "whatsapp_enabled"));
   const allSettings = await db.select().from(settings);
   const map: Record<string, string> = {};
   for (const row of allSettings) map[row.key] = row.value;
@@ -73,6 +88,17 @@ export async function getWhatsAppStatus() {
 }
 
 export async function initWhatsAppClient() {
+  if (state.client || state.initializing) return getWhatsAppStatus();
+  if (initPromise) return initPromise;
+  initPromise = initWhatsAppClientLocked();
+  try {
+    return await initPromise;
+  } finally {
+    initPromise = null;
+  }
+}
+
+async function initWhatsAppClientLocked() {
   if (state.client || state.initializing) return getWhatsAppStatus();
 
   state.initializing = true;
@@ -98,16 +124,17 @@ export async function initWhatsAppClient() {
     });
 
     client.on("qr", async (qr: string) => {
-      state.qrDataUrl = await qrcode.toDataURL(qr, { margin: 1, width: 320 });
-      state.status = "qr";
+      setQrWithTtl(await qrcode.toDataURL(qr, { margin: 1, width: 320 }));
     });
     client.on("authenticated", () => {
       state.status = "authenticated";
       state.qrDataUrl = null;
+      if (qrTimeout) clearTimeout(qrTimeout);
     });
     client.on("ready", () => {
       state.status = "ready";
       state.qrDataUrl = null;
+      if (qrTimeout) clearTimeout(qrTimeout);
       state.lastError = null;
     });
     client.on("disconnected", (reason: string) => {

@@ -23,7 +23,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CurrencyInput } from "@/components/CurrencyInput";
-import { validatePasswordPolicy } from "@/lib/security";
+import { isValidWhatsAppNumber, validatePasswordPolicy } from "@/lib/security";
 
 type Step = "welcome" | "store" | "admin" | "saldo" | "printer" | "done";
 
@@ -149,6 +149,7 @@ function SetupWizardForm() {
       if (step === "store") {
         if (!storeName.trim()) return setError("Nama toko wajib diisi");
         if (!ownerName.trim()) return setError("Nama pemilik wajib diisi");
+        if (!isValidWhatsAppNumber(ownerWhatsApp)) return setError("Nomor WhatsApp owner tidak valid. Gunakan format 08xxx atau 62xxx.");
       }
       if (step === "admin") {
         if (!adminName.trim()) return setError("Nama admin wajib diisi");

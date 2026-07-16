@@ -44,6 +44,7 @@ export default function BRILink() {
   const [submitting, setSubmitting] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [lastInv, setLastInv] = useState("");
+  const [cashConfirmed, setCashConfirmed] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -158,6 +159,7 @@ export default function BRILink() {
     setShowAccountPicker(false);
     setShowDenomination(false);
     setShowDetails(false);
+    setCashConfirmed(false);
     trackRecent(s.id);
     const flow = getFlowConfig(s);
     const defaultFeeMethod = shouldForceChargedFeeMethod(s)
@@ -174,6 +176,7 @@ export default function BRILink() {
   function closeModal() {
     setSel(null);
     setStep("input");
+    setCashConfirmed(false);
   }
 
   function goToReview() {
@@ -196,6 +199,7 @@ export default function BRILink() {
       return;
     }
     setStep("review");
+    setCashConfirmed(false);
   }
 
   async function handleSubmit() {
@@ -222,7 +226,7 @@ export default function BRILink() {
           notes: form.notes || null,
           denomination: flowConfig?.showDenomination ? denomination : null,
           referenceNo: form.referenceNo || null,
-          cashConfirmed: true, // P2: User confirmed physical cash in Step 3
+          cashConfirmed: !flowConfig?.requiresCashHandling || cashConfirmed
         }),
       });
       const trx = await res.json();
@@ -663,13 +667,27 @@ export default function BRILink() {
                   <div className="flex justify-between"><span className="text-slate-500">Kas setelah transaksi</span><span className={cn("font-bold", totalCashFlow < 0 ? "text-red-600" : "text-emerald-600")}>{formatRupiah(cashBalanceAfter)}</span></div>
                 </div>
 
+                {flowConfig.requiresCashHandling && (
+                  <label className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={cashConfirmed}
+                      onChange={(e) => setCashConfirmed(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 rounded text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-semibold text-amber-800">
+                      Saya sudah menghitung dan memastikan uang fisik sesuai transaksi ini.
+                    </span>
+                  </label>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <Button variant="secondary" size="lg" className="flex-1" onClick={() => setStep("review")}>{flowConfig.confirmationCancelText}</Button>
                   <Button
                     size="lg"
                     className={cn("flex-1", toneClasses.button)}
                     onClick={handleSubmit}
-                    disabled={submitting}
+                    disabled={submitting || (flowConfig.requiresCashHandling && !cashConfirmed)}
                   >
                     {submitting ? "Memproses..." : flowConfig.confirmationConfirmText}
                   </Button>

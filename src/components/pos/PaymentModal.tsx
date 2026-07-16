@@ -105,7 +105,7 @@ export default function PaymentModal({
                 </button>
               ))}
             </div>
-            {parseFloat(cashAmt || "0") >= total && parseFloat(cashAmt || "0") > 0 && (
+            {parseFloat(cashAmt || "0") >= grandTotal && parseFloat(cashAmt || "0") > 0 && (
               <div className="bg-emerald-50 rounded-xl p-3 text-center flex items-center justify-center gap-2">
                 <Banknote size={18} className="text-emerald-600" />
                 <span className="text-emerald-600 font-bold text-lg">Kembalian: {formatRupiah(change)}</span>

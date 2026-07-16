@@ -39,6 +39,9 @@ export default function SettingsPage() {
         business_type: "Agen Bisnis",
         services_label: "Layanan Agen",
         ...d,
+        // Never bind an existing bcrypt hash to the PIN input.
+        // Backend only updates the PIN when this field is non-empty.
+        discount_admin_pin: "",
       });
       setLoading(false);
     });

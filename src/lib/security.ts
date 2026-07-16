@@ -28,6 +28,12 @@ export function validatePasswordPolicy(password: string): PasswordPolicyResult {
   return { ok: true };
 }
 
+export function isValidWhatsAppNumber(value: string): boolean {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return true; // optional field
+  return /^(0|\+62|62)\d{8,13}$/.test(trimmed.replace(/[\s-]/g, ""));
+}
+
 export function sanitizeInternalRedirect(value: string | null | undefined): string {
   if (!value) return "/";
   const trimmed = value.trim();

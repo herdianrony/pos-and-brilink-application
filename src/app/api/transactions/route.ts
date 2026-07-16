@@ -430,7 +430,11 @@ export async function POST(req: Request) {
           }
           cashBalanceAfter = freshCash.balance + cashFlow.cashDelta;
         } else if (cashAcc && cashFlow.cashReceived > 0) {
-          cashBalanceAfter = cashAcc.balance + cashFlow.cashDelta;
+          const [freshCash] = await tx.select().from(accounts).where(eq(accounts.id, cashAcc.id));
+          if (!freshCash) {
+            return NextResponse.json({ error: "Akun kas tidak ditemukan" }, { status: 400 });
+          }
+          cashBalanceAfter = freshCash.balance + cashFlow.cashDelta;
         }
 
         let bankAcc: typeof accounts.$inferSelect | null = null;

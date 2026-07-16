@@ -279,8 +279,11 @@ export function getFlowType(service: {
   if (service.cashEffect === "out" && service.bankEffect === "none") {
     return "cash_withdrawal";
   }
+  // Generic cash-in + bank-out services are usually payment/topup/transfer-like.
+  // Setor Tunai is detected by name/category above; avoid showing deposit-only
+  // UI (denominations) for unknown payment services.
   if (service.cashEffect === "in" && service.bankEffect === "out") {
-    return "cash_deposit";
+    return "payment";
   }
 
   // Default: payment flow

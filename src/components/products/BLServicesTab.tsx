@@ -119,8 +119,20 @@ export default function BLServicesTab() {
   const toast = useToast();
 
   async function load() {
-    const [s, c] = await Promise.all([fetch("/api/brilink-services").then(r => r.json()), fetch("/api/service-categories").then(r => r.json())]);
-    setSvcs(s); setCats(c); setLoading(false);
+    setLoading(true);
+    try {
+      const [svcRes, catRes] = await Promise.all([fetch("/api/brilink-services"), fetch("/api/service-categories")]);
+      if (!svcRes.ok || !catRes.ok) throw new Error("Gagal memuat layanan/kategori");
+      const [s, c] = await Promise.all([svcRes.json(), catRes.json()]);
+      setSvcs(s);
+      setCats(c);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal memuat layanan");
+      setSvcs([]);
+      setCats([]);
+    } finally {
+      setLoading(false);
+    }
   }
   useEffect(() => { load(); }, []);
 
@@ -185,41 +197,76 @@ export default function BLServicesTab() {
   }
   
   async function save() {
-    if (!f.name) return; setSaving(true);
-    const agentFee = f.profitDifferent ? (f.agentFee || "0") : (f.adminFee || "0");
-    const res = await fetch("/api/brilink-services", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, flowType: f.flowType, defaultFeeMethod: f.defaultFeeMethod, description: f.description || null })
-    });
-    const svc = await res.json();
-    
-    // Save fee tiers if using tiered fee
-    if (f.useTieredFee && tiers.length > 0) {
-      await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save_tiers", serviceId: edit?.id || svc.id, tiers })
+    if (!f.name) return;
+    setSaving(true);
+    let createdServiceId: number | null = null;
+    try {
+      const agentFee = f.profitDifferent ? (f.agentFee || "0") : (f.adminFee || "0");
+      const res = await fetch("/api/brilink-services", { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...(edit ? { id: edit.id } : {}), name: f.name, categoryId: f.categoryId ? parseInt(f.categoryId) : null, icon: f.icon, adminFee: f.adminFee || "0", agentFee, useTieredFee: f.useTieredFee, cashEffect: f.cashEffect, bankEffect: f.bankEffect, flowType: f.flowType, defaultFeeMethod: f.defaultFeeMethod, description: f.description || null })
       });
+      const svc = await res.json();
+      if (!res.ok) throw new Error(svc.error || "Gagal menyimpan layanan");
+      if (!edit) createdServiceId = svc.id;
+
+      if (f.useTieredFee && tiers.length > 0) {
+        const tierRes = await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save_tiers", serviceId: edit?.id || svc.id, tiers })
+        });
+        const tierBody = await tierRes.json().catch(() => ({}));
+        if (!tierRes.ok) throw new Error(tierBody.error || "Gagal menyimpan fee berjenjang");
+      }
+
+      setModal(false);
+      await load();
+      toast.success(edit ? "Layanan berhasil diupdate" : "Layanan berhasil ditambahkan");
+    } catch (error) {
+      // Best-effort rollback for newly created service when tier save fails.
+      if (createdServiceId) {
+        await fetch("/api/brilink-services", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: createdServiceId }) }).catch(() => {});
+      }
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan layanan");
+    } finally {
+      setSaving(false);
     }
-    
-    setModal(false); load(); setSaving(false);
-    toast.success(edit ? "Layanan berhasil diupdate" : "Layanan berhasil ditambahkan");
   }
   
   async function saveTiers() {
     if (!edit) return;
     setSaving(true);
-    await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "save_tiers", serviceId: edit.id, tiers })
-    });
-    // Update useTieredFee flag
-    await fetch("/api/brilink-services", { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: edit.id, name: edit.name, useTieredFee: tiers.length > 0, adminFee: edit.adminFee, agentFee: edit.agentFee, cashEffect: edit.cashEffect, bankEffect: edit.bankEffect, flowType: edit.flowType, defaultFeeMethod: edit.defaultFeeMethod })
-    });
-    setTiersModal(false); load(); setSaving(false);
+    try {
+      const tierRes = await fetch("/api/fee-tiers", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_tiers", serviceId: edit.id, tiers })
+      });
+      const tierBody = await tierRes.json().catch(() => ({}));
+      if (!tierRes.ok) throw new Error(tierBody.error || "Gagal menyimpan fee berjenjang");
+
+      const svcRes = await fetch("/api/brilink-services", { method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: edit.id, name: edit.name, useTieredFee: tiers.length > 0, adminFee: edit.adminFee, agentFee: edit.agentFee, cashEffect: edit.cashEffect, bankEffect: edit.bankEffect, flowType: edit.flowType, defaultFeeMethod: edit.defaultFeeMethod })
+      });
+      const svcBody = await svcRes.json().catch(() => ({}));
+      if (!svcRes.ok) throw new Error(svcBody.error || "Gagal update status fee layanan");
+
+      setTiersModal(false);
+      await load();
+      toast.success("Fee berjenjang berhasil disimpan");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan fee berjenjang");
+    } finally {
+      setSaving(false);
+    }
   }
   
   async function del(id: number) {
-    await fetch("/api/brilink-services", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    load();
-    toast.success("Layanan berhasil dihapus");
+    try {
+      const res = await fetch("/api/brilink-services", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Gagal menghapus layanan");
+      await load();
+      toast.success("Layanan berhasil dihapus");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus layanan");
+    }
   }
 
   return (

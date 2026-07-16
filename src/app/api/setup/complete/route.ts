@@ -8,7 +8,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hasUsers, hashPassword, signToken, setSessionCookie } from "@/lib/auth";
-import { validatePasswordPolicy } from "@/lib/security";
+import { isValidWhatsAppNumber, validatePasswordPolicy } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,6 +97,12 @@ export async function POST(req: Request) {
   if (!storeName) {
     return NextResponse.json(
       { error: "Nama toko wajib diisi" },
+      { status: 400 }
+    );
+  }
+  if (!isValidWhatsAppNumber(body.store?.ownerWhatsApp || "")) {
+    return NextResponse.json(
+      { error: "Nomor WhatsApp owner tidak valid. Gunakan format 08xxx atau 62xxx." },
       { status: 400 }
     );
   }

@@ -21,8 +21,8 @@ describe("service-flow: getFlowType", () => {
     expect(getFlowType({ cashEffect: "in", bankEffect: "out", name: "Setor Tunai Bank Lain" })).toBe("cash_deposit");
   });
 
-  it("should detect cash_deposit from cashEffect=in + bankEffect=out", () => {
-    expect(getFlowType({ cashEffect: "in", bankEffect: "out", name: "Custom Service" })).toBe("cash_deposit");
+  it("should default generic cash-in + bank-out services to payment", () => {
+    expect(getFlowType({ cashEffect: "in", bankEffect: "out", name: "Custom Service" })).toBe("payment");
   });
 
   it("should detect transfer from name", () => {
