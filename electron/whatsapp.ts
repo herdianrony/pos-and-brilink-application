@@ -1,10 +1,9 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import path from "path";
 
 // IMPORTANT: require wwebjs-electron from Electron main process before app.whenReady().
 // It appends the remote debugging switch needed to attach to Electron Chromium.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Client, LocalAuth } = require("wwebjs-electron");
+const { Client } = require("wwebjs-electron");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const qrcode = require("qrcode");
 
@@ -46,11 +45,6 @@ function setQrWithTtl(qrDataUrl: string) {
       state.status = "idle";
     }
   }, 60_000);
-}
-
-function getAuthDataPath() {
-  const dir = path.join(app.getPath("userData"), "whatsapp-session-electron");
-  return dir;
 }
 
 function ensureWindow() {
@@ -105,10 +99,10 @@ async function startWhatsAppClientLocked() {
   try {
     const win = ensureWindow();
     const client = new Client({
-      authStrategy: new LocalAuth({
-        clientId: "pos-brilink-cashier",
-        dataPath: getAuthDataPath(),
-      }),
+      // Do not use LocalAuth here. In Electron mode, the BrowserWindow partition
+      // is the persistent session store. LocalAuth sets a Puppeteer userDataDir
+      // and can fail in packaged Electron with:
+      // "The browser is already running for ...session-pos-brilink-cashier".
       electron: { window: win },
       webVersionCache: { type: "none" },
     });
@@ -185,7 +179,11 @@ export async function logoutWhatsAppClient() {
       await state.client.logout().catch(() => {});
       await state.client.destroy().catch(() => {});
     }
-    if (state.window && !state.window.isDestroyed()) state.window.close();
+    if (state.window && !state.window.isDestroyed()) {
+      await state.window.webContents.session.clearStorageData().catch(() => {});
+      await state.window.webContents.session.clearCache().catch(() => {});
+      state.window.close();
+    }
   } finally {
     state.client = null;
     state.window = null;
