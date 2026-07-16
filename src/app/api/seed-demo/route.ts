@@ -4,6 +4,7 @@ import {
   categories,
   products,
   feeTiers,
+  serviceCategories,
   brilinkServices,
 } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -93,6 +94,64 @@ export async function POST() {
         stats.products = 11;
       } else {
         stats.products = 0;
+      }
+
+      // ── Demo Service Categories + Services ─────────────
+      // Production seed intentionally does NOT create services. E2E/demo needs
+      // representative services, so seed-demo creates them when absent.
+      const existingSvcCats = await tx.select().from(serviceCategories).limit(1);
+      let svcCats: Array<{ id: number; code: string }> = [];
+      if (existingSvcCats.length === 0) {
+        svcCats = await tx.insert(serviceCategories).values([
+          { code: "transfer", name: "Transfer", icon: "arrow-right-left", color: "#3B82F6", sortOrder: 1 },
+          { code: "cash_withdrawal", name: "Tarik Tunai", icon: "arrow-down-left", color: "#F59E0B", sortOrder: 2 },
+          { code: "cash_deposit", name: "Setor Tunai", icon: "arrow-up-right", color: "#10B981", sortOrder: 3 },
+          { code: "payment", name: "Bayar Tagihan", icon: "file-text", color: "#8B5CF6", sortOrder: 4 },
+          { code: "topup", name: "Isi Ulang", icon: "smartphone", color: "#06B6D4", sortOrder: 5 },
+          { code: "voucher", name: "Voucher & Game", icon: "gift", color: "#EC4899", sortOrder: 6 },
+          { code: "financing", name: "Cicilan & Pembiayaan", icon: "receipt-text", color: "#F97316", sortOrder: 7 },
+          { code: "inquiry", name: "Inquiry", icon: "search", color: "#64748B", sortOrder: 8 },
+        ]).returning({ id: serviceCategories.id, code: serviceCategories.code });
+        stats.serviceCategories = svcCats.length;
+      } else {
+        svcCats = await tx.select({ id: serviceCategories.id, code: serviceCategories.code }).from(serviceCategories);
+        stats.serviceCategories = 0;
+      }
+
+      const scm: Record<string, number> = {};
+      for (const c of svcCats) scm[c.code] = c.id;
+
+      const existingServices = await tx.select().from(brilinkServices).limit(1);
+      if (existingServices.length === 0) {
+        await tx.insert(brilinkServices).values([
+          { code: "transfer_cash", name: "Kirim Transfer Tunai", categoryId: scm["transfer"], categoryCode: "transfer", icon: "arrow-up-right", adminFee: 5000, agentFee: 5000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "transfer", defaultFeeMethod: "cash" },
+          { code: "transfer_receive", name: "Terima Transfer / Pencairan", categoryId: scm["transfer"], categoryCode: "transfer", icon: "arrow-down-left", adminFee: 5000, agentFee: 5000, useTieredFee: false, cashEffect: "out", bankEffect: "in", flowType: "cash_withdrawal", defaultFeeMethod: "deducted" },
+          { code: "cash_withdrawal", name: "Tarik Tunai", categoryId: scm["cash_withdrawal"], categoryCode: "cash_withdrawal", icon: "banknote", adminFee: 5000, agentFee: 5000, useTieredFee: false, cashEffect: "out", bankEffect: "in", flowType: "cash_withdrawal", defaultFeeMethod: "charged" },
+          { code: "cash_deposit", name: "Setor Tunai", categoryId: scm["cash_deposit"], categoryCode: "cash_deposit", icon: "wallet", adminFee: 5000, agentFee: 5000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "cash_deposit", defaultFeeMethod: "cash" },
+          { code: "payment_pln", name: "Tagihan PLN", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "payment_bpjs", name: "BPJS Kesehatan", categoryId: scm["payment"], categoryCode: "payment", icon: "bpjs", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_20k", name: "Token PLN 20K", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_50k", name: "Token PLN 50K", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_100k", name: "Token PLN 100K", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_200k", name: "Token PLN 200K", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_500k", name: "Token PLN 500K", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "token_pln_1jt", name: "Token PLN 1Jt", categoryId: scm["payment"], categoryCode: "payment", icon: "pln", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "topup_pulsa", name: "Pulsa Reguler", categoryId: scm["topup"], categoryCode: "topup", icon: "smartphone", adminFee: 2000, agentFee: 2000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "topup_data", name: "Paket Data", categoryId: scm["topup"], categoryCode: "topup", icon: "smartphone", adminFee: 2000, agentFee: 2000, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_12k", name: "Voucher Game 12K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 1000, agentFee: 1000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_33k", name: "Voucher Game 33K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 1500, agentFee: 1500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_66k", name: "Voucher Game 66K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 2000, agentFee: 2000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_132k", name: "Voucher Game 132K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 2500, agentFee: 2500, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_330k", name: "Voucher Game 330K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 3000, agentFee: 3000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "voucher_game_600k", name: "Voucher Game 600K", categoryId: scm["voucher"], categoryCode: "voucher", icon: "gift", adminFee: 5000, agentFee: 5000, useTieredFee: true, cashEffect: "in", bankEffect: "out", flowType: "topup", defaultFeeMethod: "cash" },
+          { code: "financing_fif", name: "Cicilan FIF", categoryId: scm["financing"], categoryCode: "financing", icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "financing_adira", name: "Cicilan Adira", categoryId: scm["financing"], categoryCode: "financing", icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "financing_wom", name: "Cicilan WOM", categoryId: scm["financing"], categoryCode: "financing", icon: "file-text", adminFee: 2500, agentFee: 2500, useTieredFee: false, cashEffect: "in", bankEffect: "out", flowType: "payment", defaultFeeMethod: "cash" },
+          { code: "inquiry_check", name: "Cek Saldo", categoryId: scm["inquiry"], categoryCode: "inquiry", icon: "bar-chart-3", adminFee: 0, agentFee: 0, useTieredFee: false, cashEffect: "none", bankEffect: "none", flowType: "inquiry", defaultFeeMethod: "cash" },
+        ]);
+        stats.services = 22;
+      } else {
+        stats.services = 0;
       }
 
       // ── Fee Tiers (sample for tiered services only) ──

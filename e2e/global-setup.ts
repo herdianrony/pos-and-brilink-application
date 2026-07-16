@@ -5,7 +5,7 @@
  *   1. Delete the test DB file to ensure a clean state.
  *   2. Wait for the Next.js dev server to be ready.
  *   3. Call /api/auth/setup to create the admin user (admin/Admin123).
- *   4. Call /api/seed to populate products, services, accounts.
+ *   4. Call /api/seed to populate settings/accounts, then /api/seed-demo for E2E products/services.
  *   5. Log in via /api/auth/login and save the session cookie to
  *      .playwright-auth.json so all tests start already authenticated.
  *
@@ -129,7 +129,7 @@ async function globalSetup(config: FullConfig) {
   await context.storageState({ path: AUTH_FILE });
   await browser.close();
 
-  console.log("[globalSetup] DB reset, admin user created, data seeded, auth state saved.");
+  console.log("[globalSetup] DB reset, admin user created, templates and demo data seeded, auth state saved.");
 }
 
 export default globalSetup;

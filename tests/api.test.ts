@@ -291,59 +291,17 @@ describe("Seed Data Logic", () => {
     });
   });
 
-  describe("Service categories count", () => {
-    it("should have 8 service categories with stable codes", () => {
-      const categories = [
-        { code: "transfer", name: "Transfer" },
-        { code: "cash_withdrawal", name: "Tarik Tunai" },
-        { code: "cash_deposit", name: "Setor Tunai" },
-        { code: "payment", name: "Bayar Tagihan" },
-        { code: "topup", name: "Isi Ulang" },
-        { code: "voucher", name: "Voucher & Game" },
-        { code: "financing", name: "Cicilan & Pembiayaan" },
-        { code: "inquiry", name: "Inquiry" },
-      ];
-      expect(categories).toHaveLength(8);
-      // All codes must be unique
-      const codes = categories.map(c => c.code);
-      expect(new Set(codes).size).toBe(codes.length);
+  describe("Production service seed", () => {
+    it("should not seed service categories/services in production templates", () => {
+      // Owner configures services dynamically for each business.
+      const productionSeedStats = { serviceCategories: 0, services: 0 };
+      expect(productionSeedStats.serviceCategories).toBe(0);
+      expect(productionSeedStats.services).toBe(0);
     });
-  });
 
-  describe("Token PLN nominals", () => {
-    it("should have 6 Token PLN nominals", () => {
-      const nominals = [20000, 50000, 100000, 200000, 500000, 1000000];
-      expect(nominals).toHaveLength(6);
-    });
-  });
-
-  describe("Voucher Game nominals", () => {
-    it("should have 6 Voucher Game nominals", () => {
-      const nominals = [12000, 33000, 66000, 132000, 330000, 600000];
-      expect(nominals).toHaveLength(6);
-    });
-  });
-
-  describe("Cicilan providers", () => {
-    it("should have 3 multifinance providers", () => {
-      const providers = ["FIF", "Adira", "WOM"];
-      expect(providers).toHaveLength(3);
-    });
-  });
-
-  describe("Service fees (redesigned)", () => {
-    it("should seed all services with adminFee=0 (user sets actual fees)", () => {
-      // Seed redesign: no fake fees
-      const services = [
-        { code: "transfer_cash", adminFee: 0 },
-        { code: "cash_withdrawal", adminFee: 0 },
-        { code: "cash_deposit", adminFee: 0 },
-        { code: "payment_pln", adminFee: 0 },
-        { code: "topup_pulsa", adminFee: 0 },
-      ];
-      for (const s of services) {
-        expect(s.adminFee).toBe(0);
-      }
+    it("should keep service examples in seed-demo only", () => {
+      const demoServices = ["cash_withdrawal", "cash_deposit", "transfer_cash", "payment_pln", "topup_pulsa"];
+      expect(demoServices).toContain("cash_withdrawal");
     });
   });
 

@@ -380,9 +380,17 @@ Seed ini berisi:
 
 - Kas Tunai default.
 - Template rekening bank/e-wallet.
-- Kategori layanan.
-- Layanan agen.
 - Settings default.
+
+Seed production **tidak** membuat:
+
+- produk,
+- kategori produk,
+- kategori layanan agen,
+- layanan agen,
+- fee layanan.
+
+Semua produk, kategori, layanan, efek saldo, dan fee dibuat sendiri oleh owner melalui aplikasi agar benar-benar sesuai SOP masing-masing bisnis.
 
 Seed ini **bukan data demo**.
 
@@ -392,7 +400,7 @@ Jangan gunakan untuk production:
 /api/seed-demo
 ```
 
-Aplikasi biasanya menjalankan seed template secara otomatis saat first run/login page. Data bisnis seperti saldo, fee, produk, dan user tetap diisi pengguna melalui Setup Wizard/Pengaturan.
+Aplikasi biasanya menjalankan seed template secara otomatis saat first run/login page. Data bisnis seperti saldo, produk, kategori, layanan agen, fee, dan user tetap diisi pengguna melalui Setup Wizard/Pengaturan.
 
 ---
 

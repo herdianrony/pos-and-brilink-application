@@ -507,6 +507,8 @@ API berada di `src/app/api/`. Endpoint yang tersedia antara lain:
 | Hardware | `/api/hardware/printer` |
 | Data utility | `/api/backup`, `/api/seed`, `/api/seed-demo` |
 
+> Production seed hanya membuat settings default dan template rekening/kas. Produk, kategori produk, kategori layanan, layanan agen, dan fee tidak dibuat otomatis; owner/admin mengisinya sendiri sesuai SOP bisnis.
+
 > Dokumentasi detail request/response API belum dipisahkan ke file khusus.
 
 ## Panduan Pengguna

@@ -215,6 +215,8 @@ Gunakan kategori agar produk lebih mudah dicari di POS.
 
 ### Layanan Agen
 
+> Production tidak menyediakan layanan agen siap pakai secara otomatis. Owner/admin perlu membuat kategori layanan dan layanan sendiri sesuai SOP usaha, termasuk efek kas, efek rekening, biaya admin, dan flow layanan.
+
 Anda dapat mengatur:
 
 - nama layanan,
