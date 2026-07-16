@@ -174,6 +174,22 @@ export async function logoutWhatsAppClient() {
   return getWhatsAppStatus();
 }
 
+export async function restartWhatsAppClient() {
+  try {
+    if (state.client) {
+      await state.client.destroy().catch(() => {});
+    }
+  } finally {
+    state.client = null;
+    state.qrDataUrl = null;
+    state.lastError = null;
+    state.status = "idle";
+    state.initializing = false;
+    if (qrTimeout) clearTimeout(qrTimeout);
+  }
+  return initWhatsAppClient();
+}
+
 async function waitForWhatsAppReady(timeoutMs = 10_000): Promise<boolean> {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {

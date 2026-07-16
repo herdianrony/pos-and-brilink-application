@@ -76,6 +76,26 @@ export default function SettingsPage() {
     }
   }
 
+  async function restartWhatsApp() {
+    setWaLoading(true);
+    try {
+      const res = await fetch("/api/whatsapp/restart", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setWaStatus(data);
+        if (data.status === "ready") toast.success("WhatsApp siap digunakan");
+        else if (data.qrDataUrl) toast.info("Scan QR WhatsApp untuk menghubungkan ulang");
+        else toast.info("Koneksi WhatsApp direstart, tunggu lalu refresh status");
+      } else {
+        toast.error(data.error || "Gagal restart WhatsApp");
+      }
+    } catch {
+      toast.error("Gagal restart WhatsApp");
+    } finally {
+      setWaLoading(false);
+    }
+  }
+
   async function logoutWhatsApp() {
     setWaLoading(true);
     try {
@@ -86,6 +106,18 @@ export default function SettingsPage() {
       toast.error("Gagal logout WhatsApp");
     } finally {
       setWaLoading(false);
+    }
+  }
+
+  function whatsappStatusText(status?: string) {
+    switch (status) {
+      case "ready": return "Siap mengirim pesan otomatis.";
+      case "authenticated": return "QR sudah berhasil discan. WhatsApp sedang menyiapkan session; jika lebih dari 1-2 menit, klik Restart Koneksi.";
+      case "qr": return "Scan QR dengan WhatsApp kasir/operasional.";
+      case "initializing": return "Sedang memulai WhatsApp Web. Tunggu beberapa saat.";
+      case "disconnected": return "WhatsApp terputus. Klik mulai atau restart untuk menghubungkan.";
+      case "error": return "WhatsApp error. Lihat detail error atau klik restart/logout lalu scan ulang.";
+      default: return "Belum terhubung. Klik Mulai / Tampilkan QR.";
     }
   }
 
@@ -370,11 +402,19 @@ export default function SettingsPage() {
               title="Koneksi WhatsApp Kasir"
               desc="Scan QR dengan WhatsApp kasir/operasional. Session tersimpan lokal dan bisa logout kapan saja."
             />
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={waStatus?.status === "ready" ? "success" : waStatus?.status === "qr" ? "warning" : waStatus?.status === "error" ? "danger" : "default"}>
-                Status: {waStatus?.status || "idle"}
-              </Badge>
-              {waStatus?.lastError && <span className="text-xs text-red-600">{waStatus.lastError}</span>}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={waStatus?.status === "ready" ? "success" : waStatus?.status === "qr" || waStatus?.status === "authenticated" ? "warning" : waStatus?.status === "error" ? "danger" : "default"}>
+                  Status: {waStatus?.status || "idle"}
+                </Badge>
+                {waStatus?.lastError && <span className="text-xs text-red-600">{waStatus.lastError}</span>}
+              </div>
+              <p className="text-xs text-slate-500">{whatsappStatusText(waStatus?.status)}</p>
+              {waStatus?.status === "authenticated" && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                  QR sudah diterima WhatsApp, tetapi client belum siap kirim. Tunggu sebentar lalu klik Refresh Status. Jika tetap authenticated lebih dari 1-2 menit, klik Restart Koneksi.
+                </div>
+              )}
             </div>
             {waStatus?.qrDataUrl && (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -388,6 +428,9 @@ export default function SettingsPage() {
               </Button>
               <Button variant="secondary" size="sm" onClick={refreshWhatsAppStatus} disabled={waLoading}>
                 <RefreshCw size={14} /> Refresh Status
+              </Button>
+              <Button variant="secondary" size="sm" onClick={restartWhatsApp} disabled={waLoading}>
+                <RefreshCw size={14} /> Restart Koneksi
               </Button>
               <Button variant="danger" size="sm" onClick={logoutWhatsApp} disabled={waLoading}>
                 <LogOut size={14} /> Logout WhatsApp
