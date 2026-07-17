@@ -20,7 +20,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Dokumentasi release/deployment/user guide diselaraskan: desktop resmi Windows 10/11 x64, Windows 7/8/8.1 tidak didukung, Node 22 LTS untuk build produksi, dan OS lain memakai Web/LAN mode.
 - Log WhatsApp Electron khusus (`whatsapp-electron.log`) untuk event QR, authenticated, ready, disconnected, restart/logout, dan hasil kirim pesan; log ini ikut tampil di panel Log & Monitoring.
 - Persiapan remote debugging Electron untuk WhatsApp dibuat lebih stabil dengan port lokal deterministik `43220` dan penulisan `DevToolsActivePort`; bila mode native Electron bermasalah, WhatsApp desktop sekarang memakai fallback utama `whatsapp-web.js` + Edge/Chrome lokal agar tidak bergantung pada remote debugging Electron.
-- WhatsApp Owner menambahkan readiness probe/polling setelah status `authenticated` agar session yang sudah login bisa dinaikkan ke `ready` ketika WA Web injection sudah siap, meskipun event `ready` tidak terpanggil.
+- WhatsApp Owner menambahkan readiness probe/polling setelah status `authenticated`; status `CONNECTED` yang stabil kini dinaikkan ke `ready` meskipun helper `WWebJS` tidak terlihat oleh probe, sementara kegagalan kirim tetap ditangkap di jalur send.
 
 ### Security
 

@@ -50,6 +50,8 @@ const sendTimestamps: number[] = [];
 const maxSendsPerMinute = 10;
 const maxMessageLength = 4096;
 const maxLogBytes = 2 * 1024 * 1024;
+let connectedProbeCount = 0;
+let lastReadinessLogAt = 0;
 
 function normalizeWhatsAppNumber(input: string) {
   const digits = String(input || "").replace(/\D/g, "");
@@ -311,30 +313,80 @@ async function isClientSendReady() {
       typeof state.client.getState === "function"
         ? await state.client.getState().catch(() => null)
         : null;
-    const injectionReady = state.client.pupPage
+    const injectionState = state.client.pupPage
       ? await state.client.pupPage
           .evaluate(() => {
             const w = window as typeof window & {
-              Store?: { Chat?: unknown; Msg?: unknown };
-              WWebJS?: { getChat?: unknown; sendMessage?: unknown };
+              Store?: Record<string, unknown>;
+              WWebJS?: Record<string, unknown>;
             };
-            return Boolean(
-              w.Store?.Chat &&
-              w.Store?.Msg &&
-              typeof w.WWebJS?.getChat === "function" &&
-              typeof w.WWebJS?.sendMessage === "function",
-            );
+            return {
+              hasStore: Boolean(w.Store),
+              hasStoreChat: Boolean(w.Store?.Chat),
+              hasStoreMsg: Boolean(w.Store?.Msg),
+              hasWWebJS: Boolean(w.WWebJS),
+              hasGetChat: typeof w.WWebJS?.getChat === "function",
+              hasSendMessage: typeof w.WWebJS?.sendMessage === "function",
+            };
           })
-          .catch(() => false)
-      : false;
+          .catch(() => ({
+            hasStore: false,
+            hasStoreChat: false,
+            hasStoreMsg: false,
+            hasWWebJS: false,
+            hasGetChat: false,
+            hasSendMessage: false,
+          }))
+      : {
+          hasStore: false,
+          hasStoreChat: false,
+          hasStoreMsg: false,
+          hasWWebJS: false,
+          hasGetChat: false,
+          hasSendMessage: false,
+        };
 
-    log("readiness probe", { waState, injectionReady }, "debug");
-    if ((waState === "CONNECTED" || waState === "OPENING") && injectionReady) {
+    const injectionReady = Boolean(
+      injectionState.hasStoreChat &&
+      injectionState.hasStoreMsg &&
+      injectionState.hasGetChat &&
+      injectionState.hasSendMessage,
+    );
+    if (waState === "CONNECTED") connectedProbeCount += 1;
+    else connectedProbeCount = 0;
+
+    const now = Date.now();
+    if (
+      now - lastReadinessLogAt > 10_000 ||
+      injectionReady ||
+      connectedProbeCount <= 3
+    ) {
+      lastReadinessLogAt = now;
+      log(
+        "readiness probe",
+        { waState, injectionReady, connectedProbeCount, injectionState },
+        "debug",
+      );
+    }
+
+    // On this packaged Windows runtime, WhatsApp reaches CONNECTED but the
+    // WWebJS helper object remains invisible to our external probe. A stable
+    // CONNECTED state is enough to allow sending; sendWhatsAppMessage still
+    // catches and reports any real injection/send failure.
+    if (
+      waState === "CONNECTED" &&
+      (injectionReady || connectedProbeCount >= 3)
+    ) {
       state.status = "ready";
       state.qrDataUrl = null;
       state.lastError = null;
       if (qrTimeout) clearTimeout(qrTimeout);
-      log("ready via readiness probe", { waState });
+      log("ready via readiness probe", {
+        waState,
+        injectionReady,
+        connectedProbeCount,
+        injectionState,
+      });
       return true;
     }
   } catch (error) {
@@ -478,6 +530,7 @@ async function startWhatsAppClientLocked() {
   state.initializing = true;
   state.status = "initializing";
   state.lastError = null;
+  connectedProbeCount = 0;
   log("start requested");
 
   try {
@@ -563,6 +616,7 @@ async function startWhatsAppClientLocked() {
       state.status = "disconnected";
       state.lastError = reason || null;
       state.client = null;
+      connectedProbeCount = 0;
     });
     client.on("auth_failure", (message: string) => {
       log("auth failure", message, "error");
@@ -582,6 +636,7 @@ async function startWhatsAppClientLocked() {
   } catch (error) {
     state.status = "error";
     state.client = null;
+    connectedProbeCount = 0;
     state.mode = null;
     state.lastError = error instanceof Error ? error.message : String(error);
     log("init error", state.lastError, "error");
@@ -616,6 +671,7 @@ export async function restartWhatsAppClient() {
     }
   } finally {
     state.client = null;
+    connectedProbeCount = 0;
     state.mode = null;
     state.window = null;
     state.qrDataUrl = null;
@@ -641,6 +697,7 @@ export async function logoutWhatsAppClient() {
     }
   } finally {
     state.client = null;
+    connectedProbeCount = 0;
     state.mode = null;
     state.window = null;
     state.qrDataUrl = null;
