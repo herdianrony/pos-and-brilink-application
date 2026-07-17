@@ -6,9 +6,11 @@ import path from "path";
 // IMPORTANT: require wwebjs-electron from Electron main process before app.whenReady().
 // It appends the remote debugging switch needed to attach to Electron Chromium.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Client } = require("wwebjs-electron");
+const { Client: ElectronWhatsAppClient } = require("wwebjs-electron");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const qrcode = require("qrcode");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Client: BrowserWhatsAppClient, LocalAuth } = require("whatsapp-web.js");
 
 type WhatsAppStatus =
   | "idle"
@@ -26,6 +28,7 @@ interface State {
   client: any | null;
   window: BrowserWindow | null;
   initializing: boolean;
+  mode: "electron" | "browser" | null;
 }
 
 const state: State = {
@@ -35,6 +38,7 @@ const state: State = {
   client: null,
   window: null,
   initializing: false,
+  mode: null,
 };
 
 let initPromise: Promise<Awaited<ReturnType<typeof getWhatsAppStatus>>> | null =
@@ -125,6 +129,72 @@ function ensureRemoteDebuggingPortFile() {
   } catch (error) {
     log("remote debugging port file check failed", error, "warn");
   }
+}
+
+function findBrowserExecutable(): string | undefined {
+  const candidates: string[] = [];
+  if (process.env.WHATSAPP_BROWSER_PATH)
+    candidates.push(process.env.WHATSAPP_BROWSER_PATH);
+
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || "";
+    const programFiles = process.env.PROGRAMFILES || "C:\Program Files";
+    const programFilesX86 =
+      process.env["PROGRAMFILES(X86)"] || "C:\Program Files (x86)";
+    candidates.push(
+      path.join(programFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(
+        programFilesX86,
+        "Microsoft",
+        "Edge",
+        "Application",
+        "msedge.exe",
+      ),
+      path.join(localAppData, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(
+        programFilesX86,
+        "Google",
+        "Chrome",
+        "Application",
+        "chrome.exe",
+      ),
+      path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
+    );
+  } else if (process.platform === "darwin") {
+    candidates.push(
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+      "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    );
+  } else {
+    candidates.push(
+      "/usr/bin/google-chrome",
+      "/usr/bin/chromium",
+      "/usr/bin/chromium-browser",
+      "/snap/bin/chromium",
+    );
+  }
+
+  const found = candidates.find(
+    (candidate) => candidate && fs.existsSync(candidate),
+  );
+  if (found) log("browser executable found", { found });
+  else log("browser executable not found", { candidates }, "error");
+  return found;
+}
+
+function getBrowserSessionDir() {
+  const sessionDir = path.join(
+    app.getPath("userData"),
+    "whatsapp-browser-session",
+  );
+  fs.mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
+  return sessionDir;
+}
+
+function shouldUseElectronClient() {
+  return process.env.WHATSAPP_USE_ELECTRON_CLIENT === "1";
 }
 
 function sanitizeLogExtra(extra: unknown, depth = 0): unknown {
@@ -311,6 +381,7 @@ export async function getWhatsAppStatus() {
     qrDataUrl: state.qrDataUrl,
     lastError: state.lastError,
     hasClient: Boolean(state.client),
+    mode: state.mode,
   };
 }
 
@@ -333,23 +404,63 @@ async function startWhatsAppClientLocked() {
   log("start requested");
 
   try {
-    ensureRemoteDebuggingPortFile();
-    const win = ensureWindow();
-    const client = new Client({
-      // Do not use LocalAuth here. In Electron mode, the BrowserWindow partition
-      // is the persistent session store. LocalAuth sets a Puppeteer userDataDir
-      // and can fail in packaged Electron with:
-      // "The browser is already running for ...session-pos-brilink-cashier".
-      electron: { window: win },
-      authTimeoutMs: 60_000,
-      takeoverOnConflict: true,
-      takeoverTimeoutMs: 0,
-      // Use Electron's native Chromium user-agent. WhatsApp Web can be sensitive
-      // to spoofed/stale user agents; the visible session window + log file will
-      // show clearly if WhatsApp reports an unsupported browser.
-      userAgent: false,
-      webVersionCache: { type: "none" },
-    });
+    const useElectronClient = shouldUseElectronClient();
+    let client: any;
+
+    if (useElectronClient) {
+      ensureRemoteDebuggingPortFile();
+      const win = ensureWindow();
+      state.mode = "electron";
+      log("using wwebjs-electron client");
+      client = new ElectronWhatsAppClient({
+        // Do not use LocalAuth here. In Electron mode, the BrowserWindow partition
+        // is the persistent session store. LocalAuth sets a Puppeteer userDataDir
+        // and can fail in packaged Electron with:
+        // "The browser is already running for ...session-pos-brilink-cashier".
+        electron: { window: win },
+        authTimeoutMs: 60_000,
+        takeoverOnConflict: true,
+        takeoverTimeoutMs: 0,
+        userAgent: false,
+        webVersionCache: { type: "none" },
+      });
+    } else {
+      const executablePath = findBrowserExecutable();
+      if (!executablePath) {
+        throw new Error(
+          "Browser Chrome/Edge tidak ditemukan untuk WhatsApp. Install Microsoft Edge/Google Chrome atau set WHATSAPP_BROWSER_PATH.",
+        );
+      }
+      state.mode = "browser";
+      log("using whatsapp-web.js browser client", {
+        executablePath,
+        sessionDir: getBrowserSessionDir(),
+      });
+      client = new BrowserWhatsAppClient({
+        authStrategy: new LocalAuth({
+          clientId: "pos-brilink-owner",
+          dataPath: getBrowserSessionDir(),
+        }),
+        takeoverOnConflict: true,
+        takeoverTimeoutMs: 0,
+        qrMaxRetries: 0,
+        authTimeoutMs: 60_000,
+        puppeteer: {
+          executablePath,
+          headless: true,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+          ],
+        },
+      });
+    }
 
     client.on("qr", async (qr: string) => {
       log("QR received");
@@ -385,13 +496,14 @@ async function startWhatsAppClientLocked() {
     });
 
     state.client = client;
-    log("client.initialize called");
+    log("client.initialize called", { mode: state.mode });
     await withTimeout(client.initialize(), 90_000, "WhatsApp initialize");
     log("client.initialize returned", await getWhatsAppStatus());
     return getWhatsAppStatus();
   } catch (error) {
     state.status = "error";
     state.client = null;
+    state.mode = null;
     state.lastError = error instanceof Error ? error.message : String(error);
     log("init error", state.lastError, "error");
     return getWhatsAppStatus();
@@ -425,6 +537,7 @@ export async function restartWhatsAppClient() {
     }
   } finally {
     state.client = null;
+    state.mode = null;
     state.window = null;
     state.qrDataUrl = null;
     state.lastError = null;
@@ -449,6 +562,7 @@ export async function logoutWhatsAppClient() {
     }
   } finally {
     state.client = null;
+    state.mode = null;
     state.window = null;
     state.qrDataUrl = null;
     state.lastError = null;
