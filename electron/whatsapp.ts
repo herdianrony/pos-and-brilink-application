@@ -11,6 +11,8 @@ const { Client: ElectronWhatsAppClient } = require("wwebjs-electron");
 const qrcode = require("qrcode");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Client: BrowserWhatsAppClient, LocalAuth } = require("whatsapp-web.js");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { LoadUtils } = require("whatsapp-web.js/src/util/Injected/Utils");
 
 type WhatsAppStatus =
   | "idle"
@@ -52,6 +54,7 @@ const maxMessageLength = 4096;
 const maxLogBytes = 2 * 1024 * 1024;
 let connectedProbeCount = 0;
 let lastReadinessLogAt = 0;
+let lastManualInjectAt = 0;
 
 function normalizeWhatsAppNumber(input: string) {
   const digits = String(input || "").replace(/\D/g, "");
@@ -298,9 +301,56 @@ async function withTimeout<T>(
   }
 }
 
+async function probeInjectionState() {
+  if (!state.client?.pupPage) {
+    return {
+      hasStore: false,
+      hasStoreChat: false,
+      hasStoreMsg: false,
+      hasWWebJS: false,
+      hasGetChat: false,
+      hasSendMessage: false,
+    };
+  }
+
+  return state.client.pupPage
+    .evaluate(() => {
+      const w = window as typeof window & {
+        Store?: Record<string, unknown>;
+        WWebJS?: Record<string, unknown>;
+      };
+      return {
+        hasStore: Boolean(w.Store),
+        hasStoreChat: Boolean(w.Store?.Chat),
+        hasStoreMsg: Boolean(w.Store?.Msg),
+        hasWWebJS: Boolean(w.WWebJS),
+        hasGetChat: typeof w.WWebJS?.getChat === "function",
+        hasSendMessage: typeof w.WWebJS?.sendMessage === "function",
+      };
+    })
+    .catch(() => ({
+      hasStore: false,
+      hasStoreChat: false,
+      hasStoreMsg: false,
+      hasWWebJS: false,
+      hasGetChat: false,
+      hasSendMessage: false,
+    }));
+}
+
 async function isClientSendReady() {
   if (!state.client) return false;
-  if (state.status === "ready") return true;
+  if (state.status === "ready") {
+    const injectionState = await probeInjectionState();
+    const stillReady = Boolean(
+      injectionState.hasStoreChat &&
+      injectionState.hasStoreMsg &&
+      injectionState.hasGetChat &&
+      injectionState.hasSendMessage,
+    );
+    if (stillReady) return true;
+    state.status = "authenticated";
+  }
   if (
     state.status === "qr" ||
     state.status === "error" ||
@@ -313,49 +363,46 @@ async function isClientSendReady() {
       typeof state.client.getState === "function"
         ? await state.client.getState().catch(() => null)
         : null;
-    const injectionState = state.client.pupPage
-      ? await state.client.pupPage
-          .evaluate(() => {
-            const w = window as typeof window & {
-              Store?: Record<string, unknown>;
-              WWebJS?: Record<string, unknown>;
-            };
-            return {
-              hasStore: Boolean(w.Store),
-              hasStoreChat: Boolean(w.Store?.Chat),
-              hasStoreMsg: Boolean(w.Store?.Msg),
-              hasWWebJS: Boolean(w.WWebJS),
-              hasGetChat: typeof w.WWebJS?.getChat === "function",
-              hasSendMessage: typeof w.WWebJS?.sendMessage === "function",
-            };
-          })
-          .catch(() => ({
-            hasStore: false,
-            hasStoreChat: false,
-            hasStoreMsg: false,
-            hasWWebJS: false,
-            hasGetChat: false,
-            hasSendMessage: false,
-          }))
-      : {
-          hasStore: false,
-          hasStoreChat: false,
-          hasStoreMsg: false,
-          hasWWebJS: false,
-          hasGetChat: false,
-          hasSendMessage: false,
-        };
-
-    const injectionReady = Boolean(
+    let injectionState = await probeInjectionState();
+    let injectionReady = Boolean(
       injectionState.hasStoreChat &&
       injectionState.hasStoreMsg &&
       injectionState.hasGetChat &&
       injectionState.hasSendMessage,
     );
+
+    // If WhatsApp is connected but WWebJS helpers are missing, retry the same
+    // utility injection that whatsapp-web.js performs before emitting ready.
+    const now = Date.now();
+    if (
+      waState === "CONNECTED" &&
+      !injectionReady &&
+      state.client.pupPage &&
+      now - lastManualInjectAt > 10_000
+    ) {
+      lastManualInjectAt = now;
+      try {
+        log("manual WWebJS injection requested", { injectionState });
+        await state.client.pupPage.evaluate(LoadUtils);
+        injectionState = await probeInjectionState();
+        injectionReady = Boolean(
+          injectionState.hasStoreChat &&
+          injectionState.hasStoreMsg &&
+          injectionState.hasGetChat &&
+          injectionState.hasSendMessage,
+        );
+        log("manual WWebJS injection result", {
+          injectionReady,
+          injectionState,
+        });
+      } catch (error) {
+        log("manual WWebJS injection failed", error, "warn");
+      }
+    }
+
     if (waState === "CONNECTED") connectedProbeCount += 1;
     else connectedProbeCount = 0;
 
-    const now = Date.now();
     if (
       now - lastReadinessLogAt > 10_000 ||
       injectionReady ||
@@ -369,14 +416,7 @@ async function isClientSendReady() {
       );
     }
 
-    // On this packaged Windows runtime, WhatsApp reaches CONNECTED but the
-    // WWebJS helper object remains invisible to our external probe. A stable
-    // CONNECTED state is enough to allow sending; sendWhatsAppMessage still
-    // catches and reports any real injection/send failure.
-    if (
-      waState === "CONNECTED" &&
-      (injectionReady || connectedProbeCount >= 3)
-    ) {
+    if (waState === "CONNECTED" && injectionReady) {
       state.status = "ready";
       state.qrDataUrl = null;
       state.lastError = null;
@@ -531,6 +571,7 @@ async function startWhatsAppClientLocked() {
   state.status = "initializing";
   state.lastError = null;
   connectedProbeCount = 0;
+  lastManualInjectAt = 0;
   log("start requested");
 
   try {
