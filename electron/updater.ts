@@ -35,6 +35,20 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error || "");
+}
+
+function isMissingUpdateMetadataError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return (
+    message.includes("latest.yml") &&
+    (message.includes("404") ||
+      message.includes("not found") ||
+      message.includes("cannot find"))
+  );
+}
+
 /**
  * Simulasi update untuk QA/demo tanpa benar-benar mengunduh installer.
  * Dipakai untuk memastikan UI update Electron, IPC listener, dan tombol install
@@ -123,8 +137,19 @@ export function initAutoUpdater(window: BrowserWindow) {
   });
 
   autoUpdater.on("error", (err) => {
+    if (isMissingUpdateMetadataError(err)) {
+      // First release may exist without electron-builder metadata yet.
+      // Treat it as "no update" so users don't see a scary 404 toast.
+      console.warn(
+        "[updater] Update metadata latest.yml belum tersedia; update otomatis dilewati.",
+      );
+      sendToRenderer("update:not-available", {
+        reason: "missing_update_metadata",
+      });
+      return;
+    }
     console.error("Auto-updater error:", err);
-    sendToRenderer("update:error", { message: err?.message || String(err) });
+    sendToRenderer("update:error", { message: getErrorMessage(err) });
   });
 }
 
@@ -146,12 +171,25 @@ export function startUpdateCheck(delay = 10000) {
 export async function checkForUpdatesNow() {
   if (isUpdateSimulationEnabled()) return simulateUpdate();
 
-  const result = await autoUpdater.checkForUpdates();
-  if (!result) {
-    sendToRenderer("update:not-available", {});
-    return null;
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    if (!result) {
+      sendToRenderer("update:not-available", {});
+      return null;
+    }
+    return { version: result.updateInfo.version };
+  } catch (error) {
+    if (isMissingUpdateMetadataError(error)) {
+      console.warn(
+        "[updater] Update metadata latest.yml belum tersedia; update otomatis dilewati.",
+      );
+      sendToRenderer("update:not-available", {
+        reason: "missing_update_metadata",
+      });
+      return null;
+    }
+    throw error;
   }
-  return { version: result.updateInfo.version };
 }
 
 /**

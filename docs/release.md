@@ -181,6 +181,16 @@ npm run dev:electron:update-sim
 
 Ini expected untuk konfigurasi saat ini. Electron 43/Chromium modern dan Node.js 22 tidak mendukung Windows 7/8/8.1 secara realistis. Gunakan Web/LAN mode dari server/PC modern atau upgrade OS ke Windows 10/11 64-bit.
 
+### Toast `Cannot find latest.yml`
+
+Pesan ini muncul jika GitHub tag/release sudah ada, tetapi asset auto-update dari `electron-builder` belum diupload, terutama `latest.yml`. Pada versi terbaru aplikasi, kondisi ini diperlakukan sebagai "belum ada update" dan tidak ditampilkan sebagai error ke user.
+
+Untuk auto-update produksi, pastikan GitHub Release berisi:
+
+- installer `.exe`,
+- portable `.exe` jika digunakan,
+- `latest.yml`.
+
 ### Aplikasi tidak menemukan update
 
 Cek:

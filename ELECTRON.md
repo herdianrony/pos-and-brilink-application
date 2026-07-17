@@ -437,6 +437,10 @@ Penyebab umum:
 3. Untuk USB, pastikan driver terinstall.
 4. Jalankan Test Print dari menu pengaturan.
 
+### Toast `Cannot find latest.yml`
+
+Artinya release/tag GitHub sudah ada tetapi metadata auto-update (`latest.yml`) belum diupload. Ini tidak merusak aplikasi; transaksi tetap aman. Pada build terbaru, error ini disembunyikan dari user dan dianggap belum ada update. Upload `latest.yml` bersama installer saat publish release agar auto-update aktif.
+
 ### Auto-update tidak bekerja
 
 1. Pastikan aplikasi berjalan sebagai packaged app, bukan dev mode.
