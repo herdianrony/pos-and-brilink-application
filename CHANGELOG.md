@@ -19,7 +19,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Login setelah submit memakai full navigation agar cookie httpOnly terbaca stabil oleh middleware pada Playwright/Electron.
 - Dokumentasi release/deployment/user guide diselaraskan: desktop resmi Windows 10/11 x64, Windows 7/8/8.1 tidak didukung, Node 22 LTS untuk build produksi, dan OS lain memakai Web/LAN mode.
 - Log WhatsApp Electron khusus (`whatsapp-electron.log`) untuk event QR, authenticated, ready, disconnected, restart/logout, dan hasil kirim pesan; log ini ikut tampil di panel Log & Monitoring.
-- Persiapan remote debugging Electron untuk WhatsApp dibuat lebih aman dengan menghapus `DevToolsActivePort` lama saat startup agar Puppeteer tidak menggantung ke port lama.
+- Persiapan remote debugging Electron untuk WhatsApp dibuat lebih stabil dengan port lokal deterministik `43220` dan penulisan `DevToolsActivePort` agar Puppeteer tidak gagal menentukan port di Electron packaged.
 
 ### Security
 

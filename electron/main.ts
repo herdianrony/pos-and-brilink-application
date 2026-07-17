@@ -41,6 +41,7 @@ const INTERNAL_PORT = 43219;
 const ALLOWED_APP_PATHS = new Set(["userData", "documents", "desktop"]);
 // Port Next.js dev server (development)
 const DEV_PORT = 3000;
+const WHATSAPP_REMOTE_DEBUGGING_PORT = 43220;
 
 let nextServer: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -51,17 +52,27 @@ const isPackaged = app.isPackaged;
 
 function prepareElectronRemoteDebugging() {
   // wwebjs-electron attaches Puppeteer to Electron through Chromium remote debugging.
-  // Remove a stale DevToolsActivePort before Chromium starts; otherwise Puppeteer
-  // can try to connect to an old/dead port and WhatsApp initialization hangs.
+  // Electron 43 on some Windows installations does not reliably create/read
+  // DevToolsActivePort when using port=0. Use a deterministic local port and
+  // write the port file expected by wwebjs-electron before app.whenReady().
   try {
-    app.commandLine.appendSwitch("remote-debugging-port", "0");
-    const portFile = path.join(app.getPath("userData"), "DevToolsActivePort");
-    if (fs.existsSync(portFile)) {
-      fs.rmSync(portFile, { force: true });
-      console.log(
-        "[main] Removed stale DevToolsActivePort for WhatsApp Electron",
-      );
-    }
+    const port = String(WHATSAPP_REMOTE_DEBUGGING_PORT);
+    process.env.WHATSAPP_ELECTRON_DEBUG_PORT = port;
+    app.commandLine.appendSwitch("remote-debugging-port", port);
+    app.commandLine.appendSwitch("remote-allow-origins", "*");
+
+    const userDataPath = app.getPath("userData");
+    fs.mkdirSync(userDataPath, { recursive: true });
+    const portFile = path.join(userDataPath, "DevToolsActivePort");
+    fs.writeFileSync(
+      portFile,
+      `${port}
+`,
+      { mode: 0o600 },
+    );
+    console.log(
+      `[main] WhatsApp Electron remote debugging prepared on port ${port}`,
+    );
   } catch (error) {
     console.warn(
       "[main] Could not prepare Electron remote debugging for WhatsApp:",

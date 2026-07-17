@@ -109,6 +109,24 @@ function getWhatsAppLogPath() {
   }
 }
 
+function ensureRemoteDebuggingPortFile() {
+  try {
+    const port = process.env.WHATSAPP_ELECTRON_DEBUG_PORT || "43220";
+    const portFile = path.join(app.getPath("userData"), "DevToolsActivePort");
+    const current = fs.existsSync(portFile)
+      ? fs.readFileSync(portFile, "utf8").split("\n")[0]?.trim()
+      : "";
+    if (current !== port) {
+      fs.writeFileSync(portFile, `${port}\n`, { mode: 0o600 });
+      log("remote debugging port file repaired", { portFile, port });
+    } else {
+      log("remote debugging port file verified", { portFile, port }, "debug");
+    }
+  } catch (error) {
+    log("remote debugging port file check failed", error, "warn");
+  }
+}
+
 function sanitizeLogExtra(extra: unknown, depth = 0): unknown {
   if (extra == null) return extra;
   if (extra instanceof Error) {
@@ -315,6 +333,7 @@ async function startWhatsAppClientLocked() {
   log("start requested");
 
   try {
+    ensureRemoteDebuggingPortFile();
     const win = ensureWindow();
     const client = new Client({
       // Do not use LocalAuth here. In Electron mode, the BrowserWindow partition
