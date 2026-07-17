@@ -49,6 +49,29 @@ let mainWindow: BrowserWindow | null = null;
 const isDevMode = process.env.ELECTRON_DEV === "1";
 const isPackaged = app.isPackaged;
 
+function prepareElectronRemoteDebugging() {
+  // wwebjs-electron attaches Puppeteer to Electron through Chromium remote debugging.
+  // Remove a stale DevToolsActivePort before Chromium starts; otherwise Puppeteer
+  // can try to connect to an old/dead port and WhatsApp initialization hangs.
+  try {
+    app.commandLine.appendSwitch("remote-debugging-port", "0");
+    const portFile = path.join(app.getPath("userData"), "DevToolsActivePort");
+    if (fs.existsSync(portFile)) {
+      fs.rmSync(portFile, { force: true });
+      console.log(
+        "[main] Removed stale DevToolsActivePort for WhatsApp Electron",
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "[main] Could not prepare Electron remote debugging for WhatsApp:",
+      error,
+    );
+  }
+}
+
+prepareElectronRemoteDebugging();
+
 // ── Setup DATABASE_URL SEBELUM spawn Next.js ─────
 // Hanya apply di production (di dev, Next.js pakai .env.local atau default)
 if (isPackaged) {
