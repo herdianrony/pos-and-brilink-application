@@ -14,7 +14,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("BRILink Flow", () => {
   test("should display service categories", async ({ page }) => {
     // Should see category filters
-    const categories = page.locator("text=/transfer|tarik tunai|setor|pembayaran|token pln|pulsa|voucher|cicilan/i");
+    const categories = page.locator(
+      "text=/transfer|tarik tunai|setor|pembayaran|token pln|pulsa|voucher|cicilan/i",
+    );
     const count = await categories.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -22,7 +24,9 @@ test.describe("BRILink Flow", () => {
   test("should display service cards", async ({ page }) => {
     await page.waitForTimeout(2000);
     // Should see service buttons/cards
-    const services = page.locator('button:has-text("Transfer"), button:has-text("Tarik"), button:has-text("Tagihan"), button:has-text("Token"), button:has-text("Pulsa")');
+    const services = page.locator(
+      'button:has-text("Transfer"), button:has-text("Tarik"), button:has-text("Tagihan"), button:has-text("Token"), button:has-text("Pulsa")',
+    );
     const count = await services.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -35,15 +39,24 @@ test.describe("BRILink Flow", () => {
       await page.waitForTimeout(1000);
 
       // Should see transfer-related services
-      await expect(page.locator("text=/kirim transfer|transfer|tarik tunai|setor tunai/i").first()).toBeVisible({ timeout: 5000 });
+      await expect(
+        page
+          .locator("text=/kirim transfer|transfer|tarik tunai|setor tunai/i")
+          .first(),
+      ).toBeVisible({ timeout: 5000 });
     }
   });
 
-  test("should open transaction form when service clicked", async ({ page }) => {
+  test("should open transaction form when service clicked", async ({
+    page,
+  }) => {
     await page.waitForTimeout(2000);
 
-    // Click first service button — use specific service name to avoid matching category filter
-    const firstService = page.locator('button:has-text("Kirim Transfer"), button:has-text("Tarik Tunai"), button:has-text("Tagihan PLN")').first();
+    // Click real service card, not the category filter button.
+    const firstService = page
+      .getByTestId("service-card-transfer_cash")
+      .or(page.getByTestId("service-card-cash_withdrawal"))
+      .first();
     await expect(firstService).toBeVisible({ timeout: 5000 });
     await firstService.click();
     await page.waitForTimeout(1000);
@@ -51,10 +64,18 @@ test.describe("BRILink Flow", () => {
     // Modal should open with service name as heading
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('h3:has-text("Transfer"), h3:has-text("Tarik"), h3:has-text("Tagihan")').first()).toBeVisible({ timeout: 5000 });
+    await expect(
+      dialog
+        .locator(
+          'h3:has-text("Transfer"), h3:has-text("Tarik"), h3:has-text("Tagihan")',
+        )
+        .first(),
+    ).toBeVisible({ timeout: 5000 });
     // Form label/text should be visible. Use text matching instead of label-only
     // selector because the shared Input component may wrap label markup.
-    await expect(dialog.getByText(/Nama Pelanggan/i)).toBeVisible({ timeout: 5000 });
+    await expect(dialog.getByText(/Nama Pelanggan/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("should show BPJS periode field for BPJS service", async ({ page }) => {
@@ -67,7 +88,9 @@ test.describe("BRILink Flow", () => {
     await page.waitForTimeout(1000);
 
     // Should see Periode (Bulan) label — not a CSS selector mix
-    await expect(page.locator("label:has-text('Periode')")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("label:has-text('Periode')")).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("should show Token PLN services", async ({ page }) => {
@@ -78,7 +101,9 @@ test.describe("BRILink Flow", () => {
       await page.waitForTimeout(1000);
 
       // Should see Token PLN services
-      await expect(page.locator("text=/token pln/i").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/token pln/i").first()).toBeVisible({
+        timeout: 5000,
+      });
     }
   });
 
@@ -88,7 +113,9 @@ test.describe("BRILink Flow", () => {
       await voucherFilter.click();
       await page.waitForTimeout(1000);
 
-      await expect(page.locator("text=/voucher game/i").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/voucher game/i").first()).toBeVisible({
+        timeout: 5000,
+      });
     }
   });
 
@@ -98,7 +125,9 @@ test.describe("BRILink Flow", () => {
       await cicilanFilter.click();
       await page.waitForTimeout(1000);
 
-      await expect(page.locator("text=/fif|adira|wom/i").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/fif|adira|wom/i").first()).toBeVisible({
+        timeout: 5000,
+      });
     }
   });
 });

@@ -92,7 +92,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((user) => setCurrentUser(user))
+      .then((data) => setCurrentUser(data?.user || data || null))
       .catch(() => setCurrentUser(null));
 
     fetch("/api/settings")
