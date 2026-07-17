@@ -1,5 +1,5 @@
 # electron-builder configuration
-# Generate installer untuk Windows 7/8/10/11
+# Generate installer untuk Windows 10/11 64-bit
 # Targets:
 #   - NSIS installer (.exe) — recommended
 #   - Portable (.exe) — untuk USB/tanpa install
@@ -29,7 +29,7 @@ files:
 # kita copy manual di afterPack hook (setelah pruning selesai).
 afterPack: scripts/after-pack.js
 
-# Windows target (Windows 10/11 only — Electron 28+ butuh Node.js 18+)
+# Windows target: Windows 10/11 x64 only. Windows 7/8/8.1 and 32-bit are not supported.
 win:
   target:
     - target: nsis

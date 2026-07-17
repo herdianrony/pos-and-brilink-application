@@ -2,7 +2,7 @@
 
 Dokumen ini menjelaskan mode desktop aplikasi POS & Agen Bisnis/BRILink POS berdasarkan konfigurasi project saat ini.
 
-> **Konfigurasi saat ini:** package desktop memakai `productName: BRILink POS`, Electron `^43.1.0`, dan target build Windows x64. Dengan konfigurasi ini, target realistis adalah Windows 10/11 64-bit. Dokumentasi lama yang menyebut Electron 22, Windows 7/8, dan ia32 tidak sesuai dengan konfigurasi saat ini.
+> **Konfigurasi saat ini:** package desktop memakai `productName: BRILink POS`, Electron `^43.1.0`, dan target build Windows x64. Dengan konfigurasi ini, target resmi adalah Windows 10/11 64-bit. Windows 7, Windows 8/8.1, dan build 32-bit/ia32 tidak didukung untuk konfigurasi saat ini.
 
 ## Ringkasan Arsitektur
 
@@ -42,17 +42,17 @@ Transaksi aktual tetap dilakukan operator melalui kanal resmi seperti mobile ban
 
 ## File Penting
 
-| File | Fungsi |
-|------|--------|
-| `electron/main.ts` | Main process, window, server Next.js, CSP, single instance, IPC update |
-| `electron/preload.ts` | Bridge aman antara renderer dan Electron API |
-| `electron/printer.ts` | Integrasi printer thermal ESC/POS |
-| `electron/updater.ts` | Auto-update via `electron-updater` |
-| `electron/db-path.ts` | Resolver path database Electron |
-| `electron-builder.yml` | Konfigurasi packaging desktop |
-| `scripts/after-pack.js` | Hook setelah packaging untuk copy Next.js standalone |
-| `scripts/copy-preload.js` | Copy preload hasil compile |
-| `scripts/post-build.js` | Post-build helper untuk output Next.js |
+| File                      | Fungsi                                                                 |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `electron/main.ts`        | Main process, window, server Next.js, CSP, single instance, IPC update |
+| `electron/preload.ts`     | Bridge aman antara renderer dan Electron API                           |
+| `electron/printer.ts`     | Integrasi printer thermal ESC/POS                                      |
+| `electron/updater.ts`     | Auto-update via `electron-updater`                                     |
+| `electron/db-path.ts`     | Resolver path database Electron                                        |
+| `electron-builder.yml`    | Konfigurasi packaging desktop                                          |
+| `scripts/after-pack.js`   | Hook setelah packaging untuk copy Next.js standalone                   |
+| `scripts/copy-preload.js` | Copy preload hasil compile                                             |
+| `scripts/post-build.js`   | Post-build helper untuk output Next.js                                 |
 
 ## Mode Development
 
@@ -165,12 +165,13 @@ win:
 
 Artinya:
 
-| Target | Arch | Status |
-|--------|------|--------|
-| NSIS installer | x64 | Aktif |
-| Portable | x64 | Aktif |
-| ia32/32-bit | ia32 | Tidak aktif |
-| Windows 7/8 compatibility | - | Tidak diklaim untuk konfigurasi saat ini |
+| Target              | Arch | Status                         |
+| ------------------- | ---- | ------------------------------ |
+| NSIS installer      | x64  | Aktif                          |
+| Portable            | x64  | Aktif                          |
+| ia32/32-bit         | ia32 | Tidak aktif                    |
+| Windows 7/8/8.1     | -    | Tidak didukung                 |
+| Windows 32-bit/ia32 | ia32 | Tidak aktif dan tidak didukung |
 
 Output folder:
 
@@ -188,10 +189,10 @@ BRILink POS-Portable-<version>.exe
 
 Resolver database berada di `electron/db-path.ts`.
 
-| Mode | Database |
-|------|----------|
-| Development | `DATABASE_URL` atau `file:./data.db` |
-| Production Electron | `file:<userData>/pos-brilink.db` |
+| Mode                | Database                             |
+| ------------------- | ------------------------------------ |
+| Development         | `DATABASE_URL` atau `file:./data.db` |
+| Production Electron | `file:<userData>/pos-brilink.db`     |
 
 Pada Windows, folder `userData` biasanya berada di `%APPDATA%/<nama aplikasi>`. Karena `productName` saat ini adalah `BRILink POS`, folder umumnya adalah:
 
@@ -221,13 +222,16 @@ Pada production Electron:
 
 Untuk production web/server non-Electron, `AUTH_SECRET` wajib disediakan lewat environment variable.
 
-
 ## WhatsApp Owner di Electron
 
-Fitur WhatsApp Owner memakai `whatsapp-web.js` untuk mengirim notifikasi internal ke owner. Di mode Electron production, session WhatsApp disimpan di folder `userData`:
+Fitur WhatsApp Owner di mode desktop memakai `wwebjs-electron` dari Electron main process untuk mengirim notifikasi internal ke owner. Web/LAN mode tetap memakai fallback server-side `whatsapp-web.js`.
+
+Session desktop disimpan di persistent partition Electron/userData. Jika migrasi dari build lama bermasalah, tutup aplikasi lalu bersihkan folder session lama sesuai troubleshooting.
+
+Lokasi terkait userData:
 
 ```text
-%APPDATA%/BRILink POS/whatsapp-session
+%APPDATA%/BRILink POS/
 ```
 
 Pengaturan tersedia di:
@@ -351,7 +355,6 @@ Konfigurasi penting di `electron/main.ts`:
 
 ## Troubleshooting
 
-
 ### Build gagal karena `.next/dev/types/validator.ts`
 
 Jika setelah menjalankan `npm run dev` lalu build muncul error dari `.next/dev/types`, hapus `.next` dan build ulang. Script build terbaru sudah menjalankan `scripts/pre-build.js` otomatis.
@@ -360,6 +363,10 @@ Jika setelah menjalankan `npm run dev` lalu build muncul error dari `.next/dev/t
 rmdir /s /q .next
 npm run build:electron
 ```
+
+### Windows 7/8 tidak bisa menjalankan aplikasi
+
+Build desktop resmi hanya untuk Windows 10/11 64-bit. Windows 7/8/8.1 tidak didukung oleh Electron/Chromium modern dan Node.js 22. Gunakan Web/LAN mode dari server yang lebih modern atau upgrade OS minimal ke Windows 10 64-bit.
 
 ### Build gagal karena `.whatsapp-session` terkunci
 
@@ -402,9 +409,16 @@ Production Electron memakai port internal `43219`. Tutup proses yang memakai por
 
 ### Aplikasi blank atau gagal load
 
-Cek log:
+Cek log dari aplikasi:
 
 ```text
+Pengaturan → Lanjutan → Log & Monitoring Aplikasi
+```
+
+Atau cek file:
+
+```text
+userData/logs/app.log
 userData/logs/next-server.log
 ```
 

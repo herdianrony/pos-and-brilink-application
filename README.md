@@ -140,7 +140,7 @@ Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC,
 - **electron-builder** untuk packaging.
 - **electron-updater** untuk auto-update.
 - **node-thermal-printer** untuk printer thermal.
-- **whatsapp-web.js** + **qrcode** untuk notifikasi WhatsApp Owner opsional.
+- **wwebjs-electron** di mode desktop dan **whatsapp-web.js** sebagai fallback Web/LAN untuk notifikasi WhatsApp Owner opsional.
 
 ## Persyaratan Sistem
 
@@ -156,13 +156,14 @@ Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC,
 
 Konfigurasi desktop saat ini menggunakan Electron 43 dan target build Windows x64.
 
-- Windows 10/11 64-bit direkomendasikan.
+- **Didukung:** Windows 10/11 64-bit.
+- **Tidak didukung:** Windows 7, Windows 8/8.1, Windows 32-bit/ia32.
 - RAM minimal 2GB, direkomendasikan 4GB.
-- Disk space minimal sekitar 250MB setelah install.
+- Disk space minimal sekitar 500MB setelah install.
 - Printer thermal opsional.
 - Barcode scanner USB opsional.
 
-> **Catatan penting:** Dokumentasi versi lama menyebut Windows 7/8 dan Electron 22. Konfigurasi project saat ini memakai Electron 43, sehingga klaim Windows 7/8 tidak berlaku untuk build saat ini.
+> **Catatan penting:** Windows 7/8 tidak didukung karena Electron/Chromium modern dan Node.js 22 sudah tidak realistis untuk OS tersebut. Jika perangkat masih Windows 7, gunakan Web/LAN mode dari server/PC yang lebih modern, atau upgrade minimal ke Windows 10 64-bit.
 
 ## Instalasi
 
@@ -175,8 +176,10 @@ cd pos-and-brilink-application
 
 ### Install Dependencies
 
+Gunakan Node.js 22 LTS sesuai `.nvmrc` (`22.12.0`). Node 25 tidak direkomendasikan untuk build produksi Electron.
+
 ```bash
-npm install
+npm ci
 ```
 
 ## Konfigurasi Environment
@@ -354,14 +357,14 @@ npm run build:electron:publish
 
 Aplikasi ini dirancang fleksibel untuk berbagai jenis usaha:
 
-| Tipe Bisnis | Contoh Branding |
-|-------------|-----------------|
-| Agen BRILink | BRILink POS |
-| Counter HP | Counter HP POS |
-| Agen Pulsa | Agen Pulsa POS |
-| Agen Pembayaran | Agen Bayar POS |
-| Toko Kelontong | Toko POS |
-| Lainnya | Branding custom |
+| Tipe Bisnis     | Contoh Branding |
+| --------------- | --------------- |
+| Agen BRILink    | BRILink POS     |
+| Counter HP      | Counter HP POS  |
+| Agen Pulsa      | Agen Pulsa POS  |
+| Agen Pembayaran | Agen Bayar POS  |
+| Toko Kelontong  | Toko POS        |
+| Lainnya         | Branding custom |
 
 Branding dapat diubah melalui menu pengaturan aplikasi, termasuk nama aplikasi, tipe bisnis, dan label menu layanan.
 
@@ -412,7 +415,6 @@ function POSPage() {
 }
 ```
 
-
 ## WhatsApp Owner
 
 Aplikasi mendukung notifikasi WhatsApp otomatis ke owner melalui **WhatsApp Web** (`whatsapp-web.js`). Fitur ini bersifat opsional dan ditujukan untuk notifikasi internal, misalnya saat kasir mencatat Tarik Tunai dan owner perlu mengecek transfer masuk di m-banking.
@@ -420,8 +422,10 @@ Aplikasi mendukung notifikasi WhatsApp otomatis ke owner melalui **WhatsApp Web*
 Fitur utama:
 
 - nomor WhatsApp owner dapat diisi saat Setup Wizard atau Pengaturan,
+- mode desktop memakai client WhatsApp native Electron (`wwebjs-electron`) dengan persistent partition,
+- mode Web/LAN memakai fallback server-side `whatsapp-web.js`,
 - scan QR menggunakan WhatsApp kasir/operasional,
-- tombol logout WhatsApp,
+- tombol restart/logout WhatsApp,
 - notifikasi otomatis untuk flow `cash_withdrawal`, `cash_deposit`, `transfer`, `payment`, dan `topup`,
 - tidak mengirim untuk inquiry/cek saldo.
 
@@ -430,7 +434,7 @@ Catatan penting:
 - ini memakai WhatsApp Web automation, bukan API resmi Meta/WhatsApp Business Cloud API,
 - jangan digunakan untuk spam/broadcast massal,
 - jika WhatsApp belum terhubung, transaksi tetap tersimpan; hanya notifikasi yang gagal/tidak terkirim,
-- session Electron disimpan di `userData/whatsapp-session`, bukan di root project.
+- session desktop disimpan di partition Electron/userData, bukan di root project. Perangkat produksi sebaiknya memakai full-disk encryption seperti BitLocker.
 
 ## Auto-Update
 
@@ -453,16 +457,33 @@ Setup release:
 
 Panduan lengkap ada di `docs/release.md`.
 
+## Log & Monitoring
+
+Admin dapat memantau error aplikasi dari:
+
+```text
+Pengaturan → Lanjutan → Log & Monitoring Aplikasi
+```
+
+Panel ini menampilkan error API, error tampilan, log server Electron, filter level, pencarian, download log, dan tombol bersihkan log aktif.
+
+Lokasi file log desktop:
+
+```text
+%APPDATA%/BRILink POS/logs/app.log
+%APPDATA%/BRILink POS/logs/next-server.log
+```
+
 ## Database
 
 Database menggunakan SQLite/libSQL melalui Drizzle ORM.
 
 ### Lokasi Database
 
-| Mode | Path |
-|------|------|
-| Development web | `./data.db` atau nilai `DATABASE_URL` |
-| Production Electron | `userData/pos-brilink.db` |
+| Mode                | Path                                  |
+| ------------------- | ------------------------------------- |
+| Development web     | `./data.db` atau nilai `DATABASE_URL` |
+| Production Electron | `userData/pos-brilink.db`             |
 
 Pada Windows, lokasi `userData` biasanya berada di bawah `%APPDATA%` sesuai nama aplikasi desktop. Dengan `productName` saat ini, lokasinya umumnya berada di folder aplikasi **BRILink POS**.
 
@@ -496,19 +517,19 @@ drizzle.config.json
 
 API berada di `src/app/api/`. Endpoint yang tersedia antara lain:
 
-| Area | Route |
-|------|-------|
-| Health | `/api/health` |
-| Auth | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/setup`, `/api/auth/users` |
-| Setup | `/api/setup/complete`, `/api/setup/templates` |
-| Produk | `/api/products`, `/api/categories` |
-| Layanan agen | `/api/service-categories`, `/api/brilink-services`, `/api/fee-tiers` |
-| Transaksi | `/api/transactions`, `/api/transactions/[id]` |
-| Rekening/kas | `/api/accounts`, `/api/accounts/mutations`, `/api/cash` |
-| Dashboard | `/api/dashboard` |
-| Settings | `/api/settings` |
-| Hardware | `/api/hardware/printer` |
-| Data utility | `/api/backup`, `/api/seed`, `/api/seed-demo` |
+| Area         | Route                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| Health       | `/api/health`                                                                               |
+| Auth         | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/setup`, `/api/auth/users` |
+| Setup        | `/api/setup/complete`, `/api/setup/templates`                                               |
+| Produk       | `/api/products`, `/api/categories`                                                          |
+| Layanan agen | `/api/service-categories`, `/api/brilink-services`, `/api/fee-tiers`                        |
+| Transaksi    | `/api/transactions`, `/api/transactions/[id]`                                               |
+| Rekening/kas | `/api/accounts`, `/api/accounts/mutations`, `/api/cash`                                     |
+| Dashboard    | `/api/dashboard`                                                                            |
+| Settings     | `/api/settings`                                                                             |
+| Hardware     | `/api/hardware/printer`                                                                     |
+| Data utility | `/api/backup`, `/api/seed`, `/api/seed-demo`                                                |
 
 > Production seed hanya membuat settings default dan template rekening/kas. Produk, kategori produk, kategori layanan, layanan agen, dan fee tidak dibuat otomatis; owner/admin mengisinya sendiri sesuai SOP bisnis.
 
@@ -615,7 +636,6 @@ rm data.db
 
 Untuk production Electron, backup dulu data penting sebelum menghapus database di folder `userData`.
 
-
 ### Build gagal karena file `.next/dev/types` atau validator rusak
 
 Build production sekarang otomatis menjalankan `scripts/pre-build.js` untuk membersihkan `.next`. Jika masih gagal setelah menjalankan dev server, hapus manual:
@@ -649,26 +669,26 @@ Session produksi Electron sekarang disimpan di `userData/whatsapp-session`.
 
 ## Scripts
 
-| Command | Deskripsi |
-|---------|-----------|
-| `npm run dev` | Menjalankan Next.js dev server |
-| `npm run dev:web` | Alias mode web dev |
-| `npm run dev:electron` | Menjalankan Electron + Next.js dev server |
-| `npm run build` | Build Next.js |
-| `npm run build:web` | Build Next.js standalone + post-build script |
-| `npm run build:electron` | Build desktop Windows NSIS + portable |
-| `npm run build:electron:portable` | Build desktop portable saja |
-| `npm run build:electron:publish` | Build dan publish ke GitHub Releases |
-| `npm run dist` | Alias build Electron |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript check untuk web |
-| `npm run typecheck:electron` | TypeScript check untuk Electron |
-| `npm run compile:electron` | Compile Electron TypeScript dan copy preload |
-| `npm test` | Menjalankan Vitest |
-| `npm run test:watch` | Vitest watch mode |
-| `npm run test:coverage` | Vitest dengan coverage |
-| `npm run test:e2e` | Playwright E2E test |
-| `npm run test:e2e:ui` | Playwright E2E UI mode |
+| Command                           | Deskripsi                                    |
+| --------------------------------- | -------------------------------------------- |
+| `npm run dev`                     | Menjalankan Next.js dev server               |
+| `npm run dev:web`                 | Alias mode web dev                           |
+| `npm run dev:electron`            | Menjalankan Electron + Next.js dev server    |
+| `npm run build`                   | Build Next.js                                |
+| `npm run build:web`               | Build Next.js standalone + post-build script |
+| `npm run build:electron`          | Build desktop Windows NSIS + portable        |
+| `npm run build:electron:portable` | Build desktop portable saja                  |
+| `npm run build:electron:publish`  | Build dan publish ke GitHub Releases         |
+| `npm run dist`                    | Alias build Electron                         |
+| `npm run lint`                    | ESLint                                       |
+| `npm run typecheck`               | TypeScript check untuk web                   |
+| `npm run typecheck:electron`      | TypeScript check untuk Electron              |
+| `npm run compile:electron`        | Compile Electron TypeScript dan copy preload |
+| `npm test`                        | Menjalankan Vitest                           |
+| `npm run test:watch`              | Vitest watch mode                            |
+| `npm run test:coverage`           | Vitest dengan coverage                       |
+| `npm run test:e2e`                | Playwright E2E test                          |
+| `npm run test:e2e:ui`             | Playwright E2E UI mode                       |
 
 ## Struktur Project
 

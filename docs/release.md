@@ -4,8 +4,9 @@ Dokumen ini dipakai setiap kali aplikasi Windows Electron akan dirilis atau dina
 
 ## Mode rilis yang didukung
 
-- **Produksi utama:** Windows desktop Electron (`BRILink POS Setup x.y.z.exe`).
-- **Mode lain:** Web/LAN mode untuk Linux, Armbian, macOS, atau server lokal. Tidak perlu installer Electron untuk OS tersebut.
+- **Produksi utama:** Windows 10/11 64-bit desktop Electron (`BRILink POS Setup x.y.z.exe`).
+- **Tidak didukung untuk installer desktop:** Windows 7, Windows 8/8.1, dan Windows 32-bit/ia32.
+- **Mode lain:** Web/LAN mode untuk Linux, Armbian, macOS, Windows lama, atau server lokal. Tidak perlu installer Electron untuk OS tersebut.
 
 ## Aturan versi
 
@@ -60,6 +61,8 @@ npm audit --audit-level=moderate
 
 ## Build installer Windows lokal
 
+Gunakan Node.js 22 LTS sesuai `.nvmrc` (`22.12.0`). Node 25 tidak direkomendasikan untuk build produksi Electron.
+
 ```bash
 npm run build:electron
 ```
@@ -89,10 +92,10 @@ Langkah manual yang aman:
 git status
 npm run release:check
 git add package.json package-lock.json CHANGELOG.md docs/release.md
-git commit -m "chore: release v1.0.1"
-git tag v1.0.1
+git commit -m "chore: release vX.Y.Z"
+git tag vX.Y.Z
 git push origin main
-git push origin v1.0.1
+git push origin vX.Y.Z
 GH_TOKEN=isi_token npm run build:electron:publish
 ```
 
@@ -159,7 +162,8 @@ npm run dev:electron:update-sim
 
 ## Checklist release produksi
 
-- [ ] Node.js sesuai `.nvmrc` (`22.12.0` atau Node 22 LTS).
+- [ ] Target installer adalah Windows 10/11 64-bit; Windows 7/8/8.1 tidak diklaim support.
+- [ ] Node.js sesuai `.nvmrc` (`22.12.0` atau Node 22 LTS), bukan Node 25.
 - [ ] `npm ci` bersih.
 - [ ] `npm run release:check` pass.
 - [ ] `CHANGELOG.md` sudah diisi.
@@ -172,6 +176,10 @@ npm run dev:electron:update-sim
 - [ ] Komputer dengan versi lama berhasil menerima update.
 
 ## Troubleshooting
+
+### Windows 7/8 tidak bisa menjalankan installer
+
+Ini expected untuk konfigurasi saat ini. Electron 43/Chromium modern dan Node.js 22 tidak mendukung Windows 7/8/8.1 secara realistis. Gunakan Web/LAN mode dari server/PC modern atau upgrade OS ke Windows 10/11 64-bit.
 
 ### Aplikasi tidak menemukan update
 

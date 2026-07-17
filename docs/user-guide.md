@@ -19,6 +19,15 @@ Aplikasi ini membantu operasional usaha untuk:
 - Mencetak struk melalui printer thermal jika tersedia.
 - Melihat laporan ringkas di dashboard.
 
+### 1.1 Sistem Operasi yang Didukung
+
+Untuk aplikasi desktop/installer:
+
+- Didukung: **Windows 10/11 64-bit**.
+- Tidak didukung: Windows 7, Windows 8/8.1, dan Windows 32-bit.
+
+Jika perangkat masih memakai Windows 7/8, gunakan mode Web/LAN dari komputer/server yang lebih modern, atau upgrade OS minimal ke Windows 10 64-bit.
+
 ---
 
 ## 2. Setup Awal
@@ -81,6 +90,7 @@ Dashboard menampilkan ringkasan usaha:
 - Volume layanan agen.
 - Fee/profit layanan agen.
 - Keuntungan hari ini.
+- Chart 7 hari berisi omzet, profit, dan jumlah transaksi.
 - Stok menipis.
 - Saldo rekening/kas.
 - Transaksi terakhir.
@@ -256,11 +266,11 @@ Fee berjenjang digunakan jika biaya admin berubah berdasarkan nominal transaksi.
 
 Contoh:
 
-| Nominal | Biaya Admin |
-|---|---:|
-| 0–500.000 | 5.000 |
-| 500.001–2.000.000 | 7.500 |
-| >2.000.000 | 10.000 |
+| Nominal           | Biaya Admin |
+| ----------------- | ----------: |
+| 0–500.000         |       5.000 |
+| 500.001–2.000.000 |       7.500 |
+| >2.000.000        |      10.000 |
 
 ---
 
@@ -317,12 +327,12 @@ Fitur:
 
 ### Status Transaksi
 
-| Status | Arti |
-|---|---|
-| Selesai | Transaksi selesai dan tercatat final |
-| Pending | Transaksi dicatat tetapi perlu penyelesaian/konfirmasi |
-| Dibatalkan | Transaksi dibatalkan |
-| Di-reverse | Transaksi dibalik dengan counter-mutasi |
+| Status     | Arti                                                   |
+| ---------- | ------------------------------------------------------ |
+| Selesai    | Transaksi selesai dan tercatat final                   |
+| Pending    | Transaksi dicatat tetapi perlu penyelesaian/konfirmasi |
+| Dibatalkan | Transaksi dibatalkan                                   |
+| Di-reverse | Transaksi dibalik dengan counter-mutasi                |
 
 ### Complete Pending
 
@@ -476,7 +486,29 @@ Rekomendasi:
 
 ---
 
-## 14. Praktik Operasional yang Disarankan
+## 14. Log & Monitoring Aplikasi
+
+Admin dapat membuka:
+
+```txt
+Pengaturan → Lanjutan → Log & Monitoring Aplikasi
+```
+
+Menu ini digunakan untuk:
+
+- melihat error aplikasi/API,
+- melihat error tampilan,
+- melihat log server Electron,
+- memfilter error/warning/info/debug,
+- mencari pesan log,
+- download log untuk dikirim ke developer,
+- membersihkan log aktif.
+
+Jika aplikasi terasa bermasalah, buka panel ini lalu download log sebelum restart/reinstall.
+
+---
+
+## 15. Praktik Operasional yang Disarankan
 
 1. Cocokkan saldo kas fisik dengan saldo aplikasi setiap akhir hari.
 2. Cocokkan saldo bank real dengan saldo internal aplikasi secara berkala.
@@ -489,7 +521,7 @@ Rekomendasi:
 
 ---
 
-## 15. Troubleshooting Singkat
+## 16. Troubleshooting Singkat
 
 ### Tidak bisa login
 
@@ -526,7 +558,7 @@ Rekomendasi:
 
 ---
 
-## 16. Batasan Aplikasi
+## 17. Batasan Aplikasi
 
 Aplikasi ini tidak menyediakan:
 
@@ -549,7 +581,7 @@ Aplikasi ini fokus pada:
 
 ---
 
-## 17. Alur Tutup Hari yang Disarankan
+## 18. Alur Tutup Hari yang Disarankan
 
 1. Selesaikan semua transaksi pending.
 2. Cek Riwayat Transaksi hari ini.

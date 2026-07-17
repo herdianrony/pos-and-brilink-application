@@ -11,10 +11,10 @@ Dokumen ini menjelaskan cara menjalankan aplikasi dalam dua mode produksi yang d
 
 ## 1. Pilihan Mode Deployment
 
-| Mode | Cocok Untuk | Kelebihan | Catatan |
-|---|---|---|---|
-| Windows Desktop | Laptop/PC kasir Windows | Installer mudah, printer Electron, database lokal, offline-first | Target utama aplikasi |
-| Web/LAN Server | STB Armbian, mini PC, Linux, macOS, server lokal | Bisa diakses banyak device via browser | Printer thermal native perlu strategi terpisah |
+| Mode            | Cocok Untuk                                      | Kelebihan                                                        | Catatan                                               |
+| --------------- | ------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| Windows Desktop | Laptop/PC kasir Windows 10/11 x64                | Installer mudah, printer Electron, database lokal, offline-first | Target utama aplikasi; Windows 7/8/8.1 tidak didukung |
+| Web/LAN Server  | STB Armbian, mini PC, Linux, macOS, server lokal | Bisa diakses banyak device via browser                           | Printer thermal native perlu strategi terpisah        |
 
 ---
 
@@ -25,6 +25,7 @@ Mode ini menggunakan Electron dan cocok untuk kasir utama.
 ### 2.1 Requirement
 
 - Windows 10/11 64-bit.
+- Windows 7, Windows 8/8.1, dan Windows 32-bit tidak didukung.
 - RAM minimal 2GB, disarankan 4GB.
 - Storage kosong minimal 500MB.
 - Printer thermal opsional.
@@ -75,6 +76,7 @@ File penting lain:
 ```txt
 %APPDATA%/BRILink POS/.auth-secret
 %APPDATA%/BRILink POS/printer-config.json
+%APPDATA%/BRILink POS/logs/app.log
 %APPDATA%/BRILink POS/logs/next-server.log
 ```
 
@@ -432,13 +434,12 @@ Jika printer thermal USB dipakai, lebih mudah jalankan aplikasi desktop di Windo
 
 ---
 
-
 ## 10. WhatsApp Owner di Deployment
 
-Fitur WhatsApp Owner memakai `whatsapp-web.js` dan membutuhkan Chromium/Puppeteer. Untuk Windows Desktop, session WhatsApp disimpan di:
+Fitur WhatsApp Owner memakai `wwebjs-electron` di Windows Desktop dan fallback `whatsapp-web.js` di Web/LAN. Untuk Windows Desktop, session disimpan di persistent partition Electron/userData. Lokasi userData terkait:
 
 ```text
-%APPDATA%/BRILink POS/whatsapp-session
+%APPDATA%/BRILink POS/
 ```
 
 Untuk Web/LAN mode, jika `WHATSAPP_SESSION_DIR` tidak diatur, session disimpan di folder home user:
@@ -564,7 +565,11 @@ Cek:
 node -v
 ```
 
-Gunakan Node 22.x.
+Gunakan Node 22.x sesuai `.nvmrc` (`22.12.0` atau Node 22 LTS). Node 25 tidak direkomendasikan untuk build produksi Electron walaupun sebagian test bisa berjalan.
+
+### Windows 7/8 tidak didukung
+
+Installer desktop resmi hanya untuk Windows 10/11 64-bit. Untuk perangkat lama/Windows 7, gunakan Web/LAN mode dari PC/server yang lebih modern atau upgrade OS.
 
 ### Build gagal karena RAM kecil
 
@@ -600,6 +605,21 @@ Windows:
 
 ```bat
 rmdir /s /q .whatsapp-session
+```
+
+### Cek log aplikasi
+
+Di desktop, admin bisa melihat log dari:
+
+```txt
+Pengaturan → Lanjutan → Log & Monitoring Aplikasi
+```
+
+File log ada di:
+
+```txt
+%APPDATA%/BRILink POS/logs/app.log
+%APPDATA%/BRILink POS/logs/next-server.log
 ```
 
 ### Printer tidak muncul di Web/LAN
