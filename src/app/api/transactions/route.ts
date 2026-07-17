@@ -34,7 +34,7 @@ async function getAccountByCode(code: string) {
 function buildTransactionNotes(
   userNotes: unknown,
   denomination: unknown,
-  feeMethod: string
+  feeMethod: string,
 ): string | null {
   const parts: string[] = [];
   if (typeof userNotes === "string" && userNotes.trim()) {
@@ -58,28 +58,46 @@ function buildTransactionNotes(
 // Default: max discount Rp100.000 atau 10% dari subtotal, mana lebih besar.
 // Bila discount > limit, wajib PIN admin (diset di settings: discount_admin_pin).
 async function getDiscountPolicy() {
-  const rows = await db.select().from(settings).where(
-    sql`${settings.key} IN ('max_discount_amount', 'max_discount_percent', 'discount_admin_pin')`
-  );
+  const rows = await db
+    .select()
+    .from(settings)
+    .where(
+      sql`${settings.key} IN ('max_discount_amount', 'max_discount_percent', 'discount_admin_pin')`,
+    );
   const m: Record<string, string> = {};
   for (const r of rows) m[r.key] = r.value;
 
   return {
-    maxAmount: parseSafeNumber(m.max_discount_amount, { default: 100000, min: 0 }),
-    maxPercent: parseSafeNumber(m.max_discount_percent, { default: 10, min: 0, max: 100 }),
+    maxAmount: parseSafeNumber(m.max_discount_amount, {
+      default: 100000,
+      min: 0,
+    }),
+    maxPercent: parseSafeNumber(m.max_discount_percent, {
+      default: 10,
+      min: 0,
+      max: 100,
+    }),
     adminPin: m.discount_admin_pin || "", // bcrypt hash; if empty → no PIN enforcement
   };
 }
 
 // P1: Read default_service_status from settings
 async function getDefaultServiceStatus(): Promise<string> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, "default_service_status")).limit(1);
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, "default_service_status"))
+    .limit(1);
   return row?.value || "recorded";
 }
 
 // P2: Read require_cash_confirmation from settings
 async function getRequireCashConfirmation(): Promise<boolean> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, "require_cash_confirmation")).limit(1);
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, "require_cash_confirmation"))
+    .limit(1);
   return row?.value === "true";
 }
 
@@ -93,7 +111,10 @@ export async function GET(req: NextRequest) {
 
     const sp = req.nextUrl.searchParams;
     const type = sp.get("type");
-    const limit = Math.max(1, Math.min(500, parseInt(sp.get("limit") || "50", 10) || 50));
+    const limit = Math.max(
+      1,
+      Math.min(500, parseInt(sp.get("limit") || "50", 10) || 50),
+    );
 
     const conds = [];
     if (type && type !== "all") conds.push(eq(transactions.type, type));
@@ -105,7 +126,6 @@ export async function GET(req: NextRequest) {
       .orderBy(desc(transactions.createdAt))
       .limit(limit);
     return NextResponse.json(data);
-
   } catch (error) {
     return handleApiError("transactions:GET", error, "Gagal memuat transaksi");
   }
@@ -127,7 +147,10 @@ export async function POST(req: Request) {
 
         // Validate items
         if (!Array.isArray(body.items) || body.items.length === 0) {
-          return NextResponse.json({ error: "Items tidak valid" }, { status: 400 });
+          return NextResponse.json(
+            { error: "Items tidak valid" },
+            { status: 400 },
+          );
         }
 
         // Aggregate qty per productId (prevent duplicate line bypass)
@@ -135,31 +158,56 @@ export async function POST(req: Request) {
         for (const raw of body.items) {
           const qty = Number(raw.quantity);
           if (!Number.isInteger(qty) || qty <= 0) {
-            return NextResponse.json({ error: "Quantity harus integer positif" }, { status: 400 });
+            return NextResponse.json(
+              { error: "Quantity harus integer positif" },
+              { status: 400 },
+            );
           }
           const pid = Number(raw.productId);
           if (!Number.isInteger(pid) || pid <= 0) {
-            return NextResponse.json({ error: "Product ID tidak valid" }, { status: 400 });
+            return NextResponse.json(
+              { error: "Product ID tidak valid" },
+              { status: 400 },
+            );
           }
           aggregated.set(pid, (aggregated.get(pid) || 0) + qty);
         }
 
         // Fetch products, validate stock with AGGREGATED qty
         const serverItems: Array<{
-          productId: number; productName: string; quantity: number;
-          unitPrice: number; buyPrice: number; subtotal: number;
+          productId: number;
+          productName: string;
+          quantity: number;
+          unitPrice: number;
+          buyPrice: number;
+          subtotal: number;
         }> = [];
 
         for (const [pid, qty] of aggregated) {
-          const [product] = await tx.select().from(products).where(eq(products.id, pid)).limit(1);
+          const [product] = await tx
+            .select()
+            .from(products)
+            .where(eq(products.id, pid))
+            .limit(1);
           if (!product) {
-            return NextResponse.json({ error: `Produk ID ${pid} tidak ditemukan` }, { status: 400 });
+            return NextResponse.json(
+              { error: `Produk ID ${pid} tidak ditemukan` },
+              { status: 400 },
+            );
           }
           if (!product.isActive) {
-            return NextResponse.json({ error: `Produk ${product.name} tidak aktif` }, { status: 400 });
+            return NextResponse.json(
+              { error: `Produk ${product.name} tidak aktif` },
+              { status: 400 },
+            );
           }
           if (product.stock < qty) {
-            return NextResponse.json({ error: `Stok ${product.name} tidak cukup (tersisa ${product.stock}, diminta ${qty})` }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: `Stok ${product.name} tidak cukup (tersisa ${product.stock}, diminta ${qty})`,
+              },
+              { status: 400 },
+            );
           }
           const unitPrice = Number(product.sellPrice);
           const buyPrice = Number(product.buyPrice);
@@ -183,14 +231,18 @@ export async function POST(req: Request) {
 
         // F-01: Server-side discount policy
         let discount = 0;
-        const rawDiscount = parseSafeNumber(body.discount, { default: 0, min: 0 });
+        const rawDiscount = parseSafeNumber(body.discount, {
+          default: 0,
+          min: 0,
+        });
         if (rawDiscount > 0) {
           // Cap at total
           discount = Math.min(rawDiscount, totalAmount);
 
           // F-01: Check policy
           const policy = await getDiscountPolicy();
-          const percentOfTotal = totalAmount > 0 ? (discount / totalAmount) * 100 : 0;
+          const percentOfTotal =
+            totalAmount > 0 ? (discount / totalAmount) * 100 : 0;
           const exceedsAmount = discount > policy.maxAmount;
           const exceedsPercent = percentOfTotal > policy.maxPercent;
           const isFullDiscount = discount >= totalAmount && totalAmount > 0;
@@ -199,17 +251,24 @@ export async function POST(req: Request) {
           if (exceedsAmount || exceedsPercent || isFullDiscount) {
             // If no PIN configured → reject all discounts above policy
             if (!policy.adminPin) {
-              return NextResponse.json({
-                error: `Diskon Rp${discount.toLocaleString("id-ID")} melebihi kebijakan (maks Rp${policy.maxAmount.toLocaleString("id-ID")} atau ${policy.maxPercent}% dari subtotal). Mintalah admin untuk mengatur PIN diskon di Pengaturan.`,
-              }, { status: 403 });
+              return NextResponse.json(
+                {
+                  error: `Diskon Rp${discount.toLocaleString("id-ID")} melebihi kebijakan (maks Rp${policy.maxAmount.toLocaleString("id-ID")} atau ${policy.maxPercent}% dari subtotal). Mintalah admin untuk mengatur PIN diskon di Pengaturan.`,
+                },
+                { status: 403 },
+              );
             }
             // Verify admin PIN
             const providedPin = String(body.discountAdminPin || "");
             if (!providedPin) {
-              return NextResponse.json({
-                error: "Diskon besar memerlukan otorisasi admin. Masukkan PIN admin.",
-                code: "DISCOUNT_PIN_REQUIRED",
-              }, { status: 403 });
+              return NextResponse.json(
+                {
+                  error:
+                    "Diskon besar memerlukan otorisasi admin. Masukkan PIN admin.",
+                  code: "DISCOUNT_PIN_REQUIRED",
+                },
+                { status: 403 },
+              );
             }
             // PIN is stored as bcrypt hash in settings; verify with bcryptjs
             // For perf, use a simple equality check on a pre-hashed PIN (less secure but acceptable for local app)
@@ -221,20 +280,26 @@ export async function POST(req: Request) {
               pinOk = false;
             }
             if (!pinOk) {
-              return NextResponse.json({
-                error: "PIN admin tidak valid",
-                code: "DISCOUNT_PIN_INVALID",
-              }, { status: 403 });
+              return NextResponse.json(
+                {
+                  error: "PIN admin tidak valid",
+                  code: "DISCOUNT_PIN_INVALID",
+                },
+                { status: 403 },
+              );
             }
           }
 
           // F-01: Require reason for any discount
           const reason = String(body.discountReason || "").trim();
           if (!reason || reason.length < 3) {
-            return NextResponse.json({
-              error: "Alasan diskon wajib diisi (min 3 karakter)",
-              code: "DISCOUNT_REASON_REQUIRED",
-            }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: "Alasan diskon wajib diisi (min 3 karakter)",
+                code: "DISCOUNT_REASON_REQUIRED",
+              },
+              { status: 400 },
+            );
           }
         }
 
@@ -250,15 +315,22 @@ export async function POST(req: Request) {
             ? `Diskon Rp${discount.toLocaleString("id-ID")}${body.discountReason ? ` — ${body.discountReason}` : ""}`
             : null;
 
-        const [trx] = await tx.insert(transactions).values({
-          invoiceNo,
-          type: "pos",
-          customerName: body.customerName ? String(body.customerName) : null,
-          totalAmount: finalTotal,
-          profit: finalProfit,
-          paymentMethod: body.paymentMethod || "cash",
-          notes,
-        }).returning();
+        const [trx] = await tx
+          .insert(transactions)
+          .values({
+            invoiceNo,
+            type: "pos",
+            customerName: body.customerName ? String(body.customerName) : null,
+            totalAmount: finalTotal,
+            profit: finalProfit,
+            paymentMethod: body.paymentMethod || "cash",
+            notes,
+            settlementAccountId: body.settlementAccountId
+              ? Number(body.settlementAccountId)
+              : null,
+            referenceNo: body.referenceNo ? String(body.referenceNo) : null,
+          })
+          .returning();
 
         // Insert line items + conditional stock decrement
         for (const item of serverItems) {
@@ -271,26 +343,88 @@ export async function POST(req: Request) {
             subtotal: item.subtotal,
           });
           // Conditional update — only decrement if stock >= qty (race-safe)
-          const result = await tx.update(products).set({
-            stock: sql`${products.stock} - ${item.quantity}`,
-          }).where(sql`${products.id} = ${item.productId} AND ${products.stock} >= ${item.quantity}`).returning({ id: products.id });
+          const result = await tx
+            .update(products)
+            .set({
+              stock: sql`${products.stock} - ${item.quantity}`,
+            })
+            .where(
+              sql`${products.id} = ${item.productId} AND ${products.stock} >= ${item.quantity}`,
+            )
+            .returning({ id: products.id });
 
           if (result.length === 0) {
             // F-03: Throw → triggers ROLLBACK on entire transaction
-            throw new Error(`Stok race condition: produk ID ${item.productId} tidak cukup`);
+            throw new Error(
+              `Stok race condition: produk ID ${item.productId} tidak cukup`,
+            );
           }
         }
 
-        // Cash account mutation (cash payment only)
-        if (cashAcc && body.paymentMethod === "cash") {
-          const newBalance = cashAcc.balance + finalTotal;
-          await tx.update(accounts).set({ balance: newBalance, updatedAt: new Date() }).where(eq(accounts.id, cashAcc.id));
+        const paymentMethod = String(body.paymentMethod || "cash");
+
+        if (paymentMethod === "cash") {
+          if (cashAcc) {
+            const newBalance = cashAcc.balance + finalTotal;
+            await tx
+              .update(accounts)
+              .set({ balance: newBalance, updatedAt: new Date() })
+              .where(eq(accounts.id, cashAcc.id));
+            await tx.insert(accountMutations).values({
+              accountId: cashAcc.id,
+              type: "pos_in",
+              amount: finalTotal,
+              balanceAfter: newBalance,
+              notes: `POS Tunai: ${invoiceNo}`,
+              referenceId: trx.id,
+            });
+          }
+        } else {
+          const settlementAccountId = Number(
+            body.settlementAccountId || body.bankAccountId || 0,
+          );
+          if (
+            !Number.isInteger(settlementAccountId) ||
+            settlementAccountId <= 0
+          ) {
+            return NextResponse.json(
+              {
+                error:
+                  "Rekening penerima wajib dipilih untuk pembayaran transfer/QRIS",
+                code: "SETTLEMENT_ACCOUNT_REQUIRED",
+              },
+              { status: 400 },
+            );
+          }
+          const [settlementAcc] = await tx
+            .select()
+            .from(accounts)
+            .where(eq(accounts.id, settlementAccountId))
+            .limit(1);
+          if (
+            !settlementAcc ||
+            !settlementAcc.isActive ||
+            settlementAcc.code === "cash"
+          ) {
+            return NextResponse.json(
+              {
+                error: "Rekening penerima tidak valid atau tidak aktif",
+                code: "INVALID_SETTLEMENT_ACCOUNT",
+              },
+              { status: 400 },
+            );
+          }
+          const newBalance = Number(settlementAcc.balance) + finalTotal;
+          await tx
+            .update(accounts)
+            .set({ balance: newBalance, updatedAt: new Date() })
+            .where(eq(accounts.id, settlementAcc.id));
           await tx.insert(accountMutations).values({
-            accountId: cashAcc.id,
-            type: "pos_in",
+            accountId: settlementAcc.id,
+            type: paymentMethod === "qris" ? "pos_qris_in" : "pos_transfer_in",
             amount: finalTotal,
             balanceAfter: newBalance,
-            notes: `POS: ${invoiceNo}`,
+            notes: `POS ${paymentMethod.toUpperCase()}: ${invoiceNo}${body.referenceNo ? ` — Ref: ${body.referenceNo}` : ""}`,
             referenceId: trx.id,
           });
         }
@@ -304,14 +438,23 @@ export async function POST(req: Request) {
 
         // Fetch service from DB
         const [service] = body.serviceId
-          ? await tx.select().from(brilinkServices).where(eq(brilinkServices.id, body.serviceId))
+          ? await tx
+              .select()
+              .from(brilinkServices)
+              .where(eq(brilinkServices.id, body.serviceId))
           : [];
 
         if (!service) {
-          return NextResponse.json({ error: "Layanan tidak ditemukan" }, { status: 400 });
+          return NextResponse.json(
+            { error: "Layanan tidak ditemukan" },
+            { status: 400 },
+          );
         }
         if (!service.isActive) {
-          return NextResponse.json({ error: "Layanan tidak aktif" }, { status: 400 });
+          return NextResponse.json(
+            { error: "Layanan tidak aktif" },
+            { status: 400 },
+          );
         }
 
         const cashEffect = service.cashEffect;
@@ -321,14 +464,22 @@ export async function POST(req: Request) {
         const flowConfig = getFlowConfig(service);
 
         // S-03: Validate feeMethod against flow allowlist
-        const requestedFeeMethod = String(body.feeMethod || service.defaultFeeMethod || "cash") as FeeMethod;
-        if (flowConfig.showFeeMethod && flowConfig.allowedFeeMethods.length > 0) {
+        const requestedFeeMethod = String(
+          body.feeMethod || service.defaultFeeMethod || "cash",
+        ) as FeeMethod;
+        if (
+          flowConfig.showFeeMethod &&
+          flowConfig.allowedFeeMethods.length > 0
+        ) {
           if (!flowConfig.allowedFeeMethods.includes(requestedFeeMethod)) {
-            return NextResponse.json({
-              error: `Metode biaya '${requestedFeeMethod}' tidak didukung untuk flow ${flowConfig.title}. Yang diizinkan: ${flowConfig.allowedFeeMethods.map(m => FEE_METHOD_LABELS[m]).join(", ")}`,
-              code: "INVALID_FEE_METHOD",
-              allowedMethods: flowConfig.allowedFeeMethods,
-            }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: `Metode biaya '${requestedFeeMethod}' tidak didukung untuk flow ${flowConfig.title}. Yang diizinkan: ${flowConfig.allowedFeeMethods.map((m) => FEE_METHOD_LABELS[m]).join(", ")}`,
+                code: "INVALID_FEE_METHOD",
+                allowedMethods: flowConfig.allowedFeeMethods,
+              },
+              { status: 400 },
+            );
           }
         }
         // Tarik Tunai dengan rekening masuk memakai skenario operasional utama:
@@ -341,45 +492,58 @@ export async function POST(req: Request) {
 
         // S-04: Inquiry flow — no nominal, no fee, no cash effect
         if (flowConfig.flowType === "inquiry") {
-          const [trx] = await tx.insert(transactions).values({
-            invoiceNo,
-            type: "brilink",
-            subType: body.subType || service.name,
-            customerName: body.customerName ? String(body.customerName) : null,
-            customerPhone: body.customerPhone ? String(body.customerPhone) : null,
-            totalAmount: 0,
-            adminFee: 0,
-            profit: 0,
-            paymentMethod: "inquiry",
-            notes: body.notes ? String(body.notes) : null,
-            flowType: flowConfig.flowType,
-            feeMethod: null,
-            cashReceived: 0,
-            cashDispensed: 0,
-            settlementAccountId: null,
-            referenceNo: body.referenceNo ? String(body.referenceNo) : null,
-            status: "completed",
-            confirmedAt: new Date(),
-            confirmedByUserId: auth.ok ? auth.user.id : null,
-          }).returning();
+          const [trx] = await tx
+            .insert(transactions)
+            .values({
+              invoiceNo,
+              type: "brilink",
+              subType: body.subType || service.name,
+              customerName: body.customerName
+                ? String(body.customerName)
+                : null,
+              customerPhone: body.customerPhone
+                ? String(body.customerPhone)
+                : null,
+              totalAmount: 0,
+              adminFee: 0,
+              profit: 0,
+              paymentMethod: "inquiry",
+              notes: body.notes ? String(body.notes) : null,
+              flowType: flowConfig.flowType,
+              feeMethod: null,
+              cashReceived: 0,
+              cashDispensed: 0,
+              settlementAccountId: null,
+              referenceNo: body.referenceNo ? String(body.referenceNo) : null,
+              status: "completed",
+              confirmedAt: new Date(),
+              confirmedByUserId: auth.ok ? auth.user.id : null,
+            })
+            .returning();
           return NextResponse.json(trx);
         }
 
         const totalAmount = parseSafeNumber(body.totalAmount, { min: 1 });
         if (totalAmount <= 0) {
-          return NextResponse.json({ error: "Nominal tidak valid" }, { status: 400 });
+          return NextResponse.json(
+            { error: "Nominal tidak valid" },
+            { status: 400 },
+          );
         }
 
         // F-07: Implement fee tier lookup (remove TODO)
         let adminFee = Number(service.adminFee);
         let agentFee = Number(service.agentFee);
         if (service.useTieredFee) {
-          const tiers = await tx.select().from(feeTiers)
+          const tiers = await tx
+            .select()
+            .from(feeTiers)
             .where(eq(feeTiers.serviceId, service.id))
             .orderBy(asc(feeTiers.minAmount));
           for (const tier of tiers) {
             const minN = Number(tier.minAmount);
-            const maxN = tier.maxAmount === null ? Infinity : Number(tier.maxAmount);
+            const maxN =
+              tier.maxAmount === null ? Infinity : Number(tier.maxAmount);
             if (totalAmount >= minN && totalAmount <= maxN) {
               adminFee = Number(tier.adminFee);
               agentFee = Number(tier.agentFee);
@@ -402,37 +566,66 @@ export async function POST(req: Request) {
         if (flowConfig.requiresCashHandling) {
           const requireCashConfirm = await getRequireCashConfirmation();
           if (requireCashConfirm && !body.cashConfirmed) {
-            return NextResponse.json({
-              error: "Konfirmasi uang fisik wajib untuk transaksi ini.",
-              code: "CASH_CONFIRMATION_REQUIRED",
-            }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: "Konfirmasi uang fisik wajib untuk transaksi ini.",
+                code: "CASH_CONFIRMATION_REQUIRED",
+              },
+              { status: 400 },
+            );
           }
         }
 
         // ── S-02: Use unified cash flow calculator ──
-        const cashFlow = calculateCashFlow(cashEffect, totalAmount, adminFee, feeMethod);
-        const bankFlow = calculateBankFlow(cashEffect, bankEffect, totalAmount, adminFee, feeMethod);
+        const cashFlow = calculateCashFlow(
+          cashEffect,
+          totalAmount,
+          adminFee,
+          feeMethod,
+        );
+        const bankFlow = calculateBankFlow(
+          cashEffect,
+          bankEffect,
+          totalAmount,
+          adminFee,
+          feeMethod,
+        );
         const bankAbsAmount = Math.abs(bankFlow.bankDelta);
 
         // F-02: Pre-validate balances BEFORE writing
         let cashBalanceAfter = cashAcc?.balance ?? 0;
         if (cashAcc && cashFlow.cashDispensed > 0) {
-          const [freshCash] = await tx.select().from(accounts).where(eq(accounts.id, cashAcc.id));
+          const [freshCash] = await tx
+            .select()
+            .from(accounts)
+            .where(eq(accounts.id, cashAcc.id));
           if (!freshCash) {
-            return NextResponse.json({ error: "Akun kas tidak ditemukan" }, { status: 400 });
+            return NextResponse.json(
+              { error: "Akun kas tidak ditemukan" },
+              { status: 400 },
+            );
           }
           // S-02: check against cashDispensed (not full nominal for deducted)
           if (freshCash.balance < cashFlow.cashDispensed) {
-            return NextResponse.json({
-              error: `Saldo kas tidak cukup. Saldo: Rp${Number(freshCash.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${cashFlow.cashDispensed.toLocaleString("id-ID")}`,
-              code: "INSUFFICIENT_CASH",
-            }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: `Saldo kas tidak cukup. Saldo: Rp${Number(freshCash.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${cashFlow.cashDispensed.toLocaleString("id-ID")}`,
+                code: "INSUFFICIENT_CASH",
+              },
+              { status: 400 },
+            );
           }
           cashBalanceAfter = freshCash.balance + cashFlow.cashDelta;
         } else if (cashAcc && cashFlow.cashReceived > 0) {
-          const [freshCash] = await tx.select().from(accounts).where(eq(accounts.id, cashAcc.id));
+          const [freshCash] = await tx
+            .select()
+            .from(accounts)
+            .where(eq(accounts.id, cashAcc.id));
           if (!freshCash) {
-            return NextResponse.json({ error: "Akun kas tidak ditemukan" }, { status: 400 });
+            return NextResponse.json(
+              { error: "Akun kas tidak ditemukan" },
+              { status: 400 },
+            );
           }
           cashBalanceAfter = freshCash.balance + cashFlow.cashDelta;
         }
@@ -440,59 +633,89 @@ export async function POST(req: Request) {
         let bankAcc: typeof accounts.$inferSelect | null = null;
         let bankBalanceAfter = 0;
         if (bankAccId && bankEffect !== "none") {
-          const [ba] = await tx.select().from(accounts).where(eq(accounts.id, bankAccId));
+          const [ba] = await tx
+            .select()
+            .from(accounts)
+            .where(eq(accounts.id, bankAccId));
           if (!ba) {
-            return NextResponse.json({ error: "Akun bank tidak ditemukan" }, { status: 400 });
+            return NextResponse.json(
+              { error: "Akun bank tidak ditemukan" },
+              { status: 400 },
+            );
           }
           if (!ba.isActive) {
-            return NextResponse.json({ error: `Akun bank ${ba.name} tidak aktif` }, { status: 400 });
+            return NextResponse.json(
+              { error: `Akun bank ${ba.name} tidak aktif` },
+              { status: 400 },
+            );
           }
           if (bankEffect === "out" && ba.balance < bankAbsAmount) {
-            return NextResponse.json({
-              error: `Saldo ${ba.name} tidak cukup. Saldo: Rp${Number(ba.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${bankAbsAmount.toLocaleString("id-ID")}`,
-              code: "INSUFFICIENT_BANK_BALANCE",
-            }, { status: 400 });
+            return NextResponse.json(
+              {
+                error: `Saldo ${ba.name} tidak cukup. Saldo: Rp${Number(ba.balance).toLocaleString("id-ID")}, dibutuhkan: Rp${bankAbsAmount.toLocaleString("id-ID")}`,
+                code: "INSUFFICIENT_BANK_BALANCE",
+              },
+              { status: 400 },
+            );
           }
           bankAcc = ba;
           bankBalanceAfter = ba.balance + bankFlow.bankDelta;
         }
 
-        const [trx] = await tx.insert(transactions).values({
-          invoiceNo,
-          type: "brilink",
-          subType: body.subType || service.name,
-          customerName: body.customerName ? String(body.customerName) : null,
-          customerPhone: body.customerPhone ? String(body.customerPhone) : null,
-          totalAmount,
-          adminFee,
-          profit: agentFee,
-          paymentMethod: body.paymentMethod || "cash",
-          notes: buildTransactionNotes(body.notes, body.denomination, feeMethod),
-          // S-05: structured audit fields
-          flowType: flowConfig.flowType,
-          feeMethod,
-          cashReceived: cashFlow.cashReceived,
-          cashDispensed: cashFlow.cashDispensed,
-          settlementAccountId: bankAccId,
-          referenceNo: body.referenceNo ? String(body.referenceNo) : null,
-          // P1: Read default_service_status from settings
-          // If 'recorded' → external provider transactions start as pending
-          // If 'completed' → all transactions start as completed
-          status: flowConfig.involvesExternalProvider
-            ? (defaultServiceStatus === "completed" ? "completed" : "pending")
-            : "completed",
-          confirmedAt: (flowConfig.involvesExternalProvider && defaultServiceStatus !== "completed")
-            ? null
-            : new Date(),
-          confirmedByUserId: (flowConfig.involvesExternalProvider && defaultServiceStatus !== "completed")
-            ? null
-            : (auth.ok ? auth.user.id : null),
-        }).returning();
+        const [trx] = await tx
+          .insert(transactions)
+          .values({
+            invoiceNo,
+            type: "brilink",
+            subType: body.subType || service.name,
+            customerName: body.customerName ? String(body.customerName) : null,
+            customerPhone: body.customerPhone
+              ? String(body.customerPhone)
+              : null,
+            totalAmount,
+            adminFee,
+            profit: agentFee,
+            paymentMethod: body.paymentMethod || "cash",
+            notes: buildTransactionNotes(
+              body.notes,
+              body.denomination,
+              feeMethod,
+            ),
+            // S-05: structured audit fields
+            flowType: flowConfig.flowType,
+            feeMethod,
+            cashReceived: cashFlow.cashReceived,
+            cashDispensed: cashFlow.cashDispensed,
+            settlementAccountId: bankAccId,
+            referenceNo: body.referenceNo ? String(body.referenceNo) : null,
+            // P1: Read default_service_status from settings
+            // If 'recorded' → external provider transactions start as pending
+            // If 'completed' → all transactions start as completed
+            status: flowConfig.involvesExternalProvider
+              ? defaultServiceStatus === "completed"
+                ? "completed"
+                : "pending"
+              : "completed",
+            confirmedAt:
+              flowConfig.involvesExternalProvider &&
+              defaultServiceStatus !== "completed"
+                ? null
+                : new Date(),
+            confirmedByUserId:
+              flowConfig.involvesExternalProvider &&
+              defaultServiceStatus !== "completed"
+                ? null
+                : auth.ok
+                  ? auth.user.id
+                  : null,
+          })
+          .returning();
 
         // S-05: Store denomination breakdown in separate table
         if (body.denomination && typeof body.denomination === "object") {
-          const denomEntries = Object.entries(body.denomination as Record<string, number>)
-            .filter(([, count]) => count > 0);
+          const denomEntries = Object.entries(
+            body.denomination as Record<string, number>,
+          ).filter(([, count]) => count > 0);
           if (denomEntries.length > 0) {
             await tx.insert(transactionDenominations).values(
               denomEntries.map(([val, count]) => ({
@@ -500,7 +723,7 @@ export async function POST(req: Request) {
                 denomination: parseInt(val),
                 count,
                 subtotal: parseInt(val) * count,
-              }))
+              })),
             );
           }
         }
@@ -509,7 +732,8 @@ export async function POST(req: Request) {
         if (cashAcc && cashFlow.cashDelta !== 0) {
           if (cashFlow.cashDelta > 0) {
             // Cash in
-            const result = await tx.update(accounts)
+            const result = await tx
+              .update(accounts)
               .set({ balance: cashBalanceAfter, updatedAt: new Date() })
               .where(eq(accounts.id, cashAcc.id))
               .returning({ id: accounts.id });
@@ -517,21 +741,34 @@ export async function POST(req: Request) {
               throw new Error("Gagal update kas (race condition)");
             }
             await tx.insert(accountMutations).values({
-              accountId: cashAcc.id, type: "brilink_in", amount: cashFlow.cashDelta, balanceAfter: cashBalanceAfter,
-              notes: `BRILink IN: ${service.name} - ${invoiceNo}`, referenceId: trx.id,
+              accountId: cashAcc.id,
+              type: "brilink_in",
+              amount: cashFlow.cashDelta,
+              balanceAfter: cashBalanceAfter,
+              notes: `BRILink IN: ${service.name} - ${invoiceNo}`,
+              referenceId: trx.id,
             });
           } else {
             // Cash out — conditional update (S-02: check against cashDispensed)
-            const result = await tx.update(accounts)
+            const result = await tx
+              .update(accounts)
               .set({ balance: cashBalanceAfter, updatedAt: new Date() })
-              .where(sql`${accounts.id} = ${cashAcc.id} AND ${accounts.balance} >= ${cashFlow.cashDispensed}`)
+              .where(
+                sql`${accounts.id} = ${cashAcc.id} AND ${accounts.balance} >= ${cashFlow.cashDispensed}`,
+              )
               .returning({ id: accounts.id });
             if (result.length === 0) {
-              throw new Error(`Saldo kas tidak cukup (race condition) untuk ${service.name}`);
+              throw new Error(
+                `Saldo kas tidak cukup (race condition) untuk ${service.name}`,
+              );
             }
             await tx.insert(accountMutations).values({
-              accountId: cashAcc.id, type: "brilink_out", amount: cashFlow.cashDelta, balanceAfter: cashBalanceAfter,
-              notes: `BRILink OUT: ${service.name} - ${invoiceNo}`, referenceId: trx.id,
+              accountId: cashAcc.id,
+              type: "brilink_out",
+              amount: cashFlow.cashDelta,
+              balanceAfter: cashBalanceAfter,
+              notes: `BRILink OUT: ${service.name} - ${invoiceNo}`,
+              referenceId: trx.id,
             });
           }
         }
@@ -539,22 +776,38 @@ export async function POST(req: Request) {
         // ── Bank account effect ─────────────────────
         if (bankAcc && bankEffect !== "none") {
           if (bankEffect === "in") {
-            await tx.update(accounts).set({ balance: bankBalanceAfter, updatedAt: new Date() }).where(eq(accounts.id, bankAcc.id));
+            await tx
+              .update(accounts)
+              .set({ balance: bankBalanceAfter, updatedAt: new Date() })
+              .where(eq(accounts.id, bankAcc.id));
             await tx.insert(accountMutations).values({
-              accountId: bankAcc.id, type: "brilink_in", amount: bankAbsAmount, balanceAfter: bankBalanceAfter,
-              notes: `BRILink IN: ${service.name} → ${bankAcc.name} - ${invoiceNo}`, referenceId: trx.id,
+              accountId: bankAcc.id,
+              type: "brilink_in",
+              amount: bankAbsAmount,
+              balanceAfter: bankBalanceAfter,
+              notes: `BRILink IN: ${service.name} → ${bankAcc.name} - ${invoiceNo}`,
+              referenceId: trx.id,
             });
           } else if (bankEffect === "out") {
-            const result = await tx.update(accounts)
+            const result = await tx
+              .update(accounts)
               .set({ balance: bankBalanceAfter, updatedAt: new Date() })
-              .where(sql`${accounts.id} = ${bankAcc.id} AND ${accounts.balance} >= ${bankAbsAmount}`)
+              .where(
+                sql`${accounts.id} = ${bankAcc.id} AND ${accounts.balance} >= ${bankAbsAmount}`,
+              )
               .returning({ id: accounts.id });
             if (result.length === 0) {
-              throw new Error(`Saldo ${bankAcc.name} tidak cukup (race condition) untuk ${service.name}`);
+              throw new Error(
+                `Saldo ${bankAcc.name} tidak cukup (race condition) untuk ${service.name}`,
+              );
             }
             await tx.insert(accountMutations).values({
-              accountId: bankAcc.id, type: "brilink_out", amount: -bankAbsAmount, balanceAfter: bankBalanceAfter,
-              notes: `BRILink OUT: ${service.name} ← ${bankAcc.name} - ${invoiceNo}`, referenceId: trx.id,
+              accountId: bankAcc.id,
+              type: "brilink_out",
+              amount: -bankAbsAmount,
+              balanceAfter: bankBalanceAfter,
+              notes: `BRILink OUT: ${service.name} ← ${bankAcc.name} - ${invoiceNo}`,
+              referenceId: trx.id,
             });
           }
         }
@@ -562,8 +815,11 @@ export async function POST(req: Request) {
         return NextResponse.json(trx);
       });
     }
-
   } catch (error) {
-    return handleApiError("transactions:POST", error, "Gagal memproses transaksi");
+    return handleApiError(
+      "transactions:POST",
+      error,
+      "Gagal memproses transaksi",
+    );
   }
 }
