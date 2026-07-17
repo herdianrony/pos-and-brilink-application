@@ -296,6 +296,77 @@ async function withTimeout<T>(
   }
 }
 
+async function isClientSendReady() {
+  if (!state.client) return false;
+  if (state.status === "ready") return true;
+  if (
+    state.status === "qr" ||
+    state.status === "error" ||
+    state.status === "disconnected"
+  )
+    return false;
+
+  try {
+    const waState =
+      typeof state.client.getState === "function"
+        ? await state.client.getState().catch(() => null)
+        : null;
+    const injectionReady = state.client.pupPage
+      ? await state.client.pupPage
+          .evaluate(() => {
+            const w = window as typeof window & {
+              Store?: { Chat?: unknown; Msg?: unknown };
+              WWebJS?: { getChat?: unknown; sendMessage?: unknown };
+            };
+            return Boolean(
+              w.Store?.Chat &&
+              w.Store?.Msg &&
+              typeof w.WWebJS?.getChat === "function" &&
+              typeof w.WWebJS?.sendMessage === "function",
+            );
+          })
+          .catch(() => false)
+      : false;
+
+    log("readiness probe", { waState, injectionReady }, "debug");
+    if ((waState === "CONNECTED" || waState === "OPENING") && injectionReady) {
+      state.status = "ready";
+      state.qrDataUrl = null;
+      state.lastError = null;
+      if (qrTimeout) clearTimeout(qrTimeout);
+      log("ready via readiness probe", { waState });
+      return true;
+    }
+  } catch (error) {
+    log("readiness probe failed", error, "warn");
+  }
+  return false;
+}
+
+async function waitForClientReady(timeoutMs = 120_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (await isClientSendReady()) return true;
+    if (
+      state.status === "qr" ||
+      state.status === "error" ||
+      state.status === "disconnected"
+    )
+      return false;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  log("readiness wait timeout", { timeoutMs, status: state.status }, "warn");
+  return false;
+}
+
+function scheduleReadinessWatch(reason: string) {
+  void (async () => {
+    log("readiness watch started", { reason });
+    const ready = await waitForClientReady(120_000);
+    log("readiness watch finished", { reason, ready, status: state.status });
+  })();
+}
+
 function setQrWithTtl(qrDataUrl: string) {
   state.qrDataUrl = qrDataUrl;
   state.status = "qr";
@@ -376,6 +447,12 @@ function ensureWindow() {
 }
 
 export async function getWhatsAppStatus() {
+  if (
+    state.client &&
+    (state.status === "authenticated" || state.status === "initializing")
+  ) {
+    await isClientSendReady();
+  }
   return {
     status: state.status,
     qrDataUrl: state.qrDataUrl,
@@ -471,6 +548,7 @@ async function startWhatsAppClientLocked() {
       state.status = "authenticated";
       state.qrDataUrl = null;
       if (qrTimeout) clearTimeout(qrTimeout);
+      scheduleReadinessWatch("authenticated");
     });
     client.on("ready", () => {
       log("ready");
@@ -499,6 +577,7 @@ async function startWhatsAppClientLocked() {
     log("client.initialize called", { mode: state.mode });
     await withTimeout(client.initialize(), 90_000, "WhatsApp initialize");
     log("client.initialize returned", await getWhatsAppStatus());
+    scheduleReadinessWatch("initialize-returned");
     return getWhatsAppStatus();
   } catch (error) {
     state.status = "error";
@@ -592,11 +671,13 @@ export async function sendWhatsAppMessage(to: string, message: string) {
 
   if (!state.client || state.status !== "ready") {
     const status = await startWhatsAppClient();
-    if (status.status !== "ready") {
+    const ready =
+      status.status === "ready" || (await waitForClientReady(30_000));
+    if (!ready) {
       return {
         ok: false,
-        error: `WhatsApp belum siap (status: ${status.status})`,
-        status,
+        error: `WhatsApp belum siap (status: ${state.status})`,
+        status: await getWhatsAppStatus(),
       };
     }
   }
