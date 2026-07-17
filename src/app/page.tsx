@@ -27,7 +27,16 @@ export default function Home() {
       const hash = window.location.hash.replace("#", "");
       if (hash) {
         // Map hash to page IDs
-        const validPages = ["dashboard", "pos", "brilink", "products", "history", "rekeningKoran", "cash", "settings"];
+        const validPages = [
+          "dashboard",
+          "pos",
+          "brilink",
+          "products",
+          "history",
+          "rekeningKoran",
+          "cash",
+          "settings",
+        ];
         if (validPages.includes(hash)) {
           setPage(hash);
           // Clear hash so it doesn't loop
@@ -35,6 +44,7 @@ export default function Home() {
         }
       }
     }
+    handleHashChange();
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
@@ -44,7 +54,9 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400 font-medium">Mempersiapkan aplikasi...</p>
+          <p className="text-slate-400 font-medium">
+            Mempersiapkan aplikasi...
+          </p>
         </div>
       </div>
     );
@@ -52,15 +64,24 @@ export default function Home() {
 
   function renderPage() {
     switch (page) {
-      case "dashboard": return <Dashboard />;
-      case "pos": return <POS />;
-      case "brilink": return <BRILink />;
-      case "products": return <Products />;
-      case "history": return <History />;
-      case "rekeningKoran": return <RekeningKoran />;
-      case "cash": return <Cash />;
-      case "settings": return <SettingsPage />;
-      default: return <Dashboard />;
+      case "dashboard":
+        return <Dashboard />;
+      case "pos":
+        return <POS />;
+      case "brilink":
+        return <BRILink />;
+      case "products":
+        return <Products />;
+      case "history":
+        return <History />;
+      case "rekeningKoran":
+        return <RekeningKoran />;
+      case "cash":
+        return <Cash />;
+      case "settings":
+        return <SettingsPage />;
+      default:
+        return <Dashboard />;
     }
   }
 

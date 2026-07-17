@@ -13,6 +13,9 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Tombol cek update dan simulasi update di halaman Tentang saat berjalan di Electron.
 - Panel **Log & Monitoring Aplikasi** di Pengaturan > Lanjutan untuk memantau error API, error tampilan, log server Electron, download log, dan membersihkan log aktif.
 - Chart Dashboard 7 hari yang lebih informatif dengan omzet, profit, jumlah transaksi, tooltip, ringkasan total, dan data tanggal kosong tetap tampil.
+- Navigasi hash awal (`/#brilink`, `/#settings`, dll.) diproses saat halaman pertama kali dibuka agar E2E dan deep-link langsung masuk ke halaman tujuan.
+- Data demo E2E mengaktifkan saldo kas dan rekening BRI secara deterministik di mode development agar skenario layanan agen dan insufficient balance stabil.
+- Login setelah submit memakai full navigation agar cookie httpOnly terbaca stabil oleh middleware pada Playwright/Electron.
 
 ### Security
 - Mengamankan IPC `whatsapp:send` Electron dengan token HMAC yang terikat ke nomor owner, isi pesan, dan masa kedaluwarsa.
