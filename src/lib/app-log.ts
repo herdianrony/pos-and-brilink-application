@@ -26,6 +26,10 @@ export function getNextServerLogPath() {
   return path.join(getLogDir(), "next-server.log");
 }
 
+export function getWhatsAppElectronLogPath() {
+  return path.join(getLogDir(), "whatsapp-electron.log");
+}
+
 function sanitize(value: unknown, depth = 0): unknown {
   if (value == null) return value;
   if (value instanceof Error) {
@@ -36,16 +40,26 @@ function sanitize(value: unknown, depth = 0): unknown {
     };
   }
   if (typeof value === "string") {
-    return value.length > MAX_DETAIL_LENGTH ? `${value.slice(0, MAX_DETAIL_LENGTH)}…` : value;
+    return value.length > MAX_DETAIL_LENGTH
+      ? `${value.slice(0, MAX_DETAIL_LENGTH)}…`
+      : value;
   }
   if (typeof value !== "object") return value;
   if (depth >= 3) return "[truncated]";
-  if (Array.isArray(value)) return value.slice(0, 30).map((item) => sanitize(item, depth + 1));
+  if (Array.isArray(value))
+    return value.slice(0, 30).map((item) => sanitize(item, depth + 1));
 
   const out: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value as Record<string, unknown>).slice(0, 50)) {
+  for (const [key, item] of Object.entries(
+    value as Record<string, unknown>,
+  ).slice(0, 50)) {
     const lower = key.toLowerCase();
-    if (lower.includes("password") || lower.includes("token") || lower.includes("secret") || lower.includes("pin")) {
+    if (
+      lower.includes("password") ||
+      lower.includes("token") ||
+      lower.includes("secret") ||
+      lower.includes("pin")
+    ) {
       out[key] = "[redacted]";
       continue;
     }
@@ -66,7 +80,12 @@ async function rotateIfNeeded(filePath: string) {
   }
 }
 
-export async function appendAppLog(level: AppLogLevel, source: string, message: string, details?: unknown) {
+export async function appendAppLog(
+  level: AppLogLevel,
+  source: string,
+  message: string,
+  details?: unknown,
+) {
   const entry: AppLogEntry = {
     ts: new Date().toISOString(),
     level,
@@ -76,7 +95,9 @@ export async function appendAppLog(level: AppLogLevel, source: string, message: 
   };
 
   const logPath = getAppLogPath();
-  await fs.mkdir(path.dirname(logPath), { recursive: true, mode: 0o700 }).catch(() => {});
+  await fs
+    .mkdir(path.dirname(logPath), { recursive: true, mode: 0o700 })
+    .catch(() => {});
   await rotateIfNeeded(logPath);
   await fs.appendFile(logPath, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
 }
@@ -100,27 +121,34 @@ function parseAppLogLine(line: string): AppLogEntry | null {
   }
 }
 
-function parseTextLogLine(line: string): AppLogEntry {
+function parseTextLogLine(line: string, source = "next-server"): AppLogEntry {
   const isError = /\berror\b|\[stderr\]|failed|gagal/i.test(line);
   const isWarn = /\bwarn/i.test(line);
   return {
     ts: new Date().toISOString(),
     level: isError ? "error" : isWarn ? "warn" : "info",
-    source: "next-server",
+    source,
     message: line.slice(0, 1000),
   };
 }
 
-export async function readLogs(options: { limit?: number; level?: string; q?: string } = {}) {
+export async function readLogs(
+  options: { limit?: number; level?: string; q?: string } = {},
+) {
   const limit = Math.min(Math.max(Number(options.limit || 200), 1), 1000);
-  const [appLines, nextLines] = await Promise.all([
+  const [appLines, nextLines, whatsAppElectronLines] = await Promise.all([
     readTailLines(getAppLogPath(), limit),
     readTailLines(getNextServerLogPath(), Math.min(limit, 300)),
+    readTailLines(getWhatsAppElectronLogPath(), Math.min(limit, 500)),
   ]);
 
   let entries = [
     ...appLines.map(parseAppLogLine).filter(Boolean),
-    ...nextLines.map(parseTextLogLine),
+    ...nextLines.map((line) => parseTextLogLine(line, "next-server")),
+    ...whatsAppElectronLines.map(
+      (line) =>
+        parseAppLogLine(line) || parseTextLogLine(line, "whatsapp-electron"),
+    ),
   ] as AppLogEntry[];
 
   if (options.level && options.level !== "all") {
@@ -129,7 +157,9 @@ export async function readLogs(options: { limit?: number; level?: string; q?: st
   if (options.q) {
     const q = options.q.toLowerCase();
     entries = entries.filter((entry) =>
-      `${entry.source} ${entry.message} ${JSON.stringify(entry.details || "")}`.toLowerCase().includes(q),
+      `${entry.source} ${entry.message} ${JSON.stringify(entry.details || "")}`
+        .toLowerCase()
+        .includes(q),
     );
   }
 
@@ -139,6 +169,13 @@ export async function readLogs(options: { limit?: number; level?: string; q?: st
 }
 
 export async function clearAppLogs() {
-  await fs.rm(getAppLogPath(), { force: true }).catch(() => {});
-  await appendAppLog("info", "system/logs", "Log aplikasi dibersihkan oleh admin");
+  await Promise.all([
+    fs.rm(getAppLogPath(), { force: true }).catch(() => {}),
+    fs.rm(getWhatsAppElectronLogPath(), { force: true }).catch(() => {}),
+  ]);
+  await appendAppLog(
+    "info",
+    "system/logs",
+    "Log aplikasi dibersihkan oleh admin",
+  );
 }

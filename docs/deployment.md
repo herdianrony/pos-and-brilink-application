@@ -78,6 +78,7 @@ File penting lain:
 %APPDATA%/BRILink POS/printer-config.json
 %APPDATA%/BRILink POS/logs/app.log
 %APPDATA%/BRILink POS/logs/next-server.log
+%APPDATA%/BRILink POS/logs/whatsapp-electron.log
 ```
 
 ### 2.5 Backup Desktop
@@ -620,6 +621,7 @@ File log ada di:
 ```txt
 %APPDATA%/BRILink POS/logs/app.log
 %APPDATA%/BRILink POS/logs/next-server.log
+%APPDATA%/BRILink POS/logs/whatsapp-electron.log
 ```
 
 ### Printer tidak muncul di Web/LAN

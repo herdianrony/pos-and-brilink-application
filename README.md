@@ -472,6 +472,7 @@ Lokasi file log desktop:
 ```text
 %APPDATA%/BRILink POS/logs/app.log
 %APPDATA%/BRILink POS/logs/next-server.log
+%APPDATA%/BRILink POS/logs/whatsapp-electron.log
 ```
 
 ## Database

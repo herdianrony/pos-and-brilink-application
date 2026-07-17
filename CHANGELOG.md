@@ -18,6 +18,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Data demo E2E mengaktifkan saldo kas dan rekening BRI secara deterministik di mode development agar skenario layanan agen dan insufficient balance stabil.
 - Login setelah submit memakai full navigation agar cookie httpOnly terbaca stabil oleh middleware pada Playwright/Electron.
 - Dokumentasi release/deployment/user guide diselaraskan: desktop resmi Windows 10/11 x64, Windows 7/8/8.1 tidak didukung, Node 22 LTS untuk build produksi, dan OS lain memakai Web/LAN mode.
+- Log WhatsApp Electron khusus (`whatsapp-electron.log`) untuk event QR, authenticated, ready, disconnected, restart/logout, dan hasil kirim pesan; log ini ikut tampil di panel Log & Monitoring.
 
 ### Security
 

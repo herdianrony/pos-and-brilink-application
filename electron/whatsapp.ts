@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 // IMPORTANT: require wwebjs-electron from Electron main process before app.whenReady().
 // It appends the remote debugging switch needed to attach to Electron Chromium.
@@ -43,6 +45,7 @@ const restartCooldownMs = 10_000;
 const sendTimestamps: number[] = [];
 const maxSendsPerMinute = 10;
 const maxMessageLength = 4096;
+const maxLogBytes = 2 * 1024 * 1024;
 
 function normalizeWhatsAppNumber(input: string) {
   const digits = String(input || "").replace(/\D/g, "");
@@ -95,9 +98,90 @@ function checkSendRateLimit() {
   return true;
 }
 
-function log(message: string, extra?: unknown) {
+function getWhatsAppLogPath() {
+  try {
+    const dir = app.isReady()
+      ? path.join(app.getPath("userData"), "logs")
+      : path.join(process.cwd(), ".data", "logs");
+    return path.join(dir, "whatsapp-electron.log");
+  } catch {
+    return path.join(process.cwd(), ".data", "logs", "whatsapp-electron.log");
+  }
+}
+
+function sanitizeLogExtra(extra: unknown, depth = 0): unknown {
+  if (extra == null) return extra;
+  if (extra instanceof Error) {
+    return {
+      name: extra.name,
+      message: extra.message,
+      stack: extra.stack?.split("\n").slice(0, 12).join("\n"),
+    };
+  }
+  if (typeof extra === "string") return extra.slice(0, 3000);
+  if (typeof extra !== "object") return extra;
+  if (depth >= 3) return "[truncated]";
+  if (Array.isArray(extra))
+    return extra.slice(0, 30).map((item) => sanitizeLogExtra(item, depth + 1));
+
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(
+    extra as Record<string, unknown>,
+  ).slice(0, 50)) {
+    const lower = key.toLowerCase();
+    if (
+      lower.includes("token") ||
+      lower.includes("secret") ||
+      lower.includes("password") ||
+      lower.includes("pin")
+    ) {
+      out[key] = "[redacted]";
+      continue;
+    }
+    out[key] = sanitizeLogExtra(value, depth + 1);
+  }
+  return out;
+}
+
+function appendWhatsAppLog(
+  level: "debug" | "info" | "warn" | "error",
+  message: string,
+  extra?: unknown,
+) {
+  try {
+    const logPath = getWhatsAppLogPath();
+    fs.mkdirSync(path.dirname(logPath), { recursive: true, mode: 0o700 });
+    try {
+      const stat = fs.statSync(logPath);
+      if (stat.size > maxLogBytes) {
+        fs.rmSync(`${logPath}.1`, { force: true });
+        fs.renameSync(logPath, `${logPath}.1`);
+      }
+    } catch {
+      // file does not exist yet
+    }
+
+    const entry = {
+      ts: new Date().toISOString(),
+      level,
+      source: "whatsapp-electron",
+      message: String(message || "").slice(0, 1000),
+      ...(extra !== undefined ? { details: sanitizeLogExtra(extra) } : {}),
+    };
+    fs.appendFileSync(logPath, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
+  } catch (error) {
+    console.warn("[whatsapp-electron] failed to write log", error);
+  }
+}
+
+function log(
+  message: string,
+  extra?: unknown,
+  level: "debug" | "info" | "warn" | "error" = "info",
+) {
   if (extra !== undefined) console.log(`[whatsapp-electron] ${message}`, extra);
   else console.log(`[whatsapp-electron] ${message}`);
+  appendWhatsAppLog(level, message, extra);
 }
 
 function setQrWithTtl(qrDataUrl: string) {
@@ -160,6 +244,7 @@ async function startWhatsAppClientLocked() {
   state.initializing = true;
   state.status = "initializing";
   state.lastError = null;
+  log("start requested");
 
   try {
     const win = ensureWindow();
@@ -190,13 +275,13 @@ async function startWhatsAppClientLocked() {
       if (qrTimeout) clearTimeout(qrTimeout);
     });
     client.on("disconnected", (reason: string) => {
-      log("disconnected", reason);
+      log("disconnected", reason, "warn");
       state.status = "disconnected";
       state.lastError = reason || null;
       state.client = null;
     });
     client.on("auth_failure", (message: string) => {
-      log("auth failure", message);
+      log("auth failure", message, "error");
       state.status = "error";
       state.lastError = message || "Auth failure";
     });
@@ -211,7 +296,7 @@ async function startWhatsAppClientLocked() {
     state.status = "error";
     state.client = null;
     state.lastError = error instanceof Error ? error.message : String(error);
-    log("init error", state.lastError);
+    log("init error", state.lastError, "error");
     return getWhatsAppStatus();
   } finally {
     state.initializing = false;
@@ -219,8 +304,14 @@ async function startWhatsAppClientLocked() {
 }
 
 export async function restartWhatsAppClient() {
+  log("restart requested");
   const now = Date.now();
   if (now - lastRestartAt < restartCooldownMs) {
+    log(
+      "restart rejected by cooldown",
+      { lastRestartAt, restartCooldownMs },
+      "warn",
+    );
     return {
       ...(await getWhatsAppStatus()),
       error:
@@ -248,6 +339,7 @@ export async function restartWhatsAppClient() {
 }
 
 export async function logoutWhatsAppClient() {
+  log("logout requested");
   try {
     if (state.client) {
       await state.client.logout().catch(() => {});
@@ -269,6 +361,10 @@ export async function logoutWhatsAppClient() {
 }
 
 export async function sendWhatsAppMessage(to: string, message: string) {
+  log("send requested", {
+    to: normalizeWhatsAppNumber(to),
+    messageLength: String(message || "").length,
+  });
   if (!message || message.length > maxMessageLength) {
     return {
       ok: false,
@@ -300,11 +396,12 @@ export async function sendWhatsAppMessage(to: string, message: string) {
       return { ok: false, error: "Nomor WhatsApp tujuan tidak valid" };
     const chatId = `${number}@c.us`;
     await state.client.sendMessage(chatId, message);
+    log("send success", { to: number });
     return { ok: true };
   } catch (error) {
     const messageText = error instanceof Error ? error.message : String(error);
     state.lastError = messageText;
-    log("send error", messageText);
+    log("send error", messageText, "error");
     return { ok: false, error: messageText, status: await getWhatsAppStatus() };
   }
 }

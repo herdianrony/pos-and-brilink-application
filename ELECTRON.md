@@ -206,6 +206,7 @@ File yang relevan:
 %APPDATA%/BRILink POS/pos-brilink.db
 %APPDATA%/BRILink POS/.auth-secret
 %APPDATA%/BRILink POS/logs/next-server.log
+%APPDATA%/BRILink POS/logs/whatsapp-electron.log
 %APPDATA%/BRILink POS/printer-config.json
 ```
 
