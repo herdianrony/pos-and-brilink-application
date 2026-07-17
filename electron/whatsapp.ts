@@ -338,6 +338,17 @@ async function probeInjectionState() {
     }));
 }
 
+function hasRequiredSendHelpers(injectionState: {
+  hasGetChat: boolean;
+  hasSendMessage: boolean;
+}) {
+  // In current WhatsApp Web builds, Store.Chat/Store.Msg may not be exposed to
+  // our external probe, but whatsapp-web.js send path only requires WWebJS
+  // getChat/sendMessage helpers. Requiring Store caused false "not ready" even
+  // after the library emitted READY.
+  return Boolean(injectionState.hasGetChat && injectionState.hasSendMessage);
+}
+
 async function isClientSendReady() {
   if (!state.client) return false;
   if (state.status === "ready") {
