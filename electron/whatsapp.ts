@@ -184,6 +184,30 @@ function log(
   appendWhatsAppLog(level, message, extra);
 }
 
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+) {
+  let timer: NodeJS.Timeout | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_resolve, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(`${label} timeout setelah ${timeoutMs / 1000} detik`),
+            ),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function setQrWithTtl(qrDataUrl: string) {
   state.qrDataUrl = qrDataUrl;
   state.status = "qr";
@@ -197,21 +221,65 @@ function setQrWithTtl(qrDataUrl: string) {
 }
 
 function ensureWindow() {
-  if (state.window && !state.window.isDestroyed()) return state.window;
+  if (state.window && !state.window.isDestroyed()) {
+    if (!state.window.isVisible()) state.window.show();
+    return state.window;
+  }
 
   const win = new BrowserWindow({
-    width: 900,
-    height: 700,
-    show: false,
-    title: "WhatsApp Session",
+    width: 1100,
+    height: 800,
+    show: true,
+    title: "WhatsApp Session - BRILink POS",
+    backgroundColor: "#0f172a",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false,
+      backgroundThrottling: false,
       partition: "persist:pos-brilink-whatsapp",
     },
   });
 
+  log("window created", { partition: "persist:pos-brilink-whatsapp" });
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("dom-ready", () =>
+    log("window dom-ready", { url: win.webContents.getURL() }),
+  );
+  win.webContents.on("did-start-loading", () =>
+    log("window did-start-loading", { url: win.webContents.getURL() }, "debug"),
+  );
+  win.webContents.on("did-finish-load", () =>
+    log("window did-finish-load", { url: win.webContents.getURL() }),
+  );
+  win.webContents.on(
+    "did-fail-load",
+    (_event, errorCode, errorDescription, validatedURL) => {
+      log(
+        "window did-fail-load",
+        { errorCode, errorDescription, validatedURL },
+        "error",
+      );
+    },
+  );
+  win.webContents.on("render-process-gone", (_event, details) => {
+    log("window render-process-gone", details, "error");
+  });
+  win.webContents.on(
+    "console-message",
+    (_event, level, message, line, sourceId) => {
+      if (/error|warn|qr|auth|whatsapp/i.test(message)) {
+        log(
+          "window console",
+          { level, message, line, sourceId },
+          level >= 2 ? "warn" : "debug",
+        );
+      }
+    },
+  );
+
   win.on("closed", () => {
+    log("window closed");
     if (state.window === win) state.window = null;
   });
 
@@ -254,6 +322,11 @@ async function startWhatsAppClientLocked() {
       // and can fail in packaged Electron with:
       // "The browser is already running for ...session-pos-brilink-cashier".
       electron: { window: win },
+      authTimeoutMs: 60_000,
+      takeoverOnConflict: true,
+      takeoverTimeoutMs: 0,
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       webVersionCache: { type: "none" },
     });
 
@@ -273,6 +346,7 @@ async function startWhatsAppClientLocked() {
       state.qrDataUrl = null;
       state.lastError = null;
       if (qrTimeout) clearTimeout(qrTimeout);
+      if (state.window && !state.window.isDestroyed()) state.window.hide();
     });
     client.on("disconnected", (reason: string) => {
       log("disconnected", reason, "warn");
@@ -290,7 +364,9 @@ async function startWhatsAppClientLocked() {
     });
 
     state.client = client;
-    await client.initialize();
+    log("client.initialize called");
+    await withTimeout(client.initialize(), 90_000, "WhatsApp initialize");
+    log("client.initialize returned", await getWhatsAppStatus());
     return getWhatsAppStatus();
   } catch (error) {
     state.status = "error";
