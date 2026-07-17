@@ -325,8 +325,10 @@ async function startWhatsAppClientLocked() {
       authTimeoutMs: 60_000,
       takeoverOnConflict: true,
       takeoverTimeoutMs: 0,
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      // Use Electron's native Chromium user-agent. WhatsApp Web can be sensitive
+      // to spoofed/stale user agents; the visible session window + log file will
+      // show clearly if WhatsApp reports an unsupported browser.
+      userAgent: false,
       webVersionCache: { type: "none" },
     });
 
