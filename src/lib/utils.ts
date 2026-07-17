@@ -15,8 +15,19 @@ export function formatNumber(num: number | string): string {
   return new Intl.NumberFormat("id-ID").format(n);
 }
 
-export function formatDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+function toValidDate(
+  value: Date | string | number | null | undefined,
+): Date | null {
+  if (value == null || value === "") return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function formatDate(
+  date: Date | string | number | null | undefined,
+): string {
+  const d = toValidDate(date);
+  if (!d) return "—";
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -26,8 +37,11 @@ export function formatDate(date: Date | string): string {
   }).format(d);
 }
 
-export function formatDateShort(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function formatDateShort(
+  date: Date | string | number | null | undefined,
+): string {
+  const d = toValidDate(date);
+  if (!d) return "—";
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -42,10 +56,14 @@ export function generateInvoice(prefix: string): string {
   const h = now.getHours().toString().padStart(2, "0");
   const min = now.getMinutes().toString().padStart(2, "0");
   const s = now.getSeconds().toString().padStart(2, "0");
-  const r = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+  const r = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
   return `${prefix}${y}${m}${d}${h}${min}${s}${r}`;
 }
 
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
+export function cn(
+  ...classes: (string | boolean | undefined | null)[]
+): string {
   return classes.filter(Boolean).join(" ");
 }
