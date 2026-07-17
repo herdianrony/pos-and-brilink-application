@@ -136,6 +136,12 @@ const api = {
     },
   },
 
+  // ── Report/PDF export ────────────────────────
+  report: {
+    savePdf: (payload: { html: string; defaultPath?: string }) =>
+      ipcRenderer.invoke("report:savePdf", payload),
+  },
+
   // ── Window controls ───────────────────────────
   window: {
     minimize: () => ipcRenderer.invoke("window:minimize"),

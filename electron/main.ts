@@ -20,7 +20,7 @@
  *   1. next build           → .next/standalone/ (self-contained server)
  *   2. electron-builder     → bundle electron + standalone + assets
  */
-import { app, BrowserWindow, ipcMain, shell, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, dialog } from "electron";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { existsSync } from "fs";
@@ -665,6 +665,54 @@ function registerAppIpc() {
     }
   });
   ipcMain.handle("update:install", () => quitAndInstall());
+
+  ipcMain.handle(
+    "report:savePdf",
+    async (_evt, payload: { html: string; defaultPath?: string }) => {
+      let pdfWindow: BrowserWindow | null = null;
+      try {
+        const html = String(payload?.html || "");
+        if (!html.trim()) return { ok: false, error: "Konten laporan kosong" };
+        pdfWindow = new BrowserWindow({
+          show: false,
+          width: 900,
+          height: 1200,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+          },
+        });
+        await pdfWindow.loadURL(
+          `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+        );
+        const pdf = await pdfWindow.webContents.printToPDF({
+          printBackground: true,
+          pageSize: "A4",
+          margins: { marginType: "default" },
+        });
+        const result = await (dialog.showSaveDialog as any)(
+          mainWindow || undefined,
+          {
+            title: "Simpan Laporan PDF",
+            defaultPath: payload?.defaultPath || "laporan.pdf",
+            filters: [{ name: "PDF", extensions: ["pdf"] }],
+          },
+        );
+        if (result.canceled || !result.filePath)
+          return { ok: false, canceled: true };
+        fs.writeFileSync(result.filePath, pdf);
+        return { ok: true, filePath: result.filePath };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      } finally {
+        if (pdfWindow && !pdfWindow.isDestroyed()) pdfWindow.close();
+      }
+    },
+  );
 }
 
 // ── App lifecycle ────────────────────────────────

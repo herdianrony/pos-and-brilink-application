@@ -54,9 +54,7 @@ export interface ElectronAPI {
       error?: string;
       simulated?: boolean;
     } | null>;
-    simulate: (
-      version?: string,
-    ) => Promise<{
+    simulate: (version?: string) => Promise<{
       version?: string;
       error?: string;
       simulated?: boolean;
@@ -73,6 +71,18 @@ export interface ElectronAPI {
     onUpdateError: (cb: (e: { message: string }) => void) => () => void;
     onUpdateNotAvailable: (cb: () => void) => () => void;
     onUpdateSimulatedInstalled: (cb: () => void) => () => void;
+  };
+  report: {
+    savePdf: (payload: {
+      html: string;
+      defaultPath?: string;
+    }) => Promise<{
+      ok: boolean;
+      filePath?: string;
+      canceled?: boolean;
+      error?: string;
+      browserPrint?: boolean;
+    }>;
   };
   window: {
     minimize: () => Promise<void>;

@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card, Spinner } from "@/components/ui";
+import { Button, Card, Spinner, useToast } from "@/components/ui";
 import { formatRupiah } from "@/lib/utils";
+import {
+  buildReportHtml,
+  exportReportPdf,
+  reportTable,
+} from "@/lib/report-export";
 import {
   Download,
   RefreshCw,
@@ -54,6 +59,7 @@ export default function POSReportPanel() {
   const [end, setEnd] = useState(todayLocal());
   const [data, setData] = useState<POSReport | null>(null);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,6 +77,77 @@ export default function POSReportPanel() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function exportPdf() {
+    if (!data) return;
+    const html = buildReportHtml({
+      title: "Laporan POS",
+      subtitle: "Ringkasan penjualan kasir POS",
+      meta: [["Periode", `${start} s/d ${end}`]],
+      summary: [
+        { label: "Transaksi", value: String(data.summary.count) },
+        {
+          label: "Omzet",
+          value: formatRupiah(data.summary.revenue),
+          tone: "success",
+        },
+        {
+          label: "HPP",
+          value: formatRupiah(data.summary.cogs),
+          tone: "warning",
+        },
+        {
+          label: "Profit",
+          value: formatRupiah(data.summary.profit),
+          tone: "success",
+        },
+      ],
+      sections: [
+        {
+          title: "Metode Pembayaran",
+          html: reportTable(
+            ["Metode", "Transaksi", "Omzet", "Profit"],
+            data.byPayment.map((row) => [
+              row.paymentMethod || "—",
+              row.count,
+              formatRupiah(row.revenue),
+              formatRupiah(row.profit),
+            ]),
+          ),
+        },
+        {
+          title: "Produk Terlaris",
+          html: reportTable(
+            ["Produk", "Qty", "Omzet Kotor"],
+            data.products.map((row) => [
+              row.productName,
+              row.qty,
+              formatRupiah(row.grossSales),
+            ]),
+          ),
+        },
+        {
+          title: "Ringkasan Harian",
+          html: reportTable(
+            ["Tanggal", "Transaksi", "Omzet", "Profit"],
+            data.daily.map((row) => [
+              row.date,
+              row.count,
+              formatRupiah(row.revenue),
+              formatRupiah(row.profit),
+            ]),
+          ),
+        },
+      ],
+    });
+    const result = await exportReportPdf(
+      html,
+      `laporan-pos-${start}-${end}.pdf`,
+    );
+    if (result.ok && !result.browserPrint)
+      toast.success("PDF laporan POS disimpan");
+    else if (result.error) toast.error(result.error);
+  }
 
   function exportCsv() {
     if (!data) return;
@@ -95,7 +172,7 @@ export default function POSReportPanel() {
   }
 
   return (
-    <Card className="p-5 space-y-4 border-emerald-100 bg-emerald-50/30">
+    <Card className="p-5 space-y-4 border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 shadow-sm">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
           <h3 className="font-extrabold text-slate-800 flex items-center gap-2">
@@ -120,6 +197,9 @@ export default function POSReportPanel() {
           />
           <Button size="sm" variant="secondary" onClick={load}>
             <RefreshCw size={14} /> Refresh
+          </Button>
+          <Button size="sm" variant="secondary" onClick={exportPdf}>
+            <Download size={14} /> PDF
           </Button>
           <Button size="sm" variant="secondary" onClick={exportCsv}>
             <Download size={14} /> CSV Produk

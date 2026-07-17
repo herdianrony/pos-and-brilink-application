@@ -397,6 +397,7 @@ Fitur:
 - total keluar,
 - saldo akhir,
 - export CSV,
+- export PDF,
 - print.
 
 Preset tanggal:

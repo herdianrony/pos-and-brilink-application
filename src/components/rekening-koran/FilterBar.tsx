@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, Button, Input, Select } from "@/components/ui";
-import { Download, Printer } from "lucide-react";
+import { Download, FileText, Printer } from "lucide-react";
 import type { Account } from "@/types/models";
 import type { DatePreset } from "@/types/rekening-koran";
 
@@ -16,6 +16,7 @@ interface Props {
   onEndDateChange: (value: string) => void;
   onPreset: (preset: DatePreset) => void;
   onExportCSV: () => void;
+  onExportPDF: () => void;
   onPrint: () => void;
 }
 
@@ -38,30 +39,67 @@ export default function FilterBar({
   onEndDateChange,
   onPreset,
   onExportCSV,
+  onExportPDF,
   onPrint,
 }: Props) {
   return (
     <>
       <div className="flex items-center gap-2 no-print">
-        <Button variant="secondary" size="sm" onClick={onExportCSV} disabled={!canExport}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onExportPDF}
+          disabled={!canExport}
+        >
+          <FileText size={14} /> PDF
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onExportCSV}
+          disabled={!canExport}
+        >
           <Download size={14} /> CSV
         </Button>
-        <Button variant="secondary" size="sm" onClick={onPrint} disabled={!canExport}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onPrint}
+          disabled={!canExport}
+        >
           <Printer size={14} /> Print
         </Button>
       </div>
 
       <Card className="p-4 no-print">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Select label="Rekening" value={selectedAccountId} onChange={(event) => onAccountChange(event.target.value)}>
+          <Select
+            label="Rekening"
+            value={selectedAccountId}
+            onChange={(event) => onAccountChange(event.target.value)}
+          >
             {accounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name}</option>
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
             ))}
           </Select>
-          <Input label="Dari Tanggal" type="date" value={startDate} onChange={(event) => onStartDateChange(event.target.value)} />
-          <Input label="Sampai Tanggal" type="date" value={endDate} onChange={(event) => onEndDateChange(event.target.value)} />
+          <Input
+            label="Dari Tanggal"
+            type="date"
+            value={startDate}
+            onChange={(event) => onStartDateChange(event.target.value)}
+          />
+          <Input
+            label="Sampai Tanggal"
+            type="date"
+            value={endDate}
+            onChange={(event) => onEndDateChange(event.target.value)}
+          />
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Presets</label>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Presets
+            </label>
             <div className="flex flex-wrap gap-1">
               {PRESETS.map((preset) => (
                 <button
