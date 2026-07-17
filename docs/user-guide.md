@@ -91,6 +91,7 @@ Dashboard menampilkan ringkasan usaha:
 - Fee/profit layanan agen.
 - Keuntungan hari ini.
 - Chart 7 hari berisi omzet, profit, dan jumlah transaksi.
+- Laporan POS per periode: omzet, HPP, profit, metode pembayaran, dan produk terlaris.
 - Stok menipis.
 - Saldo rekening/kas.
 - Transaksi terakhir.
@@ -275,6 +276,34 @@ Contoh:
 ---
 
 ## 8. Manajemen Saldo
+
+### Sesuaikan Saldo
+
+Fitur **Sesuaikan Saldo** digunakan untuk koreksi saldo internal agar sesuai dengan kondisi nyata, misalnya:
+
+- top up kas/rekening,
+- koreksi selisih kas opname,
+- koreksi saldo karena salah input,
+- biaya admin bank atau potongan lain yang perlu dicatat.
+
+Gunakan catatan yang jelas agar audit mudah dibaca. Untuk transaksi operasional normal, jangan pakai Sesuaikan Saldo; gunakan transaksi POS/Layanan Agen agar laporan tetap benar.
+
+### Ambil Profit Owner
+
+Jika owner mengambil laba/prive, gunakan tombol **Ambil Profit** pada kartu akun saldo. Contoh:
+
+1. Owner mengambil Rp200.000 dari Kas Tunai.
+2. Buka **Kas & Saldo**.
+3. Pilih akun **Kas Tunai**.
+4. Klik **Ambil Profit**.
+5. Isi nominal Rp200.000 dan catatan “Ambil profit harian”.
+
+Efeknya:
+
+- saldo kas/rekening berkurang,
+- tercatat sebagai mutasi `Prive Owner`,
+- profit transaksi historis tidak berubah,
+- laporan POS tetap menunjukkan profit operasional, sedangkan prive terlihat di mutasi saldo.
 
 Menu **Manajemen Saldo** digunakan untuk mengelola saldo internal.
 

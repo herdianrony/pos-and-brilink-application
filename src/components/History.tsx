@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { formatRupiah, formatDate } from "@/lib/utils";
 import { Badge, Button, Modal, Spinner, Tabs, useToast } from "@/components/ui";
-import { ClipboardList, X, ShoppingCart, Landmark, CheckCircle, Ban, RotateCcw, Printer, Banknote, Receipt } from "lucide-react";
+import {
+  ClipboardList,
+  X,
+  ShoppingCart,
+  Landmark,
+  CheckCircle,
+  Ban,
+  RotateCcw,
+  Printer,
+  Banknote,
+  Receipt,
+} from "lucide-react";
 import { type ReceiptData } from "@/components/ReceiptPreview";
 import { useSettings } from "@/lib/use-settings";
 import StatusFilter from "@/components/history/StatusFilter";
@@ -11,9 +22,18 @@ import HistoryStats from "@/components/history/HistoryStats";
 import TransactionTable from "@/components/history/TransactionTable";
 import LifecycleActionModal from "@/components/history/LifecycleActionModal";
 import TransactionDetailModal from "@/components/history/TransactionDetailModal";
-import { calculateTransactionTotals, filterTransactionsByStatus, getStatusConfig } from "@/lib/history";
-import type { TransactionActionState, TransactionActionType, Trx, TrxDetail } from "@/types/transactions";
-
+import POSReportPanel from "@/components/history/POSReportPanel";
+import {
+  calculateTransactionTotals,
+  filterTransactionsByStatus,
+  getStatusConfig,
+} from "@/lib/history";
+import type {
+  TransactionActionState,
+  TransactionActionType,
+  Trx,
+  TrxDetail,
+} from "@/types/transactions";
 
 export default function History() {
   const [trxs, setTrxs] = useState<Trx[]>([]);
@@ -27,7 +47,9 @@ export default function History() {
   const toast = useToast();
 
   // P2: Lifecycle action state
-  const [actionModal, setActionModal] = useState<TransactionActionState | null>(null);
+  const [actionModal, setActionModal] = useState<TransactionActionState | null>(
+    null,
+  );
   const [actionInput, setActionInput] = useState("");
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
@@ -36,13 +58,19 @@ export default function History() {
     const p = new URLSearchParams();
     if (filter !== "all") p.set("type", filter);
     p.set("limit", "100");
-    fetch(`/api/transactions?${p}`).then(r => r.json()).then(d => { setTrxs(d); setLoading(false); });
+    fetch(`/api/transactions?${p}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setTrxs(d);
+        setLoading(false);
+      });
   }, [filter]);
 
   async function viewDetail(id: number) {
     setLoadingDet(true);
     const d = await (await fetch(`/api/transactions/${id}`)).json();
-    setDetail(d); setLoadingDet(false);
+    setDetail(d);
+    setLoadingDet(false);
   }
 
   // P2: Filter by status (client-side)
@@ -75,7 +103,13 @@ export default function History() {
         toast.error(data.error || "Gagal memproses aksi");
         return;
       }
-      toast.success(actionModal.type === "complete" ? "Transaksi diselesaikan" : actionModal.type === "void" ? "Transaksi dibatalkan" : "Transaksi di-reverse");
+      toast.success(
+        actionModal.type === "complete"
+          ? "Transaksi diselesaikan"
+          : actionModal.type === "void"
+            ? "Transaksi dibatalkan"
+            : "Transaksi di-reverse",
+      );
       setActionModal(null);
 
       // Refresh list + detail
@@ -95,19 +129,28 @@ export default function History() {
     }
   }
 
-  const { revenue: totalRev, profit: totalProfit } = calculateTransactionTotals(filteredTrxs);
+  const { revenue: totalRev, profit: totalProfit } =
+    calculateTransactionTotals(filteredTrxs);
   const { pendingCount } = calculateTransactionTotals(trxs);
 
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
+          <ClipboardList size={24} className="text-blue-500" /> Riwayat
+          Transaksi
         </h2>
-        <p className="text-sm text-slate-400">{filteredTrxs.length} transaksi ditemukan{pendingCount > 0 && ` • ${pendingCount} pending`}</p>
+        <p className="text-sm text-slate-400">
+          {filteredTrxs.length} transaksi ditemukan
+          {pendingCount > 0 && ` • ${pendingCount} pending`}
+        </p>
       </div>
 
-      <HistoryStats count={filteredTrxs.length} revenue={totalRev} profit={totalProfit} />
+      <HistoryStats
+        count={filteredTrxs.length}
+        revenue={totalRev}
+        profit={totalProfit}
+      />
 
       <Tabs
         tabs={[
@@ -120,6 +163,8 @@ export default function History() {
       />
 
       <StatusFilter active={statusFilter} onChange={setStatusFilter} />
+
+      {filter === "pos" && <POSReportPanel />}
 
       <TransactionTable
         loading={loading}

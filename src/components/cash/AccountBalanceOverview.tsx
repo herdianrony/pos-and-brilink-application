@@ -3,15 +3,11 @@
 import { Card, Button } from "@/components/ui";
 import { AccountCard } from "@/components/AccountCard";
 import { formatRupiah } from "@/lib/utils";
-import { Plus, ArrowRightLeft } from "lucide-react";
+import { Plus, ArrowRightLeft, HandCoins } from "lucide-react";
 import type { Account } from "@/types/models";
 
 export type CashModalType =
-  | "adjust"
-  | "transfer"
-  | "add_account"
-  | "edit_account"
-  | null;
+  "adjust" | "transfer" | "add_account" | "edit_account" | "owner_draw" | null;
 
 interface Props {
   activeAccounts: Account[];
@@ -79,6 +75,15 @@ export default function AccountBalanceOverview({
                   className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <ArrowRightLeft size={14} /> Transfer
+                </button>
+                <button
+                  onClick={() => {
+                    onSelectAccount(account);
+                    onOpenModal("owner_draw");
+                  }}
+                  className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <HandCoins size={14} /> Ambil Profit
                 </button>
               </>
             }
