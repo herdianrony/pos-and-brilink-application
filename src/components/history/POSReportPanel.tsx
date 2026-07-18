@@ -68,7 +68,14 @@ export default function POSReportPanel() {
       const res = await fetch(`/api/reports/pos?${params.toString()}`, {
         cache: "no-store",
       });
-      setData(await res.json());
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.summary) {
+        setData(null);
+        if (res.status !== 403)
+          toast.error(body?.error || "Gagal memuat laporan POS");
+        return;
+      }
+      setData(body);
     } finally {
       setLoading(false);
     }

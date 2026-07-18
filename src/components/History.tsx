@@ -174,7 +174,7 @@ export default function History() {
 
       <StatusFilter active={statusFilter} onChange={setStatusFilter} />
 
-      {filter === "pos" && <POSReportPanel />}
+      {filter === "pos" && showProfit && <POSReportPanel />}
 
       <TransactionTable
         loading={loading}
