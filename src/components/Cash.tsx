@@ -139,6 +139,38 @@ export default function Cash() {
     setSaving(false);
   }
 
+  async function handleBankFee() {
+    if (!selAccount || !amount) return;
+    const nominal = Math.abs(parseFloat(amount));
+    if (!Number.isFinite(nominal) || nominal <= 0) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "adjust",
+          accountId: selAccount.id,
+          amount: -nominal,
+          type: "bank_fee",
+          notes: notes || "Biaya admin bank bulanan",
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(body.error || "Gagal mencatat biaya bank");
+        return;
+      }
+      toast.success("Biaya bank tercatat");
+      setModal(null);
+      setAmount("");
+      setNotes("");
+      load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleOwnerDraw() {
     if (!selAccount || !amount) return;
     const nominal = Math.abs(parseFloat(amount));
@@ -453,6 +485,67 @@ export default function Cash() {
               disabled={saving || !amount}
             >
               {saving ? "..." : "Simpan"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bank Fee Modal */}
+      <Modal
+        open={modal === "bank_fee"}
+        onClose={() => setModal(null)}
+        size="sm"
+      >
+        <div className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-extrabold">Biaya Admin Bank</h3>
+            <button
+              onClick={() => setModal(null)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          {selAccount && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+              <p className="font-bold">Catat potongan rekening</p>
+              <p className="text-xs mt-1">
+                Untuk biaya admin bulanan, biaya transfer, biaya kartu, atau MDR
+                QRIS. Saldo {selAccount.name} akan berkurang, tetapi profit
+                transaksi tidak berubah.
+              </p>
+              <p className="text-xs mt-2">
+                Saldo saat ini: <b>{formatRupiah(selAccount.balance)}</b>
+              </p>
+            </div>
+          )}
+          <CurrencyInput
+            label="Nominal biaya"
+            value={amount}
+            onChange={(v) => setAmount(String(v))}
+            placeholder="0"
+          />
+          <Input
+            label="Catatan"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Contoh: Biaya admin BRI Juli 2026 / MDR QRIS"
+          />
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setModal(null)}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleBankFee}
+              disabled={saving || !amount}
+            >
+              {saving ? "..." : "Catat Biaya"}
             </Button>
           </div>
         </div>

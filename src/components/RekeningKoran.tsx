@@ -41,6 +41,9 @@ const mutationTypeLabels: Record<
   brilink_out: { label: "Pembayaran Agen", variant: "danger" },
   cash_in: { label: "Kas Masuk", variant: "success" },
   cash_out: { label: "Kas Keluar", variant: "danger" },
+  bank_fee: { label: "Biaya Bank", variant: "danger" },
+  qris_fee: { label: "Biaya QRIS", variant: "danger" },
+  owner_draw: { label: "Prive Owner", variant: "danger" },
 };
 
 export default function RekeningKoran() {

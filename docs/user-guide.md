@@ -288,6 +288,28 @@ Fitur **Sesuaikan Saldo** digunakan untuk koreksi saldo internal agar sesuai den
 
 Gunakan catatan yang jelas agar audit mudah dibaca. Untuk transaksi operasional normal, jangan pakai Sesuaikan Saldo; gunakan transaksi POS/Layanan Agen agar laporan tetap benar.
 
+### Biaya Admin Bank / Potongan Rekening
+
+Jika ada potongan dari bank atau QRIS, gunakan tombol **Biaya** pada kartu rekening non-tunai.
+
+Contoh:
+
+1. Bank memotong biaya admin bulanan Rp10.000.
+2. Buka **Kas & Saldo**.
+3. Pilih rekening, misalnya **M-Banking BRI**.
+4. Klik **Biaya**.
+5. Isi nominal Rp10.000.
+6. Isi catatan “Biaya admin BRI Juli 2026”.
+
+Efeknya:
+
+- saldo rekening berkurang,
+- mutasi tercatat sebagai **Biaya Bank**,
+- profit transaksi POS/agen tidak berubah,
+- laporan rekening koran tetap menunjukkan potongan tersebut.
+
+Untuk potongan QRIS/MDR, gunakan cara yang sama dengan catatan seperti “MDR QRIS Juli 2026”.
+
 ### Ambil Profit Owner
 
 Jika owner mengambil laba/prive, gunakan tombol **Ambil Profit** pada kartu akun saldo. Contoh:

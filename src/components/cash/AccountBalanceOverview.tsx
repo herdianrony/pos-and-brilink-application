@@ -3,11 +3,17 @@
 import { Card, Button } from "@/components/ui";
 import { AccountCard } from "@/components/AccountCard";
 import { formatRupiah } from "@/lib/utils";
-import { Plus, ArrowRightLeft, HandCoins } from "lucide-react";
+import { Plus, ArrowRightLeft, HandCoins, ReceiptText } from "lucide-react";
 import type { Account } from "@/types/models";
 
 export type CashModalType =
-  "adjust" | "transfer" | "add_account" | "edit_account" | "owner_draw" | null;
+  | "adjust"
+  | "transfer"
+  | "add_account"
+  | "edit_account"
+  | "owner_draw"
+  | "bank_fee"
+  | null;
 
 interface Props {
   activeAccounts: Account[];
@@ -76,6 +82,17 @@ export default function AccountBalanceOverview({
                 >
                   <ArrowRightLeft size={14} /> Transfer
                 </button>
+                {account.code !== "cash" && (
+                  <button
+                    onClick={() => {
+                      onSelectAccount(account);
+                      onOpenModal("bank_fee");
+                    }}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <ReceiptText size={14} /> Biaya
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onSelectAccount(account);

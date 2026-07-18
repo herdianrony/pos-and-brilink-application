@@ -18,6 +18,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Redaksi dukungan di halaman Tentang, README, dan panduan pengguna disederhanakan agar mudah dipahami pengguna awam.
 - Laporan POS khusus dengan filter tanggal, omzet, HPP, profit, rata-rata transaksi, metode pembayaran, produk terlaris, export CSV produk, dan export PDF.
 - Fitur **Ambil Profit Owner** pada Manajemen Saldo untuk mencatat prive/penarikan laba owner tanpa mengubah profit transaksi.
+- Fitur **Biaya Admin Bank** pada rekening non-tunai untuk mencatat biaya admin bulanan, biaya transfer, biaya kartu, atau MDR QRIS tanpa harus input nominal minus manual.
 - Navigasi hash awal (`/#brilink`, `/#settings`, dll.) diproses saat halaman pertama kali dibuka agar E2E dan deep-link langsung masuk ke halaman tujuan.
 - Data demo E2E mengaktifkan saldo kas dan rekening BRI secara deterministik di mode development agar skenario layanan agen dan insufficient balance stabil.
 - Login setelah submit memakai full navigation agar cookie httpOnly terbaca stabil oleh middleware pada Playwright/Electron.

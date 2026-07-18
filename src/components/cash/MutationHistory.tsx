@@ -24,6 +24,8 @@ const typeLabels: Record<
   adjustment_out: { label: "Pengurangan", color: "danger" },
   adjustment: { label: "Penyesuaian", color: "warning" },
   owner_draw: { label: "Prive Owner", color: "danger" },
+  bank_fee: { label: "Biaya Bank", color: "danger" },
+  qris_fee: { label: "Biaya QRIS", color: "danger" },
 };
 
 interface Props {

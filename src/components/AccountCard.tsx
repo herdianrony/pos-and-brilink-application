@@ -228,7 +228,7 @@ export function AccountCard({
 
         {/* Action buttons (di dalam card, bawah) */}
         {actions && (
-          <div className="flex gap-2 mt-4 pt-3 border-t border-white/15">
+          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-white/15">
             {actions}
           </div>
         )}
