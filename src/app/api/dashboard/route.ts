@@ -7,6 +7,10 @@ import { requireAuth } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const emptyAggregate = { count: 0, revenue: "0", profit: "0" };
+const emptyTypeAggregate = { count: 0, total: "0", profit: "0" };
+const emptyBrilinkAggregate = { count: 0, total: "0", fee: "0", profit: "0" };
+
 function toLocalDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -130,11 +134,32 @@ export async function GET() {
     .where(eq(transactions.status, "pending"));
 
   return NextResponse.json({
-    today: { ...todayAll, pos: todayPos, brilink: todayBrilink },
-    lowStock,
-    recent,
+    today: {
+      ...emptyAggregate,
+      ...(todayAll || {}),
+      count: Number(todayAll?.count || 0),
+      revenue: todayAll?.revenue || "0",
+      profit: todayAll?.profit || "0",
+      pos: {
+        ...emptyTypeAggregate,
+        ...(todayPos || {}),
+        count: Number(todayPos?.count || 0),
+        total: todayPos?.total || "0",
+        profit: todayPos?.profit || "0",
+      },
+      brilink: {
+        ...emptyBrilinkAggregate,
+        ...(todayBrilink || {}),
+        count: Number(todayBrilink?.count || 0),
+        total: todayBrilink?.total || "0",
+        fee: todayBrilink?.fee || "0",
+        profit: todayBrilink?.profit || "0",
+      },
+    },
+    lowStock: lowStock || [],
+    recent: recent || [],
     last7,
-    accounts: accountBalances,
+    accounts: accountBalances || [],
     pendingCount: pendingResult?.count || 0,
   });
 }

@@ -153,6 +153,26 @@ export default function Dashboard() {
   if (!d || !d.today)
     return <EmptyState icon="x-circle" title="Gagal memuat dashboard" />;
 
+  const today = {
+    count: Number(d.today.count || 0),
+    revenue: d.today.revenue || "0",
+    profit: d.today.profit || "0",
+    pos: {
+      count: Number(d.today.pos?.count || 0),
+      total: d.today.pos?.total || "0",
+      profit: d.today.pos?.profit || "0",
+    },
+    brilink: {
+      count: Number(d.today.brilink?.count || 0),
+      total: d.today.brilink?.total || "0",
+      fee: d.today.brilink?.fee || "0",
+      profit: d.today.brilink?.profit || "0",
+    },
+  };
+  const lowStock = d.lowStock || [];
+  const accounts = d.accounts || [];
+  const recent = d.recent || [];
+
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header */}
@@ -180,17 +200,17 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-4xl font-extrabold tracking-tight">
-            {formatRupiah(d.today.profit)}
+            {formatRupiah(today.profit)}
           </p>
           <div className="flex items-center gap-3 mt-4">
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <ShoppingCart size={12} />
-              <span>POS: {formatRupiah(d.today.pos.profit)}</span>
+              <span>POS: {formatRupiah(today.pos.profit)}</span>
             </div>
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <Landmark size={12} />
               <span>
-                {servicesLabel}: {formatRupiah(d.today.brilink.profit)}
+                {servicesLabel}: {formatRupiah(today.brilink.profit)}
               </span>
             </div>
           </div>
@@ -202,28 +222,28 @@ export default function Dashboard() {
         <StatCard
           icon={<ShoppingCart size={20} />}
           label="Total Transaksi"
-          value={(d.today.count ?? 0).toString()}
+          value={(today.count ?? 0).toString()}
           sub="hari ini"
           color="bg-emerald-50 text-emerald-600"
         />
         <StatCard
           icon={<ArrowUpRight size={20} />}
           label="Omzet POS"
-          value={formatRupiah(d.today.pos?.total ?? "0")}
-          sub={`${d.today.pos?.count ?? 0} trx`}
+          value={formatRupiah(today.pos.total)}
+          sub={`${today.pos.count} trx`}
           color="bg-blue-50 text-blue-600"
         />
         <StatCard
           icon={<Landmark size={20} />}
           label={`Volume ${servicesLabel}`}
-          value={formatRupiah(d.today.brilink?.total ?? "0")}
-          sub={`${d.today.brilink?.count ?? 0} trx`}
+          value={formatRupiah(today.brilink.total)}
+          sub={`${today.brilink.count} trx`}
           color="bg-violet-50 text-violet-600"
         />
         <StatCard
           icon={<TrendingUp size={20} />}
           label={`Fee ${servicesLabel}`}
-          value={formatRupiah(d.today.brilink?.profit ?? "0")}
+          value={formatRupiah(today.brilink.profit)}
           sub="100% profit"
           color="bg-amber-50 text-amber-600"
         />
@@ -248,16 +268,16 @@ export default function Dashboard() {
             action: () => (window.location.hash = "history"),
           });
         }
-        if (d.lowStock.length > 0) {
+        if (lowStock.length > 0) {
           actions.push({
             icon: AlertTriangle,
-            label: `${d.lowStock.length} produk stok menipis`,
+            label: `${lowStock.length} produk stok menipis`,
             detail: "Cek stok fisik dan update stok produk sebelum habis.",
             color: "amber",
             action: () => (window.location.hash = "products"),
           });
         }
-        const lowBalanceAccounts = d.accounts.filter(
+        const lowBalanceAccounts = accounts.filter(
           (a) => parseFloat(a.balance) < parseFloat(a.minBalance || "0"),
         );
         if (lowBalanceAccounts.length > 0) {
@@ -360,12 +380,10 @@ export default function Dashboard() {
           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
             Saldo Rekening
           </h3>
-          <span className="text-xs text-slate-400">
-            {d.accounts.length} akun
-          </span>
+          <span className="text-xs text-slate-400">{accounts.length} akun</span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {d.accounts.map((acc) => (
+          {accounts.map((acc) => (
             <div key={acc.id} className="shrink-0 w-[200px]">
               <AccountCard account={acc} compact />
             </div>
@@ -525,14 +543,14 @@ export default function Dashboard() {
           <h3 className="font-extrabold text-slate-700 mb-3 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-500" /> Stok Menipis
           </h3>
-          {d.lowStock.length === 0 ? (
+          {lowStock.length === 0 ? (
             <div className="text-center py-6 text-sm text-slate-400 flex flex-col items-center gap-2">
               <CheckCircle2 size={28} className="text-emerald-500" />
               <span>Semua stok aman</span>
             </div>
           ) : (
             <div className="space-y-2 max-h-44 overflow-y-auto">
-              {d.lowStock.map((p) => (
+              {lowStock.map((p) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between p-2.5 bg-amber-50/50 rounded-xl border border-amber-100"
@@ -555,7 +573,7 @@ export default function Dashboard() {
         <div className="p-5 border-b border-slate-100">
           <h3 className="font-extrabold text-slate-700">Transaksi Terakhir</h3>
         </div>
-        {d.recent.length === 0 ? (
+        {recent.length === 0 ? (
           <EmptyState icon="clipboard-list" title="Belum ada transaksi" />
         ) : (
           <div className="overflow-x-auto">
@@ -571,7 +589,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {d.recent.map((t) => (
+                {recent.map((t) => (
                   <tr
                     key={t.id}
                     className="border-b border-slate-50/50 hover:bg-emerald-50/30 transition-colors"
