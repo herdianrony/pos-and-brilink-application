@@ -371,6 +371,7 @@ export function Tabs({
       {tabs.map((t) => (
         <button
           key={t.id}
+          data-testid={`tab-${t.id}`}
           onClick={() => onChange(t.id)}
           className={cn(
             "px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2",

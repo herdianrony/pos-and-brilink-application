@@ -7,10 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1, // Single worker — tests share DB state
   reporter: process.env.CI
-    ? [
-        ["list"],
-        ["html", { outputFolder: "playwright-report", open: "never" }],
-      ]
+    ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
     : "list",
   timeout: 30000,
   expect: { timeout: 10000 },
@@ -31,7 +28,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npx cross-env PORT=3001 AUTH_SECRET=e2e_local_auth_secret_32_chars_min npm run dev",
+    command:
+      "npx cross-env PORT=3001 AUTH_SECRET=e2e_local_auth_secret_32_chars_min E2E=1 npm run dev",
     url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,

@@ -33,12 +33,16 @@ async function createPosSale(request: any) {
 }
 
 test.describe("POS report", () => {
-  test("returns POS summary with revenue, cogs, profit, payment methods, and products", async ({ request }) => {
+  test("returns POS summary with revenue, cogs, profit, payment methods, and products", async ({
+    request,
+  }) => {
     await login(request);
     const { product } = await createPosSale(request);
     const date = localDate();
 
-    const res = await request.get(`${BASE_URL}/api/reports/pos?start=${date}&end=${date}`);
+    const res = await request.get(
+      `${BASE_URL}/api/reports/pos?start=${date}&end=${date}`,
+    );
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
 
@@ -46,19 +50,46 @@ test.describe("POS report", () => {
     expect(body.summary.revenue).toBeGreaterThan(0);
     expect(body.summary.cogs).toBeGreaterThanOrEqual(0);
     expect(body.summary.profit).toBeDefined();
-    expect(body.byPayment.some((row: any) => row.paymentMethod === "cash" && row.count > 0)).toBeTruthy();
-    expect(body.products.some((row: any) => row.productName === product.name && row.qty >= 2)).toBeTruthy();
+    expect(
+      body.byPayment.some(
+        (row: any) => row.paymentMethod === "cash" && row.count > 0,
+      ),
+    ).toBeTruthy();
+    expect(
+      body.products.some(
+        (row: any) => row.productName === product.name && row.qty >= 2,
+      ),
+    ).toBeTruthy();
   });
 
-  test("shows POS report panel on History POS tab", async ({ page, request }) => {
+  test("shows POS report panel on History POS tab", async ({
+    page,
+    request,
+  }) => {
     await login(request);
     await createPosSale(request);
 
     await page.goto("/#history");
     await page.waitForLoadState("domcontentloaded");
-    await page.click('button:has-text("POS")');
-    await expect(page.getByRole("heading", { name: /laporan pos/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=/Omzet|HPP|Profit|Produk Terlaris|Metode Pembayaran/i").first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('button:has-text("CSV Produk")')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("heading", { name: /riwayat transaksi/i }),
+    ).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("tab-pos").click();
+    await expect(
+      page.getByText(
+        "Ringkasan omzet, HPP, profit, metode bayar, dan produk terlaris.",
+      ),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("heading", { name: /laporan pos/i }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      page
+        .locator("text=/Omzet|HPP|Profit|Produk Terlaris|Metode Pembayaran/i")
+        .first(),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('button:has-text("CSV Produk")')).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

@@ -13,12 +13,18 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("BRILink Flow", () => {
   test("should display service categories", async ({ page }) => {
-    // Should see category filters
-    const categories = page.locator(
-      "text=/transfer|tarik tunai|setor|pembayaran|token pln|pulsa|voucher|cicilan/i",
-    );
-    const count = await categories.count();
-    expect(count).toBeGreaterThan(0);
+    const filters = page.getByTestId("service-category-filters");
+    await expect(filters).toBeVisible({ timeout: 10000 });
+    await expect(
+      filters.locator("button").filter({ hasText: /Semua/i }),
+    ).toBeVisible({ timeout: 5000 });
+    const categoryButtons = filters
+      .locator("button")
+      .filter({
+        hasText:
+          /transfer|tarik tunai|setor|pembayaran|token pln|pulsa|voucher|cicilan/i,
+      });
+    await expect(categoryButtons.first()).toBeVisible({ timeout: 10000 });
   });
 
   test("should display service cards", async ({ page }) => {
