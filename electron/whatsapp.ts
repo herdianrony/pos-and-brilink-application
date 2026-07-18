@@ -353,12 +353,7 @@ async function isClientSendReady() {
   if (!state.client) return false;
   if (state.status === "ready") {
     const injectionState = await probeInjectionState();
-    const stillReady = Boolean(
-      injectionState.hasStoreChat &&
-      injectionState.hasStoreMsg &&
-      injectionState.hasGetChat &&
-      injectionState.hasSendMessage,
-    );
+    const stillReady = hasRequiredSendHelpers(injectionState);
     if (stillReady) return true;
     state.status = "authenticated";
   }
@@ -375,12 +370,7 @@ async function isClientSendReady() {
         ? await state.client.getState().catch(() => null)
         : null;
     let injectionState = await probeInjectionState();
-    let injectionReady = Boolean(
-      injectionState.hasStoreChat &&
-      injectionState.hasStoreMsg &&
-      injectionState.hasGetChat &&
-      injectionState.hasSendMessage,
-    );
+    let injectionReady = hasRequiredSendHelpers(injectionState);
 
     // If WhatsApp is connected but WWebJS helpers are missing, retry the same
     // utility injection that whatsapp-web.js performs before emitting ready.
@@ -396,12 +386,7 @@ async function isClientSendReady() {
         log("manual WWebJS injection requested", { injectionState });
         await state.client.pupPage.evaluate(LoadUtils);
         injectionState = await probeInjectionState();
-        injectionReady = Boolean(
-          injectionState.hasStoreChat &&
-          injectionState.hasStoreMsg &&
-          injectionState.hasGetChat &&
-          injectionState.hasSendMessage,
-        );
+        injectionReady = hasRequiredSendHelpers(injectionState);
         log("manual WWebJS injection result", {
           injectionReady,
           injectionState,
@@ -497,7 +482,6 @@ function ensureWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
       backgroundThrottling: false,
       partition: "persist:pos-brilink-whatsapp",
     },

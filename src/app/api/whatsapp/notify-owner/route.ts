@@ -22,7 +22,8 @@ function signElectronSendPayload(
   message: string,
   expiresAt: number,
 ) {
-  const secret = Buffer.from(getAuthSecretBytes()).toString();
+  const secret =
+    process.env.AUTH_SECRET || Buffer.from(getAuthSecretBytes()).toString();
   return crypto
     .createHmac("sha256", secret)
     .update(`${to}\n${expiresAt}\n${message}`)
