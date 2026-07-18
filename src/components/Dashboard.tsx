@@ -74,6 +74,7 @@ function DashboardChartTooltip({
   active,
   payload,
   label,
+  showProfit,
 }: {
   active?: boolean;
   payload?: Array<{
@@ -83,6 +84,7 @@ function DashboardChartTooltip({
     color?: string;
   }>;
   label?: string;
+  showProfit?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const values = Object.fromEntries(
@@ -98,12 +100,14 @@ function DashboardChartTooltip({
             {formatRupiah(String(values.revenue || 0))}
           </span>
         </div>
-        <div className="flex items-center justify-between gap-5">
-          <span className="font-semibold text-slate-500">Profit</span>
-          <span className="font-extrabold text-emerald-600">
-            {formatRupiah(String(values.profit || 0))}
-          </span>
-        </div>
+        {showProfit && (
+          <div className="flex items-center justify-between gap-5">
+            <span className="font-semibold text-slate-500">Profit</span>
+            <span className="font-extrabold text-emerald-600">
+              {formatRupiah(String(values.profit || 0))}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-5">
           <span className="font-semibold text-slate-500">Transaksi</span>
           <span className="font-extrabold text-amber-600">
@@ -118,6 +122,7 @@ function DashboardChartTooltip({
 export default function Dashboard() {
   const [d, setD] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const { settings } = useSettings();
   const servicesLabel = settings.services_label || "Layanan Agen";
 
@@ -126,6 +131,10 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then(setD)
       .finally(() => setLoading(false));
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setRole(data?.user?.role || null))
+      .catch(() => setRole(null));
   }, []);
 
   const chartData = useMemo(() => {
@@ -140,6 +149,8 @@ export default function Dashboard() {
   const chartHasActivity = chartData.some(
     (day) => day.revenue > 0 || day.profit > 0 || day.count > 0,
   );
+  const showProfit = role === "admin";
+
   const chartTotals = chartData.reduce(
     (acc, day) => ({
       revenue: acc.revenue + day.revenue,
@@ -196,21 +207,30 @@ export default function Dashboard() {
               <Wallet size={18} className="text-white" />
             </div>
             <span className="text-slate-200 text-sm font-semibold">
-              Keuntungan Hari Ini
+              {showProfit ? "Keuntungan Hari Ini" : "Aktivitas Hari Ini"}
             </span>
           </div>
           <p className="text-4xl font-extrabold tracking-tight">
-            {formatRupiah(today.profit)}
+            {showProfit
+              ? formatRupiah(today.profit)
+              : `${today.count} Transaksi`}
           </p>
           <div className="flex items-center gap-3 mt-4">
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <ShoppingCart size={12} />
-              <span>POS: {formatRupiah(today.pos.profit)}</span>
+              <span>
+                {showProfit
+                  ? `POS: ${formatRupiah(today.pos.profit)}`
+                  : `POS: ${today.pos.count} trx`}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold">
               <Landmark size={12} />
               <span>
-                {servicesLabel}: {formatRupiah(today.brilink.profit)}
+                {servicesLabel}:{" "}
+                {showProfit
+                  ? formatRupiah(today.brilink.profit)
+                  : `${today.brilink.count} trx`}
               </span>
             </div>
           </div>
@@ -240,13 +260,23 @@ export default function Dashboard() {
           sub={`${today.brilink.count} trx`}
           color="bg-violet-50 text-violet-600"
         />
-        <StatCard
-          icon={<TrendingUp size={20} />}
-          label={`Fee ${servicesLabel}`}
-          value={formatRupiah(today.brilink.profit)}
-          sub="100% profit"
-          color="bg-amber-50 text-amber-600"
-        />
+        {showProfit ? (
+          <StatCard
+            icon={<TrendingUp size={20} />}
+            label={`Fee ${servicesLabel}`}
+            value={formatRupiah(today.brilink.profit)}
+            sub="profit layanan"
+            color="bg-amber-50 text-amber-600"
+          />
+        ) : (
+          <StatCard
+            icon={<TrendingUp size={20} />}
+            label="Transaksi Selesai"
+            value={(today.pos.count + today.brilink.count).toString()}
+            sub="hari ini"
+            color="bg-amber-50 text-amber-600"
+          />
+        )}
       </div>
 
       {/* Action Required block — production-focused, high visibility */}
@@ -401,7 +431,9 @@ export default function Dashboard() {
                 Hari
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Omzet, profit, dan jumlah transaksi harian.
+                {showProfit
+                  ? "Omzet, profit, dan jumlah transaksi harian."
+                  : "Omzet dan jumlah transaksi harian."}
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 text-right">
@@ -413,14 +445,16 @@ export default function Dashboard() {
                   {formatRupiah(chartTotals.revenue)}
                 </p>
               </div>
-              <div className="rounded-xl bg-emerald-50 px-3 py-2">
-                <p className="text-[10px] font-bold uppercase text-emerald-500">
-                  Profit
-                </p>
-                <p className="text-xs font-extrabold text-emerald-700">
-                  {formatRupiah(chartTotals.profit)}
-                </p>
-              </div>
+              {showProfit && (
+                <div className="rounded-xl bg-emerald-50 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase text-emerald-500">
+                    Profit
+                  </p>
+                  <p className="text-xs font-extrabold text-emerald-700">
+                    {formatRupiah(chartTotals.profit)}
+                  </p>
+                </div>
+              )}
               <div className="rounded-xl bg-slate-50 px-3 py-2">
                 <p className="text-[10px] font-bold uppercase text-slate-500">
                   Trx
@@ -516,14 +550,16 @@ export default function Dashboard() {
                     dot={false}
                     activeDot={{ r: 4 }}
                   />
-                  <Bar
-                    yAxisId="money"
-                    dataKey="profit"
-                    name="Profit"
-                    fill="#10b981"
-                    radius={[8, 8, 0, 0]}
-                    maxBarSize={36}
-                  />
+                  {showProfit && (
+                    <Bar
+                      yAxisId="money"
+                      dataKey="profit"
+                      name="Profit"
+                      fill="#10b981"
+                      radius={[8, 8, 0, 0]}
+                      maxBarSize={36}
+                    />
+                  )}
                   <Line
                     yAxisId="count"
                     type="monotone"
@@ -584,7 +620,9 @@ export default function Dashboard() {
                   <th className="text-left p-3 font-medium">Tipe</th>
                   <th className="text-left p-3 font-medium">Pelanggan</th>
                   <th className="text-right p-3 font-medium">Total</th>
-                  <th className="text-right p-3 font-medium">Profit</th>
+                  {showProfit && (
+                    <th className="text-right p-3 font-medium">Profit</th>
+                  )}
                   <th className="text-left p-3 font-medium">Waktu</th>
                 </tr>
               </thead>
@@ -608,9 +646,11 @@ export default function Dashboard() {
                     <td className="p-3 text-right font-semibold">
                       {formatRupiah(t.totalAmount)}
                     </td>
-                    <td className="p-3 text-right font-bold text-emerald-600">
-                      {formatRupiah(t.profit || "0")}
-                    </td>
+                    {showProfit && (
+                      <td className="p-3 text-right font-bold text-emerald-600">
+                        {formatRupiah(t.profit || "0")}
+                      </td>
+                    )}
                     <td className="p-3 text-slate-400 text-xs">
                       {formatDate(t.createdAt)}
                     </td>

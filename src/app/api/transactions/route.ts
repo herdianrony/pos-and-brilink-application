@@ -104,6 +104,13 @@ async function getRequireCashConfirmation(): Promise<boolean> {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function maskTransactionProfit<T extends { profit?: unknown }>(
+  row: T,
+  isAdmin: boolean,
+): T {
+  return isAdmin ? row : { ...row, profit: null };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth();
@@ -125,7 +132,10 @@ export async function GET(req: NextRequest) {
       .where(conds.length > 0 ? and(...conds) : undefined)
       .orderBy(desc(transactions.createdAt))
       .limit(limit);
-    return NextResponse.json(data);
+    const isAdmin = auth.user.role === "admin";
+    return NextResponse.json(
+      data.map((row) => maskTransactionProfit(row, isAdmin)),
+    );
   } catch (error) {
     return handleApiError("transactions:GET", error, "Gagal memuat transaksi");
   }
@@ -429,7 +439,9 @@ export async function POST(req: Request) {
           });
         }
 
-        return NextResponse.json(trx);
+        return NextResponse.json(
+          maskTransactionProfit(trx, auth.user.role === "admin"),
+        );
       });
     } else {
       // BRILINK TRANSACTION — S-02/S-03: unified cash flow calculator + feeMethod enforcement
@@ -812,7 +824,9 @@ export async function POST(req: Request) {
           }
         }
 
-        return NextResponse.json(trx);
+        return NextResponse.json(
+          maskTransactionProfit(trx, auth.user.role === "admin"),
+        );
       });
     }
   } catch (error) {

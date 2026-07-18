@@ -38,6 +38,7 @@ import type {
 export default function History() {
   const [trxs, setTrxs] = useState<Trx[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detail, setDetail] = useState<TrxDetail | null>(null);
@@ -52,6 +53,13 @@ export default function History() {
   );
   const [actionInput, setActionInput] = useState("");
   const [actionSubmitting, setActionSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setRole(data?.user?.role || null))
+      .catch(() => setRole(null));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -129,6 +137,7 @@ export default function History() {
     }
   }
 
+  const showProfit = role === "admin";
   const { revenue: totalRev, profit: totalProfit } =
     calculateTransactionTotals(filteredTrxs);
   const { pendingCount } = calculateTransactionTotals(trxs);
@@ -150,6 +159,7 @@ export default function History() {
         count={filteredTrxs.length}
         revenue={totalRev}
         profit={totalProfit}
+        showProfit={showProfit}
       />
 
       <Tabs
@@ -172,6 +182,7 @@ export default function History() {
         servicesLabel={servicesLabel}
         onViewDetail={viewDetail}
         onOpenAction={openAction}
+        showProfit={showProfit}
       />
 
       <TransactionDetailModal
@@ -179,6 +190,7 @@ export default function History() {
         loadingDet={loadingDet}
         servicesLabel={servicesLabel}
         settings={settings}
+        showProfit={showProfit}
         onClose={() => setDetail(null)}
         openAction={openAction}
       />

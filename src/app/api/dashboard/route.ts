@@ -133,32 +133,34 @@ export async function GET() {
     .from(transactions)
     .where(eq(transactions.status, "pending"));
 
+  const isAdmin = auth.user.role === "admin";
+
   return NextResponse.json({
     today: {
       ...emptyAggregate,
       ...(todayAll || {}),
       count: Number(todayAll?.count || 0),
       revenue: todayAll?.revenue || "0",
-      profit: todayAll?.profit || "0",
+      profit: isAdmin ? todayAll?.profit || "0" : "0",
       pos: {
         ...emptyTypeAggregate,
         ...(todayPos || {}),
         count: Number(todayPos?.count || 0),
         total: todayPos?.total || "0",
-        profit: todayPos?.profit || "0",
+        profit: isAdmin ? todayPos?.profit || "0" : "0",
       },
       brilink: {
         ...emptyBrilinkAggregate,
         ...(todayBrilink || {}),
         count: Number(todayBrilink?.count || 0),
         total: todayBrilink?.total || "0",
-        fee: todayBrilink?.fee || "0",
-        profit: todayBrilink?.profit || "0",
+        fee: isAdmin ? todayBrilink?.fee || "0" : "0",
+        profit: isAdmin ? todayBrilink?.profit || "0" : "0",
       },
     },
     lowStock: lowStock || [],
     recent: recent || [],
-    last7,
+    last7: isAdmin ? last7 : last7.map((row) => ({ ...row, profit: "0" })),
     accounts: accountBalances || [],
     pendingCount: pendingResult?.count || 0,
   });
