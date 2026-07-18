@@ -30,7 +30,7 @@ Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplik
 - [Troubleshooting](#troubleshooting)
 - [Scripts](#scripts)
 - [Struktur Project](#struktur-project)
-- [Dukungan dan Support](#dukungan-dan-support)
+- [Dukungan dan Bantuan](#dukungan-dan-bantuan)
 - [Lisensi](#lisensi)
 - [Author](#author)
 
@@ -116,16 +116,17 @@ Aplikasi ini adalah aplikasi POS dan pencatatan agen bisnis. Untuk modul layanan
 
 Operator tetap harus melakukan transaksi sebenarnya melalui mobile banking, EDC, aplikasi BRILink/PPOB resmi, atau kanal resmi lain. Setelah itu transaksi dicatat di aplikasi ini untuk kebutuhan pembukuan, struk, dan laporan.
 
-## Dukungan dan Support
+## Dukungan dan Bantuan
 
-Aplikasi ini dapat digunakan tanpa biaya license pada tahap stabilisasi. Jika aplikasi membantu operasional usaha Anda, dukungan sukarela sangat berarti untuk pengembangan fitur, perbaikan bug, dokumentasi, dan biaya operasional.
+Aplikasi ini masih tahap pemantapan dan bisa dipakai tanpa biaya lisensi pada rilis awal `v1.0.0`.
 
-- Dukungan/donasi bersifat sukarela dan bukan kewajiban license.
-- Layanan support teknis, instalasi, training, setup printer, setup layanan agen, backup/restore, dan customisasi dapat dikenakan biaya sesuai kesepakatan.
-- Untuk dukungan sukarela: <https://sociabuzz.com/herdianrony/tribe>
-- Untuk support teknis: <mailto:herdianrony@gmail.com>
+Jika aplikasi ini membantu usaha Anda, Anda boleh memberi dukungan sukarela. Dukungan ini membantu perbaikan bug, pembuatan fitur baru, dan penulisan panduan.
 
-Aplikasi tidak menerapkan license gate pada rilis awal `v1.0.0`; POS tetap dapat digunakan offline sesuai desain.
+- Donasi tidak wajib.
+- Aplikasi tidak dikunci jika pengguna tidak berdonasi.
+- Jika pengguna meminta bantuan langsung seperti instalasi, training, setup printer, setup layanan agen, backup/restore, atau penyesuaian khusus, bantuan tersebut bisa berbayar sesuai kesepakatan.
+- Dukungan sukarela: <https://sociabuzz.com/herdianrony/tribe>
+- Bantuan teknis: <mailto:herdianrony@gmail.com>
 
 ## Tech Stack
 

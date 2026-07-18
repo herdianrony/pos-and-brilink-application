@@ -260,29 +260,29 @@ export default function AboutPage() {
               </div>
               <div>
                 <h2 className="text-lg font-extrabold text-slate-800">
-                  Dukung Pengembangan
+                  Dukung Aplikasi Ini
                 </h2>
                 <p className="text-sm text-amber-700/80 mt-0.5">
-                  Bantu saya terus mengembangkan aplikasi ini
+                  Bantu agar aplikasi terus diperbaiki
                 </p>
               </div>
             </div>
 
             <p className="text-sm text-slate-600 leading-relaxed mb-5">
-              Aplikasi ini dapat digunakan tanpa biaya license pada tahap
-              stabilisasi. Jika aplikasi membantu operasional usaha Anda,
-              dukungan sukarela sangat berarti untuk pengembangan fitur baru,
-              perbaikan bug, dokumentasi, dan biaya operasional. Dukungan tidak
-              wajib, tetapi sangat dihargai.
+              Aplikasi ini masih tahap pemantapan dan bisa dipakai tanpa biaya
+              lisensi. Jika aplikasi ini membantu usaha Anda, Anda boleh memberi
+              dukungan sukarela. Dukungan ini membantu saya memperbaiki bug,
+              membuat fitur baru, dan menulis panduan yang lebih mudah dipahami.
             </p>
 
             <div className="mb-5 rounded-2xl border border-amber-200 bg-white/70 p-4 text-xs leading-relaxed text-amber-800">
-              <p className="font-extrabold text-amber-900">Transparansi</p>
+              <p className="font-extrabold text-amber-900">Catatan sederhana</p>
               <p className="mt-1">
-                Donasi bersifat sukarela dan bukan kewajiban license. Jika Anda
-                membutuhkan bantuan instalasi, training, setup printer, setup
-                layanan agen, backup/restore, atau customisasi, layanan support
-                teknis dapat dikenakan biaya sesuai kesepakatan.
+                Donasi tidak wajib. Aplikasi tidak akan dikunci hanya karena
+                Anda tidak berdonasi. Jika Anda minta dibantu langsung, misalnya
+                instalasi, setting printer, training kasir, backup data, atau
+                penyesuaian khusus, bantuan tersebut bisa berbayar sesuai
+                kesepakatan.
               </p>
             </div>
 
@@ -295,7 +295,7 @@ export default function AboutPage() {
             >
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 py-4 rounded-2xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/40 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group">
                 <Heart size={20} className="fill-white" />
-                <span>Dukung via Sociabuzz</span>
+                <span>Dukung lewat Sociabuzz</span>
                 <ExternalLink
                   size={16}
                   className="opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
@@ -314,9 +314,9 @@ export default function AboutPage() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
-                  { icon: Zap, text: "Update fitur lebih cepat" },
-                  { icon: Star, text: "Perbaikan bug & dokumentasi" },
-                  { icon: Users, text: "Support komunitas UMKM" },
+                  { icon: Zap, text: "Fitur baru lebih cepat" },
+                  { icon: Star, text: "Bug dan panduan diperbaiki" },
+                  { icon: Users, text: "Membantu pengguna UMKM" },
                 ].map((b, i) => {
                   const Icon = b.icon;
                   return (
@@ -341,30 +341,30 @@ export default function AboutPage() {
           <div className="flex items-center gap-2 mb-5">
             <LifeBuoy size={18} className="text-emerald-600" />
             <h2 className="text-lg font-extrabold text-slate-800">
-              Layanan Support Berbayar
+              Bantuan Berbayar
             </h2>
           </div>
           <p className="text-sm text-slate-500 leading-relaxed mb-5">
-            Aplikasi dapat digunakan mandiri. Jika membutuhkan pendampingan,
-            developer menyediakan layanan support teknis berbayar untuk membantu
-            usaha Anda mulai lebih cepat dan aman.
+            Anda bisa memakai aplikasi ini sendiri. Jika ingin dibantu agar
+            lebih cepat siap dipakai, saya juga menerima bantuan berbayar sesuai
+            kebutuhan.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {
                 icon: Wrench,
-                title: "Setup Aplikasi",
-                desc: "Instalasi, setup toko, akun, saldo awal, dan update.",
+                title: "Pasang Aplikasi",
+                desc: "Install, isi data toko, akun, saldo awal, dan update.",
               },
               {
                 icon: Printer,
-                title: "Printer & Perangkat",
-                desc: "Bantuan konfigurasi printer thermal dan scanner barcode.",
+                title: "Printer & Scanner",
+                desc: "Bantu setting printer thermal dan scanner barcode.",
               },
               {
                 icon: GraduationCap,
-                title: "Training & Custom",
-                desc: "Training kasir, setup layanan agen, laporan, dan SOP.",
+                title: "Training & Penyesuaian",
+                desc: "Latih kasir, buat layanan agen, laporan, dan SOP.",
               },
             ].map((item) => {
               const Icon = item.icon;
@@ -391,7 +391,7 @@ export default function AboutPage() {
               href="mailto:herdianrony@gmail.com?subject=Support%20BRILink%20POS"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white transition-colors hover:bg-emerald-700"
             >
-              <Mail size={16} /> Hubungi untuk Support
+              <Mail size={16} /> Minta Bantuan
             </a>
             <a
               href="https://github.com/herdianrony/pos-and-brilink-application/issues"
@@ -399,7 +399,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200"
             >
-              <ExternalLink size={16} /> Laporkan Bug
+              <ExternalLink size={16} /> Laporkan Masalah
             </a>
           </div>
         </div>

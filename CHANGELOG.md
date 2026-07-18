@@ -15,7 +15,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Panel **Log & Monitoring Aplikasi** di Pengaturan > Lanjutan untuk memantau error API, error tampilan, log server Electron, download log, dan membersihkan log aktif.
 - Chart Dashboard 7 hari yang lebih informatif dengan omzet, profit, jumlah transaksi, tooltip, ringkasan total, dan data tanggal kosong tetap tampil.
 - Export PDF untuk laporan POS dan Rekening Koran melalui Electron `printToPDF`, dengan fallback print-to-PDF di browser.
-- Halaman Tentang dilengkapi informasi dukungan sukarela dan layanan support teknis berbayar tanpa license gate.
+- Redaksi dukungan di halaman Tentang, README, dan panduan pengguna disederhanakan agar mudah dipahami pengguna awam.
 - Laporan POS khusus dengan filter tanggal, omzet, HPP, profit, rata-rata transaksi, metode pembayaran, produk terlaris, export CSV produk, dan export PDF.
 - Fitur **Ambil Profit Owner** pada Manajemen Saldo untuk mencatat prive/penarikan laba owner tanpa mengubah profit transaksi.
 - Navigasi hash awal (`/#brilink`, `/#settings`, dll.) diproses saat halaman pertama kali dibuka agar E2E dan deep-link langsung masuk ke halaman tujuan.

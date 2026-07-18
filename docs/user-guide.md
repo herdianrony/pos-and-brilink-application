@@ -551,21 +551,20 @@ Jika aplikasi terasa bermasalah, buka panel ini lalu download log sebelum restar
 
 ---
 
-## 16. Dukungan Pengembangan dan Support
+## 16. Dukungan dan Bantuan
 
-Aplikasi dapat digunakan tanpa biaya license pada tahap stabilisasi. Jika aplikasi membantu operasional usaha, pengguna dapat mendukung pengembangan secara sukarela.
+Aplikasi ini masih tahap pemantapan dan dapat dipakai tanpa biaya lisensi.
 
-Dukungan sukarela digunakan untuk membantu:
+Jika aplikasi membantu usaha Anda, Anda boleh memberi dukungan sukarela. Dukungan ini membantu:
 
-- pengembangan fitur baru,
-- perbaikan bug,
-- dokumentasi,
-- pengujian perangkat/printer,
-- biaya operasional pengembangan.
+- memperbaiki bug,
+- menambah fitur,
+- membuat panduan yang lebih mudah,
+- menguji printer dan perangkat lain.
 
-Dukungan tidak wajib dan bukan aktivasi license.
+Donasi tidak wajib. Aplikasi tidak akan dikunci hanya karena pengguna tidak berdonasi.
 
-Jika membutuhkan bantuan teknis seperti instalasi, setup printer, setup layanan agen, training kasir, backup/restore, atau customisasi laporan, developer dapat menyediakan layanan support berbayar sesuai kesepakatan.
+Jika Anda ingin dibantu langsung, misalnya instalasi, setting printer, setup layanan agen, training kasir, backup/restore, atau penyesuaian laporan, bantuan tersebut bisa berbayar sesuai kesepakatan.
 
 Kontak dan dukungan:
 
