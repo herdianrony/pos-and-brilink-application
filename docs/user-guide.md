@@ -551,7 +551,32 @@ Jika aplikasi terasa bermasalah, buka panel ini lalu download log sebelum restar
 
 ---
 
-## 16. Troubleshooting Singkat
+## 16. Dukungan Pengembangan dan Support
+
+Aplikasi dapat digunakan tanpa biaya license pada tahap stabilisasi. Jika aplikasi membantu operasional usaha, pengguna dapat mendukung pengembangan secara sukarela.
+
+Dukungan sukarela digunakan untuk membantu:
+
+- pengembangan fitur baru,
+- perbaikan bug,
+- dokumentasi,
+- pengujian perangkat/printer,
+- biaya operasional pengembangan.
+
+Dukungan tidak wajib dan bukan aktivasi license.
+
+Jika membutuhkan bantuan teknis seperti instalasi, setup printer, setup layanan agen, training kasir, backup/restore, atau customisasi laporan, developer dapat menyediakan layanan support berbayar sesuai kesepakatan.
+
+Kontak dan dukungan:
+
+```txt
+Sociabuzz: https://sociabuzz.com/herdianrony/tribe
+Email: herdianrony@gmail.com
+```
+
+---
+
+## 17. Troubleshooting Singkat
 
 ### Tidak bisa login
 
@@ -588,7 +613,7 @@ Jika aplikasi terasa bermasalah, buka panel ini lalu download log sebelum restar
 
 ---
 
-## 17. Batasan Aplikasi
+## 18. Batasan Aplikasi
 
 Aplikasi ini tidak menyediakan:
 
@@ -611,7 +636,7 @@ Aplikasi ini fokus pada:
 
 ---
 
-## 18. Alur Tutup Hari yang Disarankan
+## 19. Alur Tutup Hari yang Disarankan
 
 1. Selesaikan semua transaksi pending.
 2. Cek Riwayat Transaksi hari ini.

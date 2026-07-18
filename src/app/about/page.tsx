@@ -19,6 +19,9 @@ import {
   Globe,
   RefreshCw,
   DownloadCloud,
+  LifeBuoy,
+  Wrench,
+  GraduationCap,
 } from "lucide-react";
 import { getAppVersion, isElectron, isPackaged } from "@/lib/hardware";
 import { useSettings } from "@/lib/use-settings";
@@ -266,11 +269,22 @@ export default function AboutPage() {
             </div>
 
             <p className="text-sm text-slate-600 leading-relaxed mb-5">
-              Aplikasi ini gratis & open-source. Dukungan Anda sangat berarti
-              untuk pengembangan fitur baru, perbaikan bug, dan biaya
-              operasional. Setiap kontribusi — sekecil apapun — sangat dihargai!
-              heart
+              Aplikasi ini dapat digunakan tanpa biaya license pada tahap
+              stabilisasi. Jika aplikasi membantu operasional usaha Anda,
+              dukungan sukarela sangat berarti untuk pengembangan fitur baru,
+              perbaikan bug, dokumentasi, dan biaya operasional. Dukungan tidak
+              wajib, tetapi sangat dihargai.
             </p>
+
+            <div className="mb-5 rounded-2xl border border-amber-200 bg-white/70 p-4 text-xs leading-relaxed text-amber-800">
+              <p className="font-extrabold text-amber-900">Transparansi</p>
+              <p className="mt-1">
+                Donasi bersifat sukarela dan bukan kewajiban license. Jika Anda
+                membutuhkan bantuan instalasi, training, setup printer, setup
+                layanan agen, backup/restore, atau customisasi, layanan support
+                teknis dapat dikenakan biaya sesuai kesepakatan.
+              </p>
+            </div>
 
             {/* CTA button */}
             <a
@@ -301,7 +315,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   { icon: Zap, text: "Update fitur lebih cepat" },
-                  { icon: Star, text: "Pertahankan gratis selamanya" },
+                  { icon: Star, text: "Perbaikan bug & dokumentasi" },
                   { icon: Users, text: "Support komunitas UMKM" },
                 ].map((b, i) => {
                   const Icon = b.icon;
@@ -319,6 +333,74 @@ export default function AboutPage() {
                 })}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ── Paid Support Card ─────────────── */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-5">
+            <LifeBuoy size={18} className="text-emerald-600" />
+            <h2 className="text-lg font-extrabold text-slate-800">
+              Layanan Support Berbayar
+            </h2>
+          </div>
+          <p className="text-sm text-slate-500 leading-relaxed mb-5">
+            Aplikasi dapat digunakan mandiri. Jika membutuhkan pendampingan,
+            developer menyediakan layanan support teknis berbayar untuk membantu
+            usaha Anda mulai lebih cepat dan aman.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                icon: Wrench,
+                title: "Setup Aplikasi",
+                desc: "Instalasi, setup toko, akun, saldo awal, dan update.",
+              },
+              {
+                icon: Printer,
+                title: "Printer & Perangkat",
+                desc: "Bantuan konfigurasi printer thermal dan scanner barcode.",
+              },
+              {
+                icon: GraduationCap,
+                title: "Training & Custom",
+                desc: "Training kasir, setup layanan agen, laporan, dan SOP.",
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                >
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+                    <Icon size={18} />
+                  </div>
+                  <p className="text-sm font-extrabold text-slate-800">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    {item.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <a
+              href="mailto:herdianrony@gmail.com?subject=Support%20BRILink%20POS"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white transition-colors hover:bg-emerald-700"
+            >
+              <Mail size={16} /> Hubungi untuk Support
+            </a>
+            <a
+              href="https://github.com/herdianrony/pos-and-brilink-application/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200"
+            >
+              <ExternalLink size={16} /> Laporkan Bug
+            </a>
           </div>
         </div>
 
