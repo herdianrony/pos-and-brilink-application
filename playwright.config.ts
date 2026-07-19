@@ -32,6 +32,6 @@ export default defineConfig({
       "npx cross-env PORT=3001 AUTH_SECRET=e2e_local_auth_secret_32_chars_min E2E=1 npm run dev",
     url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
-    timeout: 60000,
+    timeout: 180000,
   },
 });

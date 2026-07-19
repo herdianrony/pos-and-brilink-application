@@ -87,8 +87,10 @@ test.describe("Owner draw / Ambil Profit", () => {
   });
 
   test("shows Ambil Profit button and modal on cash page", async ({ page }) => {
-    await page.goto("/#cash");
+    await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
+    await page.click('button:has-text("Kas & Saldo")');
+    await page.waitForSelector('[class*="animate-spin"]', { state: "hidden" }).catch(() => {});
     await expect(page.locator('button:has-text("Ambil Profit")').first()).toBeVisible({ timeout: 10000 });
     await page.locator('button:has-text("Ambil Profit")').first().click();
     await expect(page.getByRole("heading", { name: /ambil profit owner/i })).toBeVisible({ timeout: 5000 });
