@@ -28,6 +28,30 @@ Untuk aplikasi desktop/installer:
 
 Jika perangkat masih memakai Windows 7/8, gunakan mode Web/LAN dari komputer/server yang lebih modern, atau upgrade OS minimal ke Windows 10 64-bit.
 
+### 1.2 Jika Komputer Masih Core 2 Duo
+
+PC lama seperti Core 2 Duo masih bisa dipakai sebagai kasir jika kondisinya cukup layak:
+
+- CPU mendukung 64-bit,
+- RAM minimal 4GB,
+- memakai SSD,
+- sudah Windows 10 64-bit.
+
+Jika masih Windows 7 32-bit, aplikasi desktop tidak didukung. Pilihan yang lebih aman adalah:
+
+```txt
+Aplikasi dijalankan di komputer/server yang lebih baru.
+PC lama cukup membuka aplikasi lewat browser di jaringan lokal.
+```
+
+Contoh:
+
+```txt
+http://192.168.1.10:3000
+```
+
+Dengan cara ini, PC lama hanya menjadi layar kasir/browser, sedangkan aplikasi dan database berjalan di perangkat yang lebih kuat.
+
 ---
 
 ## 2. Setup Awal

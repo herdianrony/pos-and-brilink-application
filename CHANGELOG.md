@@ -16,6 +16,7 @@ Semua perubahan penting aplikasi dicatat di file ini. Format mengikuti praktik u
 - Chart Dashboard 7 hari yang lebih informatif dengan omzet, profit, jumlah transaksi, tooltip, ringkasan total, dan data tanggal kosong tetap tampil.
 - Export PDF untuk laporan POS dan Rekening Koran melalui Electron `printToPDF`, dengan fallback print-to-PDF di browser.
 - Redaksi dukungan di halaman Tentang, README, dan panduan pengguna disederhanakan agar mudah dipahami pengguna awam.
+- Dokumentasi perangkat lama/Core 2 Duo ditambahkan: desktop hanya realistis untuk Windows 10/11 64-bit, sedangkan Windows 7 32-bit disarankan memakai Web/LAN mode.
 - Laporan POS khusus dengan filter tanggal, omzet, HPP, profit, rata-rata transaksi, metode pembayaran, produk terlaris, export CSV produk, dan export PDF.
 - Fitur **Ambil Profit Owner** pada Manajemen Saldo untuk mencatat prive/penarikan laba owner tanpa mengubah profit transaksi.
 - Fitur **Biaya Admin Bank** pada rekening non-tunai untuk mencatat biaya admin bulanan, biaya transfer, biaya kartu, atau MDR QRIS tanpa harus input nominal minus manual.

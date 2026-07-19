@@ -178,6 +178,26 @@ Konfigurasi desktop saat ini menggunakan Electron 43 dan target build Windows x6
 
 > **Catatan penting:** Windows 7/8 tidak didukung karena Electron/Chromium modern dan Node.js 22 sudah tidak realistis untuk OS tersebut. Jika perangkat masih Windows 7, gunakan Web/LAN mode dari server/PC yang lebih modern, atau upgrade minimal ke Windows 10 64-bit.
 
+### Catatan untuk PC Lama / Core 2 Duo
+
+Banyak usaha masih memakai PC lama seperti Core 2 Duo. Aplikasi masih bisa dicoba jika perangkat tersebut sudah memenuhi syarat berikut:
+
+| Komponen | Rekomendasi                                      |
+| -------- | ------------------------------------------------ |
+| CPU      | Core 2 Duo yang mendukung 64-bit atau lebih baru |
+| RAM      | Minimal 4GB                                      |
+| Storage  | SSD sangat disarankan                            |
+| OS       | Windows 10 64-bit                                |
+
+Jika PC masih memakai **Windows 7 32-bit**, installer desktop tidak didukung. Solusi yang disarankan adalah menjalankan aplikasi di PC/server yang lebih baru, lalu PC lama mengakses lewat browser dalam mode Web/LAN.
+
+Contoh skenario Web/LAN:
+
+```txt
+PC/server utama Windows 10/11 atau Linux menjalankan aplikasi
+PC Core 2 Duo lama membuka http://IP-SERVER:3000 dari browser
+```
+
 ## Instalasi
 
 ### Clone Repository

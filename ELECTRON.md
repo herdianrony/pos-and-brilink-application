@@ -369,6 +369,10 @@ npm run build:electron
 
 Build desktop resmi hanya untuk Windows 10/11 64-bit. Windows 7/8/8.1 tidak didukung oleh Electron/Chromium modern dan Node.js 22. Gunakan Web/LAN mode dari server yang lebih modern atau upgrade OS minimal ke Windows 10 64-bit.
 
+### PC Core 2 Duo / Perangkat Lama
+
+Core 2 Duo masih mungkin dipakai jika sudah 64-bit, RAM 4GB, SSD, dan Windows 10 64-bit. Jika masih Windows 7 32-bit atau RAM/HDD sangat terbatas, jangan pakai installer desktop; gunakan Web/LAN mode dari server/PC yang lebih baru.
+
 ### Build gagal karena `.whatsapp-session` terkunci
 
 Jika pernah menjalankan WhatsApp Web.js sebelum perubahan session path, folder `.whatsapp-session` di root project bisa terkunci oleh Chromium. Tutup proses `chrome.exe`, `node.exe`, atau `electron.exe`, lalu hapus:

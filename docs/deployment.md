@@ -31,6 +31,27 @@ Mode ini menggunakan Electron dan cocok untuk kasir utama.
 - Printer thermal opsional.
 - Barcode scanner USB opsional.
 
+### 2.1.1 Perangkat Lama / Core 2 Duo
+
+Untuk PC lama seperti Core 2 Duo, gunakan patokan berikut:
+
+| Kondisi Perangkat                                     | Rekomendasi                                    |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| Core 2 Duo 64-bit + RAM 4GB + SSD + Windows 10 64-bit | Bisa dicoba untuk desktop Electron             |
+| Core 2 Duo + RAM 2GB + HDD                            | Kemungkinan lambat; lebih baik Web/LAN client  |
+| Windows 7 32-bit                                      | Tidak didukung untuk installer desktop         |
+| Windows 7/8 yang tidak bisa upgrade                   | Gunakan Web/LAN dari PC/server yang lebih baru |
+
+Mode Web/LAN untuk PC lama:
+
+```txt
+1. Jalankan aplikasi di PC/server yang lebih baru.
+2. PC lama membuka browser ke http://IP-SERVER:3000.
+3. Gunakan printer network/LAN jika memungkinkan.
+```
+
+Jika printer thermal USB harus dipakai, lebih aman memakai PC kasir utama dengan Windows 10/11 64-bit.
+
 ### 2.2 Build Installer
 
 Di mesin developer:
