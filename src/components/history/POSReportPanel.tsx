@@ -79,7 +79,7 @@ export default function POSReportPanel() {
     } finally {
       setLoading(false);
     }
-  }, [start, end]);
+  }, [start, end, toast]);
 
   useEffect(() => {
     load();

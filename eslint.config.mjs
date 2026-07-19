@@ -3,7 +3,19 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 
 export default defineConfig([
   ...nextCoreWebVitals,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "electron/**", "tests/**", "e2e/**", "dist-electron/**", "scripts/**"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "electron/**",
+    "tests/**",
+    "e2e/**",
+    "dist-electron/**",
+    "scripts/**",
+    "src-tauri-ui/dist/**",
+    "src-tauri/**/target/**",
+  ]),
   {
     rules: {
       "react/no-unescaped-entities": "off",
