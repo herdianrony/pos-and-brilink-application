@@ -147,6 +147,15 @@ Target:
 - Login admin/kasir lokal berjalan.
 - Settings dasar terbaca.
 
+Status implementasi di branch eksperimen:
+
+- frontend static Vite React sudah dibuat di `src-tauri-ui`,
+- command Rust `health_check`, `db_init`, `setup_status`, `create_admin`, `login`, dan `list_accounts` sudah dibuat,
+- SQLite fresh schema awal sudah dibuat dengan `rusqlite`,
+- plugin dialog, fs, log, opener, single-instance, dan window-state sudah dipasang,
+- build UI `npm run build:tauri-ui` sudah berhasil di sandbox,
+- compile Rust/Tauri belum divalidasi di sandbox karena `cargo/rustc` tidak tersedia.
+
 Belum termasuk:
 
 - printer,
@@ -165,6 +174,14 @@ Target:
 - Stok berkurang.
 - Mutasi kas/rekening tercatat.
 - Riwayat transaksi POS.
+
+Status implementasi di branch eksperimen:
+
+- command Rust `list_categories`, `create_category`, `list_products`, `create_product`, dan `checkout_pos_cash` sudah dibuat,
+- UI awal untuk tambah kategori, tambah produk, keranjang, input quantity, dan checkout tunai sudah dibuat,
+- checkout tunai sudah mengurangi stok, membuat `transactions`, membuat `transaction_items`, menambah saldo `Kas Tunai`, dan membuat `account_mutations` bertipe `pos_in`,
+- riwayat transaksi terakhir sudah tampil lewat command `list_transactions`,
+- transfer/QRIS belum dibuat.
 
 ### POC 3 — Kas & Saldo
 
@@ -336,9 +353,9 @@ POC Windows 7/32-bit dianggap berhasil jika:
 
 Langkah berikut:
 
-1. Install Rust + Visual Studio Build Tools.
-2. Inisialisasi Tauri v2.
-3. Buat frontend static minimal.
-4. Buat command `health_check`.
-5. Buat database SQLite baru.
-6. Port Setup Wizard + login.
+1. Di Windows, install Rust + Visual Studio Build Tools.
+2. Jalankan `npm run dev:tauri` untuk validasi compile Rust/Tauri.
+3. Jika ada error compile Rust, perbaiki di branch `experiment/tauri-full` tanpa menyentuh `main`.
+4. Lanjutkan POC 2 dengan riwayat transaksi POS.
+5. Tambahkan checkout transfer/QRIS + rekening penerima.
+6. Setelah POC POS tunai stabil, lanjutkan POC Kas & Saldo.

@@ -27,6 +27,50 @@ export interface AccountRow {
   is_active: boolean;
 }
 
+export interface CategoryRow {
+  id: number;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  is_active: boolean;
+}
+
+export interface ProductRow {
+  id: number;
+  name: string;
+  barcode?: string | null;
+  category_id?: number | null;
+  category_name?: string | null;
+  buy_price: number;
+  sell_price: number;
+  stock: number;
+  min_stock: number;
+  unit: string;
+  is_active: boolean;
+}
+
+export interface PosCheckoutResponse {
+  ok: boolean;
+  transaction_id: number;
+  invoice_no: string;
+  total_amount: number;
+  profit: number;
+  cash_balance: number;
+}
+
+export interface TransactionRow {
+  id: number;
+  invoice_no: string;
+  transaction_type: string;
+  customer_name?: string | null;
+  total_amount: number;
+  profit: number;
+  payment_method: string;
+  status: string;
+  notes?: string | null;
+  created_at: string;
+}
+
 export function healthCheck() {
   return invoke<HealthCheck>("health_check");
 }
@@ -49,4 +93,41 @@ export function login(payload: { username: string; password: string }) {
 
 export function listAccounts() {
   return invoke<AccountRow[]>("list_accounts");
+}
+
+export function listCategories() {
+  return invoke<CategoryRow[]>("list_categories");
+}
+
+export function createCategory(payload: { name: string; icon?: string; color?: string }) {
+  return invoke<CategoryRow>("create_category", { payload });
+}
+
+export function listProducts() {
+  return invoke<ProductRow[]>("list_products");
+}
+
+export function listTransactions() {
+  return invoke<TransactionRow[]>("list_transactions");
+}
+
+export function createProduct(payload: {
+  name: string;
+  barcode?: string;
+  category_id?: number | null;
+  buy_price: number;
+  sell_price: number;
+  stock: number;
+  min_stock: number;
+  unit?: string;
+}) {
+  return invoke<ProductRow>("create_product", { payload });
+}
+
+export function checkoutPosCash(payload: {
+  customer_name?: string;
+  notes?: string;
+  items: Array<{ product_id: number; quantity: number }>;
+}) {
+  return invoke<PosCheckoutResponse>("checkout_pos_cash", { payload });
 }

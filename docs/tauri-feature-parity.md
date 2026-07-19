@@ -12,60 +12,60 @@ Status:
 
 ## Fondasi
 
-- [ ] Tauri v2 app dibuat.
-- [ ] Build dev Tauri jalan.
+- [~] Tauri v2 app dibuat — scaffold POC sudah ada di `src-tauri`.
+- [ ] Build dev Tauri jalan — menunggu validasi Windows dengan Rust + Visual Studio Build Tools.
 - [ ] Build Windows x64 jalan.
 - [ ] Build Windows i686 eksperimen jalan.
-- [ ] SQLite lokal dibuat di app data folder.
-- [ ] Migration fresh schema jalan.
-- [ ] Logging lokal jalan.
-- [ ] Single instance jalan.
-- [ ] Window state tersimpan.
+- [~] SQLite lokal dibuat di app data folder — command `db_init` sudah membuat database fresh.
+- [~] Migration fresh schema jalan — tabel awal user, akun, produk, kategori, transaksi, mutasi sudah dibuat.
+- [~] Logging lokal jalan — plugin log sudah dipasang, belum ada panel log.
+- [~] Single instance jalan — plugin single instance sudah dipasang.
+- [~] Window state tersimpan — plugin window state sudah dipasang.
 
 ## Setup & Auth
 
-- [ ] Setup Wizard.
-- [ ] Buat admin pertama.
-- [ ] Login.
+- [~] Setup Wizard — form admin pertama sudah tersedia.
+- [~] Buat admin pertama — command Rust `create_admin` sudah ada.
+- [~] Login — command Rust `login` sudah ada.
 - [ ] Logout.
-- [ ] Role admin/kasir.
-- [ ] Password hashing.
+- [~] Role admin/kasir — struktur role sudah ada, UI/guard belum lengkap.
+- [~] Password hashing — bcrypt sudah dipakai.
 - [ ] Login lockout.
 - [ ] Kasir tidak melihat profit.
 - [ ] Kasir tidak akses halaman admin.
 
 ## POS
 
-- [ ] List produk.
+- [~] List produk — command/UI awal sudah ada.
 - [ ] Search produk.
 - [ ] Barcode scanner keyboard wedge.
-- [ ] Cart.
-- [ ] Quantity +/-.
+- [~] Cart — keranjang sederhana sudah ada.
+- [~] Quantity +/- — input jumlah sudah ada.
 - [ ] Hold cart.
 - [ ] Diskon.
 - [ ] PIN admin diskon besar.
-- [ ] Checkout tunai.
+- [~] Checkout tunai — command `checkout_pos_cash` sudah mencatat transaksi.
 - [ ] Checkout transfer + rekening penerima.
 - [ ] Checkout QRIS + rekening penerima.
-- [ ] Stok berkurang.
-- [ ] Mutasi POS tunai.
+- [~] Stok berkurang — sudah dilakukan saat checkout tunai.
+- [~] Mutasi POS tunai — sudah menambah saldo Kas Tunai dan `account_mutations`.
 - [ ] Mutasi POS transfer.
 - [ ] Mutasi POS QRIS.
 - [ ] Struk/receipt preview.
 
 ## Produk
 
-- [ ] CRUD produk.
-- [ ] Kategori produk.
-- [ ] Barcode.
-- [ ] Harga beli/jual.
-- [ ] Stok/min stok.
+- [~] CRUD produk — create/list produk sudah ada, edit/delete belum.
+- [~] Kategori produk — create/list kategori sudah ada, edit/delete belum.
+- [~] Barcode — field barcode sudah ada, scanner/search belum.
+- [~] Harga beli/jual — field dan kalkulasi profit POS tunai sudah ada.
+- [~] Stok/min stok — field stok/min stok sudah ada, alert belum.
 - [ ] Foto produk opsional.
 - [ ] Alert stok menipis.
 
 ## Kas & Saldo
 
-- [ ] List akun.
+- [~] List akun — command/UI awal sudah ada.
 - [ ] Tambah/edit akun.
 - [ ] Aktif/nonaktif akun.
 - [ ] Transfer antar akun.
@@ -93,7 +93,7 @@ Status:
 
 ## Riwayat & Laporan
 
-- [ ] Riwayat transaksi.
+- [~] Riwayat transaksi — list 100 transaksi terakhir sudah ada di POC Tauri.
 - [ ] Filter POS/agen.
 - [ ] Filter status.
 - [ ] Detail transaksi.
