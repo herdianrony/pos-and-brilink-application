@@ -117,6 +117,14 @@ export interface BackupRow {
   created_at: string;
 }
 
+export interface AppLogRow {
+  id: number;
+  level: string;
+  source: string;
+  message: string;
+  created_at: string;
+}
+
 export function healthCheck() {
   return invoke<HealthCheck>("health_check");
 }
@@ -198,6 +206,10 @@ export function listTransactions() {
 
 export function listTransactionItems(payload: { transaction_id: number }) {
   return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
+}
+
+export function listAppLogs() {
+  return invoke<AppLogRow[]>("list_app_logs");
 }
 
 export function createDatabaseBackup() {

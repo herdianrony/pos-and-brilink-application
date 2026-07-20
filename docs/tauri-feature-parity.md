@@ -18,7 +18,7 @@ Status:
 - [ ] Build Windows i686 eksperimen jalan.
 - [~] SQLite lokal dibuat di app data folder — command `db_init` sudah membuat database fresh.
 - [~] Migration fresh schema jalan — tabel awal user, akun, produk, kategori, transaksi, mutasi sudah dibuat.
-- [~] Logging lokal jalan — plugin log sudah dipasang, belum ada panel log.
+- [~] Logging lokal jalan — plugin log dan halaman Log Aktivitas sudah ada.
 - [~] Single instance jalan — plugin single instance sudah dipasang.
 - [~] Window state tersimpan — plugin window state sudah dipasang.
 

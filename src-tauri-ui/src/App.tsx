@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AccountMutationRow,
   AccountRow,
+  AppLogRow,
   BackupRow,
   CategoryRow,
   DebtRow,
@@ -27,6 +28,7 @@ import {
   healthCheck,
   listAccountMutations,
   listAccounts,
+  listAppLogs,
   listCategories,
   listDatabaseBackups,
   listDebts,
@@ -79,8 +81,8 @@ type ReceiptState = {
   created_at: string;
   items: CartItem[];
 };
-type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings";
-type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
+type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "logs" | "settings";
+type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "logs" | "settings" | "search";
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -92,6 +94,7 @@ const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: 
   { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
   { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
   { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
+  { id: "logs", label: "Log Aktivitas", icon: "logs", adminOnly: true },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];
 
@@ -104,6 +107,7 @@ function Icon({ name }: { name: IconName }) {
   if (name === "reports") return <svg {...common}><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="5" rx="1" /><rect x="12" y="8" width="3" height="9" rx="1" /><rect x="17" y="5" width="3" height="12" rx="1" /></svg>;
   if (name === "products") return <svg {...common}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>;
   if (name === "history") return <svg {...common}><path d="M8 3H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V5a2 2 0 0 0-2-2h-2" /><path d="M9 7h6" /><path d="M9 11h6" /><path d="M9 15h4" /></svg>;
+  if (name === "logs") return <svg {...common}><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h10" /><path d="M8 5v14" /></svg>;
   if (name === "debts") return <svg {...common}><path d="M16 3h5v5" /><path d="m21 3-7 7" /><path d="M12 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7 14h6" /><path d="M7 18h4" /></svg>;
   if (name === "cash") return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 9v.01" /><path d="M18 15v.01" /></svg>;
   if (name === "settings") return <svg {...common}><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06A2 2 0 1 1 7.03 3.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.15.4.38.74.7 1 .32.25.7.4 1.1.4H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.6Z" /></svg>;
@@ -129,6 +133,7 @@ export default function App() {
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [debts, setDebts] = useState<DebtRow[]>([]);
   const [backups, setBackups] = useState<BackupRow[]>([]);
+  const [appLogs, setAppLogs] = useState<AppLogRow[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -180,7 +185,7 @@ export default function App() {
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups] = await Promise.all([
+    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups, nextLogs] = await Promise.all([
       listAccounts(),
       listAccountMutations(),
       listCategories(),
@@ -189,6 +194,7 @@ export default function App() {
       listDebts(),
       listUsers(),
       listDatabaseBackups(),
+      listAppLogs(),
     ]);
     setAccounts(nextAccounts);
     setAccountMutations(nextMutations);
@@ -198,6 +204,7 @@ export default function App() {
     setDebts(nextDebts);
     setUsers(nextUsers);
     setBackups(nextBackups);
+    setAppLogs(nextLogs);
     if (!settlementAccountId) {
       const firstBank = nextAccounts.find((account) => account.code !== "cash");
       if (firstBank) setSettlementAccountId(String(firstBank.id));
@@ -1124,6 +1131,31 @@ export default function App() {
     );
   }
 
+
+  function renderLogs() {
+    const visibleLogs = normalizedSearch
+      ? appLogs.filter((log) => [log.level, log.source, log.message, log.created_at].join(" ").toLowerCase().includes(normalizedSearch))
+      : appLogs;
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Monitoring</p><h1>Log Aktivitas</h1></div><button className="secondary" onClick={bootstrap}>Refresh Log</button></div>
+        <div className="page-help"><strong>Tujuan log:</strong><span>Melihat aktivitas penting seperti checkout, backup, restore, dan pembuatan user.</span></div>
+        <section className="card">
+          {visibleLogs.length === 0 ? <div className="empty-state"><strong>Belum ada log</strong><span>Log akan muncul setelah ada aktivitas penting.</span></div> : (
+            <div className="log-list">
+              {visibleLogs.map((log) => (
+                <div key={log.id} className="log-row">
+                  <span className={`log-level ${log.level.toLowerCase()}`}>{log.level}</span>
+                  <div><strong>{log.message}</strong><small>{log.source} • {log.created_at}</small></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </>
+    );
+  }
+
   function renderSettings() {
     return (
       <>
@@ -1221,6 +1253,7 @@ export default function App() {
     if (activeView === "rekeningKoran") return renderRekeningKoran();
     if (activeView === "cash") return renderCash();
     if (activeView === "reports") return renderReports();
+    if (activeView === "logs") return renderLogs();
     if (activeView === "settings") return renderSettings();
     return renderDashboard();
   }

@@ -289,6 +289,15 @@ struct BackupRow {
     created_at: String,
 }
 
+#[derive(Debug, Serialize)]
+struct AppLogRow {
+    id: i64,
+    level: String,
+    source: String,
+    message: String,
+    created_at: String,
+}
+
 #[derive(Debug, Deserialize)]
 struct RestoreBackupPayload {
     path: String,
@@ -497,6 +506,13 @@ fn normalize_code(value: &str) -> String {
         .to_string()
 }
 
+fn record_app_log(conn: &Connection, level: &str, source: &str, message: &str) {
+    let _ = conn.execute(
+        "INSERT INTO app_logs (level, source, message, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![level, source, message, Utc::now().to_rfc3339()],
+    );
+}
+
 #[tauri::command]
 fn health_check() -> HealthCheck {
     HealthCheck {
@@ -597,6 +613,7 @@ fn create_user(app: AppHandle, payload: CreateUserPayload) -> Result<PublicUser,
         params![name, username, password_hash, role, now],
     )
     .map_err(|e| format!("Gagal membuat user: {e}"))?;
+    record_app_log(&conn, "INFO", "users", &format!("User dibuat: {username}"));
     Ok(PublicUser { id: conn.last_insert_rowid(), name, username, role })
 }
 
@@ -1091,6 +1108,29 @@ fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Resu
 
 
 
+
+#[tauri::command]
+fn list_app_logs(app: AppHandle) -> Result<Vec<AppLogRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT 300")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(AppLogRow {
+                id: row.get(0)?,
+                level: row.get(1)?,
+                source: row.get(2)?,
+                message: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
+
 #[tauri::command]
 fn create_database_backup(app: AppHandle) -> Result<BackupRow, String> {
     let conn = init_schema(&app)?;
@@ -1106,6 +1146,8 @@ fn create_database_backup(app: AppHandle) -> Result<BackupRow, String> {
     let target = dir.join(&name);
     fs::copy(&source, &target).map_err(|e| format!("Gagal membuat backup: {e}"))?;
     let metadata = fs::metadata(&target).map_err(|e| e.to_string())?;
+    let conn = init_schema(&app)?;
+    record_app_log(&conn, "INFO", "backup", &format!("Backup dibuat: {name}"));
     Ok(BackupRow {
         name,
         path: target.display().to_string(),
@@ -1164,6 +1206,8 @@ fn restore_database_backup(app: AppHandle, payload: RestoreBackupPayload) -> Res
     let _ = fs::remove_file(&wal);
     let _ = fs::remove_file(&shm);
     fs::copy(&canonical_backup, &target).map_err(|e| format!("Gagal restore database: {e}"))?;
+    let conn = init_schema(&app)?;
+    record_app_log(&conn, "WARN", "backup", &format!("Database direstore dari {}", safe_file_name(&canonical_backup)));
     Ok(true)
 }
 
@@ -1337,6 +1381,7 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
     let mutation_label = match payment_method.as_str() { "transfer" => "POS Transfer", "qris" => "POS QRIS", _ => "POS Tunai" };
     tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", params![settlement_account.0, mutation_type, total_amount, settlement_balance, format!("{mutation_label} {invoice_no}"), transaction_id, now]).map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
+    record_app_log(&conn, "INFO", "pos", &format!("Checkout POS berhasil: {invoice_no}"));
 
     Ok(PosCheckoutResponse { ok: true, transaction_id, invoice_no, total_amount, profit: total_profit, settlement_account_id: settlement_account.0, settlement_balance })
 }
@@ -1375,6 +1420,7 @@ pub fn run() {
             deactivate_product,
             list_transactions,
             list_transaction_items,
+            list_app_logs,
             create_database_backup,
             list_database_backups,
             restore_database_backup,
