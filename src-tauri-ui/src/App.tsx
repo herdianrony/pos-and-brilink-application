@@ -19,6 +19,7 @@ import {
   createDebt,
   createCategory,
   createProduct,
+  createUser,
   deactivateProduct,
   dbInit,
   healthCheck,
@@ -29,6 +30,7 @@ import {
   listProducts,
   listTransactionItems,
   listTransactions,
+  listUsers,
   login,
   ownerDraw,
   setupStatus,
@@ -80,6 +82,7 @@ export default function App() {
   const [dbPath, setDbPath] = useState("");
   const [setupNeeded, setSetupNeeded] = useState(true);
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [posStep, setPosStep] = useState<1 | 2 | 3>(1);
   const [agentStep, setAgentStep] = useState<1 | 2 | 3 | 4>(1);
@@ -95,6 +98,7 @@ export default function App() {
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
+  const [userForm, setUserForm] = useState({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" as "admin" | "kasir" });
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "qris">("cash");
   const [settlementAccountId, setSettlementAccountId] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", icon: "package", color: "#059669" });
@@ -138,13 +142,14 @@ export default function App() {
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts] = await Promise.all([
+    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers] = await Promise.all([
       listAccounts(),
       listAccountMutations(),
       listCategories(),
       listProducts(),
       listTransactions(),
       listDebts(),
+      listUsers(),
     ]);
     setAccounts(nextAccounts);
     setAccountMutations(nextMutations);
@@ -152,6 +157,7 @@ export default function App() {
     setProducts(nextProducts);
     setTransactions(nextTransactions);
     setDebts(nextDebts);
+    setUsers(nextUsers);
     if (!settlementAccountId) {
       const firstBank = nextAccounts.find((account) => account.code !== "cash");
       if (firstBank) setSettlementAccountId(String(firstBank.id));
@@ -181,6 +187,40 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
+  function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
+    if (rows.length === 0) {
+      setMessage("Tidak ada data untuk diexport");
+      return;
+    }
+    const headers = Object.keys(rows[0]);
+    const escape = (value: string | number | null | undefined) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => escape(row[header])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setMessage(`Export ${filename} berhasil dibuat`);
+  }
+
+  async function submitUser(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createUser(userForm);
+      setUserForm({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" });
+      await refreshData();
+      setMessage("User berhasil dibuat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function submitSetup(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -203,6 +243,7 @@ export default function App() {
     try {
       const result = await login(loginForm);
       setUser(result.user);
+      setActiveView("dashboard");
       await refreshData();
       setMessage(`Selamat datang, ${result.user.name}`);
     } catch (error) {
@@ -942,7 +983,7 @@ export default function App() {
   function renderRekeningKoran() {
     return (
       <>
-        <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div></div>
+        <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div><button className="secondary" onClick={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Export CSV</button></div>
         <section className="grid dashboard-grid">
           <div className="card">
             <h2>Ringkasan Saldo</h2>
@@ -972,7 +1013,7 @@ export default function App() {
     const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
     return (
       <>
-        <div className="page-title"><div><p className="eyebrow">Analitik</p><h1>Laporan</h1></div></div>
+        <div className="page-title"><div><p className="eyebrow">Analitik</p><h1>Laporan</h1></div><button className="secondary" onClick={() => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])}>Export CSV</button></div>
         <section className="stat-grid">
           <div className="stat-card green"><span>Omzet POS</span><strong>{formatRupiah(posRevenue)}</strong><small>{posTransactions.length} transaksi POS</small></div>
           <div className="stat-card blue"><span>Profit POS</span><strong>{formatRupiah(posProfit)}</strong><small>Dari margin produk</small></div>
@@ -991,10 +1032,33 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Sistem</p><h1>Pengaturan</h1></div></div>
-        <section className="card">
-          <h2>Status Eksperimen</h2>
-          <p>Ini masih CatatAgen Local. UI sudah dibuat lebih mendekati layout Electron, tetapi fitur belum parity penuh.</p>
-          <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
+        <section className="grid workspace-grid">
+          <div className="card">
+            <div className="card-header"><div><h2>Manajemen User</h2><p>Buat akun kasir agar staf tidak memakai akun owner.</p></div></div>
+            <form onSubmit={submitUser} className="product-form">
+              <label>Nama<input value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} /></label>
+              <label>Username<input value={userForm.username} onChange={(e) => setUserForm({ ...userForm, username: e.target.value })} /></label>
+              <label>Password<input type="password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} /></label>
+              <label>Role<select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as "admin" | "kasir" })}>
+                <option value="kasir">Kasir / Staff</option>
+                <option value="admin">Owner / Admin</option>
+              </select></label>
+              <button type="submit" disabled={saving}>Buat User</button>
+            </form>
+            <div className="list">
+              {users.map((item) => <div key={item.id} className="row rich-row"><div><strong>{item.name}</strong><small>{item.username}</small></div><span className="role-badge">{item.role}</span></div>)}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-header"><div><h2>Export Data</h2><p>Export CSV ringan untuk arsip manual.</p></div></div>
+            <div className="quick-actions export-actions">
+              <button className="secondary" onClick={() => exportCsv("transaksi-catatagen.csv", transactions.map((t) => ({ invoice: t.invoice_no, tipe: t.transaction_type, pelanggan: t.customer_name, total: t.total_amount, profit: t.profit, metode: t.payment_method, status: t.status, tanggal: t.created_at })))}>Export Transaksi</button>
+              <button className="secondary" onClick={() => exportCsv("mutasi-saldo-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Export Mutasi</button>
+              <button className="secondary" onClick={() => exportCsv("utang-catatagen.csv", debts.map((d) => ({ pelanggan: d.customer_name, phone: d.phone, total: d.amount, terbayar: d.paid_amount, sisa: d.outstanding, status: d.status, catatan: d.notes })))}>Export Utang</button>
+              <button className="secondary" onClick={() => exportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Export Produk</button>
+            </div>
+            <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
+          </div>
         </section>
       </>
     );

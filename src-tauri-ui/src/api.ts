@@ -126,6 +126,14 @@ export function createAdmin(payload: { name: string; username: string; password:
   return invoke<PublicUser>("create_admin", { payload });
 }
 
+export function listUsers() {
+  return invoke<PublicUser[]>("list_users");
+}
+
+export function createUser(payload: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
+  return invoke<PublicUser>("create_user", { payload });
+}
+
 export function login(payload: { username: string; password: string }) {
   return invoke<{ ok: boolean; user: PublicUser }>("login", { payload });
 }

@@ -48,6 +48,14 @@ struct CreateAdminPayload {
 }
 
 #[derive(Debug, Deserialize)]
+struct CreateUserPayload {
+    name: String,
+    username: String,
+    password: String,
+    role: String,
+}
+
+#[derive(Debug, Deserialize)]
 struct LoginPayload {
     username: String,
     password: String,
@@ -525,6 +533,45 @@ fn create_admin(app: AppHandle, payload: CreateAdminPayload) -> Result<PublicUse
         username,
         role: "admin".into(),
     })
+}
+
+
+#[tauri::command]
+fn list_users(app: AppHandle) -> Result<Vec<PublicUser>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, name, username, role FROM users WHERE is_active = 1 ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(PublicUser { id: row.get(0)?, name: row.get(1)?, username: row.get(2)?, role: row.get(3)? })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_user(app: AppHandle, payload: CreateUserPayload) -> Result<PublicUser, String> {
+    let conn = init_schema(&app)?;
+    let name = payload.name.trim().to_string();
+    let username = payload.username.trim().to_string();
+    let role = payload.role.trim().to_lowercase();
+    if name.is_empty() || username.is_empty() || payload.password.len() < 8 {
+        return Err("Nama, username, dan password minimal 8 karakter wajib diisi".into());
+    }
+    if !matches!(role.as_str(), "admin" | "kasir") {
+        return Err("Role harus admin atau kasir".into());
+    }
+    let now = Utc::now().to_rfc3339();
+    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)",
+        params![name, username, password_hash, role, now],
+    )
+    .map_err(|e| format!("Gagal membuat user: {e}"))?;
+    Ok(PublicUser { id: conn.last_insert_rowid(), name, username, role })
 }
 
 #[tauri::command]
@@ -1207,6 +1254,8 @@ pub fn run() {
             db_init,
             setup_status,
             create_admin,
+            list_users,
+            create_user,
             login,
             list_accounts,
             create_account,
