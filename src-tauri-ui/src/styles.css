@@ -682,3 +682,32 @@
   .electron-service-grid,
   .agent-summary-grid { grid-template-columns: 1fr; }
 }
+
+/* Electron parity history page */
+.history-electron-page { @apply grid gap-5; }
+.history-title h1 { @apply flex items-center gap-2 text-2xl font-black text-slate-950; }
+.history-title p { @apply m-0 text-sm font-semibold text-slate-400; }
+.history-stat-grid { @apply mb-0; }
+.history-filter-panel { @apply flex flex-col gap-3 p-3; }
+.electron-tabs { @apply flex flex-wrap gap-2; }
+.electron-tab { @apply flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:bg-slate-100 hover:shadow-none hover:transform-none; }
+.electron-tab.active { @apply bg-emerald-500 text-white; }
+.status-filter-row { @apply flex flex-wrap gap-2 border-t border-slate-100 pt-3; }
+.history-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(360px, .8fr); gap: 18px; align-items: start; }
+.history-table-card, .transaction-detail-card { @apply rounded-[28px]; }
+.transaction-detail-card { @apply sticky top-24; }
+.transaction-table-like { @apply grid gap-2; }
+.transaction-table-head { @apply hidden grid-cols-[minmax(0,1.4fr)_120px_110px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 md:grid; }
+.transaction-row-like { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left text-slate-900 shadow-none hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-[0_8px_24px_rgba(15,23,42,.06)] md:grid-cols-[minmax(0,1.4fr)_120px_110px_130px] md:items-center; }
+.transaction-row-like.active { @apply border-emerald-400 bg-emerald-50; }
+.transaction-row-like span { @apply grid gap-1; }
+.transaction-row-like small { @apply text-xs text-slate-500; }
+.history-status-badge { @apply inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black; }
+.history-status-badge.completed { @apply bg-emerald-50 text-emerald-700; }
+.history-status-badge.pending { @apply bg-amber-50 text-amber-700; }
+.history-status-badge.void,
+.history-status-badge.reversed { @apply bg-red-50 text-red-600; }
+@media (max-width: 1100px) {
+  .history-layout { grid-template-columns: 1fr; }
+  .transaction-detail-card { position: static; }
+}
