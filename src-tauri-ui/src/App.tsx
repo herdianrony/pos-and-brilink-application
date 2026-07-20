@@ -204,7 +204,7 @@ export default function App() {
   const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
   const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
   const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
-  const [agentForm, setAgentForm] = useState({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
+  const [agentForm, setAgentForm] = useState({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
   const [debtForm, setDebtForm] = useState({ customer_name: "", phone: "", amount: "0", notes: "" });
   const [debtPaymentForm, setDebtPaymentForm] = useState({ debt_id: "", amount: "0", notes: "Cicilan utang" });
   const [productForm, setProductForm] = useState({
@@ -629,10 +629,10 @@ export default function App() {
 
 
   function applyAgentPreset(kind: "withdraw" | "deposit" | "transfer" | "payment") {
-    if (kind === "withdraw") setAgentForm({ ...agentForm, service_name: "Tarik Tunai", cash_effect: "0", bank_effect: "0", fee: "5000" });
-    if (kind === "deposit") setAgentForm({ ...agentForm, service_name: "Setor Tunai", cash_effect: "0", bank_effect: "0", fee: "5000" });
-    if (kind === "transfer") setAgentForm({ ...agentForm, service_name: "Transfer", cash_effect: "0", bank_effect: "0", fee: "5000" });
-    if (kind === "payment") setAgentForm({ ...agentForm, service_name: "Pembayaran / Topup", cash_effect: "0", bank_effect: "0", fee: "2500" });
+    if (kind === "withdraw") setAgentForm({ ...agentForm, service_name: "Tarik Tunai", cash_effect: "0", bank_effect: "0", fee: "5000", provider_cost: "0" });
+    if (kind === "deposit") setAgentForm({ ...agentForm, service_name: "Setor Tunai", cash_effect: "0", bank_effect: "0", fee: "5000", provider_cost: "0" });
+    if (kind === "transfer") setAgentForm({ ...agentForm, service_name: "Transfer", cash_effect: "0", bank_effect: "0", fee: "5000", provider_cost: "0" });
+    if (kind === "payment") setAgentForm({ ...agentForm, service_name: "Pembayaran / Topup", cash_effect: "0", bank_effect: "0", fee: "2500", provider_cost: "0" });
     setAgentStep(2);
   }
 
@@ -645,6 +645,7 @@ export default function App() {
         customer_name: agentForm.customer_name,
         amount: Number(agentForm.amount || 0),
         fee: Number(agentForm.fee || 0),
+        provider_cost: Number(agentForm.provider_cost || 0),
         account_id: agentForm.account_id ? Number(agentForm.account_id) : null,
         cash_effect: Number(agentForm.cash_effect || 0),
         bank_effect: Number(agentForm.bank_effect || 0),
@@ -859,6 +860,7 @@ export default function App() {
   function renderBrilink() {
     const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
     const totalCustomerPay = Number(agentForm.amount || 0) + Number(agentForm.fee || 0);
+    const agentProfit = Number(agentForm.fee || 0) - Number(agentForm.provider_cost || 0);
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Non-API Ledger</p><h1>Layanan Agen</h1></div><div className="page-actions"><button className="secondary" onClick={() => setAgentStep(1)}>Pilih Layanan</button><button onClick={() => setAgentStep(4)}>Review</button></div></div>
@@ -890,10 +892,12 @@ export default function App() {
                 <div className="product-form no-box">
                   <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(e) => setAgentForm({ ...agentForm, customer_name: e.target.value })} /></label>
                   <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => setAgentForm({ ...agentForm, amount: value })} /></label>
-                  <label>Admin Toko / Fee<span className="field-note">Keuntungan jasa dari pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => setAgentForm({ ...agentForm, fee: value })} /></label>
+                  <label>Admin Toko / Fee<span className="field-note">Biaya admin yang dibayar pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => setAgentForm({ ...agentForm, fee: value })} /></label>
+                  <label>Biaya Modal Provider<span className="field-note">Potongan provider/bank. Profit = Admin Toko - Biaya Modal.</span><CurrencyInput value={agentForm.provider_cost} onChange={(value) => setAgentForm({ ...agentForm, provider_cost: value })} /></label>
                   <label>Catatan<input value={agentForm.notes} onChange={(e) => setAgentForm({ ...agentForm, notes: e.target.value })} /></label>
                 </div>
                 <div className="total-row"><span>Total Bayar Pelanggan</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
+                <div className="total-row"><span>Estimasi Profit Jasa</span><strong>{formatRupiah(agentProfit)}</strong></div>
                 <div className="wizard-actions"><button className="secondary" onClick={() => setAgentStep(1)}>Kembali</button><button onClick={() => setAgentStep(3)}>Lanjut Efek Saldo</button></div>
               </div>
             )}
@@ -918,6 +922,8 @@ export default function App() {
                   <div><span>Layanan</span><strong>{agentForm.service_name || "-"}</strong></div>
                   <div><span>Nominal</span><strong>{formatRupiah(Number(agentForm.amount || 0))}</strong></div>
                   <div><span>Admin/Fee</span><strong>{formatRupiah(Number(agentForm.fee || 0))}</strong></div>
+                  <div><span>Biaya Modal Provider</span><strong>{formatRupiah(Number(agentForm.provider_cost || 0))}</strong></div>
+                  <div><span>Profit Jasa</span><strong>{formatRupiah(agentProfit)}</strong></div>
                   <div><span>Total Bayar</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
                   <div><span>Efek Rekening</span><strong>{formatRupiah(Number(agentForm.bank_effect || 0))}</strong></div>
                   <div><span>Efek Kas</span><strong>{formatRupiah(Number(agentForm.cash_effect || 0))}</strong></div>

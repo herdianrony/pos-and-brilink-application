@@ -241,6 +241,7 @@ struct AgentTransactionPayload {
     customer_name: Option<String>,
     amount: f64,
     fee: f64,
+    provider_cost: Option<f64>,
     account_id: Option<i64>,
     cash_effect: f64,
     bank_effect: f64,
@@ -1290,7 +1291,9 @@ fn build_debt_reminder(app: AppHandle, payload: DebtIdPayload) -> Result<String,
 fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) -> Result<TransactionRow, String> {
     let service_name = payload.service_name.trim().to_string();
     if service_name.is_empty() { return Err("Nama layanan wajib diisi".into()); }
-    if payload.amount < 0.0 || payload.fee < 0.0 { return Err("Nominal dan admin tidak boleh minus".into()); }
+    let provider_cost = payload.provider_cost.unwrap_or(0.0);
+    if payload.amount < 0.0 || payload.fee < 0.0 || provider_cost < 0.0 { return Err("Nominal, admin, dan biaya modal provider tidak boleh minus".into()); }
+    let profit = payload.fee - provider_cost;
     let mut conn = init_schema(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let now = Utc::now().to_rfc3339();
@@ -1299,7 +1302,7 @@ fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) ->
     tx.execute(
         r#"INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at)
            VALUES (?1, 'agent', ?2, ?3, ?4, 'mixed', 'completed', ?5, ?6)"#,
-        params![invoice_no, trim_optional(payload.customer_name), total_amount, payload.fee, trim_optional(payload.notes).unwrap_or_else(|| service_name.clone()), now],
+        params![invoice_no, trim_optional(payload.customer_name), total_amount, profit, trim_optional(payload.notes).unwrap_or_else(|| service_name.clone()), now],
     ).map_err(|e| e.to_string())?;
     let transaction_id = tx.last_insert_rowid();
 
@@ -1321,7 +1324,7 @@ fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) ->
     }
     tx.commit().map_err(|e| e.to_string())?;
 
-    Ok(TransactionRow { id: transaction_id, invoice_no, transaction_type: "agent".into(), customer_name: None, total_amount, profit: payload.fee, payment_method: "mixed".into(), status: "completed".into(), notes: Some(service_name), created_at: now })
+    Ok(TransactionRow { id: transaction_id, invoice_no, transaction_type: "agent".into(), customer_name: None, total_amount, profit, payment_method: "mixed".into(), status: "completed".into(), notes: Some(service_name), created_at: now })
 }
 
 #[tauri::command]

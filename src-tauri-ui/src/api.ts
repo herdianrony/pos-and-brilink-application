@@ -245,6 +245,7 @@ export function createAgentTransaction(payload: {
   customer_name?: string;
   amount: number;
   fee: number;
+  provider_cost?: number;
   account_id?: number | null;
   cash_effect: number;
   bank_effect: number;
