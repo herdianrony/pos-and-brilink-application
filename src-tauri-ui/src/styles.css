@@ -760,3 +760,26 @@
 .cash-mutation-row { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1fr)_160px_130px_130px] lg:items-center; }
 .cash-mutation-row span { @apply grid gap-1; }
 .cash-mutation-row small { @apply text-xs text-slate-500; }
+
+/* Electron parity statement page */
+.statement-page { @apply grid gap-5; }
+.statement-title h1 { @apply text-2xl font-black text-slate-950; }
+.statement-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
+.statement-filter-card { @apply grid grid-cols-1 gap-4 md:grid-cols-[minmax(260px,.5fr)_minmax(0,1fr)]; }
+.statement-filter-label { @apply mb-2 block text-[13px] font-black text-slate-600; }
+.statement-preset-row { @apply flex flex-wrap gap-2; }
+.statement-stat-grid { @apply mb-0; }
+.statement-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, .7fr); gap: 18px; align-items: start; }
+.statement-table-card,
+.statement-side-card { @apply rounded-[28px]; }
+.statement-side-card { @apply sticky top-24; }
+.statement-table-like { @apply grid gap-2; }
+.statement-table-head { @apply hidden grid-cols-[minmax(0,1.1fr)_140px_160px_130px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 xl:grid; }
+.statement-row-like { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 xl:grid-cols-[minmax(0,1.1fr)_140px_160px_130px_130px] xl:items-center; }
+.statement-row-like:hover { @apply border-emerald-200 bg-emerald-50/20; }
+.statement-row-like span { @apply grid gap-1; }
+.statement-row-like small { @apply text-xs text-slate-500; }
+@media (max-width: 1100px) {
+  .statement-layout { grid-template-columns: 1fr; }
+  .statement-side-card { position: static; }
+}
