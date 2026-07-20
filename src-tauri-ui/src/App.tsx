@@ -1,26 +1,19 @@
 import { useEffect, useState } from "react";
 import {
-  addDebtPayment,
   adjustAccountBalance,
   bankFee,
-  buildDebtReminder,
   createAccount,
   createAdmin,
   createDatabaseBackup,
   createAgentTransaction,
-  createDebt,
-  createCategory,
-  createProduct,
   createUser,
-  deactivateProduct,
   listTransactionItems,
   login,
   ownerDraw,
   restoreDatabaseBackup,
   transferAccounts,
-  updateProduct,
 } from "./api";
-import type { AccountRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionItemRow, TransactionRow } from "./api";
+import type { AccountRow, BackupRow, ProductRow, PublicUser, TransactionItemRow, TransactionRow } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -35,6 +28,8 @@ import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
+import { useProductMaster } from "./hooks/useProductMaster";
+import { useDebtBook } from "./hooks/useDebtBook";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
 import { CashBalancePage } from "./pages/CashBalancePage";
@@ -88,33 +83,16 @@ export default function App() {
   const [agentStep, setAgentStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [cashModal, setCashModal] = useState<CashModalType>(null);
-  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
   const [userForm, setUserForm] = useState({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" as "admin" | "kasir" });
-  const [categoryForm, setCategoryForm] = useState({ name: "", icon: "package", color: "#059669" });
   const [accountForm, setAccountForm] = useState({ code: "bri", name: "Rekening BRI", initial_balance: "0", min_balance: "0" });
   const [adjustForm, setAdjustForm] = useState({ account_id: "", amount: "0", notes: "Penyesuaian saldo" });
   const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
   const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
   const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
   const [agentForm, setAgentForm] = useState<AgentForm>({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
-  const [debtForm, setDebtForm] = useState({ customer_name: "", phone: "", amount: "0", notes: "" });
-  const [debtPaymentForm, setDebtPaymentForm] = useState({ debt_id: "", amount: "0", notes: "Cicilan utang" });
-  const [productForm, setProductForm] = useState({
-    name: "",
-    barcode: "",
-    category_id: "",
-    buy_price: "0",
-    sell_price: "0",
-    stock: "0",
-    min_stock: "5",
-    unit: "pcs",
-  });
-
   const posCart = usePosCart({ onMessage: setMessage, onRefresh: refreshData });
   const {
     cart,
@@ -131,6 +109,47 @@ export default function App() {
     holdCart: holdPosCart,
     submitCheckout: submitPosCheckout,
   } = posCart;
+
+  const productMaster = useProductMaster({
+    saving,
+    setSaving,
+    onRefresh: refreshData,
+    onMessage: setMessage,
+    onNavigateProducts: () => setActiveView("products"),
+  });
+  const {
+    showProductModal,
+    setShowProductModal,
+    showCategoryModal,
+    setShowCategoryModal,
+    editingProductId,
+    categoryForm,
+    setCategoryForm,
+    productForm,
+    setProductForm,
+    submitCategory,
+    submitProduct,
+    clearProductForm,
+    openAddProduct,
+    startEditProduct,
+    removeProduct,
+  } = productMaster;
+
+  const debtBook = useDebtBook({
+    saving,
+    setSaving,
+    onRefresh: refreshData,
+    onMessage: setMessage,
+  });
+  const {
+    debtForm,
+    setDebtForm,
+    debtPaymentForm,
+    setDebtPaymentForm,
+    submitDebt,
+    submitDebtPayment,
+    copyDebtReminder,
+  } = debtBook;
   const settlementAccounts = accounts.filter((account) => account.code !== "cash");
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
@@ -250,87 +269,6 @@ export default function App() {
       setActiveView("dashboard");
       await refreshData();
       setMessage(`Selamat datang, ${result.user.name}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function submitCategory(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await createCategory(categoryForm);
-      setCategoryForm({ name: "", icon: "package", color: "#059669" });
-      setShowCategoryModal(false);
-      await refreshData();
-      setMessage("Kategori berhasil ditambahkan");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function submitProduct(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      const payload = {
-        name: productForm.name,
-        barcode: productForm.barcode,
-        category_id: productForm.category_id ? Number(productForm.category_id) : null,
-        buy_price: Number(productForm.buy_price || 0),
-        sell_price: Number(productForm.sell_price || 0),
-        stock: Number(productForm.stock || 0),
-        min_stock: Number(productForm.min_stock || 0),
-        unit: productForm.unit || "pcs",
-      };
-      if (editingProductId) {
-        await updateProduct({ ...payload, id: editingProductId });
-      } else {
-        await createProduct(payload);
-      }
-      clearProductForm();
-      setShowProductModal(false);
-      await refreshData();
-      setMessage(editingProductId ? "Produk berhasil diperbarui" : "Produk berhasil ditambahkan");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function clearProductForm() {
-    setEditingProductId(null);
-    setProductForm({ name: "", barcode: "", category_id: "", buy_price: "0", sell_price: "0", stock: "0", min_stock: "5", unit: "pcs" });
-  }
-
-  function startEditProduct(product: ProductRow) {
-    setEditingProductId(product.id);
-    setProductForm({
-      name: product.name,
-      barcode: product.barcode || "",
-      category_id: product.category_id ? String(product.category_id) : "",
-      buy_price: String(product.buy_price),
-      sell_price: String(product.sell_price),
-      stock: String(product.stock),
-      min_stock: String(product.min_stock),
-      unit: product.unit || "pcs",
-    });
-    setActiveView("products");
-    setShowProductModal(true);
-  }
-
-  async function removeProduct(product: ProductRow) {
-    if (!confirm(`Nonaktifkan produk ${product.name}?`)) return;
-    setSaving(true);
-    try {
-      await deactivateProduct({ id: product.id });
-      await refreshData();
-      setMessage("Produk berhasil dinonaktifkan");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -488,45 +426,6 @@ export default function App() {
   }
 
 
-  async function submitDebt(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await createDebt({ customer_name: debtForm.customer_name, phone: debtForm.phone, amount: Number(debtForm.amount || 0), notes: debtForm.notes });
-      setDebtForm({ customer_name: "", phone: "", amount: "0", notes: "" });
-      await refreshData();
-      setMessage("Utang pelanggan berhasil dicatat");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally { setSaving(false); }
-  }
-
-  async function submitDebtPayment(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await addDebtPayment({ debt_id: Number(debtPaymentForm.debt_id), amount: Number(debtPaymentForm.amount || 0), notes: debtPaymentForm.notes });
-      setDebtPaymentForm({ ...debtPaymentForm, amount: "0" });
-      await refreshData();
-      setMessage("Pembayaran utang berhasil dicatat");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally { setSaving(false); }
-  }
-
-  async function copyDebtReminder(debt: DebtRow) {
-    try {
-      const text = await buildDebtReminder({ debt_id: debt.id });
-      await navigator.clipboard.writeText(text);
-      setMessage("Pesan pengingat utang disalin");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-
-
-
   async function openTransactionDetail(transaction: TransactionRow) {
     setSelectedTransaction(transaction);
     try {
@@ -540,7 +439,7 @@ export default function App() {
   function renderActiveView() {
     if (activeView === "pos") return <POSPage categories={categories} products={filteredProducts} cart={cart} cartTotal={cartTotal} paymentMethod={paymentMethod} settlementAccountId={settlementAccountId} settlementAccounts={settlementAccounts} saving={saving} posCategoryFilter={posCategoryFilter} onCategoryFilterChange={setPosCategoryFilter} onAddToCart={addToCart} onUpdateQty={updateCartQty} onPaymentMethodChange={setPaymentMethod} onSettlementAccountChange={setSettlementAccountId} onHoldCart={holdCart} onClearCart={clearCart} onSubmitCheckout={submitCheckout} />;
     if (activeView === "brilink") return <AgentServicesPage accounts={accounts} transactions={transactions} agentForm={agentForm} agentStep={agentStep} saving={saving} onAgentFormChange={setAgentForm} onAgentStepChange={setAgentStep} onApplyPreset={applyAgentPreset} onSubmitAgentTransaction={submitAgentTransaction} />;
-    if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={() => { clearProductForm(); setShowProductModal(true); }} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
+    if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={openAddProduct} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
     if (activeView === "history") return <HistoryPage transactions={filteredTransactions} selectedTransaction={selectedTransaction} selectedTransactionItems={selectedTransactionItems} onOpenDetail={openTransactionDetail} />;
     if (activeView === "debts") return <DebtsPage debts={filteredDebts} debtForm={debtForm} debtPaymentForm={debtPaymentForm} saving={saving} onDebtFormChange={setDebtForm} onDebtPaymentFormChange={setDebtPaymentForm} onSubmitDebt={submitDebt} onSubmitDebtPayment={submitDebtPayment} onCopyReminder={copyDebtReminder} />;
     if (activeView === "rekeningKoran") return <StatementPage accounts={accounts} mutations={accountMutations} onExportCsv={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))} />;
