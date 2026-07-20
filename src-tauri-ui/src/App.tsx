@@ -3,16 +3,20 @@ import {
   AccountMutationRow,
   AccountRow,
   CategoryRow,
+  DebtRow,
   ProductRow,
   PublicUser,
   TransactionItemRow,
   TransactionRow,
+  addDebtPayment,
   adjustAccountBalance,
   bankFee,
+  buildDebtReminder,
   checkoutPosCash,
   createAccount,
   createAdmin,
   createAgentTransaction,
+  createDebt,
   createCategory,
   createProduct,
   deactivateProduct,
@@ -21,6 +25,7 @@ import {
   listAccountMutations,
   listAccounts,
   listCategories,
+  listDebts,
   listProducts,
   listTransactionItems,
   listTransactions,
@@ -36,8 +41,8 @@ function formatRupiah(value: number) {
 }
 
 type CartItem = { product: ProductRow; quantity: number };
-type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "rekeningKoran" | "cash" | "reports" | "settings";
-type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
+type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings";
+type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -45,6 +50,7 @@ const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: 
   { id: "brilink", label: "Layanan Agen", icon: "brilink" },
   { id: "products", label: "Produk", icon: "products", adminOnly: true },
   { id: "history", label: "Transaksi", icon: "history" },
+  { id: "debts", label: "Buku Utang", icon: "debts" },
   { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
   { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
   { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
@@ -60,6 +66,7 @@ function Icon({ name }: { name: IconName }) {
   if (name === "reports") return <svg {...common}><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="5" rx="1" /><rect x="12" y="8" width="3" height="9" rx="1" /><rect x="17" y="5" width="3" height="12" rx="1" /></svg>;
   if (name === "products") return <svg {...common}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>;
   if (name === "history") return <svg {...common}><path d="M8 3H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V5a2 2 0 0 0-2-2h-2" /><path d="M9 7h6" /><path d="M9 11h6" /><path d="M9 15h4" /></svg>;
+  if (name === "debts") return <svg {...common}><path d="M16 3h5v5" /><path d="m21 3-7 7" /><path d="M12 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7 14h6" /><path d="M7 18h4" /></svg>;
   if (name === "cash") return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 9v.01" /><path d="M18 15v.01" /></svg>;
   if (name === "settings") return <svg {...common}><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06A2 2 0 1 1 7.03 3.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.15.4.38.74.7 1 .32.25.7.4 1.1.4H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.6Z" /></svg>;
   return <svg {...common}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>;
@@ -78,6 +85,7 @@ export default function App() {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [debts, setDebts] = useState<DebtRow[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -93,6 +101,8 @@ export default function App() {
   const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
   const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
   const [agentForm, setAgentForm] = useState({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
+  const [debtForm, setDebtForm] = useState({ customer_name: "", phone: "", amount: "0", notes: "" });
+  const [debtPaymentForm, setDebtPaymentForm] = useState({ debt_id: "", amount: "0", notes: "Cicilan utang" });
   const [productForm, setProductForm] = useState({
     name: "",
     barcode: "",
@@ -115,18 +125,20 @@ export default function App() {
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions] = await Promise.all([
+    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts] = await Promise.all([
       listAccounts(),
       listAccountMutations(),
       listCategories(),
       listProducts(),
       listTransactions(),
+      listDebts(),
     ]);
     setAccounts(nextAccounts);
     setAccountMutations(nextMutations);
     setCategories(nextCategories);
     setProducts(nextProducts);
     setTransactions(nextTransactions);
+    setDebts(nextDebts);
     if (!settlementAccountId) {
       const firstBank = nextAccounts.find((account) => account.code !== "cash");
       if (firstBank) setSettlementAccountId(String(firstBank.id));
@@ -424,6 +436,43 @@ export default function App() {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
+    }
+  }
+
+
+  async function submitDebt(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createDebt({ customer_name: debtForm.customer_name, phone: debtForm.phone, amount: Number(debtForm.amount || 0), notes: debtForm.notes });
+      setDebtForm({ customer_name: "", phone: "", amount: "0", notes: "" });
+      await refreshData();
+      setMessage("Utang pelanggan berhasil dicatat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally { setSaving(false); }
+  }
+
+  async function submitDebtPayment(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await addDebtPayment({ debt_id: Number(debtPaymentForm.debt_id), amount: Number(debtPaymentForm.amount || 0), notes: debtPaymentForm.notes });
+      setDebtPaymentForm({ ...debtPaymentForm, amount: "0" });
+      await refreshData();
+      setMessage("Pembayaran utang berhasil dicatat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally { setSaving(false); }
+  }
+
+  async function copyDebtReminder(debt: DebtRow) {
+    try {
+      const text = await buildDebtReminder({ debt_id: debt.id });
+      await navigator.clipboard.writeText(text);
+      setMessage("Pesan pengingat utang disalin");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -757,6 +806,48 @@ export default function App() {
   }
 
 
+
+  function renderDebts() {
+    const openDebts = debts.filter((debt) => debt.status !== "paid");
+    const totalOutstanding = openDebts.reduce((sum, debt) => sum + debt.outstanding, 0);
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Piutang</p><h1>Buku Utang</h1></div><div className="total-row mini-total"><span>Total Belum Lunas</span><strong>{formatRupiah(totalOutstanding)}</strong></div></div>
+        <section className="grid workspace-grid">
+          <div className="card">
+            <h2>Tambah Utang Pelanggan</h2>
+            <form onSubmit={submitDebt} className="product-form">
+              <label>Nama Pelanggan<input value={debtForm.customer_name} onChange={(e) => setDebtForm({ ...debtForm, customer_name: e.target.value })} /></label>
+              <label>No WhatsApp<input value={debtForm.phone} onChange={(e) => setDebtForm({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
+              <label>Nominal Utang<input type="number" min="0" value={debtForm.amount} onChange={(e) => setDebtForm({ ...debtForm, amount: e.target.value })} /></label>
+              <label>Catatan<input value={debtForm.notes} onChange={(e) => setDebtForm({ ...debtForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving}>Simpan Utang</button>
+            </form>
+            <h2>Catat Cicilan / Pelunasan</h2>
+            <form onSubmit={submitDebtPayment} className="product-form">
+              <label>Pelanggan<select value={debtPaymentForm.debt_id} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, debt_id: e.target.value })}>
+                <option value="">Pilih utang</option>
+                {openDebts.map((debt) => <option key={debt.id} value={debt.id}>{debt.customer_name} — {formatRupiah(debt.outstanding)}</option>)}
+              </select></label>
+              <label>Nominal Bayar<input type="number" min="0" value={debtPaymentForm.amount} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, amount: e.target.value })} /></label>
+              <label className="span-2">Catatan<input value={debtPaymentForm.notes} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</button>
+            </form>
+          </div>
+          <div className="card">
+            <h2>Daftar Utang</h2>
+            {debts.length === 0 ? <p>Belum ada data utang.</p> : debts.map((debt) => (
+              <div key={debt.id} className="debt-row">
+                <div><strong>{debt.customer_name}</strong><small>{debt.phone || "Tanpa nomor"} • {debt.status === "paid" ? "Lunas" : "Belum lunas"}</small><small>{debt.notes || "-"}</small></div>
+                <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small><button className="secondary" onClick={() => copyDebtReminder(debt)} disabled={debt.status === "paid"}>Salin Reminder</button></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </>
+    );
+  }
+
   function renderRekeningKoran() {
     return (
       <>
@@ -823,6 +914,7 @@ export default function App() {
     if (activeView === "brilink") return renderBrilink();
     if (activeView === "products") return renderProducts();
     if (activeView === "history") return renderHistory();
+    if (activeView === "debts") return renderDebts();
     if (activeView === "rekeningKoran") return renderRekeningKoran();
     if (activeView === "cash") return renderCash();
     if (activeView === "reports") return renderReports();

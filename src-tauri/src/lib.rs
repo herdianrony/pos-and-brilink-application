@@ -239,6 +239,40 @@ struct AgentTransactionPayload {
     notes: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct DebtRow {
+    id: i64,
+    customer_name: String,
+    phone: Option<String>,
+    amount: f64,
+    paid_amount: f64,
+    outstanding: f64,
+    status: String,
+    notes: Option<String>,
+    created_at: String,
+    updated_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct DebtPayload {
+    customer_name: String,
+    phone: Option<String>,
+    amount: f64,
+    notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DebtPaymentPayload {
+    debt_id: i64,
+    amount: f64,
+    notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DebtIdPayload {
+    debt_id: i64,
+}
+
 fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -353,6 +387,27 @@ fn migrate(conn: &Connection) -> Result<(), String> {
           subtotal REAL NOT NULL,
           FOREIGN KEY(transaction_id) REFERENCES transactions(id),
           FOREIGN KEY(product_id) REFERENCES products(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS debts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customer_name TEXT NOT NULL,
+          phone TEXT,
+          amount REAL NOT NULL,
+          paid_amount REAL NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'open',
+          notes TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS debt_payments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          debt_id INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          notes TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(debt_id) REFERENCES debts(id)
         );
 
         CREATE TABLE IF NOT EXISTS app_logs (
@@ -961,6 +1016,82 @@ fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Resu
 }
 
 
+
+#[tauri::command]
+fn list_debts(app: AppHandle) -> Result<Vec<DebtRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT 200")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            let amount = row.get::<_, f64>(3)?;
+            let paid_amount = row.get::<_, f64>(4)?;
+            Ok(DebtRow {
+                id: row.get(0)?,
+                customer_name: row.get(1)?,
+                phone: row.get(2)?,
+                amount,
+                paid_amount,
+                outstanding: (amount - paid_amount).max(0.0),
+                status: row.get(5)?,
+                notes: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_debt(app: AppHandle, payload: DebtPayload) -> Result<DebtRow, String> {
+    let conn = init_schema(&app)?;
+    let customer_name = payload.customer_name.trim().to_string();
+    if customer_name.is_empty() { return Err("Nama pelanggan wajib diisi".into()); }
+    if payload.amount <= 0.0 { return Err("Nominal utang harus lebih dari 0".into()); }
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO debts (customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at) VALUES (?1, ?2, ?3, 0, 'open', ?4, ?5, ?5)",
+        params![customer_name, trim_optional(payload.phone), payload.amount, trim_optional(payload.notes), now],
+    ).map_err(|e| e.to_string())?;
+    Ok(DebtRow { id: conn.last_insert_rowid(), customer_name, phone: None, amount: payload.amount, paid_amount: 0.0, outstanding: payload.amount, status: "open".into(), notes: None, created_at: now.clone(), updated_at: now })
+}
+
+#[tauri::command]
+fn add_debt_payment(app: AppHandle, payload: DebtPaymentPayload) -> Result<DebtRow, String> {
+    if payload.amount <= 0.0 { return Err("Nominal pembayaran harus lebih dari 0".into()); }
+    let mut conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let debt = tx.query_row(
+        "SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at FROM debts WHERE id = ?1 LIMIT 1",
+        params![payload.debt_id],
+        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, Option<String>>(2)?, row.get::<_, f64>(3)?, row.get::<_, f64>(4)?, row.get::<_, String>(5)?, row.get::<_, Option<String>>(6)?, row.get::<_, String>(7)?)),
+    ).map_err(|_| "Data utang tidak ditemukan".to_string())?;
+    if debt.5 == "paid" { return Err("Utang sudah lunas".into()); }
+    let paid_amount = (debt.4 + payload.amount).min(debt.3);
+    let status = if paid_amount >= debt.3 { "paid" } else { "open" };
+    tx.execute("UPDATE debts SET paid_amount = ?1, status = ?2, updated_at = ?3 WHERE id = ?4", params![paid_amount, status, now, debt.0]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO debt_payments (debt_id, amount, notes, created_at) VALUES (?1, ?2, ?3, ?4)", params![debt.0, payload.amount, trim_optional(payload.notes), now]).map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(DebtRow { id: debt.0, customer_name: debt.1, phone: debt.2, amount: debt.3, paid_amount, outstanding: (debt.3 - paid_amount).max(0.0), status: status.into(), notes: debt.6, created_at: debt.7, updated_at: now })
+}
+
+#[tauri::command]
+fn build_debt_reminder(app: AppHandle, payload: DebtIdPayload) -> Result<String, String> {
+    let conn = init_schema(&app)?;
+    let debt = conn.query_row(
+        "SELECT customer_name, amount, paid_amount, notes FROM debts WHERE id = ?1 LIMIT 1",
+        params![payload.debt_id],
+        |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?, row.get::<_, Option<String>>(3)?)),
+    ).map_err(|_| "Data utang tidak ditemukan".to_string())?;
+    let outstanding = (debt.1 - debt.2).max(0.0);
+    Ok(format!("Halo {}, kami ingin mengingatkan sisa utang sebesar Rp{:.0}. Mohon dibayarkan jika sudah memungkinkan. Catatan: {}. Terima kasih.", debt.0, outstanding, debt.3.unwrap_or_else(|| "-".into())))
+}
+
 #[tauri::command]
 fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) -> Result<TransactionRow, String> {
     let service_name = payload.service_name.trim().to_string();
@@ -1092,6 +1223,10 @@ pub fn run() {
             deactivate_product,
             list_transactions,
             list_transaction_items,
+            list_debts,
+            create_debt,
+            add_debt_payment,
+            build_debt_reminder,
             create_agent_transaction,
             checkout_pos_cash,
         ])

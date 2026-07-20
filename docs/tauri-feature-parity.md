@@ -91,6 +91,13 @@ Status:
 - [ ] Nomor referensi.
 - [ ] Void/reverse.
 
+## Buku Utang
+
+- [~] Buku utang digital — tambah utang, daftar utang, status lunas/belum lunas sudah ada.
+- [~] Cicilan/pelunasan — pembayaran utang sudah ada.
+- [~] WhatsApp reminder manual — generate dan salin pesan pengingat sudah ada.
+- [ ] WhatsApp reminder otomatis — ditunda.
+
 ## Riwayat & Laporan
 
 - [~] Riwayat transaksi — list 100 transaksi terakhir sudah ada di POC Tauri.

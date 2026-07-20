@@ -97,6 +97,19 @@ export interface TransactionItemRow {
   subtotal: number;
 }
 
+export interface DebtRow {
+  id: number;
+  customer_name: string;
+  phone?: string | null;
+  amount: number;
+  paid_amount: number;
+  outstanding: number;
+  status: string;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export function healthCheck() {
   return invoke<HealthCheck>("health_check");
 }
@@ -170,6 +183,22 @@ export function listTransactions() {
 
 export function listTransactionItems(payload: { transaction_id: number }) {
   return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
+}
+
+export function listDebts() {
+  return invoke<DebtRow[]>("list_debts");
+}
+
+export function createDebt(payload: { customer_name: string; phone?: string; amount: number; notes?: string }) {
+  return invoke<DebtRow>("create_debt", { payload });
+}
+
+export function addDebtPayment(payload: { debt_id: number; amount: number; notes?: string }) {
+  return invoke<DebtRow>("add_debt_payment", { payload });
+}
+
+export function buildDebtReminder(payload: { debt_id: number }) {
+  return invoke<string>("build_debt_reminder", { payload });
 }
 
 export function createAgentTransaction(payload: {
