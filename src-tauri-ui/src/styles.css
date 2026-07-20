@@ -581,3 +581,53 @@ nav { display: grid; gap: 7px; overflow-y: auto; padding-right: 3px; }
 .log-level.warn { background: #fffbeb; color: #b45309; }
 .log-level.error { background: #fef2f2; color: #dc2626; }
 .log-level.info { background: #ecfdf5; color: #047857; }
+
+/* Data Master modal workflow */
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.product-master-grid {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+.product-list-card { min-width: 0; }
+.category-chip-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 900;
+  border: 1px solid #bbf7d0;
+}
+.dialog-card {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 22px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 30px 90px rgba(15,23,42,.35);
+}
+.small-dialog { width: min(440px, 100%); }
+.product-dialog { width: min(780px, 100%); }
+.dialog-form { display: grid; gap: 14px; }
+.dialog-form.product-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 980px) {
+  .product-master-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .page-actions { justify-content: stretch; }
+  .page-actions button { flex: 1; }
+  .dialog-form.product-form { grid-template-columns: 1fr; }
+}
