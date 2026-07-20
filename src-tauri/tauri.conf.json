@@ -27,7 +27,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "category": "Business",
     "shortDescription": "POS dan layanan agen ringan berbasis Tauri",
     "longDescription": "Eksperimen BRILink POS Lite berbasis Tauri full tanpa Next.js server lokal.",
@@ -39,6 +41,10 @@
         "displayLanguageSelector": false,
         "installerIcon": "../electron/build/icon.ico"
       }
-    }
+    },
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
   }
 }
