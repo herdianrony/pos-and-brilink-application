@@ -42,6 +42,31 @@ function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value || 0);
 }
 
+function paymentLabel(method: string) {
+  if (method === "cash") return "Tunai";
+  if (method === "transfer") return "Transfer";
+  if (method === "qris") return "QRIS";
+  if (method === "mixed") return "Campuran";
+  return method;
+}
+
+function mutationLabel(type: string) {
+  const labels: Record<string, string> = {
+    initial_balance: "Saldo Awal",
+    adjustment: "Penyesuaian",
+    pos_in: "POS Tunai",
+    pos_transfer_in: "POS Transfer",
+    pos_qris_in: "POS QRIS",
+    transfer_out: "Transfer Keluar",
+    transfer_in: "Transfer Masuk",
+    owner_draw: "Prive Owner",
+    bank_fee: "Biaya Bank/MDR",
+    agent_cash_effect: "Efek Kas Agen",
+    agent_bank_effect: "Efek Rekening Agen",
+  };
+  return labels[type] || type;
+}
+
 type CartItem = { product: ProductRow; quantity: number };
 type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings";
 type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
@@ -586,19 +611,30 @@ export default function App() {
           <div className="stat-card amber"><span>Transaksi</span><strong>{todayTransactions}</strong><small>Riwayat POC tersimpan</small></div>
           <div className="stat-card purple"><span>Keranjang</span><strong>{formatRupiah(cartTotal)}</strong><small>{cart.length} item siap checkout</small></div>
         </section>
+        <section className="quick-launch-grid">
+          <button onClick={() => setActiveView("pos")} className="launch-card"><Icon name="pos" /><strong>Kasir POS</strong><span>Jual barang fisik</span></button>
+          <button onClick={() => setActiveView("brilink")} className="launch-card"><Icon name="brilink" /><strong>Layanan Agen</strong><span>Catat transaksi non-API</span></button>
+          <button onClick={() => setActiveView("debts")} className="launch-card"><Icon name="debts" /><strong>Buku Utang</strong><span>Piutang & reminder</span></button>
+          <button onClick={() => setActiveView("cash")} className="launch-card"><Icon name="cash" /><strong>Kas & Saldo</strong><span>Saldo virtual</span></button>
+        </section>
         <section className="grid dashboard-grid">
           <div className="card">
-            <h2>Transaksi Terakhir</h2>
-            {filteredTransactions.length === 0 ? <p>Belum ada transaksi.</p> : filteredTransactions.slice(0, 5).map((transaction) => (
+            <div className="card-header"><div><h2>Transaksi Terakhir</h2><p>Aktivitas POS dan layanan agen terbaru.</p></div></div>
+            {filteredTransactions.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi</strong><span>Mulai dari Kasir POS atau Layanan Agen.</span></div> : filteredTransactions.slice(0, 5).map((transaction) => (
               <div key={transaction.id} className="row rich-row">
-                <div><strong>{transaction.invoice_no}</strong><small>{transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
+                <div><strong>{transaction.invoice_no}</strong><small>{paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
                 <strong>{formatRupiah(transaction.total_amount)}</strong>
               </div>
             ))}
           </div>
           <div className="card">
-            <h2>Akun Saldo</h2>
-            {accounts.length === 0 ? <p>Belum ada akun.</p> : accounts.map((account) => (
+            <div className="card-header"><div><h2>Perlu Perhatian</h2><p>Stok menipis dan posisi saldo.</p></div></div>
+            {products.filter((product) => product.stock <= product.min_stock).slice(0, 4).map((product) => (
+              <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className="status-badge warning">Stok rendah</span></div>
+            ))}
+            {lowStockCount === 0 && <div className="empty-state compact"><strong>Stok aman</strong><span>Tidak ada produk di bawah minimum.</span></div>}
+            <div className="divider" />
+            {accounts.slice(0, 3).map((account) => (
               <div key={account.id} className="row rich-row">
                 <div><strong>{account.name}</strong><small>{account.code}</small></div>
                 <strong>{formatRupiah(account.balance)}</strong>
@@ -613,15 +649,19 @@ export default function App() {
   function productList(showSellButton = true) {
     const visibleProducts = filteredProducts;
     return (
-      <div className="list product-list">
+      <div className={showSellButton ? "pos-product-grid" : "admin-product-list"}>
         {visibleProducts.length === 0 ? <div className="empty-state"><strong>Produk tidak ditemukan</strong><span>Tambahkan produk baru atau ubah kata kunci pencarian.</span></div> : visibleProducts.map((product) => (
-          <div key={product.id} className="product-row">
-            <div>
+          <div key={product.id} className={showSellButton ? "pos-product-card" : "admin-product-row"}>
+            <div className="product-main">
               <strong>{product.name}</strong>
-              <small>{product.category_name || "Tanpa kategori"} • Stok {product.stock} {product.unit}</small>
+              <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
+              {!showSellButton && <small>HPP {formatRupiah(product.buy_price)} • Jual {formatRupiah(product.sell_price)}</small>}
             </div>
-            <div className="right">
+            <div className="product-meta">
               <strong>{formatRupiah(product.sell_price)}</strong>
+              <span className={product.stock <= product.min_stock ? "stock-badge danger-stock" : "stock-badge"}>Stok {product.stock}</span>
+            </div>
+            <div className="product-actions">
               {showSellButton ? <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Tambah</button> : <><button className="secondary" onClick={() => startEditProduct(product)}>Edit</button><button className="danger" onClick={() => removeProduct(product)}>Nonaktifkan</button></>}
             </div>
           </div>
@@ -817,7 +857,7 @@ export default function App() {
               <div className="history-list">
                 {filteredTransactions.map((transaction) => (
                   <button key={transaction.id} className="history-row clickable-row" onClick={() => openTransactionDetail(transaction)}>
-                    <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
+                    <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
                     <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
                   </button>
                 ))}
@@ -859,6 +899,10 @@ export default function App() {
               <h2>{account.name}</h2>
               <strong>{formatRupiah(account.balance)}</strong>
               <small>Minimum: {formatRupiah(account.min_balance || 0)}</small>
+              <div className="account-card-actions">
+                <button className="secondary" onClick={() => setAdjustForm({ ...adjustForm, account_id: String(account.id) })}>Sesuaikan</button>
+                <button className="secondary" onClick={() => setTransferForm({ ...transferForm, from_account_id: String(account.id) })}>Transfer</button>
+              </div>
             </div>
           ))}
         </section>
@@ -925,7 +969,7 @@ export default function App() {
             <h2>Mutasi Saldo Terakhir</h2>
             {accountMutations.length === 0 ? <p>Belum ada mutasi saldo.</p> : accountMutations.map((mutation) => (
               <div key={mutation.id} className="row rich-row">
-                <div><strong>{mutation.account_name}</strong><small>{mutation.mutation_type} • {mutation.notes || "-"}</small></div>
+                <div><strong>{mutation.account_name}</strong><small>{mutationLabel(mutation.mutation_type)} • {mutation.notes || "-"}</small></div>
                 <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>Saldo: {formatRupiah(mutation.balance_after)}</small></div>
               </div>
             ))}
@@ -995,7 +1039,7 @@ export default function App() {
             <h2>Mutasi Terakhir</h2>
             {accountMutations.length === 0 ? <p>Belum ada mutasi.</p> : accountMutations.map((mutation) => (
               <div key={mutation.id} className="row rich-row">
-                <div><strong>{mutation.account_name}</strong><small>{mutation.mutation_type} • {mutation.created_at}</small></div>
+                <div><strong>{mutation.account_name}</strong><small>{mutationLabel(mutation.mutation_type)} • {mutation.created_at}</small></div>
                 <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>{mutation.notes || "-"}</small></div>
               </div>
             ))}
