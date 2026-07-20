@@ -24,6 +24,16 @@ function formatRupiah(value: number) {
 }
 
 type CartItem = { product: ProductRow; quantity: number };
+type ViewKey = "dashboard" | "pos" | "products" | "history" | "cash" | "settings";
+
+const navItems: Array<{ id: ViewKey; label: string; icon: string; adminOnly?: boolean }> = [
+  { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "pos", label: "POS", icon: "🛒" },
+  { id: "products", label: "Produk", icon: "📦" },
+  { id: "history", label: "Riwayat", icon: "🧾" },
+  { id: "cash", label: "Kas & Saldo", icon: "💰" },
+  { id: "settings", label: "Pengaturan", icon: "⚙️", adminOnly: true },
+];
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -32,6 +42,7 @@ export default function App() {
   const [dbPath, setDbPath] = useState("");
   const [setupNeeded, setSetupNeeded] = useState(true);
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -55,6 +66,10 @@ export default function App() {
     () => cart.reduce((sum, item) => sum + item.product.sell_price * item.quantity, 0),
     [cart],
   );
+  const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
+  const todayTransactions = transactions.length;
+  const lowStockCount = products.filter((product) => product.stock <= product.min_stock).length;
+  const isAdmin = user?.role === "admin";
 
   async function refreshData() {
     const [nextAccounts, nextCategories, nextProducts, nextTransactions] = await Promise.all([
@@ -167,6 +182,7 @@ export default function App() {
       setMessage(`Stok ${product.name} habis`);
       return;
     }
+    setActiveView("pos");
     setCart((items) => {
       const existing = items.find((item) => item.product.id === product.id);
       if (existing) {
@@ -200,138 +216,227 @@ export default function App() {
     }
   }
 
-  return (
-    <main>
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Eksperimen Tauri Full</p>
-          <h1>BRILink POS Lite</h1>
-          <p className="subtitle">Frontend static + Rust commands + SQLite lokal. Tanpa Next server.</p>
+  function authShell(kind: "setup" | "login") {
+    const isSetup = kind === "setup";
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <div className="brand-mark">BP</div>
+          <p className="eyebrow">BRILink POS Lite</p>
+          <h1>{isSetup ? "Setup Admin Pertama" : "Masuk ke Aplikasi"}</h1>
+          <p className="muted">Tauri Full POC — database lokal, tanpa Next server.</p>
+          <form onSubmit={isSetup ? submitSetup : submitLogin} className="form">
+            {isSetup && <label>Nama<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>}
+            <label>Username<input value={isSetup ? form.username : loginForm.username} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} /></label>
+            <label>Password<input type="password" value={isSetup ? form.password : loginForm.password} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} /></label>
+            <button type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : "Masuk"}</button>
+          </form>
+          <div className="status-line">{message || "Menyiapkan aplikasi..."}</div>
+        </section>
+      </main>
+    );
+  }
+
+  function renderDashboard() {
+    return (
+      <>
+        <div className="page-title">
+          <div>
+            <p className="eyebrow">Ringkasan Bisnis</p>
+            <h1>Dashboard</h1>
+          </div>
+          <button onClick={bootstrap} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
         </div>
-        <button onClick={bootstrap} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
-      </section>
-
-      <section className="notice">
-        <strong>Status:</strong> {message || "—"}<br />
-        <strong>Database:</strong> {dbPath || "—"}
-      </section>
-
-      {setupNeeded ? (
-        <section className="card">
-          <h2>Setup Admin Pertama</h2>
-          <form onSubmit={submitSetup} className="form">
-            <label>Nama<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-            <label>Username<input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></label>
-            <label>Password<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
-            <button type="submit" disabled={saving}>{saving ? "Menyimpan..." : "Buat Admin"}</button>
-          </form>
+        <section className="stat-grid">
+          <div className="stat-card green"><span>Saldo Kas</span><strong>{formatRupiah(totalCash)}</strong><small>Total saldo akun aktif</small></div>
+          <div className="stat-card blue"><span>Produk</span><strong>{products.length}</strong><small>{lowStockCount} stok menipis</small></div>
+          <div className="stat-card amber"><span>Transaksi</span><strong>{todayTransactions}</strong><small>Riwayat POC tersimpan</small></div>
+          <div className="stat-card purple"><span>Keranjang</span><strong>{formatRupiah(cartTotal)}</strong><small>{cart.length} item siap checkout</small></div>
         </section>
-      ) : !user ? (
-        <section className="card">
-          <h2>Login</h2>
-          <form onSubmit={submitLogin} className="form">
-            <label>Username<input value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} /></label>
-            <label>Password<input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} /></label>
-            <button type="submit" disabled={saving}>{saving ? "Memeriksa..." : "Masuk"}</button>
-          </form>
+        <section className="grid dashboard-grid">
+          <div className="card">
+            <h2>Transaksi Terakhir</h2>
+            {transactions.length === 0 ? <p>Belum ada transaksi.</p> : transactions.slice(0, 5).map((transaction) => (
+              <div key={transaction.id} className="row rich-row">
+                <div><strong>{transaction.invoice_no}</strong><small>{transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
+                <strong>{formatRupiah(transaction.total_amount)}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <h2>Akun Saldo</h2>
+            {accounts.length === 0 ? <p>Belum ada akun.</p> : accounts.map((account) => (
+              <div key={account.id} className="row rich-row">
+                <div><strong>{account.name}</strong><small>{account.code}</small></div>
+                <strong>{formatRupiah(account.balance)}</strong>
+              </div>
+            ))}
+          </div>
         </section>
-      ) : (
-        <>
-          <section className="grid dashboard-grid">
-            <div className="card">
-              <h2>Dashboard Lite</h2>
-              <p>User: <strong>{user.name}</strong> ({user.role})</p>
-              <p>Produk aktif: <strong>{products.length}</strong></p>
-              <p>Kategori aktif: <strong>{categories.length}</strong></p>
+      </>
+    );
+  }
+
+  function productList(showSellButton = true) {
+    return (
+      <div className="list">
+        {products.length === 0 ? <p>Belum ada produk. Tambahkan produk dulu untuk mencoba POS.</p> : products.map((product) => (
+          <div key={product.id} className="product-row">
+            <div>
+              <strong>{product.name}</strong>
+              <small>{product.category_name || "Tanpa kategori"} • Stok {product.stock} {product.unit}</small>
             </div>
-            <div className="card">
-              <h2>Akun Saldo</h2>
-              {accounts.length === 0 ? <p>Belum ada akun.</p> : accounts.map((account) => (
-                <div key={account.id} className="row">
-                  <span>{account.name}</span>
-                  <strong>{formatRupiah(account.balance)}</strong>
+            <div className="right">
+              <strong>{formatRupiah(product.sell_price)}</strong>
+              {showSellButton && <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Tambah</button>}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderPos() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Penjualan</p><h1>POS Tunai</h1></div></div>
+        <section className="grid workspace-grid">
+          <div className="card"><h2>Pilih Produk</h2>{productList(true)}</div>
+          <div className="card cart-card">
+            <h2>Keranjang</h2>
+            {cart.length === 0 ? <p>Keranjang masih kosong.</p> : cart.map((item) => (
+              <div key={item.product.id} className="cart-row">
+                <div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div>
+                <input type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(e) => updateCartQty(item.product.id, Number(e.target.value))} />
+                <strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong>
+              </div>
+            ))}
+            <div className="total-row"><span>Total</span><strong>{formatRupiah(cartTotal)}</strong></div>
+            <button className="checkout" onClick={submitCheckout} disabled={saving || cart.length === 0}>{saving ? "Memproses..." : "Bayar Tunai"}</button>
+            <p className="hint">POC ini sudah mengurangi stok, mencatat transaksi POS, mutasi kas, dan menambah saldo Kas Tunai.</p>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  function renderProducts() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Data Master</p><h1>Produk & Kategori</h1></div></div>
+        <section className="grid workspace-grid">
+          <div className="card">
+            <h2>Tambah Produk</h2>
+            <form onSubmit={submitCategory} className="inline-form">
+              <input placeholder="Kategori baru" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
+              <button type="submit" disabled={saving}>Tambah Kategori</button>
+            </form>
+            <form onSubmit={submitProduct} className="product-form">
+              <label>Nama Produk<input value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} /></label>
+              <label>Kategori<select value={productForm.category_id} onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}>
+                <option value="">Tanpa kategori</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select></label>
+              <label>Harga Beli<input type="number" min="0" value={productForm.buy_price} onChange={(e) => setProductForm({ ...productForm, buy_price: e.target.value })} /></label>
+              <label>Harga Jual<input type="number" min="0" value={productForm.sell_price} onChange={(e) => setProductForm({ ...productForm, sell_price: e.target.value })} /></label>
+              <label>Stok<input type="number" min="0" value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} /></label>
+              <label>Satuan<input value={productForm.unit} onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })} /></label>
+              <button type="submit" disabled={saving}>Tambah Produk</button>
+            </form>
+          </div>
+          <div className="card"><h2>Daftar Produk</h2>{productList(true)}</div>
+        </section>
+      </>
+    );
+  }
+
+  function renderHistory() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Audit</p><h1>Riwayat Transaksi</h1></div></div>
+        <section className="card history-card">
+          {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
+            <div className="history-list">
+              {transactions.map((transaction) => (
+                <div key={transaction.id} className="history-row">
+                  <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
+                  <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
                 </div>
               ))}
             </div>
-          </section>
+          )}
+        </section>
+      </>
+    );
+  }
 
-          <section className="grid workspace-grid">
-            <div className="card">
-              <h2>Master Produk</h2>
-              <form onSubmit={submitCategory} className="inline-form">
-                <input placeholder="Kategori baru" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
-                <button type="submit" disabled={saving}>Tambah Kategori</button>
-              </form>
-              <form onSubmit={submitProduct} className="product-form">
-                <label>Nama Produk<input value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} /></label>
-                <label>Kategori<select value={productForm.category_id} onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}>
-                  <option value="">Tanpa kategori</option>
-                  {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                </select></label>
-                <label>Harga Beli<input type="number" min="0" value={productForm.buy_price} onChange={(e) => setProductForm({ ...productForm, buy_price: e.target.value })} /></label>
-                <label>Harga Jual<input type="number" min="0" value={productForm.sell_price} onChange={(e) => setProductForm({ ...productForm, sell_price: e.target.value })} /></label>
-                <label>Stok<input type="number" min="0" value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} /></label>
-                <label>Satuan<input value={productForm.unit} onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })} /></label>
-                <button type="submit" disabled={saving}>Tambah Produk</button>
-              </form>
-              <div className="list">
-                {products.length === 0 ? <p>Belum ada produk. Tambahkan produk dulu untuk mencoba POS.</p> : products.map((product) => (
-                  <div key={product.id} className="product-row">
-                    <div>
-                      <strong>{product.name}</strong>
-                      <small>{product.category_name || "Tanpa kategori"} • Stok {product.stock} {product.unit}</small>
-                    </div>
-                    <div className="right">
-                      <strong>{formatRupiah(product.sell_price)}</strong>
-                      <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Jual</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+  function renderCash() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Keuangan</p><h1>Kas & Saldo</h1></div></div>
+        <section className="grid dashboard-grid">
+          {accounts.map((account) => (
+            <div key={account.id} className="balance-card">
+              <span>{account.code}</span>
+              <h2>{account.name}</h2>
+              <strong>{formatRupiah(account.balance)}</strong>
+              <small>Mutasi lanjutan masih dalam tahap POC berikutnya.</small>
             </div>
+          ))}
+        </section>
+      </>
+    );
+  }
 
-            <div className="card cart-card">
-              <h2>POS Tunai</h2>
-              {cart.length === 0 ? <p>Keranjang masih kosong.</p> : cart.map((item) => (
-                <div key={item.product.id} className="cart-row">
-                  <div>
-                    <strong>{item.product.name}</strong>
-                    <small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small>
-                  </div>
-                  <input type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(e) => updateCartQty(item.product.id, Number(e.target.value))} />
-                  <strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong>
-                </div>
-              ))}
-              <div className="total-row">
-                <span>Total</span>
-                <strong>{formatRupiah(cartTotal)}</strong>
-              </div>
-              <button className="checkout" onClick={submitCheckout} disabled={saving || cart.length === 0}>{saving ? "Memproses..." : "Checkout Tunai"}</button>
-              <p className="hint">POC ini sudah mengurangi stok, mencatat transaksi POS, mutasi kas, dan menambah saldo Kas Tunai.</p>
-            </div>
-          </section>
+  function renderSettings() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Sistem</p><h1>Pengaturan</h1></div></div>
+        <section className="card">
+          <h2>Status Eksperimen</h2>
+          <p>Ini masih Tauri Full POC. UI sudah dibuat lebih mendekati layout Electron, tetapi fitur belum parity penuh.</p>
+          <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
+        </section>
+      </>
+    );
+  }
 
-          <section className="card history-card">
-            <h2>Riwayat Transaksi Terakhir</h2>
-            {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
-              <div className="history-list">
-                {transactions.map((transaction) => (
-                  <div key={transaction.id} className="history-row">
-                    <div>
-                      <strong>{transaction.invoice_no}</strong>
-                      <small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small>
-                    </div>
-                    <div className="right history-amount">
-                      <span>{transaction.created_at}</span>
-                      <strong>{formatRupiah(transaction.total_amount)}</strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
-    </main>
+  function renderActiveView() {
+    if (activeView === "pos") return renderPos();
+    if (activeView === "products") return renderProducts();
+    if (activeView === "history") return renderHistory();
+    if (activeView === "cash") return renderCash();
+    if (activeView === "settings") return renderSettings();
+    return renderDashboard();
+  }
+
+  if (setupNeeded) return authShell("setup");
+  if (!user) return authShell("login");
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="logo-row"><div className="brand-mark small">BP</div><div><strong>BRILink POS</strong><small>Lite / Tauri</small></div></div>
+        <nav>
+          {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
+            <button key={item.id} className={activeView === item.id ? "nav-item active" : "nav-item"} onClick={() => setActiveView(item.id)}>
+              <span>{item.icon}</span>{item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <small>Login sebagai</small>
+          <strong>{user.name}</strong>
+          <span>{user.role}</span>
+        </div>
+      </aside>
+      <section className="content-shell">
+        <header className="topbar">
+          <div className="search-box">🔎 Cari produk / transaksi — segera</div>
+          <div className="topbar-actions"><span>{message || "Siap"}</span><button onClick={bootstrap} disabled={loading}>Refresh</button></div>
+        </header>
+        <main className="page-content">{renderActiveView()}</main>
+      </section>
+    </div>
   );
 }
