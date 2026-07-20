@@ -1,0 +1,736 @@
+use bcrypt::{hash, verify, DEFAULT_COST};
+use chrono::Utc;
+use rusqlite::{params, Connection};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use tauri::{AppHandle, Manager};
+
+#[derive(Debug, Serialize)]
+struct HealthCheck {
+    ok: bool,
+    app: &'static str,
+    backend: &'static str,
+    timestamp: String,
+}
+
+#[derive(Debug, Serialize)]
+struct DbStatus {
+    ok: bool,
+    path: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SetupStatus {
+    setup_needed: bool,
+    user_count: i64,
+}
+
+#[derive(Debug, Serialize)]
+struct LoginResponse {
+    ok: bool,
+    user: PublicUser,
+}
+
+#[derive(Debug, Serialize)]
+struct PublicUser {
+    id: i64,
+    name: String,
+    username: String,
+    role: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateAdminPayload {
+    name: String,
+    username: String,
+    password: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct LoginPayload {
+    username: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize)]
+struct AccountRow {
+    id: i64,
+    code: String,
+    name: String,
+    balance: f64,
+    is_active: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct CategoryRow {
+    id: i64,
+    name: String,
+    icon: Option<String>,
+    color: Option<String>,
+    is_active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct CategoryPayload {
+    name: String,
+    icon: Option<String>,
+    color: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ProductRow {
+    id: i64,
+    name: String,
+    barcode: Option<String>,
+    category_id: Option<i64>,
+    category_name: Option<String>,
+    buy_price: f64,
+    sell_price: f64,
+    stock: i64,
+    min_stock: i64,
+    unit: String,
+    is_active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProductPayload {
+    name: String,
+    barcode: Option<String>,
+    category_id: Option<i64>,
+    buy_price: f64,
+    sell_price: f64,
+    stock: i64,
+    min_stock: i64,
+    unit: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PosCheckoutItemPayload {
+    product_id: i64,
+    quantity: i64,
+}
+
+#[derive(Debug, Deserialize)]
+struct PosCheckoutPayload {
+    customer_name: Option<String>,
+    notes: Option<String>,
+    items: Vec<PosCheckoutItemPayload>,
+}
+
+#[derive(Debug, Serialize)]
+struct PosCheckoutResponse {
+    ok: bool,
+    transaction_id: i64,
+    invoice_no: String,
+    total_amount: f64,
+    profit: f64,
+    cash_balance: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct TransactionRow {
+    id: i64,
+    invoice_no: String,
+    transaction_type: String,
+    customer_name: Option<String>,
+    total_amount: f64,
+    profit: f64,
+    payment_method: String,
+    status: String,
+    notes: Option<String>,
+    created_at: String,
+}
+
+fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Gagal membaca app data dir: {e}"))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Gagal membuat app data dir: {e}"))?;
+    Ok(dir)
+}
+
+fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app_data_dir(app)?.join("brilink-pos-lite.db"))
+}
+
+fn open_db(app: &AppHandle) -> Result<Connection, String> {
+    let path = db_path(app)?;
+    let conn = Connection::open(path).map_err(|e| format!("Gagal membuka database: {e}"))?;
+    conn.pragma_update(None, "journal_mode", "WAL").ok();
+    conn.pragma_update(None, "foreign_keys", "ON").ok();
+    Ok(conn)
+}
+
+fn migrate(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        r#"
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          username TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'kasir',
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS accounts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          icon TEXT,
+          color TEXT,
+          balance REAL NOT NULL DEFAULT 0,
+          min_balance REAL NOT NULL DEFAULT 0,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS product_categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          icon TEXT,
+          color TEXT,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS products (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          barcode TEXT,
+          category_id INTEGER,
+          buy_price REAL NOT NULL DEFAULT 0,
+          sell_price REAL NOT NULL DEFAULT 0,
+          stock INTEGER NOT NULL DEFAULT 0,
+          min_stock INTEGER NOT NULL DEFAULT 5,
+          unit TEXT DEFAULT 'pcs',
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY(category_id) REFERENCES product_categories(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS account_mutations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          account_id INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          balance_after REAL NOT NULL,
+          notes TEXT,
+          reference_id INTEGER,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(account_id) REFERENCES accounts(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invoice_no TEXT NOT NULL UNIQUE,
+          type TEXT NOT NULL,
+          customer_name TEXT,
+          total_amount REAL NOT NULL,
+          profit REAL NOT NULL DEFAULT 0,
+          payment_method TEXT NOT NULL DEFAULT 'cash',
+          status TEXT NOT NULL DEFAULT 'completed',
+          notes TEXT,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS transaction_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transaction_id INTEGER NOT NULL,
+          product_id INTEGER,
+          product_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          unit_price REAL NOT NULL,
+          subtotal REAL NOT NULL,
+          FOREIGN KEY(transaction_id) REFERENCES transactions(id),
+          FOREIGN KEY(product_id) REFERENCES products(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS app_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          level TEXT NOT NULL,
+          source TEXT NOT NULL,
+          message TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
+        "#,
+    )
+    .map_err(|e| format!("Gagal migrasi database: {e}"))?;
+    Ok(())
+}
+
+fn seed_defaults(conn: &Connection) -> Result<(), String> {
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)",
+        params!["app_name", "BRILink POS Lite", now],
+    )
+    .map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR IGNORE INTO accounts (code, name, icon, color, balance, min_balance, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 0, 0, 1, ?5, ?5)",
+        params!["cash", "Kas Tunai", "banknote", "#22c55e", Utc::now().to_rfc3339()],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn init_schema(app: &AppHandle) -> Result<Connection, String> {
+    let conn = open_db(app)?;
+    migrate(&conn)?;
+    seed_defaults(&conn)?;
+    Ok(conn)
+}
+
+fn trim_optional(value: Option<String>) -> Option<String> {
+    value.and_then(|v| {
+        let trimmed = v.trim().to_string();
+        if trimmed.is_empty() { None } else { Some(trimmed) }
+    })
+}
+
+#[tauri::command]
+fn health_check() -> HealthCheck {
+    HealthCheck {
+        ok: true,
+        app: "BRILink POS Lite",
+        backend: "tauri-rust",
+        timestamp: Utc::now().to_rfc3339(),
+    }
+}
+
+#[tauri::command]
+fn db_init(app: AppHandle) -> Result<DbStatus, String> {
+    let path = db_path(&app)?;
+    let conn = open_db(&app)?;
+    migrate(&conn)?;
+    seed_defaults(&conn)?;
+    Ok(DbStatus {
+        ok: true,
+        path: path.display().to_string(),
+    })
+}
+
+#[tauri::command]
+fn setup_status(app: AppHandle) -> Result<SetupStatus, String> {
+    let conn = init_schema(&app)?;
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+    Ok(SetupStatus {
+        setup_needed: count == 0,
+        user_count: count,
+    })
+}
+
+#[tauri::command]
+fn create_admin(app: AppHandle, payload: CreateAdminPayload) -> Result<PublicUser, String> {
+    let conn = init_schema(&app)?;
+    let existing: i64 = conn
+        .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+    if existing > 0 {
+        return Err("Setup sudah selesai".into());
+    }
+    if payload.username.trim().is_empty() || payload.password.len() < 8 {
+        return Err("Username wajib diisi dan password minimal 8 karakter".into());
+    }
+    let name = payload.name.trim().to_string();
+    let username = payload.username.trim().to_string();
+    let now = Utc::now().to_rfc3339();
+    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 'admin', 1, ?4, ?4)",
+        params![name, username, password_hash, now],
+    )
+    .map_err(|e| e.to_string())?;
+    let id = conn.last_insert_rowid();
+    Ok(PublicUser {
+        id,
+        name,
+        username,
+        role: "admin".into(),
+    })
+}
+
+#[tauri::command]
+fn login(app: AppHandle, payload: LoginPayload) -> Result<LoginResponse, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, name, username, password_hash, role FROM users WHERE username = ?1 AND is_active = 1 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+    let user = stmt
+        .query_row(params![payload.username.trim()], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+            ))
+        })
+        .map_err(|_| "Username atau password salah".to_string())?;
+
+    if !verify(payload.password, &user.3).map_err(|e| e.to_string())? {
+        return Err("Username atau password salah".into());
+    }
+
+    Ok(LoginResponse {
+        ok: true,
+        user: PublicUser {
+            id: user.0,
+            name: user.1,
+            username: user.2,
+            role: user.4,
+        },
+    })
+}
+
+#[tauri::command]
+fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, code, name, balance, is_active FROM accounts ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(AccountRow {
+                id: row.get(0)?,
+                code: row.get(1)?,
+                name: row.get(2)?,
+                balance: row.get(3)?,
+                is_active: row.get::<_, i64>(4)? == 1,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+fn list_categories(app: AppHandle) -> Result<Vec<CategoryRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, name, icon, color, is_active FROM product_categories WHERE is_active = 1 ORDER BY name ASC")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(CategoryRow {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                icon: row.get(2)?,
+                color: row.get(3)?,
+                is_active: row.get::<_, i64>(4)? == 1,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_category(app: AppHandle, payload: CategoryPayload) -> Result<CategoryRow, String> {
+    let conn = init_schema(&app)?;
+    let name = payload.name.trim().to_string();
+    if name.is_empty() {
+        return Err("Nama kategori wajib diisi".into());
+    }
+    let icon = trim_optional(payload.icon);
+    let color = trim_optional(payload.color).or_else(|| Some("#059669".to_string()));
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO product_categories (name, icon, color, is_active, created_at) VALUES (?1, ?2, ?3, 1, ?4)",
+        params![name, icon, color, now],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(CategoryRow {
+        id: conn.last_insert_rowid(),
+        name,
+        icon,
+        color,
+        is_active: true,
+    })
+}
+
+#[tauri::command]
+fn list_products(app: AppHandle) -> Result<Vec<ProductRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare(
+            r#"
+            SELECT p.id, p.name, p.barcode, p.category_id, c.name, p.buy_price, p.sell_price,
+                   p.stock, p.min_stock, COALESCE(p.unit, 'pcs'), p.is_active
+            FROM products p
+            LEFT JOIN product_categories c ON c.id = p.category_id
+            WHERE p.is_active = 1
+            ORDER BY p.name ASC
+            "#,
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(ProductRow {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                barcode: row.get(2)?,
+                category_id: row.get(3)?,
+                category_name: row.get(4)?,
+                buy_price: row.get(5)?,
+                sell_price: row.get(6)?,
+                stock: row.get(7)?,
+                min_stock: row.get(8)?,
+                unit: row.get(9)?,
+                is_active: row.get::<_, i64>(10)? == 1,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_product(app: AppHandle, payload: ProductPayload) -> Result<ProductRow, String> {
+    let conn = init_schema(&app)?;
+    let name = payload.name.trim().to_string();
+    if name.is_empty() {
+        return Err("Nama produk wajib diisi".into());
+    }
+    if payload.buy_price < 0.0 || payload.sell_price < 0.0 || payload.stock < 0 || payload.min_stock < 0 {
+        return Err("Harga dan stok tidak boleh minus".into());
+    }
+    let barcode = trim_optional(payload.barcode);
+    let unit = trim_optional(payload.unit).unwrap_or_else(|| "pcs".to_string());
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        r#"
+        INSERT INTO products (name, barcode, category_id, buy_price, sell_price, stock, min_stock, unit, is_active, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, ?9, ?9)
+        "#,
+        params![
+            name,
+            barcode,
+            payload.category_id,
+            payload.buy_price,
+            payload.sell_price,
+            payload.stock,
+            payload.min_stock,
+            unit,
+            now
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    let id = conn.last_insert_rowid();
+    let category_name = if let Some(category_id) = payload.category_id {
+        conn.query_row(
+            "SELECT name FROM product_categories WHERE id = ?1",
+            params![category_id],
+            |row| row.get::<_, String>(0),
+        )
+        .ok()
+    } else {
+        None
+    };
+    Ok(ProductRow {
+        id,
+        name,
+        barcode,
+        category_id: payload.category_id,
+        category_name,
+        buy_price: payload.buy_price,
+        sell_price: payload.sell_price,
+        stock: payload.stock,
+        min_stock: payload.min_stock,
+        unit,
+        is_active: true,
+    })
+}
+
+#[tauri::command]
+fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare(
+            r#"
+            SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
+            FROM transactions
+            ORDER BY id DESC
+            LIMIT 100
+            "#,
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(TransactionRow {
+                id: row.get(0)?,
+                invoice_no: row.get(1)?,
+                transaction_type: row.get(2)?,
+                customer_name: row.get(3)?,
+                total_amount: row.get(4)?,
+                profit: row.get(5)?,
+                payment_method: row.get(6)?,
+                status: row.get(7)?,
+                notes: row.get(8)?,
+                created_at: row.get(9)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
+    if payload.items.is_empty() {
+        return Err("Keranjang masih kosong".into());
+    }
+    if payload.items.iter().any(|item| item.quantity <= 0) {
+        return Err("Jumlah produk harus lebih dari 0".into());
+    }
+
+    let mut conn = init_schema(&app)?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let now = Utc::now().to_rfc3339();
+    let invoice_no = format!("POS-{}-{}", Utc::now().format("%Y%m%d%H%M%S"), Utc::now().timestamp_subsec_millis());
+    let mut total_amount = 0.0;
+    let mut total_profit = 0.0;
+    let mut prepared_items: Vec<(i64, String, i64, f64, f64, f64)> = Vec::new();
+
+    for item in &payload.items {
+        let product = tx
+            .query_row(
+                "SELECT name, buy_price, sell_price, stock FROM products WHERE id = ?1 AND is_active = 1",
+                params![item.product_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, f64>(1)?,
+                        row.get::<_, f64>(2)?,
+                        row.get::<_, i64>(3)?,
+                    ))
+                },
+            )
+            .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
+        if product.3 < item.quantity {
+            return Err(format!("Stok {} tidak cukup", product.0));
+        }
+        let subtotal = product.2 * item.quantity as f64;
+        let profit = (product.2 - product.1) * item.quantity as f64;
+        total_amount += subtotal;
+        total_profit += profit;
+        prepared_items.push((item.product_id, product.0, item.quantity, product.2, subtotal, profit));
+    }
+
+    tx.execute(
+        r#"
+        INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at)
+        VALUES (?1, 'pos', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6)
+        "#,
+        params![
+            invoice_no,
+            trim_optional(payload.customer_name),
+            total_amount,
+            total_profit,
+            trim_optional(payload.notes),
+            now
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    let transaction_id = tx.last_insert_rowid();
+
+    for item in prepared_items {
+        tx.execute(
+            "INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![transaction_id, item.0, item.1, item.2, item.3, item.4],
+        )
+        .map_err(|e| e.to_string())?;
+        tx.execute(
+            "UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3",
+            params![item.2, now, item.0],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    let cash_account = tx
+        .query_row(
+            "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
+            [],
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?)),
+        )
+        .map_err(|_| "Akun Kas Tunai tidak ditemukan".to_string())?;
+    let cash_balance = cash_account.1 + total_amount;
+    tx.execute(
+        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
+        params![cash_balance, now, cash_account.0],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.execute(
+        "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'pos_in', ?2, ?3, ?4, ?5, ?6)",
+        params![cash_account.0, total_amount, cash_balance, format!("POS Tunai {invoice_no}"), transaction_id, now],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+
+    Ok(PosCheckoutResponse {
+        ok: true,
+        transaction_id,
+        invoice_no,
+        total_amount,
+        profit: total_profit,
+        cash_balance,
+    })
+}
+
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = app.get_webview_window("main").map(|window| {
+                let _ = window.set_focus();
+            });
+        }))
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .invoke_handler(tauri::generate_handler![
+            health_check,
+            db_init,
+            setup_status,
+            create_admin,
+            login,
+            list_accounts,
+            list_categories,
+            create_category,
+            list_products,
+            create_product,
+            list_transactions,
+            checkout_pos_cash,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+
