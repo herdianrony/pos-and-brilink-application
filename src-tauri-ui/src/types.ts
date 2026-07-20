@@ -36,3 +36,15 @@ export type IconName =
   | "logs"
   | "settings"
   | "search";
+
+export type AgentForm = {
+  service_name: string;
+  customer_name: string;
+  amount: string;
+  fee: string;
+  provider_cost: string;
+  account_id: string;
+  cash_effect: string;
+  bank_effect: string;
+  notes: string;
+};

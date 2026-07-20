@@ -45,6 +45,8 @@ import {
 } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
+import { AgentServicesPage } from "./pages/AgentServicesPage";
+import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
@@ -52,7 +54,7 @@ import { CashBalancePage } from "./pages/CashBalancePage";
 import { CurrencyInput } from "./components/CurrencyInput";
 import { Icon } from "./components/AppIcon";
 import { formatRupiah, mutationLabel, paymentLabel } from "./lib/format";
-import type { CartItem, IconName, ReceiptState, ViewKey } from "./types";
+import type { AgentForm, CartItem, IconName, ReceiptState, ViewKey } from "./types";
 
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
@@ -110,7 +112,7 @@ export default function App() {
   const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
   const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
   const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
-  const [agentForm, setAgentForm] = useState({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
+  const [agentForm, setAgentForm] = useState<AgentForm>({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
   const [debtForm, setDebtForm] = useState({ customer_name: "", phone: "", amount: "0", notes: "" });
   const [debtPaymentForm, setDebtPaymentForm] = useState({ debt_id: "", amount: "0", notes: "Cicilan utang" });
   const [productForm, setProductForm] = useState({
@@ -672,167 +674,6 @@ export default function App() {
     );
   }
 
-  function productList(showSellButton = true) {
-    const visibleProducts = filteredProducts;
-    return (
-      <div className={showSellButton ? "pos-product-grid" : "admin-product-list"}>
-        {visibleProducts.length === 0 ? <div className="empty-state"><strong>Produk tidak ditemukan</strong><span>Tambahkan produk baru atau ubah kata kunci pencarian.</span></div> : visibleProducts.map((product) => (
-          <div key={product.id} className={showSellButton ? "pos-product-card" : "admin-product-row"}>
-            <div className="product-main">
-              <strong>{product.name}</strong>
-              <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
-              {!showSellButton && <small>HPP {formatRupiah(product.buy_price)} • Jual {formatRupiah(product.sell_price)}</small>}
-            </div>
-            <div className="product-meta">
-              <strong>{formatRupiah(product.sell_price)}</strong>
-              <span className={product.stock <= product.min_stock ? "stock-badge danger-stock" : "stock-badge"}>Stok {product.stock}</span>
-            </div>
-            <div className="product-actions">
-              {showSellButton ? <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Tambah</button> : <><button className="secondary" onClick={() => startEditProduct(product)}>Edit</button><button className="danger" onClick={() => removeProduct(product)}>Nonaktifkan</button></>}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function renderPos() {
-    const canChoosePayment = cart.length > 0;
-    const canPay = canChoosePayment && (paymentMethod === "cash" || Boolean(settlementAccountId));
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Penjualan Retail</p><h1>Kasir POS</h1></div><div className="page-actions"><button className="secondary" onClick={holdCart} disabled={!cart.length}>Hold</button><button className="danger" onClick={clearCart} disabled={!cart.length}>Kosongkan</button></div></div>
-        <div className="pos-shell">
-          <section className="pos-catalog card">
-            <div className="card-header"><div><h2>Pilih Produk</h2><p>Mirip mode kasir Electron: filter kategori, pilih produk, lalu bayar dari panel kanan.</p></div></div>
-            <div className="category-filter-row">
-              <button className={posCategoryFilter === "all" ? "filter-chip active" : "filter-chip"} onClick={() => setPosCategoryFilter("all")}>Semua</button>
-              {categories.map((category) => (
-                <button key={category.id} className={posCategoryFilter === String(category.id) ? "filter-chip active" : "filter-chip"} onClick={() => setPosCategoryFilter(String(category.id))}>{category.name}</button>
-              ))}
-            </div>
-            {productList(true)}
-          </section>
-          <aside className="pos-cart-panel card">
-            <div className="card-header"><div><h2>Keranjang</h2><p>{cart.length} item dipilih.</p></div></div>
-            {cart.length === 0 ? <div className="empty-state"><strong>Keranjang kosong</strong><span>Pilih produk dari katalog.</span></div> : cart.map((item) => (
-              <div key={item.product.id} className="cart-row electron-cart-row">
-                <div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div>
-                <input type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(e) => updateCartQty(item.product.id, Number(e.target.value))} />
-                <strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong>
-              </div>
-            ))}
-            <div className="total-row"><span>Total</span><strong>{formatRupiah(cartTotal)}</strong></div>
-            <div className="payment-choice-grid compact-payment-grid">
-              {(["cash", "transfer", "qris"] as const).map((method) => (
-                <button key={method} className={paymentMethod === method ? "choice-card selected" : "choice-card"} onClick={() => setPaymentMethod(method)}>
-                  <strong>{method === "cash" ? "Tunai" : method.toUpperCase()}</strong>
-                </button>
-              ))}
-            </div>
-            {paymentMethod !== "cash" && (
-              <label>Rekening Penerima<select value={settlementAccountId} onChange={(e) => setSettlementAccountId(e.target.value)}>
-                <option value="">Pilih rekening</option>
-                {settlementAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} — {formatRupiah(account.balance)}</option>)}
-              </select></label>
-            )}
-            <button className="checkout" onClick={submitCheckout} disabled={saving || !canPay}>{saving ? "Memproses..." : `Bayar ${paymentMethod === "cash" ? "Tunai" : paymentMethod.toUpperCase()}`}</button>
-            <p className="hint">Shortcut kasir: pilih produk → cek total → bayar. Struk muncul setelah checkout.</p>
-          </aside>
-        </div>
-      </>
-    );
-  }
-
-  function renderBrilink() {
-    const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
-    const totalCustomerPay = Number(agentForm.amount || 0) + Number(agentForm.fee || 0);
-    const agentProfit = Number(agentForm.fee || 0) - Number(agentForm.provider_cost || 0);
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Non-API Ledger</p><h1>Layanan Agen</h1></div><div className="page-actions"><button className="secondary" onClick={() => setAgentStep(1)}>Pilih Layanan</button><button onClick={() => setAgentStep(4)}>Review</button></div></div>
-        <div className="stepper agent-stepper">
-          <button className={agentStep === 1 ? "step active" : "step"} onClick={() => setAgentStep(1)}><span>1</span>Pilih Layanan</button>
-          <button className={agentStep === 2 ? "step active" : "step"} onClick={() => setAgentStep(2)}><span>2</span>Nominal</button>
-          <button className={agentStep === 3 ? "step active" : "step"} onClick={() => setAgentStep(3)}><span>3</span>Efek Saldo</button>
-          <button className={agentStep === 4 ? "step active" : "step"} onClick={() => setAgentStep(4)}><span>4</span>Simpan</button>
-        </div>
-        <section className="grid workspace-grid">
-          <div className="card">
-            {agentStep === 1 && (
-              <div className="workflow-content">
-                <div className="card-header"><div><h2>1. Pilih Jenis Layanan</h2><p>Pilih preset yang paling mendekati transaksi pelanggan.</p></div></div>
-                <div className="service-section-title">Layanan Favorit</div>
-                <div className="service-card-grid">
-                  <button type="button" className="service-card" onClick={() => applyAgentPreset("withdraw")}><span className="service-icon">TT</span><strong>Tarik Tunai</strong><small>Pelanggan ambil uang tunai</small><em>Admin umum Rp5.000</em></button>
-                  <button type="button" className="service-card" onClick={() => applyAgentPreset("deposit")}><span className="service-icon">ST</span><strong>Setor Tunai</strong><small>Setor ke rekening/e-wallet</small><em>Admin umum Rp5.000</em></button>
-                  <button type="button" className="service-card" onClick={() => applyAgentPreset("transfer")}><span className="service-icon">TR</span><strong>Transfer</strong><small>Transfer bank/provider</small><em>Admin umum Rp5.000</em></button>
-                  <button type="button" className="service-card" onClick={() => applyAgentPreset("payment")}><span className="service-icon">TP</span><strong>Payment/Topup</strong><small>Token, pulsa, tagihan</small><em>Admin mulai Rp2.500</em></button>
-                </div>
-                <label>Nama Layanan<input value={agentForm.service_name} onChange={(e) => setAgentForm({ ...agentForm, service_name: e.target.value })} /></label>
-                <button onClick={() => setAgentStep(2)}>Lanjut Isi Nominal</button>
-              </div>
-            )}
-            {agentStep === 2 && (
-              <div className="workflow-content">
-                <div className="card-header"><div><h2>2. Isi Nominal</h2><p>Pisahkan nominal transaksi dan admin toko agar profit jelas.</p></div></div>
-                <div className="product-form no-box">
-                  <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(e) => setAgentForm({ ...agentForm, customer_name: e.target.value })} /></label>
-                  <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => setAgentForm({ ...agentForm, amount: value })} /></label>
-                  <label>Admin Toko / Fee<span className="field-note">Biaya admin yang dibayar pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => setAgentForm({ ...agentForm, fee: value })} /></label>
-                  <label>Biaya Modal Provider<span className="field-note">Potongan provider/bank. Profit = Admin Toko - Biaya Modal.</span><CurrencyInput value={agentForm.provider_cost} onChange={(value) => setAgentForm({ ...agentForm, provider_cost: value })} /></label>
-                  <label>Catatan<input value={agentForm.notes} onChange={(e) => setAgentForm({ ...agentForm, notes: e.target.value })} /></label>
-                </div>
-                <div className="total-row"><span>Total Bayar Pelanggan</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
-                <div className="total-row"><span>Estimasi Profit Jasa</span><strong>{formatRupiah(agentProfit)}</strong></div>
-                <div className="wizard-actions"><button className="secondary" onClick={() => setAgentStep(1)}>Kembali</button><button onClick={() => setAgentStep(3)}>Lanjut Efek Saldo</button></div>
-              </div>
-            )}
-            {agentStep === 3 && (
-              <div className="workflow-content">
-                <div className="card-header"><div><h2>3. Atur Efek Saldo</h2><p>Isi hanya saldo yang benar-benar berubah. Positif menambah, negatif mengurangi.</p></div></div>
-                <div className="product-form no-box">
-                  <label>Rekening Layanan<select value={agentForm.account_id} onChange={(e) => setAgentForm({ ...agentForm, account_id: e.target.value })}>
-                    <option value="">Tidak ada efek rekening</option>
-                    {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
-                  </select></label>
-                  <label>Perubahan Saldo Rekening<span className="field-note">Contoh transfer keluar: -100000</span><CurrencyInput allowNegative value={agentForm.bank_effect} onChange={(value) => setAgentForm({ ...agentForm, bank_effect: value })} /></label>
-                  <label>Perubahan Kas Tunai<span className="field-note">Contoh pelanggan bayar tunai: 105000</span><CurrencyInput allowNegative value={agentForm.cash_effect} onChange={(value) => setAgentForm({ ...agentForm, cash_effect: value })} /></label>
-                </div>
-                <div className="wizard-actions"><button className="secondary" onClick={() => setAgentStep(2)}>Kembali</button><button onClick={() => setAgentStep(4)}>Review & Simpan</button></div>
-              </div>
-            )}
-            {agentStep === 4 && (
-              <div className="workflow-content">
-                <div className="card-header"><div><h2>4. Review Transaksi</h2><p>Pastikan ringkasan sudah benar sebelum disimpan.</p></div></div>
-                <div className="review-box">
-                  <div><span>Layanan</span><strong>{agentForm.service_name || "-"}</strong></div>
-                  <div><span>Nominal</span><strong>{formatRupiah(Number(agentForm.amount || 0))}</strong></div>
-                  <div><span>Admin/Fee</span><strong>{formatRupiah(Number(agentForm.fee || 0))}</strong></div>
-                  <div><span>Biaya Modal Provider</span><strong>{formatRupiah(Number(agentForm.provider_cost || 0))}</strong></div>
-                  <div><span>Profit Jasa</span><strong>{formatRupiah(agentProfit)}</strong></div>
-                  <div><span>Total Bayar</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
-                  <div><span>Efek Rekening</span><strong>{formatRupiah(Number(agentForm.bank_effect || 0))}</strong></div>
-                  <div><span>Efek Kas</span><strong>{formatRupiah(Number(agentForm.cash_effect || 0))}</strong></div>
-                </div>
-                <div className="wizard-actions"><button className="secondary" onClick={() => setAgentStep(3)}>Kembali</button><button onClick={(event) => submitAgentTransaction(event as unknown as React.FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</button></div>
-              </div>
-            )}
-          </div>
-          <div className="card">
-            <div className="card-header"><div><h2>Riwayat Layanan Agen</h2><p>Transaksi yang sudah dicatat hari ini/terakhir.</p></div></div>
-            {agentTransactions.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi agen</strong><span>Mulai dari langkah 1 untuk mencatat layanan.</span></div> : agentTransactions.map((transaction) => (
-              <div key={transaction.id} className="row rich-row">
-                <div><strong>{transaction.notes || transaction.invoice_no}</strong><small>{transaction.invoice_no} • Fee {formatRupiah(transaction.profit)}</small></div>
-                <strong>{formatRupiah(transaction.total_amount)}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    );
-  }
-
   function renderHistory() {
     return (
       <>
@@ -1042,8 +883,8 @@ export default function App() {
 
 
   function renderActiveView() {
-    if (activeView === "pos") return renderPos();
-    if (activeView === "brilink") return renderBrilink();
+    if (activeView === "pos") return <POSPage categories={categories} products={filteredProducts} cart={cart} cartTotal={cartTotal} paymentMethod={paymentMethod} settlementAccountId={settlementAccountId} settlementAccounts={settlementAccounts} saving={saving} posCategoryFilter={posCategoryFilter} onCategoryFilterChange={setPosCategoryFilter} onAddToCart={addToCart} onUpdateQty={updateCartQty} onPaymentMethodChange={setPaymentMethod} onSettlementAccountChange={setSettlementAccountId} onHoldCart={holdCart} onClearCart={clearCart} onSubmitCheckout={submitCheckout} />;
+    if (activeView === "brilink") return <AgentServicesPage accounts={accounts} transactions={transactions} agentForm={agentForm} agentStep={agentStep} saving={saving} onAgentFormChange={setAgentForm} onAgentStepChange={setAgentStep} onApplyPreset={applyAgentPreset} onSubmitAgentTransaction={submitAgentTransaction} />;
     if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={() => { clearProductForm(); setShowProductModal(true); }} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
     if (activeView === "history") return renderHistory();
     if (activeView === "debts") return renderDebts();
