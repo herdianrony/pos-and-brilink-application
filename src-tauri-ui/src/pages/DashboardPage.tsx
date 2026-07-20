@@ -26,6 +26,25 @@ export function DashboardPage({
   onNavigate: (view: ViewKey) => void;
   onRefresh: () => void;
 }) {
+  const posRevenue = transactions
+    .filter((transaction) => transaction.transaction_type === "pos")
+    .reduce((sum, transaction) => sum + transaction.total_amount, 0);
+  const agentRevenue = transactions
+    .filter((transaction) => transaction.transaction_type === "agent")
+    .reduce((sum, transaction) => sum + transaction.total_amount, 0);
+  const agentProfit = transactions
+    .filter((transaction) => transaction.transaction_type === "agent")
+    .reduce((sum, transaction) => sum + transaction.profit, 0);
+  const totalRevenue = posRevenue + agentRevenue;
+  const maxSummaryValue = Math.max(posRevenue, agentRevenue, agentProfit, 1);
+  const paymentRows = ["cash", "transfer", "qris", "mixed"].map((method) => {
+    const total = transactions
+      .filter((transaction) => transaction.payment_method === method)
+      .reduce((sum, transaction) => sum + transaction.total_amount, 0);
+    return { method, total };
+  }).filter((row) => row.total > 0);
+  const maxPaymentValue = Math.max(...paymentRows.map((row) => row.total), 1);
+
   return (
     <>
       <div className="hero-panel">
@@ -50,6 +69,59 @@ export function DashboardPage({
         <button onClick={() => onNavigate("brilink")} className="launch-card"><Icon name="brilink" /><strong>Layanan Agen</strong><span>Catat transaksi non-API</span></button>
         <button onClick={() => onNavigate("debts")} className="launch-card"><Icon name="debts" /><strong>Buku Utang</strong><span>Piutang & reminder</span></button>
         <button onClick={() => onNavigate("cash")} className="launch-card"><Icon name="cash" /><strong>Kas & Saldo</strong><span>Saldo virtual</span></button>
+      </section>
+      <section className="grid dashboard-grid">
+        <div className="card">
+          <div className="card-header"><div><h2>Grafik Ringkas</h2><p>Ringkasan omzet dan keuntungan dari transaksi yang tersimpan.</p></div></div>
+          {transactions.length === 0 ? (
+            <div className="empty-state compact"><strong>Belum ada data grafik</strong><span>Grafik akan muncul setelah ada transaksi.</span></div>
+          ) : (
+            <div className="grid gap-4">
+              {[
+                { label: "Omzet POS", value: posRevenue, className: "from-emerald-600 to-emerald-400" },
+                { label: "Omzet Layanan", value: agentRevenue, className: "from-blue-600 to-cyan-400" },
+                { label: "Keuntungan Agen", value: agentProfit, className: "from-amber-500 to-orange-400" },
+                { label: "Total Omzet", value: totalRevenue, className: "from-violet-600 to-fuchsia-400" },
+              ].map((row) => (
+                <div key={row.label} className="grid gap-2">
+                  <div className="flex items-center justify-between gap-3 text-sm font-extrabold">
+                    <span className="text-slate-600">{row.label}</span>
+                    <strong>{formatRupiah(row.value)}</strong>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${row.className}`}
+                      style={{ width: `${Math.max(6, Math.round((row.value / Math.max(totalRevenue, maxSummaryValue, 1)) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="card">
+          <div className="card-header"><div><h2>Metode Pembayaran</h2><p>Komposisi nilai transaksi berdasarkan cara bayar.</p></div></div>
+          {paymentRows.length === 0 ? (
+            <div className="empty-state compact"><strong>Belum ada pembayaran</strong><span>Data muncul setelah transaksi tersimpan.</span></div>
+          ) : (
+            <div className="grid gap-3">
+              {paymentRows.map((row) => (
+                <div key={row.method} className="grid gap-2">
+                  <div className="flex items-center justify-between gap-3 text-sm font-extrabold">
+                    <span className="text-slate-600">{paymentLabel(row.method)}</span>
+                    <strong>{formatRupiah(row.total)}</strong>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-slate-700 to-slate-400"
+                      style={{ width: `${Math.max(8, Math.round((row.total / maxPaymentValue) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
       <section className="grid dashboard-grid">
         <div className="card">
