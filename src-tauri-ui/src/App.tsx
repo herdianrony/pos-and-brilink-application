@@ -586,12 +586,13 @@ export default function App() {
   function renderPos() {
     return (
       <>
-        <div className="page-title"><div><p className="eyebrow">Penjualan</p><h1>POS Tunai</h1></div></div>
+        <div className="page-title"><div><p className="eyebrow">Penjualan Retail</p><h1>Kasir POS</h1></div></div>
+        <div className="page-help"><strong>Alur cepat:</strong><span>1. Pilih produk</span><span>2. Cek keranjang</span><span>3. Pilih pembayaran lalu tekan Bayar</span></div>
         <section className="grid workspace-grid">
-          <div className="card"><h2>Pilih Produk</h2>{productList(true)}</div>
+          <div className="card"><div className="card-header"><div><h2>Pilih Produk</h2><p>Ketuk tombol Tambah untuk memasukkan produk ke keranjang.</p></div></div>{productList(true)}</div>
           <div className="card cart-card">
-            <h2>Keranjang</h2>
-            {cart.length === 0 ? <p>Keranjang masih kosong.</p> : cart.map((item) => (
+            <div className="card-header"><div><h2>Keranjang</h2><p>Periksa item sebelum pembayaran.</p></div></div>
+            {cart.length === 0 ? <div className="empty-state"><strong>Keranjang kosong</strong><span>Pilih produk di sebelah kiri untuk mulai transaksi.</span></div> : cart.map((item) => (
               <div key={item.product.id} className="cart-row">
                 <div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div>
                 <input type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(e) => updateCartQty(item.product.id, Number(e.target.value))} />
@@ -625,10 +626,11 @@ export default function App() {
     const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
     return (
       <>
-        <div className="page-title"><div><p className="eyebrow">Layanan Agen</p><h1>Transaksi Agen</h1></div></div>
+        <div className="page-title"><div><p className="eyebrow">Non-API Ledger</p><h1>Layanan Agen</h1></div></div>
+        <div className="page-help"><strong>Catatan penting:</strong><span>Aplikasi hanya mencatat transaksi, tidak mengirim ke bank/provider.</span><span>Isi efek saldo sesuai uang yang benar-benar berubah.</span></div>
         <section className="grid workspace-grid">
           <div className="card">
-            <h2>Preset Layanan</h2>
+            <div className="card-header"><div><h2>Transaksi Baru</h2><p>Pilih preset agar nama layanan dan admin cepat terisi.</p></div></div><h3 className="subsection-title">Preset Layanan</h3>
             <div className="quick-actions">
               <button type="button" className="secondary" onClick={() => applyAgentPreset("withdraw")}>Tarik Tunai</button>
               <button type="button" className="secondary" onClick={() => applyAgentPreset("deposit")}>Setor Tunai</button>
@@ -638,21 +640,21 @@ export default function App() {
             <form onSubmit={submitAgentTransaction} className="product-form">
               <label>Layanan<input value={agentForm.service_name} onChange={(e) => setAgentForm({ ...agentForm, service_name: e.target.value })} /></label>
               <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(e) => setAgentForm({ ...agentForm, customer_name: e.target.value })} /></label>
-              <label>Nominal Transaksi<input type="number" min="0" value={agentForm.amount} onChange={(e) => setAgentForm({ ...agentForm, amount: e.target.value })} /></label>
-              <label>Admin/Fee<input type="number" min="0" value={agentForm.fee} onChange={(e) => setAgentForm({ ...agentForm, fee: e.target.value })} /></label>
+              <label>Nominal Transaksi<span className="field-note">Nilai transfer/pulsa/token, bukan termasuk admin toko.</span><input type="number" min="0" value={agentForm.amount} onChange={(e) => setAgentForm({ ...agentForm, amount: e.target.value })} /></label>
+              <label>Admin Toko / Fee<span className="field-note">Keuntungan jasa yang dibayar pelanggan.</span><input type="number" min="0" value={agentForm.fee} onChange={(e) => setAgentForm({ ...agentForm, fee: e.target.value })} /></label>
               <label>Rekening Layanan<select value={agentForm.account_id} onChange={(e) => setAgentForm({ ...agentForm, account_id: e.target.value })}>
                 <option value="">Tidak ada efek rekening</option>
                 {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
               </select></label>
-              <label>Efek Rekening (+/-)<input type="number" value={agentForm.bank_effect} onChange={(e) => setAgentForm({ ...agentForm, bank_effect: e.target.value })} /></label>
-              <label>Efek Kas Tunai (+/-)<input type="number" value={agentForm.cash_effect} onChange={(e) => setAgentForm({ ...agentForm, cash_effect: e.target.value })} /></label>
+              <label>Perubahan Saldo Rekening<span className="field-note">Contoh: transfer keluar isi -100000, saldo masuk isi 100000.</span><input type="number" value={agentForm.bank_effect} onChange={(e) => setAgentForm({ ...agentForm, bank_effect: e.target.value })} /></label>
+              <label>Perubahan Kas Tunai<span className="field-note">Contoh: pelanggan bayar tunai isi +105000, tarik tunai keluar isi -100000.</span><input type="number" value={agentForm.cash_effect} onChange={(e) => setAgentForm({ ...agentForm, cash_effect: e.target.value })} /></label>
               <label>Catatan<input value={agentForm.notes} onChange={(e) => setAgentForm({ ...agentForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving}>Simpan Transaksi Agen</button>
             </form>
             <p className="hint">Mode ini fleksibel: isi efek kas/rekening sesuai alur operasional outlet. Positif menambah saldo, negatif mengurangi saldo.</p>
           </div>
           <div className="card">
-            <h2>Riwayat Layanan Agen</h2>
+            <div className="card-header"><div><h2>Riwayat Layanan Agen</h2><p>Menampilkan transaksi layanan yang sudah dicatat.</p></div></div>
             {agentTransactions.length === 0 ? <p>Belum ada transaksi agen.</p> : agentTransactions.map((transaction) => (
               <div key={transaction.id} className="row rich-row">
                 <div><strong>{transaction.notes || transaction.invoice_no}</strong><small>{transaction.invoice_no} • Fee {formatRupiah(transaction.profit)}</small></div>
@@ -669,6 +671,7 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Data Master</p><h1>Produk & Kategori</h1></div></div>
+        <div className="page-help"><strong>Untuk pemilik/admin:</strong><span>Isi HPP agar laporan profit benar.</span><span>Kasir tidak perlu melihat HPP di versi final.</span></div>
         <section className="grid workspace-grid">
           <div className="card">
             <h2>{editingProductId ? "Edit Produk" : "Tambah Produk"}</h2>
@@ -700,6 +703,7 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Audit</p><h1>Riwayat Transaksi</h1></div></div>
+        <div className="page-help"><strong>Cara pakai:</strong><span>Klik transaksi di kiri untuk melihat detail item di kanan.</span></div>
         <section className="grid workspace-grid">
           <div className="card history-card">
             <h2>Daftar Transaksi</h2>
@@ -740,7 +744,8 @@ export default function App() {
   function renderCash() {
     return (
       <>
-        <div className="page-title"><div><p className="eyebrow">Keuangan</p><h1>Kas & Saldo</h1></div></div>
+        <div className="page-title"><div><p className="eyebrow">Saldo Virtual</p><h1>Kas & Saldo</h1></div></div>
+        <div className="page-help"><strong>Tujuan halaman:</strong><span>Pantau uang tunai, rekening bank, QRIS, dan mutasi saldo tanpa membuka internet banking.</span></div>
         <section className="stat-grid balance-grid">
           {accounts.map((account) => (
             <div key={account.id} className="balance-card">
@@ -753,15 +758,16 @@ export default function App() {
         </section>
         <section className="grid workspace-grid">
           <div className="card">
-            <h2>Tambah Rekening Non-Tunai</h2>
+            <details className="collapsible" open><summary>Tambah Rekening Non-Tunai</summary>
             <form onSubmit={submitAccount} className="product-form">
               <label>Kode<input value={accountForm.code} onChange={(e) => setAccountForm({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
               <label>Nama<input value={accountForm.name} onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
               <label>Saldo Awal<input type="number" min="0" value={accountForm.initial_balance} onChange={(e) => setAccountForm({ ...accountForm, initial_balance: e.target.value })} /></label>
               <label>Saldo Minimum<input type="number" min="0" value={accountForm.min_balance} onChange={(e) => setAccountForm({ ...accountForm, min_balance: e.target.value })} /></label>
               <button type="submit" disabled={saving}>Tambah Rekening</button>
-            </form>
-            <h2>Sesuaikan Saldo</h2>
+            </form></details>
+            <details className="collapsible"><summary>Sesuaikan Saldo</summary>
+            <p className="hint">Gunakan untuk koreksi saldo. Nominal positif menambah saldo, nominal negatif mengurangi saldo.</p>
             <form onSubmit={submitAdjustment} className="product-form">
               <label>Rekening<select value={adjustForm.account_id} onChange={(e) => setAdjustForm({ ...adjustForm, account_id: e.target.value })}>
                 <option value="">Pilih rekening</option>
@@ -770,9 +776,10 @@ export default function App() {
               <label>Nominal (+ / -)<input type="number" value={adjustForm.amount} onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })} /></label>
               <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving || !adjustForm.account_id}>Simpan Penyesuaian</button>
-            </form>
+            </form></details>
 
-            <h2>Transfer Antar Rekening</h2>
+            <details className="collapsible"><summary>Transfer Antar Rekening</summary>
+            <p className="hint">Gunakan saat memindahkan uang dari kas ke rekening, atau antar rekening.</p>
             <form onSubmit={submitTransfer} className="product-form">
               <label>Dari<select value={transferForm.from_account_id} onChange={(e) => setTransferForm({ ...transferForm, from_account_id: e.target.value })}>
                 <option value="">Pilih asal</option>
@@ -785,9 +792,10 @@ export default function App() {
               <label>Nominal<input type="number" min="0" value={transferForm.amount} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} /></label>
               <label>Catatan<input value={transferForm.notes} onChange={(e) => setTransferForm({ ...transferForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</button>
-            </form>
+            </form></details>
 
-            <h2>Ambil Profit / Biaya Bank</h2>
+            <details className="collapsible"><summary>Ambil Profit / Biaya Bank</summary>
+            <p className="hint">Aksi ini mengurangi saldo rekening tanpa mengubah profit transaksi.</p>
             <form onSubmit={submitOwnerDraw} className="product-form compact-form">
               <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, account_id: e.target.value })}>
                 <option value="">Pilih rekening</option>
@@ -805,7 +813,7 @@ export default function App() {
               <label>Nominal<input type="number" min="0" value={bankFeeForm.amount} onChange={(e) => setBankFeeForm({ ...bankFeeForm, amount: e.target.value })} /></label>
               <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => setBankFeeForm({ ...bankFeeForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Biaya Bank/MDR</button>
-            </form>
+            </form></details>
           </div>
           <div className="card">
             <h2>Mutasi Saldo Terakhir</h2>
@@ -830,6 +838,7 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Piutang</p><h1>Buku Utang</h1></div><div className="total-row mini-total"><span>Total Belum Lunas</span><strong>{formatRupiah(totalOutstanding)}</strong></div></div>
+        <div className="page-help"><strong>Alur utang:</strong><span>Catat utang saat pelanggan belum bayar.</span><span>Catat cicilan saat pelanggan membayar.</span><span>Salin reminder untuk kirim via WhatsApp.</span></div>
         <section className="grid workspace-grid">
           <div className="card">
             <h2>Tambah Utang Pelanggan</h2>

@@ -143,3 +143,75 @@ nav { display: grid; gap: 7px; overflow-y: auto; padding-right: 3px; }
   .topbar-actions { flex-direction: column; align-items: stretch; }
   .status-pill { max-width: 100%; }
 }
+
+/* Guided UX helpers */
+.page-help {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: -8px 0 18px;
+  padding: 13px 15px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 800;
+}
+.page-help span {
+  color: #334155;
+  font-weight: 700;
+}
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.card-header h2 { margin-bottom: 4px; }
+.card-header p { margin: 0; font-size: 13px; color: #64748b; }
+.subsection-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #334155;
+  letter-spacing: -.01em;
+}
+.field-note {
+  display: block;
+  margin-top: -2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #64748b;
+  font-weight: 650;
+}
+.collapsible {
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 15px 16px;
+  font-weight: 950;
+  color: #0f172a;
+  background: #f8fafc;
+}
+.collapsible summary::-webkit-details-marker { display: none; }
+.collapsible summary::after {
+  content: "+";
+  float: right;
+  color: #059669;
+  font-size: 18px;
+}
+.collapsible[open] summary::after { content: "–"; }
+.collapsible .product-form,
+.collapsible .hint {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+.collapsible .hint { margin-top: 12px; }
