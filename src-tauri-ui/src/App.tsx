@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  createAdmin,
-  createUser,
-  listTransactionItems,
-  login,
 } from "./api";
-import type { AccountRow, ProductRow, PublicUser, TransactionItemRow, TransactionRow } from "./api";
+import type { AccountRow, ProductRow } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -25,6 +21,8 @@ import { useDebtBook } from "./hooks/useDebtBook";
 import { useCashActions } from "./hooks/useCashActions";
 import { useAgentTransaction } from "./hooks/useAgentTransaction";
 import { useBackupRestore } from "./hooks/useBackupRestore";
+import { useAuth } from "./hooks/useAuth";
+import { useTransactionDetail } from "./hooks/useTransactionDetail";
 import { AppShell } from "./components/layout/AppShell";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
@@ -37,7 +35,6 @@ import type { ViewKey } from "./types";
 
 export default function App() {
   const [saving, setSaving] = useState(false);
-  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const appData = useAppData(setMessage);
@@ -58,15 +55,32 @@ export default function App() {
     refreshData,
     bootstrap,
   } = appData;
-  const [user, setUser] = useState<PublicUser | null>(null);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
+  const auth = useAuth({
+    saving,
+    setSaving,
+    onRefresh: refreshData,
+    onMessage: setMessage,
+    onSetupComplete: () => setSetupNeeded(false),
+    onNavigate: setActiveView,
+  });
+  const {
+    user,
+    showAuthPassword,
+    setShowAuthPassword,
+    setupForm,
+    setSetupForm,
+    loginForm,
+    setLoginForm,
+    userForm,
+    setUserForm,
+    submitSetup,
+    submitLogin,
+    submitUser,
+    logout,
+  } = auth;
   const [posStep, setPosStep] = useState<1 | 2 | 3>(1);
   const [posCategoryFilter, setPosCategoryFilter] = useState("all");
-  const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
-  const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
-  const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
-  const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
-  const [userForm, setUserForm] = useState({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" as "admin" | "kasir" });
   const posCart = usePosCart({ onMessage: setMessage, onRefresh: refreshData });
   const {
     cart,
@@ -177,6 +191,9 @@ export default function App() {
     onMessage: setMessage,
   });
 
+  const transactionDetail = useTransactionDetail(setMessage);
+  const { selectedTransaction, selectedTransactionItems, openTransactionDetail } = transactionDetail;
+
   const settlementAccounts = accounts.filter((account) => account.code !== "cash");
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
@@ -219,53 +236,6 @@ export default function App() {
   }
 
 
-  async function submitUser(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await createUser(userForm);
-      setUserForm({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" });
-      await refreshData();
-      setMessage("User berhasil dibuat");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function submitSetup(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      const admin = await createAdmin(form);
-      setUser(admin);
-      setSetupNeeded(false);
-      await refreshData();
-      setMessage("Setup admin berhasil");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function submitLogin(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      const result = await login(loginForm);
-      setUser(result.user);
-      setActiveView("dashboard");
-      await refreshData();
-      setMessage(`Selamat datang, ${result.user.name}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function addToCart(product: ProductRow) {
     setActiveView("pos");
     setPosStep(2);
@@ -286,16 +256,6 @@ export default function App() {
     await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1) });
   }
 
-
-  async function openTransactionDetail(transaction: TransactionRow) {
-    setSelectedTransaction(transaction);
-    try {
-      setSelectedTransactionItems(await listTransactionItems({ transaction_id: transaction.id }));
-    } catch (error) {
-      setSelectedTransactionItems([]);
-      setMessage(error instanceof Error ? error.message : String(error));
-    }
-  }
 
   function renderActiveView() {
     if (activeView === "pos") return <POSPage categories={categories} products={filteredProducts} cart={cart} cartTotal={cartTotal} paymentMethod={paymentMethod} settlementAccountId={settlementAccountId} settlementAccounts={settlementAccounts} saving={saving} posCategoryFilter={posCategoryFilter} onCategoryFilterChange={setPosCategoryFilter} onAddToCart={addToCart} onUpdateQty={updateCartQty} onPaymentMethodChange={setPaymentMethod} onSettlementAccountChange={setSettlementAccountId} onHoldCart={holdCart} onClearCart={clearCart} onSubmitCheckout={submitCheckout} />;
@@ -319,9 +279,9 @@ export default function App() {
         message={message}
         showPassword={showAuthPassword}
         onTogglePassword={() => setShowAuthPassword(!showAuthPassword)}
-        setupForm={form}
+        setupForm={setupForm}
         loginForm={loginForm}
-        onSetupFormChange={setForm}
+        onSetupFormChange={setSetupForm}
         onLoginFormChange={setLoginForm}
         onSubmitSetup={submitSetup}
         onSubmitLogin={submitLogin}
@@ -336,9 +296,9 @@ export default function App() {
         message={message}
         showPassword={showAuthPassword}
         onTogglePassword={() => setShowAuthPassword(!showAuthPassword)}
-        setupForm={form}
+        setupForm={setupForm}
         loginForm={loginForm}
-        onSetupFormChange={setForm}
+        onSetupFormChange={setSetupForm}
         onLoginFormChange={setLoginForm}
         onSubmitSetup={submitSetup}
         onSubmitLogin={submitLogin}
@@ -356,7 +316,7 @@ export default function App() {
       onNavigate={setActiveView}
       onSearchChange={setSearchTerm}
       onRefresh={bootstrap}
-      onLogout={() => { setUser(null); setActiveView("dashboard"); }}
+      onLogout={logout}
     >
       {renderActiveView()}
       <CashDialogs cashModal={cashModal} accounts={accounts} saving={saving} accountForm={accountForm} adjustForm={adjustForm} transferForm={transferForm} ownerDrawForm={ownerDrawForm} bankFeeForm={bankFeeForm} onClose={() => setCashModal(null)} onAccountFormChange={setAccountForm} onAdjustFormChange={setAdjustForm} onTransferFormChange={setTransferForm} onOwnerDrawFormChange={setOwnerDrawForm} onBankFeeFormChange={setBankFeeForm} onSubmitAccount={submitAccount} onSubmitAdjustment={submitAdjustment} onSubmitTransfer={submitTransfer} onSubmitOwnerDraw={submitOwnerDraw} onSubmitBankFee={submitBankFee} />
