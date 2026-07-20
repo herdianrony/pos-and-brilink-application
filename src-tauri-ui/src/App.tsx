@@ -73,6 +73,37 @@ function mutationLabel(type: string) {
   return labels[type] || type;
 }
 
+function parseCurrencyInput(value: string, allowNegative = false) {
+  const negative = allowNegative && value.trim().startsWith("-");
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return negative ? "-" : "";
+  return `${negative ? "-" : ""}${Number(digits)}`;
+}
+
+function CurrencyInput({
+  value,
+  onChange,
+  allowNegative = false,
+  placeholder = "Rp0",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  allowNegative?: boolean;
+  placeholder?: string;
+}) {
+  const displayValue = value && value !== "-" ? formatRupiah(Number(value)) : value;
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      placeholder={placeholder}
+      value={displayValue}
+      onChange={(event) => onChange(parseCurrencyInput(event.target.value, allowNegative))}
+      onFocus={(event) => event.currentTarget.select()}
+    />
+  );
+}
+
 type CartItem = { product: ProductRow; quantity: number };
 type ReceiptState = {
   invoice_no: string;
@@ -832,8 +863,8 @@ export default function App() {
                 <div className="card-header"><div><h2>2. Isi Nominal</h2><p>Pisahkan nominal transaksi dan admin toko agar profit jelas.</p></div></div>
                 <div className="product-form no-box">
                   <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(e) => setAgentForm({ ...agentForm, customer_name: e.target.value })} /></label>
-                  <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><input type="number" min="0" value={agentForm.amount} onChange={(e) => setAgentForm({ ...agentForm, amount: e.target.value })} /></label>
-                  <label>Admin Toko / Fee<span className="field-note">Keuntungan jasa dari pelanggan.</span><input type="number" min="0" value={agentForm.fee} onChange={(e) => setAgentForm({ ...agentForm, fee: e.target.value })} /></label>
+                  <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => setAgentForm({ ...agentForm, amount: value })} /></label>
+                  <label>Admin Toko / Fee<span className="field-note">Keuntungan jasa dari pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => setAgentForm({ ...agentForm, fee: value })} /></label>
                   <label>Catatan<input value={agentForm.notes} onChange={(e) => setAgentForm({ ...agentForm, notes: e.target.value })} /></label>
                 </div>
                 <div className="total-row"><span>Total Bayar Pelanggan</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
@@ -848,8 +879,8 @@ export default function App() {
                     <option value="">Tidak ada efek rekening</option>
                     {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
                   </select></label>
-                  <label>Perubahan Saldo Rekening<span className="field-note">Contoh transfer keluar: -100000</span><input type="number" value={agentForm.bank_effect} onChange={(e) => setAgentForm({ ...agentForm, bank_effect: e.target.value })} /></label>
-                  <label>Perubahan Kas Tunai<span className="field-note">Contoh pelanggan bayar tunai: 105000</span><input type="number" value={agentForm.cash_effect} onChange={(e) => setAgentForm({ ...agentForm, cash_effect: e.target.value })} /></label>
+                  <label>Perubahan Saldo Rekening<span className="field-note">Contoh transfer keluar: -100000</span><CurrencyInput allowNegative value={agentForm.bank_effect} onChange={(value) => setAgentForm({ ...agentForm, bank_effect: value })} /></label>
+                  <label>Perubahan Kas Tunai<span className="field-note">Contoh pelanggan bayar tunai: 105000</span><CurrencyInput allowNegative value={agentForm.cash_effect} onChange={(value) => setAgentForm({ ...agentForm, cash_effect: value })} /></label>
                 </div>
                 <div className="wizard-actions"><button className="secondary" onClick={() => setAgentStep(2)}>Kembali</button><button onClick={() => setAgentStep(4)}>Review & Simpan</button></div>
               </div>
@@ -1009,7 +1040,7 @@ export default function App() {
             <form onSubmit={submitDebt} className="product-form">
               <label>Nama Pelanggan<input value={debtForm.customer_name} onChange={(e) => setDebtForm({ ...debtForm, customer_name: e.target.value })} /></label>
               <label>No WhatsApp<input value={debtForm.phone} onChange={(e) => setDebtForm({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
-              <label>Nominal Utang<input type="number" min="0" value={debtForm.amount} onChange={(e) => setDebtForm({ ...debtForm, amount: e.target.value })} /></label>
+              <label>Nominal Utang<CurrencyInput value={debtForm.amount} onChange={(value) => setDebtForm({ ...debtForm, amount: value })} /></label>
               <label>Catatan<input value={debtForm.notes} onChange={(e) => setDebtForm({ ...debtForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving}>Simpan Utang</button>
             </form>
@@ -1019,7 +1050,7 @@ export default function App() {
                 <option value="">Pilih utang</option>
                 {openDebts.map((debt) => <option key={debt.id} value={debt.id}>{debt.customer_name} — {formatRupiah(debt.outstanding)}</option>)}
               </select></label>
-              <label>Nominal Bayar<input type="number" min="0" value={debtPaymentForm.amount} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, amount: e.target.value })} /></label>
+              <label>Nominal Bayar<CurrencyInput value={debtPaymentForm.amount} onChange={(value) => setDebtPaymentForm({ ...debtPaymentForm, amount: value })} /></label>
               <label className="span-2">Catatan<input value={debtPaymentForm.notes} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</button>
             </form>
@@ -1175,15 +1206,15 @@ export default function App() {
             <form onSubmit={submitAccount} className="dialog-form product-form no-box">
               <label>Kode<input value={accountForm.code} onChange={(e) => setAccountForm({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
               <label>Nama<input value={accountForm.name} onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
-              <label>Saldo Awal<input type="number" min="0" value={accountForm.initial_balance} onChange={(e) => setAccountForm({ ...accountForm, initial_balance: e.target.value })} /></label>
-              <label>Saldo Minimum<input type="number" min="0" value={accountForm.min_balance} onChange={(e) => setAccountForm({ ...accountForm, min_balance: e.target.value })} /></label>
+              <label>Saldo Awal<CurrencyInput value={accountForm.initial_balance} onChange={(value) => setAccountForm({ ...accountForm, initial_balance: value })} /></label>
+              <label>Saldo Minimum<CurrencyInput value={accountForm.min_balance} onChange={(value) => setAccountForm({ ...accountForm, min_balance: value })} /></label>
               <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving}>Tambah Rekening</button></div>
             </form>
           )}
           {cashModal === "adjust" && (
             <form onSubmit={submitAdjustment} className="dialog-form product-form no-box">
               <label>Rekening<select value={adjustForm.account_id} onChange={(e) => setAdjustForm({ ...adjustForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal (+ / -)<input type="number" value={adjustForm.amount} onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })} /></label>
+              <label>Nominal (+ / -)<CurrencyInput allowNegative value={adjustForm.amount} onChange={(value) => setAdjustForm({ ...adjustForm, amount: value })} /></label>
               <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })} /></label>
               <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</button></div>
             </form>
@@ -1192,7 +1223,7 @@ export default function App() {
             <form onSubmit={submitTransfer} className="dialog-form product-form no-box">
               <label>Dari<select value={transferForm.from_account_id} onChange={(e) => setTransferForm({ ...transferForm, from_account_id: e.target.value })}><option value="">Pilih asal</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
               <label>Ke<select value={transferForm.to_account_id} onChange={(e) => setTransferForm({ ...transferForm, to_account_id: e.target.value })}><option value="">Pilih tujuan</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<input type="number" min="0" value={transferForm.amount} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} /></label>
+              <label>Nominal<CurrencyInput value={transferForm.amount} onChange={(value) => setTransferForm({ ...transferForm, amount: value })} /></label>
               <label>Catatan<input value={transferForm.notes} onChange={(e) => setTransferForm({ ...transferForm, notes: e.target.value })} /></label>
               <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</button></div>
             </form>
@@ -1200,7 +1231,7 @@ export default function App() {
           {cashModal === "ownerDraw" && (
             <form onSubmit={submitOwnerDraw} className="dialog-form product-form no-box">
               <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<input type="number" min="0" value={ownerDrawForm.amount} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, amount: e.target.value })} /></label>
+              <label>Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => setOwnerDrawForm({ ...ownerDrawForm, amount: value })} /></label>
               <label className="span-2">Catatan<input value={ownerDrawForm.notes} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, notes: e.target.value })} /></label>
               <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Prive</button></div>
             </form>
@@ -1208,7 +1239,7 @@ export default function App() {
           {cashModal === "bankFee" && (
             <form onSubmit={submitBankFee} className="dialog-form product-form no-box">
               <label>Rekening<select value={bankFeeForm.account_id} onChange={(e) => setBankFeeForm({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<input type="number" min="0" value={bankFeeForm.amount} onChange={(e) => setBankFeeForm({ ...bankFeeForm, amount: e.target.value })} /></label>
+              <label>Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => setBankFeeForm({ ...bankFeeForm, amount: value })} /></label>
               <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => setBankFeeForm({ ...bankFeeForm, notes: e.target.value })} /></label>
               <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Biaya</button></div>
             </form>
@@ -1250,8 +1281,8 @@ export default function App() {
                   {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select></label>
                 <label>Satuan<input value={productForm.unit} onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })} /></label>
-                <label>Harga Beli / HPP<input type="number" min="0" value={productForm.buy_price} onChange={(e) => setProductForm({ ...productForm, buy_price: e.target.value })} /></label>
-                <label>Harga Jual<input type="number" min="0" value={productForm.sell_price} onChange={(e) => setProductForm({ ...productForm, sell_price: e.target.value })} /></label>
+                <label>Harga Beli / HPP<CurrencyInput value={productForm.buy_price} onChange={(value) => setProductForm({ ...productForm, buy_price: value })} /></label>
+                <label>Harga Jual<CurrencyInput value={productForm.sell_price} onChange={(value) => setProductForm({ ...productForm, sell_price: value })} /></label>
                 <label>Stok<input type="number" min="0" value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} /></label>
                 <label>Minimum Stok<input type="number" min="0" value={productForm.min_stock} onChange={(e) => setProductForm({ ...productForm, min_stock: e.target.value })} /></label>
                 <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => { setShowProductModal(false); clearProductForm(); }}>Batal</button><button type="submit" disabled={saving}>{editingProductId ? "Simpan Perubahan" : "Simpan Produk"}</button></div>
