@@ -25,29 +25,15 @@ import { useDebtBook } from "./hooks/useDebtBook";
 import { useCashActions } from "./hooks/useCashActions";
 import { useAgentTransaction } from "./hooks/useAgentTransaction";
 import { useBackupRestore } from "./hooks/useBackupRestore";
+import { AppShell } from "./components/layout/AppShell";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
 import { CashBalancePage } from "./pages/CashBalancePage";
 import { CurrencyInput } from "./components/CurrencyInput";
-import { Icon } from "./components/AppIcon";
 import { formatRupiah } from "./lib/format";
 import { exportCsvFile } from "./lib/csv";
-import type { IconName, ViewKey } from "./types";
+import type { ViewKey } from "./types";
 
-
-const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
-  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "pos", label: "Kasir POS", icon: "pos" },
-  { id: "brilink", label: "Layanan Agen", icon: "brilink" },
-  { id: "products", label: "Produk", icon: "products", adminOnly: true },
-  { id: "history", label: "Transaksi", icon: "history" },
-  { id: "debts", label: "Buku Utang", icon: "debts" },
-  { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
-  { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
-  { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
-  { id: "logs", label: "Log Aktivitas", icon: "logs", adminOnly: true },
-  { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
-];
 
 export default function App() {
   const [saving, setSaving] = useState(false);
@@ -208,7 +194,6 @@ export default function App() {
   const filteredDebts = normalizedSearch
     ? debts.filter((debt) => [debt.customer_name, debt.phone || "", debt.notes || ""].join(" ").toLowerCase().includes(normalizedSearch))
     : debts;
-  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     bootstrap();
@@ -362,30 +347,18 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="logo-row"><div className="brand-mark small">CA</div><div><strong>CatatAgen</strong><small>Local Edition</small></div></div>
-        <nav>
-          {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-            <button key={item.id} className={activeView === item.id ? "nav-item active" : "nav-item"} onClick={() => setActiveView(item.id)}>
-              <span className="nav-icon"><Icon name={item.icon} /></span>{item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-footer">
-          <small>Login sebagai</small>
-          <strong>{user.name}</strong>
-          <span>{user.role}</span>
-          <button className="secondary logout-button" onClick={() => { setUser(null); setActiveView("dashboard"); }}>Keluar</button>
-        </div>
-      </aside>
-      <section className="content-shell">
-        <header className="topbar">
-          <label className="search-box"><Icon name="search" /> <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Cari produk, transaksi, pelanggan..." /></label>
-          <div className="topbar-actions"><span className="status-pill">{message || "Siap"}</span><button onClick={bootstrap} disabled={loading}>Refresh</button></div>
-        </header>
-        <main className="page-content">{renderActiveView()}</main>
-      </section>
+    <AppShell
+      user={user}
+      activeView={activeView}
+      searchTerm={searchTerm}
+      message={message}
+      loading={loading}
+      onNavigate={setActiveView}
+      onSearchChange={setSearchTerm}
+      onRefresh={bootstrap}
+      onLogout={() => { setUser(null); setActiveView("dashboard"); }}
+    >
+      {renderActiveView()}
       <CashDialogs cashModal={cashModal} accounts={accounts} saving={saving} accountForm={accountForm} adjustForm={adjustForm} transferForm={transferForm} ownerDrawForm={ownerDrawForm} bankFeeForm={bankFeeForm} onClose={() => setCashModal(null)} onAccountFormChange={setAccountForm} onAdjustFormChange={setAdjustForm} onTransferFormChange={setTransferForm} onOwnerDrawFormChange={setOwnerDrawForm} onBankFeeFormChange={setBankFeeForm} onSubmitAccount={submitAccount} onSubmitAdjustment={submitAdjustment} onSubmitTransfer={submitTransfer} onSubmitOwnerDraw={submitOwnerDraw} onSubmitBankFee={submitBankFee} />
       <ProductDialogs
         showCategoryModal={showCategoryModal}
@@ -403,6 +376,6 @@ export default function App() {
         onSubmitProduct={submitProduct}
       />
       <ReceiptModal receipt={lastReceipt} onClose={() => setLastReceipt(null)} />
-    </div>
+    </AppShell>
   );
 }
