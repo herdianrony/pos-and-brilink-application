@@ -442,9 +442,9 @@
 .login-input-wrap svg { @apply absolute left-4 text-slate-400; }
 .login-input-wrap input { @apply pl-12 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/60 font-semibold focus:bg-white; }
 .login-input-wrap input[type="password"],
-.login-input-wrap input[type="text"] { @apply pr-28; }
-.input-ghost-button { @apply absolute right-2 px-3 py-2 rounded-xl bg-transparent text-slate-500 shadow-none border-0 text-xs; }
-.input-ghost-button:hover:not(:disabled) { @apply bg-slate-100 transform-none shadow-none; }
+.login-input-wrap input[type="text"] { @apply pr-12; }
+.input-icon-button { @apply absolute right-2 w-9 h-9 grid place-items-center rounded-xl bg-transparent text-slate-400 shadow-none border-0 p-0; }
+.input-icon-button:hover:not(:disabled) { @apply bg-slate-100 text-slate-600 transform-none shadow-none; }
 .login-submit { @apply w-full py-4 rounded-2xl text-base flex items-center justify-center gap-2; }
 @media (max-width: 1024px) {
   .login-shell { grid-template-columns: 1fr; }
