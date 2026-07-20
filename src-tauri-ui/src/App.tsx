@@ -36,7 +36,6 @@ import type { ViewKey } from "./types";
 export default function App() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const appData = useAppData(setMessage);
   const {
     loading,
@@ -198,19 +197,11 @@ export default function App() {
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
   const lowStockCount = products.filter((product) => product.stock <= product.min_stock).length;
-  const normalizedSearch = searchTerm.trim().toLowerCase();
-  const searchedProducts = normalizedSearch
-    ? products.filter((product) => [product.name, product.barcode || "", product.category_name || ""].join(" ").toLowerCase().includes(normalizedSearch))
-    : products;
   const filteredProducts = posCategoryFilter === "all"
-    ? searchedProducts
-    : searchedProducts.filter((product) => String(product.category_id || "") === posCategoryFilter);
-  const filteredTransactions = normalizedSearch
-    ? transactions.filter((transaction) => [transaction.invoice_no, transaction.customer_name || "", transaction.notes || "", transaction.payment_method].join(" ").toLowerCase().includes(normalizedSearch))
-    : transactions;
-  const filteredDebts = normalizedSearch
-    ? debts.filter((debt) => [debt.customer_name, debt.phone || "", debt.notes || ""].join(" ").toLowerCase().includes(normalizedSearch))
-    : debts;
+    ? products
+    : products.filter((product) => String(product.category_id || "") === posCategoryFilter);
+  const filteredTransactions = transactions;
+  const filteredDebts = debts;
 
   useEffect(() => {
     bootstrap();
@@ -266,7 +257,7 @@ export default function App() {
     if (activeView === "rekeningKoran") return <StatementPage accounts={accounts} mutations={accountMutations} onExportCsv={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))} />;
     if (activeView === "cash") return <CashBalancePage accounts={accounts} mutations={accountMutations} onAddAccount={openAddAccount} onTransfer={openTransfer} onAdjust={openAdjust} onOwnerDraw={openOwnerDraw} onBankFee={openBankFee} />;
     if (activeView === "reports") return <ReportsPage transactions={transactions} mutations={accountMutations} onExportCsv={({ posRevenue, posProfit, agentProfit }) => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])} />;
-    if (activeView === "logs") return <LogsPage logs={normalizedSearch ? appLogs.filter((log) => [log.level, log.source, log.message, log.created_at].join(" ").toLowerCase().includes(normalizedSearch)) : appLogs} onRefresh={bootstrap} />;
+    if (activeView === "logs") return <LogsPage logs={appLogs} onRefresh={bootstrap} />;
     if (activeView === "settings") return <SettingsPage users={users} userForm={userForm} saving={saving} transactions={transactions} mutations={accountMutations} debts={debts} products={products} backups={backups} dbPath={dbPath} onUserFormChange={setUserForm} onSubmitUser={submitUser} onExportCsv={exportCsv} onCreateBackup={handleCreateBackup} onRestoreBackup={handleRestoreBackup} />;
     return <DashboardPage accounts={accounts} products={products} transactions={filteredTransactions} totalCash={totalCash} lowStockCount={lowStockCount} cartTotal={cartTotal} cartCount={cart.length} loading={loading} onNavigate={setActiveView} onRefresh={bootstrap} />;
   }
@@ -310,11 +301,9 @@ export default function App() {
     <AppShell
       user={user}
       activeView={activeView}
-      searchTerm={searchTerm}
       message={message}
       loading={loading}
       onNavigate={setActiveView}
-      onSearchChange={setSearchTerm}
       onRefresh={bootstrap}
       onLogout={logout}
     >
