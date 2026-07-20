@@ -723,3 +723,40 @@
 .category-card svg { @apply text-emerald-600; }
 .category-card strong { @apply block font-black text-slate-900; }
 .category-card small { @apply block text-slate-500; }
+
+/* Electron parity cash page */
+.cash-page-title h1 { @apply text-2xl font-black text-slate-950; }
+.cash-summary-grid { @apply mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.4fr)_repeat(3,minmax(0,1fr))]; }
+.cash-total-card { @apply rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 p-5 text-white shadow-[0_12px_30px_rgba(16,185,129,.25)]; }
+.cash-total-card span { @apply text-sm font-bold text-emerald-100; }
+.cash-total-card strong { @apply mt-1 block text-3xl font-black; }
+.cash-total-card small { @apply mt-1 block text-xs font-semibold text-emerald-100; }
+.cash-summary-card { @apply flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,.05)]; }
+.cash-summary-card svg { @apply text-emerald-600; }
+.cash-summary-card span { @apply block text-xs font-black uppercase tracking-wide text-slate-400; }
+.cash-summary-card strong { @apply block text-lg font-black text-slate-950; }
+.cash-section-head { @apply mb-3 flex items-center justify-between gap-3; }
+.cash-section-head strong { @apply block text-sm font-black uppercase tracking-wide text-slate-600; }
+.cash-section-head span, .cash-section-head small { @apply text-xs font-semibold text-slate-400; }
+.cash-account-grid { @apply mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4; }
+.cash-account-card { @apply overflow-hidden rounded-3xl p-5 text-white shadow-[0_12px_30px_rgba(15,23,42,.12)]; }
+.cash-account-top { @apply flex items-center justify-between text-xs font-black uppercase tracking-wide text-white/75; }
+.cash-account-card h2 { @apply mt-3 mb-0 text-base font-black; }
+.cash-account-card small { @apply mt-4 block text-[11px] font-black uppercase text-white/70; }
+.cash-account-card > strong { @apply block text-2xl font-black; }
+.cash-account-card p { @apply mt-1 text-xs font-semibold text-white/75; }
+.cash-account-actions { @apply mt-4 grid grid-cols-2 gap-2; }
+.cash-account-actions button { @apply rounded-xl bg-white/15 px-2 py-2 text-xs font-black text-white shadow-none hover:bg-white/25 hover:shadow-none hover:transform-none; }
+.cash-account-green { background: linear-gradient(135deg,#22c55e,#059669); }
+.cash-account-blue { background: linear-gradient(135deg,#0369a1,#1d4ed8); }
+.cash-account-navy { background: linear-gradient(135deg,#0f172a,#1e40af); }
+.cash-account-purple { background: linear-gradient(135deg,#8b5cf6,#6d28d9); }
+.cash-account-teal { background: linear-gradient(135deg,#0f766e,#14b8a6); }
+.cash-layout-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,.7fr)]; }
+.cash-mutation-card, .cash-side-panel { @apply rounded-[28px]; }
+.cash-side-panel { @apply xl:sticky xl:top-24; }
+.cash-mutation-table { @apply grid gap-2; }
+.cash-mutation-head { @apply hidden grid-cols-[minmax(0,1fr)_160px_130px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid; }
+.cash-mutation-row { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1fr)_160px_130px_130px] lg:items-center; }
+.cash-mutation-row span { @apply grid gap-1; }
+.cash-mutation-row small { @apply text-xs text-slate-500; }
