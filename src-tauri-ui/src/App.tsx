@@ -43,6 +43,9 @@ import {
   transferAccounts,
   updateProduct,
 } from "./api";
+import { ProductDialogs } from "./components/ProductDialogs";
+import { ReceiptModal } from "./components/ReceiptModal";
+import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { AuthShell } from "./components/AuthShell";
 import { CurrencyInput } from "./components/CurrencyInput";
 import { Icon } from "./components/AppIcon";
@@ -828,35 +831,6 @@ export default function App() {
     );
   }
 
-  function renderProducts() {
-    return (
-      <>
-        <div className="page-title">
-          <div><p className="eyebrow">Data Master</p><h1>Produk & Kategori</h1></div>
-          <div className="page-actions">
-            <button className="secondary" onClick={() => setShowCategoryModal(true)}>Tambah Kategori</button>
-            <button onClick={() => { clearProductForm(); setShowProductModal(true); }}>Tambah Produk</button>
-          </div>
-        </div>
-        <div className="page-help"><strong>Halaman ini dibuat bersih:</strong><span>Daftar produk fokus di satu halaman.</span><span>Tambah/edit produk dibuka lewat dialog agar tidak menumpuk.</span></div>
-        <section className="grid product-master-grid">
-          <div className="card">
-            <div className="card-header"><div><h2>Kategori</h2><p>Gunakan kategori untuk mempercepat pencarian produk di kasir.</p></div></div>
-            {categories.length === 0 ? <div className="empty-state compact"><strong>Belum ada kategori</strong><span>Klik Tambah Kategori untuk membuat kategori pertama.</span></div> : (
-              <div className="category-chip-list">
-                {categories.map((category) => <span key={category.id} className="category-chip">{category.name}</span>)}
-              </div>
-            )}
-          </div>
-          <div className="card product-list-card">
-            <div className="card-header"><div><h2>Daftar Produk</h2><p>{filteredProducts.length} produk ditampilkan. Gunakan pencarian di atas untuk memfilter.</p></div></div>
-            {productList(false)}
-          </div>
-        </section>
-      </>
-    );
-  }
-
   function renderHistory() {
     return (
       <>
@@ -1163,93 +1137,10 @@ export default function App() {
     );
   }
 
-  function renderProductModals() {
-    return (
-      <>
-        {showCategoryModal && (
-          <div className="modal-backdrop">
-            <section className="dialog-card small-dialog">
-              <div className="card-header">
-                <div><p className="eyebrow">Kategori</p><h2>Tambah Kategori</h2></div>
-                <button className="secondary" onClick={() => setShowCategoryModal(false)}>Tutup</button>
-              </div>
-              <form onSubmit={submitCategory} className="dialog-form">
-                <label>Nama Kategori<input autoFocus placeholder="Contoh: Rokok, Snack, Aksesoris" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} /></label>
-                <div className="modal-actions"><button className="secondary" type="button" onClick={() => setShowCategoryModal(false)}>Batal</button><button type="submit" disabled={saving}>Simpan Kategori</button></div>
-              </form>
-            </section>
-          </div>
-        )}
-        {showProductModal && (
-          <div className="modal-backdrop">
-            <section className="dialog-card product-dialog">
-              <div className="card-header">
-                <div><p className="eyebrow">Produk</p><h2>{editingProductId ? "Edit Produk" : "Tambah Produk"}</h2></div>
-                <button className="secondary" onClick={() => { setShowProductModal(false); clearProductForm(); }}>Tutup</button>
-              </div>
-              <form onSubmit={submitProduct} className="dialog-form product-form no-box">
-                <label>Nama Produk<input autoFocus value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} /></label>
-                <label>Barcode<input value={productForm.barcode} onChange={(e) => setProductForm({ ...productForm, barcode: e.target.value })} placeholder="Opsional" /></label>
-                <label>Kategori<select value={productForm.category_id} onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}>
-                  <option value="">Tanpa kategori</option>
-                  {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                </select></label>
-                <label>Satuan<input value={productForm.unit} onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })} /></label>
-                <label>Harga Beli / HPP<CurrencyInput value={productForm.buy_price} onChange={(value) => setProductForm({ ...productForm, buy_price: value })} /></label>
-                <label>Harga Jual<CurrencyInput value={productForm.sell_price} onChange={(value) => setProductForm({ ...productForm, sell_price: value })} /></label>
-                <label>Stok<input type="number" min="0" value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} /></label>
-                <label>Minimum Stok<input type="number" min="0" value={productForm.min_stock} onChange={(e) => setProductForm({ ...productForm, min_stock: e.target.value })} /></label>
-                <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => { setShowProductModal(false); clearProductForm(); }}>Batal</button><button type="submit" disabled={saving}>{editingProductId ? "Simpan Perubahan" : "Simpan Produk"}</button></div>
-              </form>
-            </section>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  function renderReceiptModal() {
-    if (!lastReceipt) return null;
-    return (
-      <div className="modal-backdrop">
-        <section className="receipt-modal">
-          <div className="card-header">
-            <div><p className="eyebrow">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
-            <button className="secondary" onClick={() => setLastReceipt(null)}>Tutup</button>
-          </div>
-          <div className="receipt-paper printable-receipt">
-            <div className="receipt-center">
-              <strong>CatatAgen Local</strong>
-              <span>Struk POS Retail</span>
-            </div>
-            <div className="receipt-line" />
-            <div className="receipt-meta"><span>Invoice</span><strong>{lastReceipt.invoice_no}</strong></div>
-            <div className="receipt-meta"><span>Waktu</span><strong>{lastReceipt.created_at}</strong></div>
-            <div className="receipt-meta"><span>Bayar</span><strong>{paymentLabel(lastReceipt.payment_method)}</strong></div>
-            <div className="receipt-line" />
-            {lastReceipt.items.map((item) => (
-              <div key={item.product.id} className="receipt-item">
-                <div><strong>{item.product.name}</strong><span>{item.quantity} x {formatRupiah(item.product.sell_price)}</span></div>
-                <strong>{formatRupiah(item.quantity * item.product.sell_price)}</strong>
-              </div>
-            ))}
-            <div className="receipt-line" />
-            <div className="receipt-total"><span>Total</span><strong>{formatRupiah(lastReceipt.total_amount)}</strong></div>
-            <div className="receipt-center receipt-footer"><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
-          </div>
-          <div className="modal-actions">
-            <button onClick={() => window.print()}>Print Struk</button>
-            <button className="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${lastReceipt.invoice_no}\nTotal: ${formatRupiah(lastReceipt.total_amount)}\nBayar: ${paymentLabel(lastReceipt.payment_method)}`)}>Salin Ringkasan</button>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   function renderActiveView() {
     if (activeView === "pos") return renderPos();
     if (activeView === "brilink") return renderBrilink();
-    if (activeView === "products") return renderProducts();
+    if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={() => { clearProductForm(); setShowProductModal(true); }} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
     if (activeView === "history") return renderHistory();
     if (activeView === "debts") return renderDebts();
     if (activeView === "rekeningKoran") return renderRekeningKoran();
@@ -1321,8 +1212,22 @@ export default function App() {
         <main className="page-content">{renderActiveView()}</main>
       </section>
       {renderCashModals()}
-      {renderProductModals()}
-      {renderReceiptModal()}
+      <ProductDialogs
+        showCategoryModal={showCategoryModal}
+        showProductModal={showProductModal}
+        saving={saving}
+        editingProductId={editingProductId}
+        categoryForm={categoryForm}
+        productForm={productForm}
+        categories={categories}
+        onCloseCategory={() => setShowCategoryModal(false)}
+        onCloseProduct={() => { setShowProductModal(false); clearProductForm(); }}
+        onCategoryFormChange={setCategoryForm}
+        onProductFormChange={setProductForm}
+        onSubmitCategory={submitCategory}
+        onSubmitProduct={submitProduct}
+      />
+      <ReceiptModal receipt={lastReceipt} onClose={() => setLastReceipt(null)} />
     </div>
   );
 }
