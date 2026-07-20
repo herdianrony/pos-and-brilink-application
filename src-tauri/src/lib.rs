@@ -283,7 +283,7 @@ fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(app_data_dir(app)?.join("brilink-pos-lite.db"))
+    Ok(app_data_dir(app)?.join("catatagen-local.db"))
 }
 
 fn open_db(app: &AppHandle) -> Result<Connection, String> {
@@ -427,7 +427,7 @@ fn seed_defaults(conn: &Connection) -> Result<(), String> {
     let now = Utc::now().to_rfc3339();
     conn.execute(
         "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)",
-        params!["app_name", "BRILink POS Lite", now],
+        params!["app_name", "CatatAgen Local", now],
     )
     .map_err(|e| e.to_string())?;
     conn.execute(
@@ -467,7 +467,7 @@ fn normalize_code(value: &str) -> String {
 fn health_check() -> HealthCheck {
     HealthCheck {
         ok: true,
-        app: "BRILink POS Lite",
+        app: "CatatAgen Local",
         backend: "tauri-rust",
         timestamp: Utc::now().to_rfc3339(),
     }

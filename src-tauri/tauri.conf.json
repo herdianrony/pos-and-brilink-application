@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BRILink POS Lite",
+  "productName": "CatatAgen Local",
   "version": "0.1.0",
-  "identifier": "com.herdianrony.brilinkposlite",
+  "identifier": "com.herdianrony.catatagenlocal",
   "build": {
     "beforeDevCommand": "npm run dev:tauri-ui",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "BRILink POS Lite",
+        "title": "CatatAgen Local",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
@@ -32,7 +32,7 @@
     ],
     "category": "Business",
     "shortDescription": "POS dan layanan agen ringan berbasis Tauri",
-    "longDescription": "Eksperimen BRILink POS Lite berbasis Tauri full tanpa Next.js server lokal.",
+    "longDescription": "Eksperimen CatatAgen Local berbasis Tauri full tanpa Next.js server lokal.",
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

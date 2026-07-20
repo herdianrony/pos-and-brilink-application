@@ -76,6 +76,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [dbPath, setDbPath] = useState("");
   const [setupNeeded, setSetupNeeded] = useState(true);
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -122,6 +123,16 @@ export default function App() {
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
   const lowStockCount = products.filter((product) => product.stock <= product.min_stock).length;
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredProducts = normalizedSearch
+    ? products.filter((product) => [product.name, product.barcode || "", product.category_name || ""].join(" ").toLowerCase().includes(normalizedSearch))
+    : products;
+  const filteredTransactions = normalizedSearch
+    ? transactions.filter((transaction) => [transaction.invoice_no, transaction.customer_name || "", transaction.notes || "", transaction.payment_method].join(" ").toLowerCase().includes(normalizedSearch))
+    : transactions;
+  const filteredDebts = normalizedSearch
+    ? debts.filter((debt) => [debt.customer_name, debt.phone || "", debt.notes || ""].join(" ").toLowerCase().includes(normalizedSearch))
+    : debts;
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
@@ -481,10 +492,10 @@ export default function App() {
     return (
       <main className="auth-page">
         <section className="auth-card">
-          <div className="brand-mark">BP</div>
-          <p className="eyebrow">BRILink POS Lite</p>
+          <div className="brand-mark">CA</div>
+          <p className="eyebrow">CatatAgen</p>
           <h1>{isSetup ? "Setup Admin Pertama" : "Masuk ke Aplikasi"}</h1>
-          <p className="muted">Tauri Full POC — database lokal, tanpa Next server.</p>
+          <p className="muted">POS retail, saldo virtual agen, dan buku utang lokal.</p>
           <form onSubmit={isSetup ? submitSetup : submitLogin} className="form">
             {isSetup && <label>Nama<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>}
             <label>Username<input value={isSetup ? form.username : loginForm.username} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} /></label>
@@ -511,12 +522,16 @@ export default function App() {
   function renderDashboard() {
     return (
       <>
-        <div className="page-title">
+        <div className="hero-panel">
           <div>
-            <p className="eyebrow">Ringkasan Bisnis</p>
-            <h1>Dashboard</h1>
+            <p className="eyebrow">CatatAgen Local</p>
+            <h1>Dashboard Operasional</h1>
+            <p>POS retail, layanan agen non-API, saldo virtual, dan buku utang dalam satu aplikasi ringan.</p>
           </div>
-          <button onClick={bootstrap} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
+          <div className="hero-actions">
+            <button onClick={() => setActiveView("pos")}>Buka Kasir</button>
+            <button className="secondary" onClick={bootstrap} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
+          </div>
         </div>
         <section className="stat-grid">
           <div className="stat-card green"><span>Saldo Kas</span><strong>{formatRupiah(totalCash)}</strong><small>Total saldo akun aktif</small></div>
@@ -527,7 +542,7 @@ export default function App() {
         <section className="grid dashboard-grid">
           <div className="card">
             <h2>Transaksi Terakhir</h2>
-            {transactions.length === 0 ? <p>Belum ada transaksi.</p> : transactions.slice(0, 5).map((transaction) => (
+            {filteredTransactions.length === 0 ? <p>Belum ada transaksi.</p> : filteredTransactions.slice(0, 5).map((transaction) => (
               <div key={transaction.id} className="row rich-row">
                 <div><strong>{transaction.invoice_no}</strong><small>{transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
                 <strong>{formatRupiah(transaction.total_amount)}</strong>
@@ -549,9 +564,10 @@ export default function App() {
   }
 
   function productList(showSellButton = true) {
+    const visibleProducts = filteredProducts;
     return (
-      <div className="list">
-        {products.length === 0 ? <p>Belum ada produk. Tambahkan produk dulu untuk mencoba POS.</p> : products.map((product) => (
+      <div className="list product-list">
+        {visibleProducts.length === 0 ? <div className="empty-state"><strong>Produk tidak ditemukan</strong><span>Tambahkan produk baru atau ubah kata kunci pencarian.</span></div> : visibleProducts.map((product) => (
           <div key={product.id} className="product-row">
             <div>
               <strong>{product.name}</strong>
@@ -689,7 +705,7 @@ export default function App() {
             <h2>Daftar Transaksi</h2>
             {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
               <div className="history-list">
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <button key={transaction.id} className="history-row clickable-row" onClick={() => openTransactionDetail(transaction)}>
                     <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
                     <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
@@ -808,8 +824,9 @@ export default function App() {
 
 
   function renderDebts() {
-    const openDebts = debts.filter((debt) => debt.status !== "paid");
-    const totalOutstanding = openDebts.reduce((sum, debt) => sum + debt.outstanding, 0);
+    const visibleDebts = filteredDebts;
+    const openDebts = visibleDebts.filter((debt) => debt.status !== "paid");
+    const totalOutstanding = debts.filter((debt) => debt.status !== "paid").reduce((sum, debt) => sum + debt.outstanding, 0);
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Piutang</p><h1>Buku Utang</h1></div><div className="total-row mini-total"><span>Total Belum Lunas</span><strong>{formatRupiah(totalOutstanding)}</strong></div></div>
@@ -836,7 +853,7 @@ export default function App() {
           </div>
           <div className="card">
             <h2>Daftar Utang</h2>
-            {debts.length === 0 ? <p>Belum ada data utang.</p> : debts.map((debt) => (
+            {visibleDebts.length === 0 ? <div className="empty-state"><strong>Belum ada data utang</strong><span>Catat utang pelanggan atau ubah pencarian.</span></div> : visibleDebts.map((debt) => (
               <div key={debt.id} className="debt-row">
                 <div><strong>{debt.customer_name}</strong><small>{debt.phone || "Tanpa nomor"} • {debt.status === "paid" ? "Lunas" : "Belum lunas"}</small><small>{debt.notes || "-"}</small></div>
                 <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small><button className="secondary" onClick={() => copyDebtReminder(debt)} disabled={debt.status === "paid"}>Salin Reminder</button></div>
@@ -902,7 +919,7 @@ export default function App() {
         <div className="page-title"><div><p className="eyebrow">Sistem</p><h1>Pengaturan</h1></div></div>
         <section className="card">
           <h2>Status Eksperimen</h2>
-          <p>Ini masih Tauri Full POC. UI sudah dibuat lebih mendekati layout Electron, tetapi fitur belum parity penuh.</p>
+          <p>Ini masih CatatAgen Local. UI sudah dibuat lebih mendekati layout Electron, tetapi fitur belum parity penuh.</p>
           <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
         </section>
       </>
@@ -928,7 +945,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="logo-row"><div className="brand-mark small">BP</div><div><strong>BRILink POS</strong><small>Lite / Tauri</small></div></div>
+        <div className="logo-row"><div className="brand-mark small">CA</div><div><strong>CatatAgen</strong><small>Local Edition</small></div></div>
         <nav>
           {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
             <button key={item.id} className={activeView === item.id ? "nav-item active" : "nav-item"} onClick={() => setActiveView(item.id)}>
@@ -945,8 +962,8 @@ export default function App() {
       </aside>
       <section className="content-shell">
         <header className="topbar">
-          <div className="search-box"><Icon name="search" /> <span>Cari produk / transaksi — segera</span></div>
-          <div className="topbar-actions"><span>{message || "Siap"}</span><button onClick={bootstrap} disabled={loading}>Refresh</button></div>
+          <label className="search-box"><Icon name="search" /> <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Cari produk, transaksi, pelanggan..." /></label>
+          <div className="topbar-actions"><span className="status-pill">{message || "Siap"}</span><button onClick={bootstrap} disabled={loading}>Refresh</button></div>
         </header>
         <main className="page-content">{renderActiveView()}</main>
       </section>
