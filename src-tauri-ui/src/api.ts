@@ -1,4 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import { mockInvoke } from "./mockApi";
+
+function invokeCommand<T>(command: string, args?: Record<string, unknown>) {
+  const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+  if (env?.VITE_TAURI_UI_E2E === "1") {
+    return mockInvoke<T>(command, args);
+  }
+  return invoke<T>(command, args);
+}
 
 export interface HealthCheck {
   ok: boolean;
@@ -126,35 +135,35 @@ export interface AppLogRow {
 }
 
 export function healthCheck() {
-  return invoke<HealthCheck>("health_check");
+  return invokeCommand<HealthCheck>("health_check");
 }
 
 export function dbInit() {
-  return invoke<{ ok: boolean; path: string }>("db_init");
+  return invokeCommand<{ ok: boolean; path: string }>("db_init");
 }
 
 export function setupStatus() {
-  return invoke<SetupStatus>("setup_status");
+  return invokeCommand<SetupStatus>("setup_status");
 }
 
 export function createAdmin(payload: { name: string; username: string; password: string }) {
-  return invoke<PublicUser>("create_admin", { payload });
+  return invokeCommand<PublicUser>("create_admin", { payload });
 }
 
 export function listUsers() {
-  return invoke<PublicUser[]>("list_users");
+  return invokeCommand<PublicUser[]>("list_users");
 }
 
 export function createUser(payload: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
-  return invoke<PublicUser>("create_user", { payload });
+  return invokeCommand<PublicUser>("create_user", { payload });
 }
 
 export function login(payload: { username: string; password: string }) {
-  return invoke<{ ok: boolean; user: PublicUser }>("login", { payload });
+  return invokeCommand<{ ok: boolean; user: PublicUser }>("login", { payload });
 }
 
 export function listAccounts() {
-  return invoke<AccountRow[]>("list_accounts");
+  return invokeCommand<AccountRow[]>("list_accounts");
 }
 
 export function createAccount(payload: {
@@ -165,79 +174,79 @@ export function createAccount(payload: {
   icon?: string;
   color?: string;
 }) {
-  return invoke<AccountRow>("create_account", { payload });
+  return invokeCommand<AccountRow>("create_account", { payload });
 }
 
 export function adjustAccountBalance(payload: { account_id: number; amount: number; notes?: string }) {
-  return invoke<AccountRow>("adjust_account_balance", { payload });
+  return invokeCommand<AccountRow>("adjust_account_balance", { payload });
 }
 
 export function transferAccounts(payload: { from_account_id: number; to_account_id: number; amount: number; notes?: string }) {
-  return invoke<boolean>("transfer_accounts", { payload });
+  return invokeCommand<boolean>("transfer_accounts", { payload });
 }
 
 export function ownerDraw(payload: { account_id: number; amount: number; notes?: string }) {
-  return invoke<AccountRow>("owner_draw", { payload });
+  return invokeCommand<AccountRow>("owner_draw", { payload });
 }
 
 export function bankFee(payload: { account_id: number; amount: number; notes?: string }) {
-  return invoke<AccountRow>("bank_fee", { payload });
+  return invokeCommand<AccountRow>("bank_fee", { payload });
 }
 
 export function listAccountMutations() {
-  return invoke<AccountMutationRow[]>("list_account_mutations");
+  return invokeCommand<AccountMutationRow[]>("list_account_mutations");
 }
 
 export function listCategories() {
-  return invoke<CategoryRow[]>("list_categories");
+  return invokeCommand<CategoryRow[]>("list_categories");
 }
 
 export function createCategory(payload: { name: string; icon?: string; color?: string }) {
-  return invoke<CategoryRow>("create_category", { payload });
+  return invokeCommand<CategoryRow>("create_category", { payload });
 }
 
 export function listProducts() {
-  return invoke<ProductRow[]>("list_products");
+  return invokeCommand<ProductRow[]>("list_products");
 }
 
 export function listTransactions() {
-  return invoke<TransactionRow[]>("list_transactions");
+  return invokeCommand<TransactionRow[]>("list_transactions");
 }
 
 export function listTransactionItems(payload: { transaction_id: number }) {
-  return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
+  return invokeCommand<TransactionItemRow[]>("list_transaction_items", { payload });
 }
 
 export function listAppLogs() {
-  return invoke<AppLogRow[]>("list_app_logs");
+  return invokeCommand<AppLogRow[]>("list_app_logs");
 }
 
 export function createDatabaseBackup() {
-  return invoke<BackupRow>("create_database_backup");
+  return invokeCommand<BackupRow>("create_database_backup");
 }
 
 export function listDatabaseBackups() {
-  return invoke<BackupRow[]>("list_database_backups");
+  return invokeCommand<BackupRow[]>("list_database_backups");
 }
 
 export function restoreDatabaseBackup(payload: { path: string }) {
-  return invoke<boolean>("restore_database_backup", { payload });
+  return invokeCommand<boolean>("restore_database_backup", { payload });
 }
 
 export function listDebts() {
-  return invoke<DebtRow[]>("list_debts");
+  return invokeCommand<DebtRow[]>("list_debts");
 }
 
 export function createDebt(payload: { customer_name: string; phone?: string; amount: number; notes?: string }) {
-  return invoke<DebtRow>("create_debt", { payload });
+  return invokeCommand<DebtRow>("create_debt", { payload });
 }
 
 export function addDebtPayment(payload: { debt_id: number; amount: number; notes?: string }) {
-  return invoke<DebtRow>("add_debt_payment", { payload });
+  return invokeCommand<DebtRow>("add_debt_payment", { payload });
 }
 
 export function buildDebtReminder(payload: { debt_id: number }) {
-  return invoke<string>("build_debt_reminder", { payload });
+  return invokeCommand<string>("build_debt_reminder", { payload });
 }
 
 export function createAgentTransaction(payload: {
@@ -251,7 +260,7 @@ export function createAgentTransaction(payload: {
   bank_effect: number;
   notes?: string;
 }) {
-  return invoke<TransactionRow>("create_agent_transaction", { payload });
+  return invokeCommand<TransactionRow>("create_agent_transaction", { payload });
 }
 
 export type ProductInput = {
@@ -266,15 +275,15 @@ export type ProductInput = {
 };
 
 export function createProduct(payload: ProductInput) {
-  return invoke<ProductRow>("create_product", { payload });
+  return invokeCommand<ProductRow>("create_product", { payload });
 }
 
 export function updateProduct(payload: ProductInput & { id: number }) {
-  return invoke<ProductRow>("update_product", { payload });
+  return invokeCommand<ProductRow>("update_product", { payload });
 }
 
 export function deactivateProduct(payload: { id: number }) {
-  return invoke<boolean>("deactivate_product", { payload });
+  return invokeCommand<boolean>("deactivate_product", { payload });
 }
 
 export function checkoutPosCash(payload: {
@@ -284,5 +293,5 @@ export function checkoutPosCash(payload: {
   settlement_account_id?: number | null;
   items: Array<{ product_id: number; quantity: number }>;
 }) {
-  return invoke<PosCheckoutResponse>("checkout_pos_cash", { payload });
+  return invokeCommand<PosCheckoutResponse>("checkout_pos_cash", { payload });
 }
