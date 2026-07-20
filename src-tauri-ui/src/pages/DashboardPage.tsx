@@ -1,7 +1,45 @@
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
-import { Icon } from "../components/AppIcon";
 import { formatRupiah, paymentLabel } from "../lib/format";
 import type { ViewKey } from "../types";
+
+function accountTone(index: number) {
+  return ["account-green", "account-blue", "account-navy", "account-purple"][index % 4];
+}
+
+function ChartPreview({ transactions }: { transactions: TransactionRow[] }) {
+  const values = Array.from({ length: 7 }, (_, index) => {
+    const row = transactions[index];
+    return row ? Math.max(row.total_amount, 0) : 0;
+  }).reverse();
+  const max = Math.max(...values, 1);
+  const points = values.map((value, index) => {
+    const x = 24 + index * 76;
+    const y = 180 - (value / max) * 130;
+    return `${x},${y}`;
+  }).join(" ");
+  const profitPoints = values.map((value, index) => {
+    const x = 24 + index * 76;
+    const y = 185 - ((value * 0.42) / max) * 130;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg className="dashboard-chart" viewBox="0 0 520 210" role="img" aria-label="Grafik pendapatan tujuh hari">
+      <defs>
+        <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#00875a" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#00875a" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[40, 80, 120, 160, 200].map((y) => <line key={y} x1="20" x2="500" y1={y} y2={y} className="chart-grid-line" />)}
+      <polyline points={`24,190 ${points} 480,190`} fill="url(#chartFill)" stroke="none" />
+      <polyline points={points} className="chart-line chart-line-green" />
+      <polyline points={profitPoints} className="chart-line chart-line-gold" />
+      {values.map((_, index) => <circle key={index} cx={24 + index * 76} cy={180 - (values[index] / max) * 130} r="4" className="chart-dot" />)}
+      {values.map((_, index) => <text key={`d-${index}`} x={24 + index * 76} y="205" textAnchor="middle" className="chart-label">{index + 1}</text>)}
+    </svg>
+  );
+}
 
 export function DashboardPage({
   accounts,
@@ -26,103 +64,86 @@ export function DashboardPage({
   onNavigate: (view: ViewKey) => void;
   onRefresh: () => void;
 }) {
-  const posRevenue = transactions
-    .filter((transaction) => transaction.transaction_type === "pos")
-    .reduce((sum, transaction) => sum + transaction.total_amount, 0);
-  const agentRevenue = transactions
-    .filter((transaction) => transaction.transaction_type === "agent")
-    .reduce((sum, transaction) => sum + transaction.total_amount, 0);
-  const agentProfit = transactions
-    .filter((transaction) => transaction.transaction_type === "agent")
-    .reduce((sum, transaction) => sum + transaction.profit, 0);
-  const totalRevenue = posRevenue + agentRevenue;
-  const maxSummaryValue = Math.max(posRevenue, agentRevenue, agentProfit, 1);
-  const paymentRows = ["cash", "transfer", "qris", "mixed"].map((method) => {
-    const total = transactions
-      .filter((transaction) => transaction.payment_method === method)
-      .reduce((sum, transaction) => sum + transaction.total_amount, 0);
-    return { method, total };
-  }).filter((row) => row.total > 0);
-  const maxPaymentValue = Math.max(...paymentRows.map((row) => row.total), 1);
+  const posTransactions = transactions.filter((transaction) => transaction.transaction_type === "pos");
+  const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
+  const posRevenue = posTransactions.reduce((sum, transaction) => sum + transaction.total_amount, 0);
+  const agentRevenue = agentTransactions.reduce((sum, transaction) => sum + transaction.total_amount, 0);
+  const posProfit = posTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
+  const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
+  const totalProfit = posProfit + agentProfit;
 
   return (
     <>
-      <div className="hero-panel">
+      <div className="electron-page-title">
         <div>
-          <p className="eyebrow">CatatAgen Local</p>
-          <h1>Dashboard Operasional</h1>
-          <p>POS retail, layanan agen non-API, saldo virtual, dan buku utang dalam satu aplikasi ringan.</p>
+          <h1>Dashboard</h1>
+          <p>Ringkasan aktivitas bisnis Anda</p>
         </div>
-        <div className="hero-actions">
-          <button onClick={() => onNavigate("pos")}>Buka Kasir</button>
-          <button className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
-        </div>
+        <button className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
       </div>
-      <section className="stat-grid">
-        <div className="stat-card green"><span>Saldo Kas</span><strong>{formatRupiah(totalCash)}</strong><small>Total saldo akun aktif</small></div>
-        <div className="stat-card blue"><span>Produk</span><strong>{products.length}</strong><small>{lowStockCount} stok menipis</small></div>
-        <div className="stat-card amber"><span>Transaksi</span><strong>{transactions.length}</strong><small>Riwayat transaksi tersimpan</small></div>
-        <div className="stat-card purple"><span>Keranjang</span><strong>{formatRupiah(cartTotal)}</strong><small>{cartCount} item siap checkout</small></div>
-      </section>
-      <section className="quick-launch-grid">
-        <button onClick={() => onNavigate("pos")} className="launch-card"><Icon name="pos" /><strong>Kasir POS</strong><span>Jual barang fisik</span></button>
-        <button onClick={() => onNavigate("brilink")} className="launch-card"><Icon name="brilink" /><strong>Layanan Agen</strong><span>Catat transaksi non-API</span></button>
-        <button onClick={() => onNavigate("debts")} className="launch-card"><Icon name="debts" /><strong>Buku Utang</strong><span>Piutang & reminder</span></button>
-        <button onClick={() => onNavigate("cash")} className="launch-card"><Icon name="cash" /><strong>Kas & Saldo</strong><span>Saldo virtual</span></button>
-      </section>
-      <section className="grid dashboard-grid">
-        <div className="card">
-          <div className="card-header"><div><h2>Grafik Ringkas</h2><p>Ringkasan omzet dan keuntungan dari transaksi yang tersimpan.</p></div></div>
-          {transactions.length === 0 ? (
-            <div className="empty-state compact"><strong>Belum ada data grafik</strong><span>Grafik akan muncul setelah ada transaksi.</span></div>
-          ) : (
-            <div className="grid gap-4">
-              {[
-                { label: "Omzet POS", value: posRevenue, className: "from-emerald-600 to-emerald-400" },
-                { label: "Omzet Layanan", value: agentRevenue, className: "from-blue-600 to-cyan-400" },
-                { label: "Keuntungan Agen", value: agentProfit, className: "from-amber-500 to-orange-400" },
-                { label: "Total Omzet", value: totalRevenue, className: "from-violet-600 to-fuchsia-400" },
-              ].map((row) => (
-                <div key={row.label} className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">{row.label}</span>
-                    <strong>{formatRupiah(row.value)}</strong>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${row.className}`}
-                      style={{ width: `${Math.max(6, Math.round((row.value / Math.max(totalRevenue, maxSummaryValue, 1)) * 100))}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="card">
-          <div className="card-header"><div><h2>Metode Pembayaran</h2><p>Komposisi nilai transaksi berdasarkan cara bayar.</p></div></div>
-          {paymentRows.length === 0 ? (
-            <div className="empty-state compact"><strong>Belum ada pembayaran</strong><span>Data muncul setelah transaksi tersimpan.</span></div>
-          ) : (
-            <div className="grid gap-3">
-              {paymentRows.map((row) => (
-                <div key={row.method} className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">{paymentLabel(row.method)}</span>
-                    <strong>{formatRupiah(row.total)}</strong>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-slate-700 to-slate-400"
-                      style={{ width: `${Math.max(8, Math.round((row.total / maxPaymentValue) * 100))}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+
+      <section className="electron-hero-card">
+        <div className="hero-icon-box">▣</div>
+        <span>Keuntungan Hari Ini</span>
+        <strong>{formatRupiah(totalProfit)}</strong>
+        <div className="hero-chip-row">
+          <button type="button" onClick={() => onNavigate("pos")}>POS: {formatRupiah(posProfit)}</button>
+          <button type="button" onClick={() => onNavigate("brilink")}>Layanan: {formatRupiah(agentProfit)}</button>
         </div>
       </section>
+
+      <section className="electron-stat-grid">
+        <div className="electron-stat-card"><span className="stat-icon green">⌁</span><div><small>Total Transaksi</small><strong>{transactions.length}</strong><p>hari ini</p></div></div>
+        <div className="electron-stat-card"><span className="stat-icon blue">↗</span><div><small>Omzet POS</small><strong>{formatRupiah(posRevenue)}</strong><p>{posTransactions.length} trx</p></div></div>
+        <div className="electron-stat-card"><span className="stat-icon purple">▥</span><div><small>Volume Layanan</small><strong>{formatRupiah(agentRevenue)}</strong><p>{agentTransactions.length} trx</p></div></div>
+        <div className="electron-stat-card"><span className="stat-icon amber">⌁</span><div><small>Keuntungan Agen</small><strong>{formatRupiah(agentProfit)}</strong><p>profit layanan</p></div></div>
+      </section>
+
+      <section className="safe-banner">
+        <span>✓</span>
+        <div>
+          <strong>{lowStockCount === 0 ? "Semua aman hari ini" : `${lowStockCount} produk stok menipis`}</strong>
+          <p>{lowStockCount === 0 ? "Tidak ada transaksi pending, stok kritis, atau rekening di bawah minimum." : "Segera cek produk dengan stok di bawah batas minimum."}</p>
+        </div>
+      </section>
+
+      <section className="account-section-head">
+        <strong>Saldo Rekening</strong>
+        <span>{accounts.length} akun</span>
+      </section>
+      <section className="account-card-row">
+        {accounts.slice(0, 4).map((account, index) => (
+          <button key={account.id} className={`account-balance-card ${accountTone(index)}`} onClick={() => onNavigate("cash")}>
+            <span>{account.code === "cash" ? "Kas Tunai" : "Rekening"}</span>
+            <strong>{account.name}</strong>
+            <small>Saldo Tercatat</small>
+            <b>{formatRupiah(account.balance)}</b>
+          </button>
+        ))}
+      </section>
+
+      <section className="electron-dashboard-grid">
+        <div className="card chart-card">
+          <div className="card-header">
+            <div>
+              <h2>Pendapatan 7 Hari</h2>
+              <p>Omzet, profit, dan jumlah transaksi harian.</p>
+            </div>
+            <div className="chart-summary-pill"><span>Omzet</span><strong>{formatRupiah(posRevenue + agentRevenue)}</strong></div>
+            <div className="chart-summary-pill green"><span>Profit</span><strong>{formatRupiah(totalProfit)}</strong></div>
+            <div className="chart-summary-pill"><span>TRX</span><strong>{transactions.length}</strong></div>
+          </div>
+          <ChartPreview transactions={transactions} />
+        </div>
+        <div className="card stock-card">
+          <div className="card-header"><div><h2>Stok Menipis</h2><p>Produk yang perlu segera dicek.</p></div></div>
+          {products.filter((product) => product.stock <= product.min_stock).slice(0, 6).map((product) => (
+            <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className="status-badge warning">Stok rendah</span></div>
+          ))}
+          {lowStockCount === 0 && <div className="empty-state compact"><strong>Semua stok aman</strong><span>Tidak ada produk di bawah minimum.</span></div>}
+        </div>
+      </section>
+
       <section className="grid dashboard-grid">
         <div className="card">
           <div className="card-header"><div><h2>Transaksi Terakhir</h2><p>Aktivitas POS dan layanan agen terbaru.</p></div></div>
@@ -134,18 +155,16 @@ export function DashboardPage({
           ))}
         </div>
         <div className="card">
-          <div className="card-header"><div><h2>Perlu Perhatian</h2><p>Stok menipis dan posisi saldo.</p></div></div>
-          {products.filter((product) => product.stock <= product.min_stock).slice(0, 4).map((product) => (
-            <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className="status-badge warning">Stok rendah</span></div>
-          ))}
-          {lowStockCount === 0 && <div className="empty-state compact"><strong>Stok aman</strong><span>Tidak ada produk di bawah minimum.</span></div>}
+          <div className="card-header"><div><h2>Aksi Cepat</h2><p>Mulai aktivitas utama.</p></div></div>
+          <div className="quick-launch-grid compact-launch">
+            <button onClick={() => onNavigate("pos")} className="launch-card"><span>Kasir POS</span></button>
+            <button onClick={() => onNavigate("brilink")} className="launch-card"><span>Layanan</span></button>
+            <button onClick={() => onNavigate("debts")} className="launch-card"><span>Buku Utang</span></button>
+            <button onClick={() => onNavigate("cash")} className="launch-card"><span>Kas & Saldo</span></button>
+          </div>
           <div className="divider" />
-          {accounts.slice(0, 3).map((account) => (
-            <div key={account.id} className="row rich-row">
-              <div><strong>{account.name}</strong><small>{account.code}</small></div>
-              <strong>{formatRupiah(account.balance)}</strong>
-            </div>
-          ))}
+          <div className="row rich-row"><div><strong>Keranjang Aktif</strong><small>{cartCount} item siap checkout</small></div><strong>{formatRupiah(cartTotal)}</strong></div>
+          <div className="row rich-row"><div><strong>Total Saldo</strong><small>Semua akun aktif</small></div><strong>{formatRupiah(totalCash)}</strong></div>
         </div>
       </section>
     </>
