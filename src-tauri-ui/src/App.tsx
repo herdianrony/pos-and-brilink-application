@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addDebtPayment,
   adjustAccountBalance,
   bankFee,
   buildDebtReminder,
-  checkoutPosCash,
   createAccount,
   createAdmin,
   createDatabaseBackup,
@@ -35,13 +34,14 @@ import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { useAppData } from "./hooks/useAppData";
+import { usePosCart } from "./hooks/usePosCart";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
 import { CashBalancePage } from "./pages/CashBalancePage";
 import { CurrencyInput } from "./components/CurrencyInput";
 import { Icon } from "./components/AppIcon";
-import { formatRupiah, mutationLabel, paymentLabel } from "./lib/format";
-import type { AgentForm, CartItem, IconName, ReceiptState, ViewKey } from "./types";
+import { formatRupiah } from "./lib/format";
+import type { AgentForm, IconName, ViewKey } from "./types";
 
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
@@ -88,8 +88,6 @@ export default function App() {
   const [agentStep, setAgentStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [lastReceipt, setLastReceipt] = useState<ReceiptState | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [cashModal, setCashModal] = useState<CashModalType>(null);
@@ -97,8 +95,6 @@ export default function App() {
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
   const [userForm, setUserForm] = useState({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" as "admin" | "kasir" });
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "qris">("cash");
-  const [settlementAccountId, setSettlementAccountId] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", icon: "package", color: "#059669" });
   const [accountForm, setAccountForm] = useState({ code: "bri", name: "Rekening BRI", initial_balance: "0", min_balance: "0" });
   const [adjustForm, setAdjustForm] = useState({ account_id: "", amount: "0", notes: "Penyesuaian saldo" });
@@ -119,10 +115,22 @@ export default function App() {
     unit: "pcs",
   });
 
-  const cartTotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.product.sell_price * item.quantity, 0),
-    [cart],
-  );
+  const posCart = usePosCart({ onMessage: setMessage, onRefresh: refreshData });
+  const {
+    cart,
+    cartTotal,
+    lastReceipt,
+    setLastReceipt,
+    paymentMethod,
+    setPaymentMethod,
+    settlementAccountId,
+    setSettlementAccountId,
+    addToCart: addProductToCart,
+    updateCartQty,
+    clearCart: clearPosCart,
+    holdCart: holdPosCart,
+    submitCheckout: submitPosCheckout,
+  } = posCart;
   const settlementAccounts = accounts.filter((account) => account.code !== "cash");
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
@@ -153,7 +161,7 @@ export default function App() {
       const firstBank = accounts.find((account) => account.code !== "cash");
       if (firstBank) setSettlementAccountId(String(firstBank.id));
     }
-  }, [accounts, settlementAccountId]);
+  }, [accounts, settlementAccountId, setSettlementAccountId]);
 
 
   function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
@@ -331,69 +339,23 @@ export default function App() {
   }
 
   function addToCart(product: ProductRow) {
-    if (product.stock <= 0) {
-      setMessage(`Stok ${product.name} habis`);
-      return;
-    }
     setActiveView("pos");
     setPosStep(2);
-    setCart((items) => {
-      const existing = items.find((item) => item.product.id === product.id);
-      if (existing) {
-        return items.map((item) => item.product.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item);
-      }
-      return [...items, { product, quantity: 1 }];
-    });
+    addProductToCart(product);
   }
-
-  function updateCartQty(productId: number, quantity: number) {
-    setCart((items) => items.flatMap((item) => {
-      if (item.product.id !== productId) return [item];
-      if (quantity <= 0) return [];
-      return [{ ...item, quantity: Math.min(quantity, item.product.stock) }];
-    }));
-  }
-
 
   function clearCart() {
-    setCart([]);
+    clearPosCart();
     setPosStep(1);
-    setMessage("Keranjang dikosongkan");
   }
 
   function holdCart() {
-    if (cart.length === 0) return;
-    setCart([]);
+    holdPosCart();
     setPosStep(1);
-    setMessage("Keranjang ditahan. Fitur daftar hold akan dilengkapi berikutnya.");
   }
 
   async function submitCheckout() {
-    setSaving(true);
-    const receiptItems = cart.map((item) => ({ ...item }));
-    const receiptPayment = paymentMethod;
-    try {
-      const result = await checkoutPosCash({
-        payment_method: paymentMethod,
-        settlement_account_id: paymentMethod === "cash" ? null : Number(settlementAccountId),
-        items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
-      });
-      setLastReceipt({
-        invoice_no: result.invoice_no,
-        payment_method: receiptPayment,
-        total_amount: result.total_amount,
-        created_at: new Date().toLocaleString("id-ID"),
-        items: receiptItems,
-      });
-      setCart([]);
-      setPosStep(1);
-      await refreshData();
-      setMessage(`Checkout berhasil: ${result.invoice_no} • ${formatRupiah(result.total_amount)}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
+    await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1) });
   }
 
   async function submitAccount(event: React.FormEvent) {
