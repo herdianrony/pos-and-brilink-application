@@ -68,6 +68,13 @@ function mutationLabel(type: string) {
 }
 
 type CartItem = { product: ProductRow; quantity: number };
+type ReceiptState = {
+  invoice_no: string;
+  payment_method: "cash" | "transfer" | "qris";
+  total_amount: number;
+  created_at: string;
+  items: CartItem[];
+};
 type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings";
 type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
 
@@ -120,6 +127,7 @@ export default function App() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptState | null>(null);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
@@ -382,11 +390,20 @@ export default function App() {
 
   async function submitCheckout() {
     setSaving(true);
+    const receiptItems = cart.map((item) => ({ ...item }));
+    const receiptPayment = paymentMethod;
     try {
       const result = await checkoutPosCash({
         payment_method: paymentMethod,
         settlement_account_id: paymentMethod === "cash" ? null : Number(settlementAccountId),
         items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+      });
+      setLastReceipt({
+        invoice_no: result.invoice_no,
+        payment_method: receiptPayment,
+        total_amount: result.total_amount,
+        created_at: new Date().toLocaleString("id-ID"),
+        items: receiptItems,
       });
       setCart([]);
       setPosStep(1);
@@ -1108,6 +1125,45 @@ export default function App() {
     );
   }
 
+
+  function renderReceiptModal() {
+    if (!lastReceipt) return null;
+    return (
+      <div className="modal-backdrop">
+        <section className="receipt-modal">
+          <div className="card-header">
+            <div><p className="eyebrow">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
+            <button className="secondary" onClick={() => setLastReceipt(null)}>Tutup</button>
+          </div>
+          <div className="receipt-paper printable-receipt">
+            <div className="receipt-center">
+              <strong>CatatAgen Local</strong>
+              <span>Struk POS Retail</span>
+            </div>
+            <div className="receipt-line" />
+            <div className="receipt-meta"><span>Invoice</span><strong>{lastReceipt.invoice_no}</strong></div>
+            <div className="receipt-meta"><span>Waktu</span><strong>{lastReceipt.created_at}</strong></div>
+            <div className="receipt-meta"><span>Bayar</span><strong>{paymentLabel(lastReceipt.payment_method)}</strong></div>
+            <div className="receipt-line" />
+            {lastReceipt.items.map((item) => (
+              <div key={item.product.id} className="receipt-item">
+                <div><strong>{item.product.name}</strong><span>{item.quantity} x {formatRupiah(item.product.sell_price)}</span></div>
+                <strong>{formatRupiah(item.quantity * item.product.sell_price)}</strong>
+              </div>
+            ))}
+            <div className="receipt-line" />
+            <div className="receipt-total"><span>Total</span><strong>{formatRupiah(lastReceipt.total_amount)}</strong></div>
+            <div className="receipt-center receipt-footer"><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
+          </div>
+          <div className="modal-actions">
+            <button onClick={() => window.print()}>Print Struk</button>
+            <button className="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${lastReceipt.invoice_no}\nTotal: ${formatRupiah(lastReceipt.total_amount)}\nBayar: ${paymentLabel(lastReceipt.payment_method)}`)}>Salin Ringkasan</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   function renderActiveView() {
     if (activeView === "pos") return renderPos();
     if (activeView === "brilink") return renderBrilink();
@@ -1149,6 +1205,7 @@ export default function App() {
         </header>
         <main className="page-content">{renderActiveView()}</main>
       </section>
+      {renderReceiptModal()}
     </div>
   );
 }

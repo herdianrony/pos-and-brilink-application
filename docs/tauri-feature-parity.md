@@ -51,7 +51,7 @@ Status:
 - [~] Mutasi POS tunai — sudah menambah saldo Kas Tunai dan `account_mutations`.
 - [~] Mutasi POS transfer — sudah mencatat `pos_transfer_in` ke rekening penerima.
 - [~] Mutasi POS QRIS — sudah mencatat `pos_qris_in` ke rekening penerima.
-- [ ] Struk/receipt preview.
+- [~] Struk/receipt preview — modal struk sukses dan print browser/webview sudah ada.
 
 ## Produk
 
@@ -120,7 +120,7 @@ Status:
 
 ## Printer
 
-- [ ] Browser/system print.
+- [~] Browser/system print — struk POS memakai `window.print()` dari WebView.
 - [ ] Printer network ESC/POS.
 - [ ] Printer USB.
 - [ ] Printer serial/COM.
