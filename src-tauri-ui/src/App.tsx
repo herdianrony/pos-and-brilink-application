@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  AccountMutationRow,
   AccountRow,
   CategoryRow,
   ProductRow,
   PublicUser,
   TransactionRow,
+  adjustAccountBalance,
   checkoutPosCash,
+  createAccount,
   createAdmin,
   createCategory,
   createProduct,
   dbInit,
   healthCheck,
+  listAccountMutations,
   listAccounts,
   listCategories,
   listProducts,
@@ -56,13 +60,18 @@ export default function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [accountMutations, setAccountMutations] = useState<AccountMutationRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "qris">("cash");
+  const [settlementAccountId, setSettlementAccountId] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", icon: "package", color: "#059669" });
+  const [accountForm, setAccountForm] = useState({ code: "bri", name: "Rekening BRI", initial_balance: "0", min_balance: "0" });
+  const [adjustForm, setAdjustForm] = useState({ account_id: "", amount: "0", notes: "Penyesuaian saldo" });
   const [productForm, setProductForm] = useState({
     name: "",
     barcode: "",
@@ -78,22 +87,29 @@ export default function App() {
     () => cart.reduce((sum, item) => sum + item.product.sell_price * item.quantity, 0),
     [cart],
   );
+  const settlementAccounts = accounts.filter((account) => account.code !== "cash");
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
   const todayTransactions = transactions.length;
   const lowStockCount = products.filter((product) => product.stock <= product.min_stock).length;
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
-    const [nextAccounts, nextCategories, nextProducts, nextTransactions] = await Promise.all([
+    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions] = await Promise.all([
       listAccounts(),
+      listAccountMutations(),
       listCategories(),
       listProducts(),
       listTransactions(),
     ]);
     setAccounts(nextAccounts);
+    setAccountMutations(nextMutations);
     setCategories(nextCategories);
     setProducts(nextProducts);
     setTransactions(nextTransactions);
+    if (!settlementAccountId) {
+      const firstBank = nextAccounts.find((account) => account.code !== "cash");
+      if (firstBank) setSettlementAccountId(String(firstBank.id));
+    }
   }
 
   async function bootstrap() {
@@ -216,11 +232,52 @@ export default function App() {
     setSaving(true);
     try {
       const result = await checkoutPosCash({
+        payment_method: paymentMethod,
+        settlement_account_id: paymentMethod === "cash" ? null : Number(settlementAccountId),
         items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
       });
       setCart([]);
       await refreshData();
       setMessage(`Checkout berhasil: ${result.invoice_no} • ${formatRupiah(result.total_amount)}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitAccount(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createAccount({
+        code: accountForm.code,
+        name: accountForm.name,
+        initial_balance: Number(accountForm.initial_balance || 0),
+        min_balance: Number(accountForm.min_balance || 0),
+      });
+      setAccountForm({ code: "", name: "", initial_balance: "0", min_balance: "0" });
+      await refreshData();
+      setMessage("Rekening berhasil ditambahkan");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitAdjustment(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await adjustAccountBalance({
+        account_id: Number(adjustForm.account_id),
+        amount: Number(adjustForm.amount || 0),
+        notes: adjustForm.notes,
+      });
+      setAdjustForm({ ...adjustForm, amount: "0" });
+      await refreshData();
+      setMessage("Saldo berhasil disesuaikan");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -323,9 +380,22 @@ export default function App() {
                 <strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong>
               </div>
             ))}
+            <div className="payment-box">
+              <label>Metode Pembayaran<select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "transfer" | "qris")}>
+                <option value="cash">Tunai</option>
+                <option value="transfer">Transfer</option>
+                <option value="qris">QRIS</option>
+              </select></label>
+              {paymentMethod !== "cash" && (
+                <label>Rekening Penerima<select value={settlementAccountId} onChange={(e) => setSettlementAccountId(e.target.value)}>
+                  <option value="">Pilih rekening</option>
+                  {settlementAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} — {formatRupiah(account.balance)}</option>)}
+                </select></label>
+              )}
+            </div>
             <div className="total-row"><span>Total</span><strong>{formatRupiah(cartTotal)}</strong></div>
-            <button className="checkout" onClick={submitCheckout} disabled={saving || cart.length === 0}>{saving ? "Memproses..." : "Bayar Tunai"}</button>
-            <p className="hint">POC ini sudah mengurangi stok, mencatat transaksi POS, mutasi kas, dan menambah saldo Kas Tunai.</p>
+            <button className="checkout" onClick={submitCheckout} disabled={saving || cart.length === 0 || (paymentMethod !== "cash" && !settlementAccountId)}>{saving ? "Memproses..." : `Bayar ${paymentMethod === "cash" ? "Tunai" : paymentMethod.toUpperCase()}`}</button>
+            <p className="hint">Checkout sudah mengurangi stok, mencatat transaksi POS, dan membuat mutasi saldo sesuai metode pembayaran.</p>
           </div>
         </section>
       </>
@@ -386,15 +456,46 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Keuangan</p><h1>Kas & Saldo</h1></div></div>
-        <section className="grid dashboard-grid">
+        <section className="stat-grid balance-grid">
           {accounts.map((account) => (
             <div key={account.id} className="balance-card">
               <span>{account.code}</span>
               <h2>{account.name}</h2>
               <strong>{formatRupiah(account.balance)}</strong>
-              <small>Mutasi lanjutan masih dalam tahap POC berikutnya.</small>
+              <small>Minimum: {formatRupiah(account.min_balance || 0)}</small>
             </div>
           ))}
+        </section>
+        <section className="grid workspace-grid">
+          <div className="card">
+            <h2>Tambah Rekening Non-Tunai</h2>
+            <form onSubmit={submitAccount} className="product-form">
+              <label>Kode<input value={accountForm.code} onChange={(e) => setAccountForm({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
+              <label>Nama<input value={accountForm.name} onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
+              <label>Saldo Awal<input type="number" min="0" value={accountForm.initial_balance} onChange={(e) => setAccountForm({ ...accountForm, initial_balance: e.target.value })} /></label>
+              <label>Saldo Minimum<input type="number" min="0" value={accountForm.min_balance} onChange={(e) => setAccountForm({ ...accountForm, min_balance: e.target.value })} /></label>
+              <button type="submit" disabled={saving}>Tambah Rekening</button>
+            </form>
+            <h2>Sesuaikan Saldo</h2>
+            <form onSubmit={submitAdjustment} className="product-form">
+              <label>Rekening<select value={adjustForm.account_id} onChange={(e) => setAdjustForm({ ...adjustForm, account_id: e.target.value })}>
+                <option value="">Pilih rekening</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Nominal (+ / -)<input type="number" value={adjustForm.amount} onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })} /></label>
+              <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving || !adjustForm.account_id}>Simpan Penyesuaian</button>
+            </form>
+          </div>
+          <div className="card">
+            <h2>Mutasi Saldo Terakhir</h2>
+            {accountMutations.length === 0 ? <p>Belum ada mutasi saldo.</p> : accountMutations.map((mutation) => (
+              <div key={mutation.id} className="row rich-row">
+                <div><strong>{mutation.account_name}</strong><small>{mutation.mutation_type} • {mutation.notes || "-"}</small></div>
+                <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>Saldo: {formatRupiah(mutation.balance_after)}</small></div>
+              </div>
+            ))}
+          </div>
         </section>
       </>
     );

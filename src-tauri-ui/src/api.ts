@@ -23,8 +23,23 @@ export interface AccountRow {
   id: number;
   code: string;
   name: string;
+  icon?: string | null;
+  color?: string | null;
   balance: number;
+  min_balance: number;
   is_active: boolean;
+}
+
+export interface AccountMutationRow {
+  id: number;
+  account_id: number;
+  account_name: string;
+  mutation_type: string;
+  amount: number;
+  balance_after: number;
+  notes?: string | null;
+  reference_id?: number | null;
+  created_at: string;
 }
 
 export interface CategoryRow {
@@ -55,7 +70,8 @@ export interface PosCheckoutResponse {
   invoice_no: string;
   total_amount: number;
   profit: number;
-  cash_balance: number;
+  settlement_account_id: number;
+  settlement_balance: number;
 }
 
 export interface TransactionRow {
@@ -95,6 +111,25 @@ export function listAccounts() {
   return invoke<AccountRow[]>("list_accounts");
 }
 
+export function createAccount(payload: {
+  code: string;
+  name: string;
+  initial_balance?: number;
+  min_balance?: number;
+  icon?: string;
+  color?: string;
+}) {
+  return invoke<AccountRow>("create_account", { payload });
+}
+
+export function adjustAccountBalance(payload: { account_id: number; amount: number; notes?: string }) {
+  return invoke<AccountRow>("adjust_account_balance", { payload });
+}
+
+export function listAccountMutations() {
+  return invoke<AccountMutationRow[]>("list_account_mutations");
+}
+
 export function listCategories() {
   return invoke<CategoryRow[]>("list_categories");
 }
@@ -127,6 +162,8 @@ export function createProduct(payload: {
 export function checkoutPosCash(payload: {
   customer_name?: string;
   notes?: string;
+  payment_method?: "cash" | "transfer" | "qris";
+  settlement_account_id?: number | null;
   items: Array<{ product_id: number; quantity: number }>;
 }) {
   return invoke<PosCheckoutResponse>("checkout_pos_cash", { payload });

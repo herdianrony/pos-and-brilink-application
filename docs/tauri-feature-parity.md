@@ -45,12 +45,12 @@ Status:
 - [ ] Diskon.
 - [ ] PIN admin diskon besar.
 - [~] Checkout tunai — command `checkout_pos_cash` sudah mencatat transaksi.
-- [ ] Checkout transfer + rekening penerima.
-- [ ] Checkout QRIS + rekening penerima.
+- [~] Checkout transfer + rekening penerima — backend/UI awal sudah ada, perlu validasi Windows.
+- [~] Checkout QRIS + rekening penerima — backend/UI awal sudah ada, perlu validasi Windows.
 - [~] Stok berkurang — sudah dilakukan saat checkout tunai.
 - [~] Mutasi POS tunai — sudah menambah saldo Kas Tunai dan `account_mutations`.
-- [ ] Mutasi POS transfer.
-- [ ] Mutasi POS QRIS.
+- [~] Mutasi POS transfer — sudah mencatat `pos_transfer_in` ke rekening penerima.
+- [~] Mutasi POS QRIS — sudah mencatat `pos_qris_in` ke rekening penerima.
 - [ ] Struk/receipt preview.
 
 ## Produk
@@ -66,13 +66,13 @@ Status:
 ## Kas & Saldo
 
 - [~] List akun — command/UI awal sudah ada.
-- [ ] Tambah/edit akun.
+- [~] Tambah/edit akun — tambah rekening non-tunai sudah ada, edit belum.
 - [ ] Aktif/nonaktif akun.
 - [ ] Transfer antar akun.
-- [ ] Sesuaikan saldo.
+- [~] Sesuaikan saldo — penyesuaian saldo plus/minus sudah ada.
 - [ ] Ambil profit owner.
 - [ ] Biaya admin bank/MDR QRIS.
-- [ ] Mutasi saldo.
+- [~] Mutasi saldo — daftar mutasi saldo terakhir sudah ada.
 - [ ] Proteksi saldo minus.
 
 ## Layanan Agen

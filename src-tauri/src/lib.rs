@@ -58,8 +58,41 @@ struct AccountRow {
     id: i64,
     code: String,
     name: String,
+    icon: Option<String>,
+    color: Option<String>,
     balance: f64,
+    min_balance: f64,
     is_active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct AccountPayload {
+    code: String,
+    name: String,
+    initial_balance: Option<f64>,
+    min_balance: Option<f64>,
+    icon: Option<String>,
+    color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct BalanceAdjustmentPayload {
+    account_id: i64,
+    amount: f64,
+    notes: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct AccountMutationRow {
+    id: i64,
+    account_id: i64,
+    account_name: String,
+    mutation_type: String,
+    amount: f64,
+    balance_after: f64,
+    notes: Option<String>,
+    reference_id: Option<i64>,
+    created_at: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -115,6 +148,8 @@ struct PosCheckoutItemPayload {
 struct PosCheckoutPayload {
     customer_name: Option<String>,
     notes: Option<String>,
+    payment_method: Option<String>,
+    settlement_account_id: Option<i64>,
     items: Vec<PosCheckoutItemPayload>,
 }
 
@@ -125,7 +160,8 @@ struct PosCheckoutResponse {
     invoice_no: String,
     total_amount: f64,
     profit: f64,
-    cash_balance: f64,
+    settlement_account_id: i64,
+    settlement_balance: f64,
 }
 
 #[derive(Debug, Serialize)]
@@ -300,6 +336,17 @@ fn trim_optional(value: Option<String>) -> Option<String> {
     })
 }
 
+fn normalize_code(value: &str) -> String {
+    value
+        .trim()
+        .to_lowercase()
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '_' })
+        .collect::<String>()
+        .trim_matches('_')
+        .to_string()
+}
+
 #[tauri::command]
 fn health_check() -> HealthCheck {
     HealthCheck {
@@ -401,7 +448,7 @@ fn login(app: AppHandle, payload: LoginPayload) -> Result<LoginResponse, String>
 fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
     let conn = init_schema(&app)?;
     let mut stmt = conn
-        .prepare("SELECT id, code, name, balance, is_active FROM accounts ORDER BY id ASC")
+        .prepare("SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE is_active = 1 ORDER BY id ASC")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |row| {
@@ -409,8 +456,11 @@ fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
                 id: row.get(0)?,
                 code: row.get(1)?,
                 name: row.get(2)?,
-                balance: row.get(3)?,
-                is_active: row.get::<_, i64>(4)? == 1,
+                icon: row.get(3)?,
+                color: row.get(4)?,
+                balance: row.get(5)?,
+                min_balance: row.get(6)?,
+                is_active: row.get::<_, i64>(7)? == 1,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -422,6 +472,110 @@ fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
     Ok(out)
 }
 
+#[tauri::command]
+fn create_account(app: AppHandle, payload: AccountPayload) -> Result<AccountRow, String> {
+    let mut conn = init_schema(&app)?;
+    let code = normalize_code(&payload.code);
+    let name = payload.name.trim().to_string();
+    let initial_balance = payload.initial_balance.unwrap_or(0.0);
+    let min_balance = payload.min_balance.unwrap_or(0.0);
+    if code.is_empty() || name.is_empty() {
+        return Err("Kode dan nama rekening wajib diisi".into());
+    }
+    if code == "cash" {
+        return Err("Kode cash sudah dipakai untuk Kas Tunai".into());
+    }
+    if initial_balance < 0.0 || min_balance < 0.0 {
+        return Err("Saldo awal dan saldo minimum tidak boleh minus".into());
+    }
+    let icon = trim_optional(payload.icon).or_else(|| Some("bank".to_string()));
+    let color = trim_optional(payload.color).or_else(|| Some("#2563eb".to_string()));
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute(
+        "INSERT INTO accounts (code, name, icon, color, balance, min_balance, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)",
+        params![code, name, icon, color, initial_balance, min_balance, now],
+    )
+    .map_err(|e| format!("Gagal membuat rekening: {e}"))?;
+    let id = tx.last_insert_rowid();
+    if initial_balance > 0.0 {
+        tx.execute(
+            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'initial_balance', ?2, ?2, 'Saldo awal', NULL, ?3)",
+            params![id, initial_balance, now],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(AccountRow { id, code, name, icon, color, balance: initial_balance, min_balance, is_active: true })
+}
+
+#[tauri::command]
+fn adjust_account_balance(app: AppHandle, payload: BalanceAdjustmentPayload) -> Result<AccountRow, String> {
+    if payload.amount == 0.0 {
+        return Err("Nominal penyesuaian tidak boleh 0".into());
+    }
+    let mut conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let account = tx
+        .query_row(
+            "SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+            params![payload.account_id],
+            |row| Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, Option<String>>(3)?,
+                row.get::<_, Option<String>>(4)?,
+                row.get::<_, f64>(5)?,
+                row.get::<_, f64>(6)?,
+                row.get::<_, i64>(7)?,
+            )),
+        )
+        .map_err(|_| "Rekening tidak ditemukan".to_string())?;
+    let next_balance = account.5 + payload.amount;
+    if next_balance < 0.0 {
+        return Err("Saldo tidak cukup".into());
+    }
+    tx.execute(
+        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
+        params![next_balance, now, account.0],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.execute(
+        "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'adjustment', ?2, ?3, ?4, NULL, ?5)",
+        params![account.0, payload.amount, next_balance, trim_optional(payload.notes).unwrap_or_else(|| "Penyesuaian saldo".to_string()), now],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(AccountRow { id: account.0, code: account.1, name: account.2, icon: account.3, color: account.4, balance: next_balance, min_balance: account.6, is_active: account.7 == 1 })
+}
+
+#[tauri::command]
+fn list_account_mutations(app: AppHandle) -> Result<Vec<AccountMutationRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare(
+            r#"
+            SELECT m.id, m.account_id, a.name, m.type, m.amount, m.balance_after, m.notes, m.reference_id, m.created_at
+            FROM account_mutations m
+            JOIN accounts a ON a.id = m.account_id
+            ORDER BY m.id DESC
+            LIMIT 100
+            "#,
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(AccountMutationRow {
+                id: row.get(0)?, account_id: row.get(1)?, account_name: row.get(2)?, mutation_type: row.get(3)?, amount: row.get(4)?, balance_after: row.get(5)?, notes: row.get(6)?, reference_id: row.get(7)?, created_at: row.get(8)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
 #[tauri::command]
 fn list_categories(app: AppHandle) -> Result<Vec<CategoryRow>, String> {
     let conn = init_schema(&app)?;
@@ -604,12 +758,11 @@ fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
 
 #[tauri::command]
 fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
-    if payload.items.is_empty() {
-        return Err("Keranjang masih kosong".into());
-    }
-    if payload.items.iter().any(|item| item.quantity <= 0) {
-        return Err("Jumlah produk harus lebih dari 0".into());
-    }
+    if payload.items.is_empty() { return Err("Keranjang masih kosong".into()); }
+    if payload.items.iter().any(|item| item.quantity <= 0) { return Err("Jumlah produk harus lebih dari 0".into()); }
+
+    let payment_method = trim_optional(payload.payment_method).unwrap_or_else(|| "cash".to_string()).to_lowercase();
+    if !matches!(payment_method.as_str(), "cash" | "transfer" | "qris") { return Err("Metode pembayaran tidak valid".into()); }
 
     let mut conn = init_schema(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
@@ -617,93 +770,52 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
     let invoice_no = format!("POS-{}-{}", Utc::now().format("%Y%m%d%H%M%S"), Utc::now().timestamp_subsec_millis());
     let mut total_amount = 0.0;
     let mut total_profit = 0.0;
-    let mut prepared_items: Vec<(i64, String, i64, f64, f64, f64)> = Vec::new();
+    let mut prepared_items: Vec<(i64, String, i64, f64, f64)> = Vec::new();
 
     for item in &payload.items {
-        let product = tx
-            .query_row(
-                "SELECT name, buy_price, sell_price, stock FROM products WHERE id = ?1 AND is_active = 1",
-                params![item.product_id],
-                |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, f64>(1)?,
-                        row.get::<_, f64>(2)?,
-                        row.get::<_, i64>(3)?,
-                    ))
-                },
-            )
-            .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
-        if product.3 < item.quantity {
-            return Err(format!("Stok {} tidak cukup", product.0));
-        }
+        let product = tx.query_row(
+            "SELECT name, buy_price, sell_price, stock FROM products WHERE id = ?1 AND is_active = 1",
+            params![item.product_id],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?, row.get::<_, i64>(3)?)),
+        ).map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
+        if product.3 < item.quantity { return Err(format!("Stok {} tidak cukup", product.0)); }
         let subtotal = product.2 * item.quantity as f64;
         let profit = (product.2 - product.1) * item.quantity as f64;
         total_amount += subtotal;
         total_profit += profit;
-        prepared_items.push((item.product_id, product.0, item.quantity, product.2, subtotal, profit));
+        prepared_items.push((item.product_id, product.0, item.quantity, product.2, subtotal));
     }
 
+    let settlement_account = if payment_method == "cash" {
+        tx.query_row("SELECT id, code, name, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1", [], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, f64>(3)?))).map_err(|_| "Akun Kas Tunai tidak ditemukan".to_string())?
+    } else {
+        let account_id = payload.settlement_account_id.ok_or_else(|| "Rekening penerima wajib dipilih untuk transfer/QRIS".to_string())?;
+        let account = tx.query_row("SELECT id, code, name, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1", params![account_id], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, f64>(3)?))).map_err(|_| "Rekening penerima tidak ditemukan".to_string())?;
+        if account.1 == "cash" { return Err("Transfer/QRIS harus masuk ke rekening non-tunai".into()); }
+        account
+    };
+
     tx.execute(
-        r#"
-        INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at)
-        VALUES (?1, 'pos', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6)
-        "#,
-        params![
-            invoice_no,
-            trim_optional(payload.customer_name),
-            total_amount,
-            total_profit,
-            trim_optional(payload.notes),
-            now
-        ],
-    )
-    .map_err(|e| e.to_string())?;
+        r#"INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at)
+           VALUES (?1, 'pos', ?2, ?3, ?4, ?5, 'completed', ?6, ?7)"#,
+        params![invoice_no, trim_optional(payload.customer_name), total_amount, total_profit, payment_method, trim_optional(payload.notes), now],
+    ).map_err(|e| e.to_string())?;
     let transaction_id = tx.last_insert_rowid();
 
     for item in prepared_items {
-        tx.execute(
-            "INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![transaction_id, item.0, item.1, item.2, item.3, item.4],
-        )
-        .map_err(|e| e.to_string())?;
-        tx.execute(
-            "UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3",
-            params![item.2, now, item.0],
-        )
-        .map_err(|e| e.to_string())?;
+        tx.execute("INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", params![transaction_id, item.0, item.1, item.2, item.3, item.4]).map_err(|e| e.to_string())?;
+        tx.execute("UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3", params![item.2, now, item.0]).map_err(|e| e.to_string())?;
     }
 
-    let cash_account = tx
-        .query_row(
-            "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
-            [],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?)),
-        )
-        .map_err(|_| "Akun Kas Tunai tidak ditemukan".to_string())?;
-    let cash_balance = cash_account.1 + total_amount;
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![cash_balance, now, cash_account.0],
-    )
-    .map_err(|e| e.to_string())?;
-    tx.execute(
-        "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'pos_in', ?2, ?3, ?4, ?5, ?6)",
-        params![cash_account.0, total_amount, cash_balance, format!("POS Tunai {invoice_no}"), transaction_id, now],
-    )
-    .map_err(|e| e.to_string())?;
+    let settlement_balance = settlement_account.3 + total_amount;
+    tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![settlement_balance, now, settlement_account.0]).map_err(|e| e.to_string())?;
+    let mutation_type = match payment_method.as_str() { "transfer" => "pos_transfer_in", "qris" => "pos_qris_in", _ => "pos_in" };
+    let mutation_label = match payment_method.as_str() { "transfer" => "POS Transfer", "qris" => "POS QRIS", _ => "POS Tunai" };
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", params![settlement_account.0, mutation_type, total_amount, settlement_balance, format!("{mutation_label} {invoice_no}"), transaction_id, now]).map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
 
-    Ok(PosCheckoutResponse {
-        ok: true,
-        transaction_id,
-        invoice_no,
-        total_amount,
-        profit: total_profit,
-        cash_balance,
-    })
+    Ok(PosCheckoutResponse { ok: true, transaction_id, invoice_no, total_amount, profit: total_profit, settlement_account_id: settlement_account.0, settlement_balance })
 }
-
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
@@ -723,6 +835,9 @@ pub fn run() {
             create_admin,
             login,
             list_accounts,
+            create_account,
+            adjust_account_balance,
+            list_account_mutations,
             list_categories,
             create_category,
             list_products,
