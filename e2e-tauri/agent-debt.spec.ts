@@ -12,8 +12,8 @@ test.describe("CatatAgen Tauri agent and debt workflows", () => {
   test("records agent fee with provider cost and copies debt reminder", async ({ page }) => {
     await login(page);
 
-    await page.getByRole("button", { name: "Layanan Agen" }).click();
-    await expect(page.getByRole("heading", { name: "Layanan Agen" })).toBeVisible();
+    await page.getByRole("button", { name: "Layanan Agen", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Layanan Agen", exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Transfer/ }).first().click();
     await page.getByLabel("Nominal Transaksi").fill("100000");
     await page.getByLabel("Admin Toko / Fee").fill("5000");
@@ -31,7 +31,7 @@ test.describe("CatatAgen Tauri agent and debt workflows", () => {
     await page.getByLabel("No WhatsApp").fill("628123456789");
     await page.getByLabel("Nominal Utang").fill("25000");
     await page.getByRole("button", { name: "Simpan Utang" }).click();
-    await expect(page.getByText("Budi")).toBeVisible();
+    await expect(page.locator(".debt-row strong", { hasText: "Budi" }).first()).toBeVisible();
     await page.getByRole("button", { name: "Salin Reminder" }).click();
     await expect(page.getByText("Pesan pengingat utang disalin")).toBeVisible();
   });

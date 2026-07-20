@@ -12,6 +12,6 @@ test.describe("CatatAgen Tauri auth", () => {
     await page.getByRole("button", { name: /masuk/i }).click();
 
     await expect(page.getByRole("heading", { name: "Dashboard Operasional" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /kasir pos/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Kasir POS", exact: true })).toBeVisible();
   });
 });

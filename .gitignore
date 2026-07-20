@@ -65,6 +65,8 @@ test-results/
 playwright-report/
 playwright/.cache/
 .playwright-auth.json
-USB
-COM1
 .wwebjs_cache/
+
+# Tauri / Rust build artifacts
+src-tauri/target/
+src-tauri/gen/

@@ -25,7 +25,7 @@ test.describe("CatatAgen Tauri product and POS", () => {
     await page.getByLabel("Kategori").selectOption({ label: "Snack" });
     await page.getByLabel(/Harga Beli/).fill("5000");
     await page.getByLabel("Harga Jual").fill("8000");
-    await page.getByLabel("Stok").fill("10");
+    await page.getByLabel("Stok", { exact: true }).fill("10");
     await page.getByRole("button", { name: "Simpan Produk" }).click();
     await expect(page.getByText("Kopi Botol")).toBeVisible();
 
@@ -36,7 +36,7 @@ test.describe("CatatAgen Tauri product and POS", () => {
     await page.getByRole("button", { name: "Bayar Tunai" }).click();
 
     await expect(page.getByRole("heading", { name: "Struk Penjualan" })).toBeVisible();
-    await expect(page.getByText("Kopi Botol")).toBeVisible();
-    await expect(page.getByText(/Rp\s?8\.000|Rp8\.000/)).toBeVisible();
+    await expect(page.getByText("Kopi Botol").first()).toBeVisible();
+    await expect(page.getByText(/Rp\s?8\.000|Rp8\.000/).first()).toBeVisible();
   });
 });

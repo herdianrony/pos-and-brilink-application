@@ -14,6 +14,7 @@ export default defineConfig({
     trace: "on-first-retry",
     headless: true,
     screenshot: "only-on-failure",
+    permissions: ["clipboard-read", "clipboard-write"],
   },
   projects: [
     {
