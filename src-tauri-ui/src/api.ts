@@ -172,6 +172,19 @@ export function listTransactionItems(payload: { transaction_id: number }) {
   return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
 }
 
+export function createAgentTransaction(payload: {
+  service_name: string;
+  customer_name?: string;
+  amount: number;
+  fee: number;
+  account_id?: number | null;
+  cash_effect: number;
+  bank_effect: number;
+  notes?: string;
+}) {
+  return invoke<TransactionRow>("create_agent_transaction", { payload });
+}
+
 export type ProductInput = {
   name: string;
   barcode?: string;

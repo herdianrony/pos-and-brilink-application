@@ -12,6 +12,7 @@ import {
   checkoutPosCash,
   createAccount,
   createAdmin,
+  createAgentTransaction,
   createCategory,
   createProduct,
   deactivateProduct,
@@ -35,15 +36,18 @@ function formatRupiah(value: number) {
 }
 
 type CartItem = { product: ProductRow; quantity: number };
-type ViewKey = "dashboard" | "pos" | "products" | "history" | "cash" | "settings";
-type IconName = "dashboard" | "pos" | "products" | "history" | "cash" | "settings" | "search";
+type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "rekeningKoran" | "cash" | "reports" | "settings";
+type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "rekeningKoran" | "cash" | "reports" | "settings" | "search";
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "pos", label: "POS", icon: "pos" },
-  { id: "products", label: "Produk", icon: "products" },
-  { id: "history", label: "Riwayat", icon: "history" },
-  { id: "cash", label: "Kas & Saldo", icon: "cash" },
+  { id: "pos", label: "Kasir POS", icon: "pos" },
+  { id: "brilink", label: "Layanan Agen", icon: "brilink" },
+  { id: "products", label: "Produk", icon: "products", adminOnly: true },
+  { id: "history", label: "Transaksi", icon: "history" },
+  { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
+  { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
+  { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];
 
@@ -51,6 +55,9 @@ function Icon({ name }: { name: IconName }) {
   const common = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   if (name === "dashboard") return <svg {...common}><rect x="3" y="3" width="7" height="8" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="15" width="7" height="6" rx="2" /></svg>;
   if (name === "pos") return <svg {...common}><circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" /><path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H7" /><path d="M10 11h6" /></svg>;
+  if (name === "brilink") return <svg {...common}><path d="M3 21h18" /><path d="M5 21V8l7-5 7 5v13" /><path d="M9 21v-7h6v7" /><path d="M9 10h.01" /><path d="M15 10h.01" /></svg>;
+  if (name === "rekeningKoran") return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8" /><path d="M8 17h6" /></svg>;
+  if (name === "reports") return <svg {...common}><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="5" rx="1" /><rect x="12" y="8" width="3" height="9" rx="1" /><rect x="17" y="5" width="3" height="12" rx="1" /></svg>;
   if (name === "products") return <svg {...common}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>;
   if (name === "history") return <svg {...common}><path d="M8 3H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V5a2 2 0 0 0-2-2h-2" /><path d="M9 7h6" /><path d="M9 11h6" /><path d="M9 15h4" /></svg>;
   if (name === "cash") return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 9v.01" /><path d="M18 15v.01" /></svg>;
@@ -85,6 +92,7 @@ export default function App() {
   const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
   const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
   const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
+  const [agentForm, setAgentForm] = useState({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
   const [productForm, setProductForm] = useState({
     name: "",
     barcode: "",
@@ -388,6 +396,37 @@ export default function App() {
     }
   }
 
+
+  function applyAgentPreset(kind: "withdraw" | "deposit" | "transfer" | "payment") {
+    if (kind === "withdraw") setAgentForm({ ...agentForm, service_name: "Tarik Tunai", cash_effect: "0", bank_effect: "0", fee: "5000" });
+    if (kind === "deposit") setAgentForm({ ...agentForm, service_name: "Setor Tunai", cash_effect: "0", bank_effect: "0", fee: "5000" });
+    if (kind === "transfer") setAgentForm({ ...agentForm, service_name: "Transfer", cash_effect: "0", bank_effect: "0", fee: "5000" });
+    if (kind === "payment") setAgentForm({ ...agentForm, service_name: "Pembayaran / Topup", cash_effect: "0", bank_effect: "0", fee: "2500" });
+  }
+
+  async function submitAgentTransaction(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createAgentTransaction({
+        service_name: agentForm.service_name,
+        customer_name: agentForm.customer_name,
+        amount: Number(agentForm.amount || 0),
+        fee: Number(agentForm.fee || 0),
+        account_id: agentForm.account_id ? Number(agentForm.account_id) : null,
+        cash_effect: Number(agentForm.cash_effect || 0),
+        bank_effect: Number(agentForm.bank_effect || 0),
+        notes: agentForm.notes,
+      });
+      await refreshData();
+      setMessage("Transaksi layanan agen berhasil dicatat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function authShell(kind: "setup" | "login") {
     const isSetup = kind === "setup";
     return (
@@ -510,6 +549,51 @@ export default function App() {
             <div className="total-row"><span>Total</span><strong>{formatRupiah(cartTotal)}</strong></div>
             <button className="checkout" onClick={submitCheckout} disabled={saving || cart.length === 0 || (paymentMethod !== "cash" && !settlementAccountId)}>{saving ? "Memproses..." : `Bayar ${paymentMethod === "cash" ? "Tunai" : paymentMethod.toUpperCase()}`}</button>
             <p className="hint">Checkout sudah mengurangi stok, mencatat transaksi POS, dan membuat mutasi saldo sesuai metode pembayaran.</p>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+
+  function renderBrilink() {
+    const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Layanan Agen</p><h1>Transaksi Agen</h1></div></div>
+        <section className="grid workspace-grid">
+          <div className="card">
+            <h2>Preset Layanan</h2>
+            <div className="quick-actions">
+              <button type="button" className="secondary" onClick={() => applyAgentPreset("withdraw")}>Tarik Tunai</button>
+              <button type="button" className="secondary" onClick={() => applyAgentPreset("deposit")}>Setor Tunai</button>
+              <button type="button" className="secondary" onClick={() => applyAgentPreset("transfer")}>Transfer</button>
+              <button type="button" className="secondary" onClick={() => applyAgentPreset("payment")}>Payment/Topup</button>
+            </div>
+            <form onSubmit={submitAgentTransaction} className="product-form">
+              <label>Layanan<input value={agentForm.service_name} onChange={(e) => setAgentForm({ ...agentForm, service_name: e.target.value })} /></label>
+              <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(e) => setAgentForm({ ...agentForm, customer_name: e.target.value })} /></label>
+              <label>Nominal Transaksi<input type="number" min="0" value={agentForm.amount} onChange={(e) => setAgentForm({ ...agentForm, amount: e.target.value })} /></label>
+              <label>Admin/Fee<input type="number" min="0" value={agentForm.fee} onChange={(e) => setAgentForm({ ...agentForm, fee: e.target.value })} /></label>
+              <label>Rekening Layanan<select value={agentForm.account_id} onChange={(e) => setAgentForm({ ...agentForm, account_id: e.target.value })}>
+                <option value="">Tidak ada efek rekening</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Efek Rekening (+/-)<input type="number" value={agentForm.bank_effect} onChange={(e) => setAgentForm({ ...agentForm, bank_effect: e.target.value })} /></label>
+              <label>Efek Kas Tunai (+/-)<input type="number" value={agentForm.cash_effect} onChange={(e) => setAgentForm({ ...agentForm, cash_effect: e.target.value })} /></label>
+              <label>Catatan<input value={agentForm.notes} onChange={(e) => setAgentForm({ ...agentForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving}>Simpan Transaksi Agen</button>
+            </form>
+            <p className="hint">Mode ini fleksibel: isi efek kas/rekening sesuai alur operasional outlet. Positif menambah saldo, negatif mengurangi saldo.</p>
+          </div>
+          <div className="card">
+            <h2>Riwayat Layanan Agen</h2>
+            {agentTransactions.length === 0 ? <p>Belum ada transaksi agen.</p> : agentTransactions.map((transaction) => (
+              <div key={transaction.id} className="row rich-row">
+                <div><strong>{transaction.notes || transaction.invoice_no}</strong><small>{transaction.invoice_no} • Fee {formatRupiah(transaction.profit)}</small></div>
+                <strong>{formatRupiah(transaction.total_amount)}</strong>
+              </div>
+            ))}
           </div>
         </section>
       </>
@@ -672,6 +756,55 @@ export default function App() {
     );
   }
 
+
+  function renderRekeningKoran() {
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div></div>
+        <section className="grid dashboard-grid">
+          <div className="card">
+            <h2>Ringkasan Saldo</h2>
+            {accounts.map((account) => (
+              <div key={account.id} className="row rich-row"><div><strong>{account.name}</strong><small>{account.code}</small></div><strong>{formatRupiah(account.balance)}</strong></div>
+            ))}
+          </div>
+          <div className="card">
+            <h2>Mutasi Terakhir</h2>
+            {accountMutations.length === 0 ? <p>Belum ada mutasi.</p> : accountMutations.map((mutation) => (
+              <div key={mutation.id} className="row rich-row">
+                <div><strong>{mutation.account_name}</strong><small>{mutation.mutation_type} • {mutation.created_at}</small></div>
+                <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>{mutation.notes || "-"}</small></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  function renderReports() {
+    const posTransactions = transactions.filter((transaction) => transaction.transaction_type === "pos");
+    const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
+    const posRevenue = posTransactions.reduce((sum, transaction) => sum + transaction.total_amount, 0);
+    const posProfit = posTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
+    const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
+    return (
+      <>
+        <div className="page-title"><div><p className="eyebrow">Analitik</p><h1>Laporan</h1></div></div>
+        <section className="stat-grid">
+          <div className="stat-card green"><span>Omzet POS</span><strong>{formatRupiah(posRevenue)}</strong><small>{posTransactions.length} transaksi POS</small></div>
+          <div className="stat-card blue"><span>Profit POS</span><strong>{formatRupiah(posProfit)}</strong><small>Dari margin produk</small></div>
+          <div className="stat-card amber"><span>Fee Agen</span><strong>{formatRupiah(agentProfit)}</strong><small>{agentTransactions.length} transaksi agen</small></div>
+          <div className="stat-card purple"><span>Total Mutasi</span><strong>{accountMutations.length}</strong><small>Mutasi saldo tersimpan</small></div>
+        </section>
+        <section className="card">
+          <h2>Catatan Export</h2>
+          <p>Export CSV/PDF native Tauri akan dibuat pada tahap berikutnya. Data laporan inti sudah tersedia di database lokal.</p>
+        </section>
+      </>
+    );
+  }
+
   function renderSettings() {
     return (
       <>
@@ -687,9 +820,12 @@ export default function App() {
 
   function renderActiveView() {
     if (activeView === "pos") return renderPos();
+    if (activeView === "brilink") return renderBrilink();
     if (activeView === "products") return renderProducts();
     if (activeView === "history") return renderHistory();
+    if (activeView === "rekeningKoran") return renderRekeningKoran();
     if (activeView === "cash") return renderCash();
+    if (activeView === "reports") return renderReports();
     if (activeView === "settings") return renderSettings();
     return renderDashboard();
   }

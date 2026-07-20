@@ -227,6 +227,18 @@ struct TransactionIdPayload {
     transaction_id: i64,
 }
 
+#[derive(Debug, Deserialize)]
+struct AgentTransactionPayload {
+    service_name: String,
+    customer_name: Option<String>,
+    amount: f64,
+    fee: f64,
+    account_id: Option<i64>,
+    cash_effect: f64,
+    bank_effect: f64,
+    notes: Option<String>,
+}
+
 fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -948,6 +960,45 @@ fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Resu
     Ok(out)
 }
 
+
+#[tauri::command]
+fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) -> Result<TransactionRow, String> {
+    let service_name = payload.service_name.trim().to_string();
+    if service_name.is_empty() { return Err("Nama layanan wajib diisi".into()); }
+    if payload.amount < 0.0 || payload.fee < 0.0 { return Err("Nominal dan admin tidak boleh minus".into()); }
+    let mut conn = init_schema(&app)?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let now = Utc::now().to_rfc3339();
+    let invoice_no = format!("AGN-{}-{}", Utc::now().format("%Y%m%d%H%M%S"), Utc::now().timestamp_subsec_millis());
+    let total_amount = payload.amount + payload.fee;
+    tx.execute(
+        r#"INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at)
+           VALUES (?1, 'agent', ?2, ?3, ?4, 'mixed', 'completed', ?5, ?6)"#,
+        params![invoice_no, trim_optional(payload.customer_name), total_amount, payload.fee, trim_optional(payload.notes).unwrap_or_else(|| service_name.clone()), now],
+    ).map_err(|e| e.to_string())?;
+    let transaction_id = tx.last_insert_rowid();
+
+    if payload.cash_effect != 0.0 {
+        let cash = tx.query_row("SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1", [], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))).map_err(|_| "Akun Kas Tunai tidak ditemukan".to_string())?;
+        let next_balance = cash.1 + payload.cash_effect;
+        if next_balance < 0.0 { return Err("Saldo Kas Tunai tidak cukup".into()); }
+        tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![next_balance, now, cash.0]).map_err(|e| e.to_string())?;
+        tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'agent_cash_effect', ?2, ?3, ?4, ?5, ?6)", params![cash.0, payload.cash_effect, next_balance, service_name, transaction_id, now]).map_err(|e| e.to_string())?;
+    }
+
+    if payload.bank_effect != 0.0 {
+        let account_id = payload.account_id.ok_or_else(|| "Rekening layanan wajib dipilih jika efek rekening tidak 0".to_string())?;
+        let account = tx.query_row("SELECT id, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1", params![account_id], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))).map_err(|_| "Rekening layanan tidak ditemukan".to_string())?;
+        let next_balance = account.1 + payload.bank_effect;
+        if next_balance < 0.0 { return Err("Saldo rekening layanan tidak cukup".into()); }
+        tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![next_balance, now, account.0]).map_err(|e| e.to_string())?;
+        tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'agent_bank_effect', ?2, ?3, ?4, ?5, ?6)", params![account.0, payload.bank_effect, next_balance, service_name, transaction_id, now]).map_err(|e| e.to_string())?;
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+
+    Ok(TransactionRow { id: transaction_id, invoice_no, transaction_type: "agent".into(), customer_name: None, total_amount, profit: payload.fee, payment_method: "mixed".into(), status: "completed".into(), notes: Some(service_name), created_at: now })
+}
+
 #[tauri::command]
 fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
     if payload.items.is_empty() { return Err("Keranjang masih kosong".into()); }
@@ -1041,6 +1092,7 @@ pub fn run() {
             deactivate_product,
             list_transactions,
             list_transaction_items,
+            create_agent_transaction,
             checkout_pos_cash,
         ])
         .run(tauri::generate_context!())

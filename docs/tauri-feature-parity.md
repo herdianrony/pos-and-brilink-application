@@ -77,16 +77,16 @@ Status:
 
 ## Layanan Agen
 
-- [ ] Kategori layanan.
+- [~] Kategori layanan — preset layanan basic sudah ada, master kategori belum.
 - [ ] CRUD layanan.
-- [ ] Preset tarik tunai.
-- [ ] Preset setor tunai.
-- [ ] Preset transfer tunai.
-- [ ] Preset payment/topup.
-- [ ] Fee/admin.
+- [~] Preset tarik tunai — preset UI sudah ada.
+- [~] Preset setor tunai — preset UI sudah ada.
+- [~] Preset transfer tunai — preset UI sudah ada.
+- [~] Preset payment/topup — preset UI sudah ada.
+- [~] Fee/admin — field fee/admin sudah ada.
 - [ ] Fee tier.
-- [ ] Cash/bank effect.
-- [ ] Transaksi agen.
+- [~] Cash/bank effect — efek kas/rekening fleksibel sudah ada.
+- [~] Transaksi agen — command/UI `create_agent_transaction` sudah ada.
 - [ ] Pending/completed.
 - [ ] Nomor referensi.
 - [ ] Void/reverse.
@@ -97,8 +97,8 @@ Status:
 - [ ] Filter POS/agen.
 - [ ] Filter status.
 - [~] Detail transaksi — detail item POS sudah bisa dilihat dari Riwayat.
-- [ ] Rekening koran.
-- [ ] Laporan POS.
+- [~] Rekening koran — ringkasan akun dan mutasi saldo sudah ada.
+- [~] Laporan POS — ringkasan omzet/profit POS basic sudah ada.
 - [ ] Dashboard.
 - [ ] Export CSV.
 - [ ] Export PDF.
