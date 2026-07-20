@@ -47,6 +47,8 @@ import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { AuthShell } from "./components/AuthShell";
+import { CashDialogs, type CashModalType } from "./components/CashDialogs";
+import { CashBalancePage } from "./pages/CashBalancePage";
 import { CurrencyInput } from "./components/CurrencyInput";
 import { Icon } from "./components/AppIcon";
 import { formatRupiah, mutationLabel, paymentLabel } from "./lib/format";
@@ -95,7 +97,7 @@ export default function App() {
   const [lastReceipt, setLastReceipt] = useState<ReceiptState | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [cashModal, setCashModal] = useState<null | "account" | "adjust" | "transfer" | "ownerDraw" | "bankFee">(null);
+  const [cashModal, setCashModal] = useState<CashModalType>(null);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
@@ -873,47 +875,6 @@ export default function App() {
     );
   }
 
-  function renderCash() {
-    return (
-      <>
-        <div className="page-title">
-          <div><p className="eyebrow">Saldo Virtual</p><h1>Kas & Saldo</h1></div>
-          <div className="page-actions">
-            <button className="secondary" onClick={() => setCashModal("account")}>Tambah Rekening</button>
-            <button onClick={() => setCashModal("transfer")}>Transfer Saldo</button>
-          </div>
-        </div>
-        <div className="page-help"><strong>Tujuan halaman:</strong><span>Pantau uang tunai, rekening bank, QRIS, dan mutasi saldo tanpa membuka internet banking.</span></div>
-        <section className="stat-grid balance-grid">
-          {accounts.map((account) => (
-            <div key={account.id} className="balance-card">
-              <span>{account.code}</span>
-              <h2>{account.name}</h2>
-              <strong>{formatRupiah(account.balance)}</strong>
-              <small>Minimum: {formatRupiah(account.min_balance || 0)}</small>
-              <div className="account-card-actions">
-                <button className="secondary" onClick={() => { setAdjustForm({ ...adjustForm, account_id: String(account.id) }); setCashModal("adjust"); }}>Sesuaikan</button>
-                <button className="secondary" onClick={() => { setTransferForm({ ...transferForm, from_account_id: String(account.id) }); setCashModal("transfer"); }}>Transfer</button>
-                <button className="secondary" onClick={() => { setOwnerDrawForm({ ...ownerDrawForm, account_id: String(account.id) }); setCashModal("ownerDraw"); }}>Prive</button>
-                <button className="secondary" onClick={() => { setBankFeeForm({ ...bankFeeForm, account_id: String(account.id) }); setCashModal("bankFee"); }}>Biaya</button>
-              </div>
-            </div>
-          ))}
-        </section>
-        <section className="card">
-          <div className="card-header"><div><h2>Mutasi Saldo Terakhir</h2><p>Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.</p></div></div>
-          {accountMutations.length === 0 ? <div className="empty-state compact"><strong>Belum ada mutasi saldo</strong><span>Mutasi muncul setelah POS, transaksi agen, atau aksi saldo.</span></div> : accountMutations.map((mutation) => (
-            <div key={mutation.id} className="row rich-row">
-              <div><strong>{mutation.account_name}</strong><small>{mutationLabel(mutation.mutation_type)} • {mutation.notes || "-"}</small></div>
-              <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>Saldo: {formatRupiah(mutation.balance_after)}</small></div>
-            </div>
-          ))}
-        </section>
-      </>
-    );
-  }
-
-
   function renderDebts() {
     const visibleDebts = filteredDebts;
     const openDebts = visibleDebts.filter((debt) => debt.status !== "paid");
@@ -1080,63 +1041,6 @@ export default function App() {
   }
 
 
-  function renderCashModals() {
-    if (!cashModal) return null;
-    const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Prive Owner" : "Biaya Bank/MDR";
-    return (
-      <div className="modal-backdrop">
-        <section className="dialog-card product-dialog">
-          <div className="card-header">
-            <div><p className="eyebrow">Kas & Saldo</p><h2>{title}</h2></div>
-            <button className="secondary" onClick={() => setCashModal(null)}>Tutup</button>
-          </div>
-          {cashModal === "account" && (
-            <form onSubmit={submitAccount} className="dialog-form product-form no-box">
-              <label>Kode<input value={accountForm.code} onChange={(e) => setAccountForm({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
-              <label>Nama<input value={accountForm.name} onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
-              <label>Saldo Awal<CurrencyInput value={accountForm.initial_balance} onChange={(value) => setAccountForm({ ...accountForm, initial_balance: value })} /></label>
-              <label>Saldo Minimum<CurrencyInput value={accountForm.min_balance} onChange={(value) => setAccountForm({ ...accountForm, min_balance: value })} /></label>
-              <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving}>Tambah Rekening</button></div>
-            </form>
-          )}
-          {cashModal === "adjust" && (
-            <form onSubmit={submitAdjustment} className="dialog-form product-form no-box">
-              <label>Rekening<select value={adjustForm.account_id} onChange={(e) => setAdjustForm({ ...adjustForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal (+ / -)<CurrencyInput allowNegative value={adjustForm.amount} onChange={(value) => setAdjustForm({ ...adjustForm, amount: value })} /></label>
-              <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })} /></label>
-              <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</button></div>
-            </form>
-          )}
-          {cashModal === "transfer" && (
-            <form onSubmit={submitTransfer} className="dialog-form product-form no-box">
-              <label>Dari<select value={transferForm.from_account_id} onChange={(e) => setTransferForm({ ...transferForm, from_account_id: e.target.value })}><option value="">Pilih asal</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Ke<select value={transferForm.to_account_id} onChange={(e) => setTransferForm({ ...transferForm, to_account_id: e.target.value })}><option value="">Pilih tujuan</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<CurrencyInput value={transferForm.amount} onChange={(value) => setTransferForm({ ...transferForm, amount: value })} /></label>
-              <label>Catatan<input value={transferForm.notes} onChange={(e) => setTransferForm({ ...transferForm, notes: e.target.value })} /></label>
-              <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</button></div>
-            </form>
-          )}
-          {cashModal === "ownerDraw" && (
-            <form onSubmit={submitOwnerDraw} className="dialog-form product-form no-box">
-              <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => setOwnerDrawForm({ ...ownerDrawForm, amount: value })} /></label>
-              <label className="span-2">Catatan<input value={ownerDrawForm.notes} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, notes: e.target.value })} /></label>
-              <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Prive</button></div>
-            </form>
-          )}
-          {cashModal === "bankFee" && (
-            <form onSubmit={submitBankFee} className="dialog-form product-form no-box">
-              <label>Rekening<select value={bankFeeForm.account_id} onChange={(e) => setBankFeeForm({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-              <label>Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => setBankFeeForm({ ...bankFeeForm, amount: value })} /></label>
-              <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => setBankFeeForm({ ...bankFeeForm, notes: e.target.value })} /></label>
-              <div className="modal-actions span-2"><button className="secondary" type="button" onClick={() => setCashModal(null)}>Batal</button><button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Biaya</button></div>
-            </form>
-          )}
-        </section>
-      </div>
-    );
-  }
-
   function renderActiveView() {
     if (activeView === "pos") return renderPos();
     if (activeView === "brilink") return renderBrilink();
@@ -1144,7 +1048,7 @@ export default function App() {
     if (activeView === "history") return renderHistory();
     if (activeView === "debts") return renderDebts();
     if (activeView === "rekeningKoran") return renderRekeningKoran();
-    if (activeView === "cash") return renderCash();
+    if (activeView === "cash") return <CashBalancePage accounts={accounts} mutations={accountMutations} onAddAccount={() => setCashModal("account")} onTransfer={(account) => { if (account) setTransferForm({ ...transferForm, from_account_id: String(account.id) }); setCashModal("transfer"); }} onAdjust={(account) => { setAdjustForm({ ...adjustForm, account_id: String(account.id) }); setCashModal("adjust"); }} onOwnerDraw={(account) => { setOwnerDrawForm({ ...ownerDrawForm, account_id: String(account.id) }); setCashModal("ownerDraw"); }} onBankFee={(account) => { setBankFeeForm({ ...bankFeeForm, account_id: String(account.id) }); setCashModal("bankFee"); }} />;
     if (activeView === "reports") return renderReports();
     if (activeView === "logs") return renderLogs();
     if (activeView === "settings") return renderSettings();
@@ -1211,7 +1115,7 @@ export default function App() {
         </header>
         <main className="page-content">{renderActiveView()}</main>
       </section>
-      {renderCashModals()}
+      <CashDialogs cashModal={cashModal} accounts={accounts} saving={saving} accountForm={accountForm} adjustForm={adjustForm} transferForm={transferForm} ownerDrawForm={ownerDrawForm} bankFeeForm={bankFeeForm} onClose={() => setCashModal(null)} onAccountFormChange={setAccountForm} onAdjustFormChange={setAdjustForm} onTransferFormChange={setTransferForm} onOwnerDrawFormChange={setOwnerDrawForm} onBankFeeFormChange={setBankFeeForm} onSubmitAccount={submitAccount} onSubmitAdjustment={submitAdjustment} onSubmitTransfer={submitTransfer} onSubmitOwnerDraw={submitOwnerDraw} onSubmitBankFee={submitBankFee} />
       <ProductDialogs
         showCategoryModal={showCategoryModal}
         showProductModal={showProductModal}
