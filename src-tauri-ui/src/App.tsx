@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AccountMutationRow,
-  AccountRow,
-  AppLogRow,
-  BackupRow,
-  CategoryRow,
-  DebtRow,
-  ProductRow,
-  PublicUser,
-  TransactionItemRow,
-  TransactionRow,
   addDebtPayment,
   adjustAccountBalance,
   bankFee,
@@ -24,25 +14,14 @@ import {
   createProduct,
   createUser,
   deactivateProduct,
-  dbInit,
-  healthCheck,
-  listAccountMutations,
-  listAccounts,
-  listAppLogs,
-  listCategories,
-  listDatabaseBackups,
-  listDebts,
-  listProducts,
   listTransactionItems,
-  listTransactions,
-  listUsers,
   login,
   ownerDraw,
   restoreDatabaseBackup,
-  setupStatus,
   transferAccounts,
   updateProduct,
 } from "./api";
+import type { AccountRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionItemRow, TransactionRow } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -55,6 +34,7 @@ import { StatementPage } from "./pages/StatementPage";
 import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
+import { useAppData } from "./hooks/useAppData";
 import { AuthShell } from "./components/AuthShell";
 import { CashDialogs, type CashModalType } from "./components/CashDialogs";
 import { CashBalancePage } from "./pages/CashBalancePage";
@@ -79,27 +59,33 @@ const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: 
 ];
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [dbPath, setDbPath] = useState("");
-  const [setupNeeded, setSetupNeeded] = useState(true);
+  const appData = useAppData(setMessage);
+  const {
+    loading,
+    dbPath,
+    setupNeeded,
+    setSetupNeeded,
+    accounts,
+    accountMutations,
+    categories,
+    products,
+    transactions,
+    debts,
+    users,
+    backups,
+    appLogs,
+    refreshData,
+    bootstrap,
+  } = appData;
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [users, setUsers] = useState<PublicUser[]>([]);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [posStep, setPosStep] = useState<1 | 2 | 3>(1);
   const [posCategoryFilter, setPosCategoryFilter] = useState("all");
   const [agentStep, setAgentStep] = useState<1 | 2 | 3 | 4>(1);
-  const [accounts, setAccounts] = useState<AccountRow[]>([]);
-  const [accountMutations, setAccountMutations] = useState<AccountMutationRow[]>([]);
-  const [categories, setCategories] = useState<CategoryRow[]>([]);
-  const [products, setProducts] = useState<ProductRow[]>([]);
-  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
-  const [debts, setDebts] = useState<DebtRow[]>([]);
-  const [backups, setBackups] = useState<BackupRow[]>([]);
-  const [appLogs, setAppLogs] = useState<AppLogRow[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -156,55 +142,18 @@ export default function App() {
     : debts;
   const isAdmin = user?.role === "admin";
 
-  async function refreshData() {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups, nextLogs] = await Promise.all([
-      listAccounts(),
-      listAccountMutations(),
-      listCategories(),
-      listProducts(),
-      listTransactions(),
-      listDebts(),
-      listUsers(),
-      listDatabaseBackups(),
-      listAppLogs(),
-    ]);
-    setAccounts(nextAccounts);
-    setAccountMutations(nextMutations);
-    setCategories(nextCategories);
-    setProducts(nextProducts);
-    setTransactions(nextTransactions);
-    setDebts(nextDebts);
-    setUsers(nextUsers);
-    setBackups(nextBackups);
-    setAppLogs(nextLogs);
-    if (!settlementAccountId) {
-      const firstBank = nextAccounts.find((account) => account.code !== "cash");
-      if (firstBank) setSettlementAccountId(String(firstBank.id));
-    }
-  }
-
-  async function bootstrap() {
-    setLoading(true);
-    try {
-      const health = await healthCheck();
-      const db = await dbInit();
-      const setup = await setupStatus();
-      setDbPath(db.path);
-      setSetupNeeded(setup.setup_needed);
-      setMessage(`${health.app} siap (${health.backend})`);
-      if (!setup.setup_needed) await refreshData();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
     bootstrap();
     // POC bootstrap cukup dijalankan sekali saat window Tauri dibuka.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!settlementAccountId) {
+      const firstBank = accounts.find((account) => account.code !== "cash");
+      if (firstBank) setSettlementAccountId(String(firstBank.id));
+    }
+  }, [accounts, settlementAccountId]);
 
 
   function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
