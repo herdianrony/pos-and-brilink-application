@@ -1,27 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
-  BarChart3,
-  ClipboardList,
-  Eye,
-  EyeOff,
-  FileText,
-  Landmark,
-  LayoutDashboard,
-  Package,
-  ReceiptText,
-  ScrollText,
-  Search,
-  Settings,
-  ShieldCheck,
-  ShoppingCart,
-  User,
-  Lock,
-  Wallet,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
-import {
   AccountMutationRow,
   AccountRow,
   AppLogRow,
@@ -65,77 +43,12 @@ import {
   transferAccounts,
   updateProduct,
 } from "./api";
+import { AuthShell } from "./components/AuthShell";
+import { CurrencyInput } from "./components/CurrencyInput";
+import { Icon } from "./components/AppIcon";
+import { formatRupiah, mutationLabel, paymentLabel } from "./lib/format";
+import type { CartItem, IconName, ReceiptState, ViewKey } from "./types";
 
-function formatRupiah(value: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value || 0);
-}
-
-function paymentLabel(method: string) {
-  if (method === "cash") return "Tunai";
-  if (method === "transfer") return "Transfer";
-  if (method === "qris") return "QRIS";
-  if (method === "mixed") return "Campuran";
-  return method;
-}
-
-function mutationLabel(type: string) {
-  const labels: Record<string, string> = {
-    initial_balance: "Saldo Awal",
-    adjustment: "Penyesuaian",
-    pos_in: "POS Tunai",
-    pos_transfer_in: "POS Transfer",
-    pos_qris_in: "POS QRIS",
-    transfer_out: "Transfer Keluar",
-    transfer_in: "Transfer Masuk",
-    owner_draw: "Prive Owner",
-    bank_fee: "Biaya Bank/MDR",
-    agent_cash_effect: "Efek Kas Agen",
-    agent_bank_effect: "Efek Rekening Agen",
-  };
-  return labels[type] || type;
-}
-
-function parseCurrencyInput(value: string, allowNegative = false) {
-  const negative = allowNegative && value.trim().startsWith("-");
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return negative ? "-" : "";
-  return `${negative ? "-" : ""}${Number(digits)}`;
-}
-
-function CurrencyInput({
-  value,
-  onChange,
-  allowNegative = false,
-  placeholder = "Rp0",
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  allowNegative?: boolean;
-  placeholder?: string;
-}) {
-  const displayValue = value && value !== "-" ? formatRupiah(Number(value)) : value;
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      placeholder={placeholder}
-      value={displayValue}
-      onChange={(event) => onChange(parseCurrencyInput(event.target.value, allowNegative))}
-      onFocus={(event) => event.currentTarget.select()}
-    />
-  );
-}
-
-type CartItem = { product: ProductRow; quantity: number };
-type ReceiptState = {
-  invoice_no: string;
-  payment_method: "cash" | "transfer" | "qris";
-  total_amount: number;
-  created_at: string;
-  items: CartItem[];
-};
-type ViewKey = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "logs" | "settings";
-type IconName = "dashboard" | "pos" | "brilink" | "products" | "history" | "debts" | "rekeningKoran" | "cash" | "reports" | "logs" | "settings" | "search";
 
 const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: boolean }> = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -150,26 +63,6 @@ const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: 
   { id: "logs", label: "Log Aktivitas", icon: "logs", adminOnly: true },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];
-
-const iconMap: Record<IconName, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  pos: ShoppingCart,
-  brilink: Landmark,
-  products: Package,
-  history: ClipboardList,
-  debts: ReceiptText,
-  rekeningKoran: ScrollText,
-  cash: Wallet,
-  reports: BarChart3,
-  logs: FileText,
-  settings: Settings,
-  search: Search,
-};
-
-function Icon({ name }: { name: IconName }) {
-  const LucideIcon = iconMap[name] || Search;
-  return <LucideIcon size={20} strokeWidth={2.2} aria-hidden />;
-}
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -706,64 +599,7 @@ export default function App() {
     }
   }
 
-  function authShell(kind: "setup" | "login") {
-    const isSetup = kind === "setup";
-    const usernameValue = isSetup ? form.username : loginForm.username;
-    const passwordValue = isSetup ? form.password : loginForm.password;
-    return (
-      <main className="login-shell">
-        <section className="login-brand-panel">
-          <div className="login-brand-content">
-            <div className="login-logo-row">
-              <div className="brand-mark">CA</div>
-              <div>
-                <h1>CatatAgen</h1>
-                <p>POS Retail & Ledger Agen Mikro</p>
-              </div>
-            </div>
-            <div className="login-copy">
-              <p className="eyebrow">Local-first Desktop</p>
-              <h2>{isSetup ? "Siapkan toko pertama Anda" : "Selamat datang kembali"}</h2>
-              <p>Kelola kasir POS, layanan agen non-API, saldo virtual, stok produk, dan buku utang dalam satu aplikasi ringan.</p>
-            </div>
-            <div className="login-feature-list">
-              <div><Zap size={18} /><span>Transaksi cepat untuk kasir harian</span></div>
-              <div><ShieldCheck size={18} /><span>Data tersimpan lokal di perangkat</span></div>
-              <div><Wallet size={18} /><span>Kas, rekening, QRIS, dan utang tercatat rapi</span></div>
-            </div>
-          </div>
-        </section>
-        <section className="login-form-panel">
-          <div className="login-mobile-brand">
-            <div className="brand-mark small">CA</div>
-            <div><strong>CatatAgen</strong><small>Local Edition</small></div>
-          </div>
-          <div className="login-card">
-            <div className="login-card-header">
-              <p className="eyebrow">{isSetup ? "Setup Awal" : "Masuk"}</p>
-              <h2>{isSetup ? "Buat Admin Pertama" : "Masuk ke Aplikasi"}</h2>
-              <p>{isSetup ? "Akun ini akan menjadi owner/admin toko." : "Gunakan akun owner atau kasir yang sudah dibuat."}</p>
-            </div>
-            <form onSubmit={isSetup ? submitSetup : submitLogin} className="login-form">
-              {isSetup && (
-                <label>Nama Owner
-                  <div className="login-input-wrap"><User size={20} /><input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama pemilik toko" /></div>
-                </label>
-              )}
-              <label>Username
-                <div className="login-input-wrap"><User size={20} /><input autoFocus={!isSetup} value={usernameValue} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} placeholder="Masukkan username" /></div>
-              </label>
-              <label>Password
-                <div className="login-input-wrap"><Lock size={20} /><input type={showAuthPassword ? "text" : "password"} value={passwordValue} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Masukkan password" /><button type="button" className="input-icon-button" onClick={() => setShowAuthPassword(!showAuthPassword)} aria-label={showAuthPassword ? "Sembunyikan password" : "Lihat password"}>{showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
-              </label>
-              <button className="login-submit" type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : <>Masuk <ArrowRight size={20} /></>}</button>
-            </form>
-            <div className="status-line">{message || "Database lokal siap digunakan."}</div>
-          </div>
-        </section>
-      </main>
-    );
-  }
+
 
 
   async function openTransactionDetail(transaction: TransactionRow) {
@@ -1424,8 +1260,40 @@ export default function App() {
     return renderDashboard();
   }
 
-  if (setupNeeded) return authShell("setup");
-  if (!user) return authShell("login");
+  if (setupNeeded) {
+    return (
+      <AuthShell
+        kind="setup"
+        saving={saving}
+        message={message}
+        showPassword={showAuthPassword}
+        onTogglePassword={() => setShowAuthPassword(!showAuthPassword)}
+        setupForm={form}
+        loginForm={loginForm}
+        onSetupFormChange={setForm}
+        onLoginFormChange={setLoginForm}
+        onSubmitSetup={submitSetup}
+        onSubmitLogin={submitLogin}
+      />
+    );
+  }
+  if (!user) {
+    return (
+      <AuthShell
+        kind="login"
+        saving={saving}
+        message={message}
+        showPassword={showAuthPassword}
+        onTogglePassword={() => setShowAuthPassword(!showAuthPassword)}
+        setupForm={form}
+        loginForm={loginForm}
+        onSetupFormChange={setForm}
+        onLoginFormChange={setLoginForm}
+        onSubmitSetup={submitSetup}
+        onSubmitLogin={submitLogin}
+      />
+    );
+  }
 
   return (
     <div className="app-shell">
