@@ -21,7 +21,7 @@ export function CashBalancePage({
   return (
     <>
       <div className="page-title">
-        <div><p className="eyebrow">Saldo Virtual</p><h1>Kas & Saldo</h1></div>
+        <div><p className="eyebrow">Saldo Tercatat</p><h1>Kas & Saldo</h1></div>
         <div className="page-actions">
           <button className="secondary" onClick={onAddAccount}>Tambah Rekening</button>
           <button onClick={() => onTransfer()}>Transfer Saldo</button>
@@ -38,7 +38,7 @@ export function CashBalancePage({
             <div className="account-card-actions">
               <button className="secondary" onClick={() => onAdjust(account)}>Sesuaikan</button>
               <button className="secondary" onClick={() => onTransfer(account)}>Transfer</button>
-              <button className="secondary" onClick={() => onOwnerDraw(account)}>Prive</button>
+              <button className="secondary" onClick={() => onOwnerDraw(account)}>Ambil Uang</button>
               <button className="secondary" onClick={() => onBankFee(account)}>Biaya</button>
             </div>
           </div>

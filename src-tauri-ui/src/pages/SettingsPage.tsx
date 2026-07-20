@@ -53,23 +53,23 @@ export function SettingsPage({
           </div>
         </div>
         <div className="card">
-          <div className="card-header"><div><h2>Export Data</h2><p>Export CSV ringan untuk arsip manual.</p></div></div>
+          <div className="card-header"><div><h2>Unduh Data</h2><p>Unduh CSV ringan untuk arsip manual.</p></div></div>
           <div className="quick-actions export-actions">
-            <button className="secondary" onClick={() => onExportCsv("transaksi-catatagen.csv", transactions.map((t) => ({ invoice: t.invoice_no, tipe: t.transaction_type, pelanggan: t.customer_name, total: t.total_amount, profit: t.profit, metode: t.payment_method, status: t.status, tanggal: t.created_at })))}>Export Transaksi</button>
-            <button className="secondary" onClick={() => onExportCsv("mutasi-saldo-catatagen.csv", mutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Export Mutasi</button>
-            <button className="secondary" onClick={() => onExportCsv("utang-catatagen.csv", debts.map((d) => ({ pelanggan: d.customer_name, phone: d.phone, total: d.amount, terbayar: d.paid_amount, sisa: d.outstanding, status: d.status, catatan: d.notes })))}>Export Utang</button>
-            <button className="secondary" onClick={() => onExportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Export Produk</button>
+            <button className="secondary" onClick={() => onExportCsv("transaksi-catatagen.csv", transactions.map((t) => ({ invoice: t.invoice_no, tipe: t.transaction_type, pelanggan: t.customer_name, total: t.total_amount, profit: t.profit, metode: t.payment_method, status: t.status, tanggal: t.created_at })))}>Unduh Transaksi</button>
+            <button className="secondary" onClick={() => onExportCsv("mutasi-saldo-catatagen.csv", mutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Unduh Mutasi</button>
+            <button className="secondary" onClick={() => onExportCsv("utang-catatagen.csv", debts.map((d) => ({ pelanggan: d.customer_name, phone: d.phone, total: d.amount, terbayar: d.paid_amount, sisa: d.outstanding, status: d.status, catatan: d.notes })))}>Unduh Utang</button>
+            <button className="secondary" onClick={() => onExportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Unduh Produk</button>
           </div>
-          <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
+          <div className="db-box"><strong>Data lokal</strong><span>{dbPath || "—"}</span></div>
         </div>
         <div className="card span-all">
-          <div className="card-header"><div><h2>Backup & Restore</h2><p>Backup disimpan lokal di folder data aplikasi. Sebelum restore, aplikasi otomatis membuat backup cadangan.</p></div><button onClick={onCreateBackup} disabled={saving}>Buat Backup</button></div>
-          {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada backup</strong><span>Klik Buat Backup untuk menyimpan salinan database.</span></div> : (
+          <div className="card-header"><div><h2>Cadangkan & Pulihkan Data</h2><p>Cadangan data disimpan di folder data aplikasi. Sebelum memulihkan data, aplikasi otomatis membuat cadangan terlebih dahulu.</p></div><button onClick={onCreateBackup} disabled={saving}>Cadangkan Data</button></div>
+          {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada backup data</strong><span>Klik Cadangkan Data untuk menyimpan salinan database.</span></div> : (
             <div className="backup-list">
               {backups.map((backup) => (
                 <div key={backup.path} className="backup-row">
                   <div><strong>{backup.name}</strong><small>{backup.path}</small><small>{Math.ceil(backup.size / 1024)} KB</small></div>
-                  <button className="secondary" onClick={() => onRestoreBackup(backup)} disabled={saving}>Restore</button>
+                  <button className="secondary" onClick={() => onRestoreBackup(backup)} disabled={saving}>Pulihkan</button>
                 </div>
               ))}
             </div>

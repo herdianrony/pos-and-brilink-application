@@ -12,7 +12,7 @@ export function StatementPage({
 }) {
   return (
     <>
-      <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div><button className="secondary" onClick={onExportCsv}>Export CSV</button></div>
+      <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div><button className="secondary" onClick={onExportCsv}>Unduh CSV</button></div>
       <section className="grid dashboard-grid">
         <div className="card">
           <h2>Ringkasan Saldo</h2>

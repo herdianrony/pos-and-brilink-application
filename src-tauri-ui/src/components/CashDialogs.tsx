@@ -46,7 +46,7 @@ export function CashDialogs({
   onSubmitBankFee: (event: FormEvent) => void;
 }) {
   if (!cashModal) return null;
-  const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Prive Owner" : "Biaya Bank/MDR";
+  const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Ambil Uang Owner" : "Potongan Bank/QRIS";
   return (
     <div className="modal-backdrop">
       <section className="dialog-card product-dialog">
@@ -85,7 +85,7 @@ export function CashDialogs({
             <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => onOwnerDrawFormChange({ ...ownerDrawForm, amount: value })} /></label>
             <label className="span-2">Catatan<input value={ownerDrawForm.notes} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Prive</button></div>
+            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Ambil Uang</button></div>
           </form>
         )}
         {cashModal === "bankFee" && (
@@ -93,7 +93,7 @@ export function CashDialogs({
             <label>Rekening<select value={bankFeeForm.account_id} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => onBankFeeFormChange({ ...bankFeeForm, amount: value })} /></label>
             <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Biaya</button></div>
+            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</button></div>
           </form>
         )}
       </section>

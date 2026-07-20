@@ -38,11 +38,11 @@ export function AuthShell({
             <div className="brand-mark">CA</div>
             <div>
               <h1>CatatAgen</h1>
-              <p>POS Retail & Ledger Agen Mikro</p>
+              <p>POS Retail & Pencatatan Agen Mikro</p>
             </div>
           </div>
           <div className="login-copy">
-            <p className="eyebrow">Local-first Desktop</p>
+            <p className="eyebrow">Aplikasi Lokal Desktop</p>
             <h2>{isSetup ? "Siapkan toko pertama Anda" : "Selamat datang kembali"}</h2>
             <p>Kelola kasir POS, layanan agen non-API, saldo virtual, stok produk, dan buku utang dalam satu aplikasi ringan.</p>
           </div>
@@ -78,7 +78,7 @@ export function AuthShell({
             </label>
             <button className="login-submit" type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : <>Masuk <ArrowRight size={20} /></>}</button>
           </form>
-          <div className="status-line">{message || "Database lokal siap digunakan."}</div>
+          <div className="status-line">{message || "Data lokal siap digunakan."}</div>
         </div>
       </section>
     </main>

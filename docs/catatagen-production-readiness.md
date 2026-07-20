@@ -19,7 +19,7 @@ Electron tetap jalur production sampai checklist berikut lolos di Windows.
 - [ ] App bisa dibuka setelah install tanpa Node.js.
 - [ ] Database dibuat di app data folder yang benar.
 
-### Data & Ledger
+### Data & Pencatatan
 
 - [ ] POS tunai menambah Kas Tunai.
 - [ ] POS transfer menambah rekening penerima.
@@ -27,9 +27,9 @@ Electron tetap jalur production sampai checklist berikut lolos di Windows.
 - [ ] Stok berkurang sesuai quantity.
 - [ ] Mutasi saldo tercatat untuk semua perubahan saldo.
 - [ ] Saldo tidak bisa minus jika tidak diizinkan.
-- [ ] Backup database berhasil.
-- [ ] Restore database berhasil.
-- [ ] Backup otomatis sebelum restore berhasil.
+- [ ] Cadangan database berhasil.
+- [ ] Pulihkan database berhasil.
+- [ ] Cadangan otomatis sebelum pulihkan berhasil.
 
 ### Kasir
 
@@ -47,7 +47,7 @@ Electron tetap jalur production sampai checklist berikut lolos di Windows.
 - [ ] Admin bisa mengelola rekening/saldo.
 - [ ] Admin bisa membuat user kasir.
 - [ ] Admin bisa melihat laporan.
-- [ ] Admin bisa export CSV.
+- [ ] Admin bisa unduh CSV.
 - [ ] Admin bisa melihat log aktivitas.
 
 ### Struk & Printer
@@ -71,7 +71,7 @@ Electron tetap jalur production sampai checklist berikut lolos di Windows.
 
 ### Observability
 
-- [ ] Aktivitas penting masuk Log Aktivitas.
+- [ ] Aktivitas penting masuk Riwayat Aktivitas.
 - [ ] Error user-facing jelas dan bahasa sederhana.
 - [ ] Log teknis bisa membantu support.
 
@@ -105,7 +105,7 @@ Tauri boleh menjadi jalur utama CatatAgen jika:
 
 1. installer Windows berhasil,
 2. alur kasir lolos tes manual,
-3. backup/restore lolos tes manual,
+3. cadangan/pulihkan lolos tes manual,
 4. print struk lolos tes printer nyata,
 5. role admin/kasir aman,
 6. tidak ada crash/blocker selama uji operasional.

@@ -243,7 +243,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
     case "list_database_backups":
       return [...backups] as T;
     case "restore_database_backup":
-      log("backup", `Database direstore dari ${payload.path}`, "WARN");
+      log("backup", `Database dipulihkan dari ${payload.path}`, "WARN");
       return true as T;
     case "list_app_logs":
       return [...logs] as T;

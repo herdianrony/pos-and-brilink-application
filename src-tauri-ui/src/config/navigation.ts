@@ -10,6 +10,6 @@ export const navItems: Array<{ id: ViewKey; label: string; icon: IconName; admin
   { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
   { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
   { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
-  { id: "logs", label: "Log Aktivitas", icon: "logs", adminOnly: true },
+  { id: "logs", label: "Riwayat Aktivitas", icon: "logs", adminOnly: true },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];

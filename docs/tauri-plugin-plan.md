@@ -6,8 +6,8 @@ Dokumen ini mencatat plugin Tauri v2 yang sudah dipakai, yang belum perlu, dan y
 
 | Plugin / Pendekatan | Status | Kegunaan |
 |---|---:|---|
-| `tauri-plugin-dialog` | Sudah | Fondasi dialog file/open/save untuk backup/restore/export berikutnya. |
-| `tauri-plugin-fs` | Sudah | Fondasi akses file untuk backup/restore/export berikutnya. |
+| `tauri-plugin-dialog` | Sudah | Fondasi dialog file/open/save untuk cadangan/pulihkan/unduh berikutnya. |
+| `tauri-plugin-fs` | Sudah | Fondasi akses file untuk cadangan/pulihkan/unduh berikutnya. |
 | `tauri-plugin-log` | Sudah | Logging aplikasi Tauri. Panel log belum dibuat. |
 | `tauri-plugin-opener` | Sudah | Buka file/URL eksternal di fase berikutnya. |
 | `tauri-plugin-single-instance` | Sudah | Mencegah aplikasi dibuka ganda. |
@@ -21,7 +21,7 @@ Dokumen ini mencatat plugin Tauri v2 yang sudah dipakai, yang belum perlu, dan y
 | `tauri-plugin-sql` | Tidak dipakai | Tidak diperlukan karena backend memakai `rusqlite` langsung. Ini lebih cocok untuk validasi ledger dan transaksi di Rust. |
 | `tauri-plugin-updater` | Ditunda | Baru dipasang setelah installer/release channel stabil. |
 | `tauri-plugin-os` | Disarankan nanti | Untuk halaman diagnosa perangkat/support. |
-| `tauri-plugin-notification` | Disarankan nanti | Untuk notifikasi lokal: stok rendah, backup berhasil, reminder. |
+| `tauri-plugin-notification` | Disarankan nanti | Untuk notifikasi lokal: stok rendah, cadangan berhasil, reminder. |
 | Clipboard plugin | Opsional | Saat ini memakai `navigator.clipboard` untuk salin reminder/ringkasan. Jika WebView bermasalah, ganti ke plugin clipboard. |
 | `tauri-plugin-store` | Disarankan nanti | Untuk preferensi ringan: printer default, ukuran struk, preferensi UI. |
 | `tauri-plugin-stronghold` | Ditunda | Untuk menyimpan secret/token jika nanti ada sync SaaS/license. |
@@ -43,8 +43,8 @@ Tambahkan bila diperlukan:
 Tetap pakai:
 
 - `rusqlite` langsung untuk database,
-- `dialog` + `fs` untuk backup/restore,
-- `opener` untuk membuka file export.
+- `dialog` + `fs` untuk cadangan/pulihkan,
+- `opener` untuk membuka file unduh.
 
 ### Fase Release Production
 

@@ -23,10 +23,10 @@ export function mutationLabel(type: string) {
     pos_qris_in: "POS QRIS",
     transfer_out: "Transfer Keluar",
     transfer_in: "Transfer Masuk",
-    owner_draw: "Prive Owner",
-    bank_fee: "Biaya Bank/MDR",
-    agent_cash_effect: "Efek Kas Agen",
-    agent_bank_effect: "Efek Rekening Agen",
+    owner_draw: "Ambil Uang Owner",
+    bank_fee: "Potongan Bank/QRIS",
+    agent_cash_effect: "Perubahan Kas Agen",
+    agent_bank_effect: "Perubahan Rekening Agen",
   };
   return labels[type] || type;
 }

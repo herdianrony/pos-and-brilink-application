@@ -229,7 +229,7 @@ export default function App() {
   function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
     try {
       exportCsvFile(filename, rows);
-      setMessage(`Export ${filename} berhasil dibuat`);
+      setMessage(`Unduh ${filename} berhasil dibuat`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     }

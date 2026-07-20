@@ -3,7 +3,7 @@ export function exportCsvFile(
   rows: Array<Record<string, string | number | null | undefined>>,
 ) {
   if (rows.length === 0) {
-    throw new Error("Tidak ada data untuk diexport");
+    throw new Error("Tidak ada data untuk diunduh");
   }
   const headers = Object.keys(rows[0]);
   const escape = (value: string | number | null | undefined) => `"${String(value ?? "").replaceAll('"', '""')}"`;

@@ -26,13 +26,13 @@ export function useBackupRestore({
   }
 
   async function handleRestoreBackup(backup: BackupRow) {
-    if (!confirm(`Restore database dari ${backup.name}? Data saat ini akan dibackup otomatis sebelum restore.`)) return;
+    if (!confirm(`Pulihkan database dari ${backup.name}? Data saat ini akan dibackup otomatis sebelum pulihkan.`)) return;
     if (saving) return;
     setSaving(true);
     try {
       await restoreDatabaseBackup({ path: backup.path });
       await onRefresh();
-      onMessage("Restore database berhasil. Jika ada data yang belum berubah, tutup dan buka ulang aplikasi.");
+      onMessage("Pulihkan database berhasil. Jika ada data yang belum berubah, tutup dan buka ulang aplikasi.");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : String(error));
     } finally {

@@ -24,8 +24,8 @@ export function useCashActions({
   const [accountForm, setAccountForm] = useState({ code: "bri", name: "Rekening BRI", initial_balance: "0", min_balance: "0" });
   const [adjustForm, setAdjustForm] = useState({ account_id: "", amount: "0", notes: "Penyesuaian saldo" });
   const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
-  const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
-  const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
+  const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Ambil Uang Owner" });
+  const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Potongan Bank / QRIS" });
 
   function openAddAccount() {
     setCashModal("account");
@@ -142,7 +142,7 @@ export function useCashActions({
       setBankFeeForm({ ...bankFeeForm, amount: "0" });
       setCashModal(null);
       await onRefresh();
-      onMessage("Biaya bank/MDR berhasil dicatat");
+      onMessage("Potongan bank/QRIS berhasil dicatat");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : String(error));
     } finally {

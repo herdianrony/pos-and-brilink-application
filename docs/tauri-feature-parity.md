@@ -18,7 +18,7 @@ Status:
 - [ ] Build Windows i686 eksperimen jalan.
 - [~] SQLite lokal dibuat di app data folder — command `db_init` sudah membuat database fresh.
 - [~] Migration fresh schema jalan — tabel awal user, akun, produk, kategori, transaksi, mutasi sudah dibuat.
-- [~] Logging lokal jalan — plugin log dan halaman Log Aktivitas sudah ada.
+- [~] Logging lokal jalan — plugin log dan halaman Riwayat Aktivitas sudah ada.
 - [~] Single instance jalan — plugin single instance sudah dipasang.
 - [~] Window state tersimpan — plugin window state sudah dipasang.
 
@@ -71,7 +71,7 @@ Status:
 - [~] Transfer antar akun — backend/UI awal sudah ada.
 - [~] Sesuaikan saldo — penyesuaian saldo plus/minus sudah ada.
 - [~] Ambil profit owner — backend/UI awal `owner_draw` sudah ada.
-- [~] Biaya admin bank/MDR QRIS — backend/UI awal `bank_fee` sudah ada.
+- [~] Biaya admin bank/potongan QRIS — backend/UI awal `bank_fee` sudah ada.
 - [~] Mutasi saldo — daftar mutasi saldo terakhir sudah ada.
 - [ ] Proteksi saldo minus.
 
@@ -107,16 +107,16 @@ Status:
 - [~] Rekening koran — ringkasan akun dan mutasi saldo sudah ada.
 - [~] Laporan POS — ringkasan omzet/profit POS basic sudah ada.
 - [ ] Dashboard.
-- [ ] Export CSV.
-- [ ] Export PDF.
+- [ ] Unduh CSV.
+- [ ] Unduh PDF.
 - [ ] Print laporan.
 
-## Backup & Restore
+## Cadangkan & Pulihkan Data
 
-- [~] Export database — backup lokal database sudah ada.
-- [~] Restore database — restore dari daftar backup lokal sudah ada.
-- [~] Validasi file backup — restore dibatasi ke folder backup aplikasi.
-- [~] Backup sebelum restore — aplikasi membuat backup cadangan sebelum restore.
+- [~] Unduh database — cadangan lokal database sudah ada.
+- [~] Pulihkan database — pulihkan dari daftar cadangan lokal sudah ada.
+- [~] Validasi file cadangan — pulihkan dibatasi ke folder cadangan aplikasi.
+- [~] Cadangan sebelum pulihkan — aplikasi membuat cadangan cadangan sebelum pulihkan.
 
 ## Printer
 
