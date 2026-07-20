@@ -55,7 +55,7 @@ Status:
 
 ## Produk
 
-- [~] CRUD produk — create/list produk sudah ada, edit/delete belum.
+- [~] CRUD produk — create/list/edit/nonaktif produk sudah ada, delete permanen belum.
 - [~] Kategori produk — create/list kategori sudah ada, edit/delete belum.
 - [~] Barcode — field barcode sudah ada, scanner/search belum.
 - [~] Harga beli/jual — field dan kalkulasi profit POS tunai sudah ada.
@@ -96,7 +96,7 @@ Status:
 - [~] Riwayat transaksi — list 100 transaksi terakhir sudah ada di POC Tauri.
 - [ ] Filter POS/agen.
 - [ ] Filter status.
-- [ ] Detail transaksi.
+- [~] Detail transaksi — detail item POS sudah bisa dilihat dari Riwayat.
 - [ ] Rekening koran.
 - [ ] Laporan POS.
 - [ ] Dashboard.

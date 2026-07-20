@@ -87,6 +87,16 @@ export interface TransactionRow {
   created_at: string;
 }
 
+export interface TransactionItemRow {
+  id: number;
+  transaction_id: number;
+  product_id?: number | null;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
 export function healthCheck() {
   return invoke<HealthCheck>("health_check");
 }
@@ -158,7 +168,11 @@ export function listTransactions() {
   return invoke<TransactionRow[]>("list_transactions");
 }
 
-export function createProduct(payload: {
+export function listTransactionItems(payload: { transaction_id: number }) {
+  return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
+}
+
+export type ProductInput = {
   name: string;
   barcode?: string;
   category_id?: number | null;
@@ -167,8 +181,18 @@ export function createProduct(payload: {
   stock: number;
   min_stock: number;
   unit?: string;
-}) {
+};
+
+export function createProduct(payload: ProductInput) {
   return invoke<ProductRow>("create_product", { payload });
+}
+
+export function updateProduct(payload: ProductInput & { id: number }) {
+  return invoke<ProductRow>("update_product", { payload });
+}
+
+export function deactivateProduct(payload: { id: number }) {
+  return invoke<boolean>("deactivate_product", { payload });
 }
 
 export function checkoutPosCash(payload: {

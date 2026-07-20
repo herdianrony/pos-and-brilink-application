@@ -154,6 +154,24 @@ struct ProductPayload {
 }
 
 #[derive(Debug, Deserialize)]
+struct ProductUpdatePayload {
+    id: i64,
+    name: String,
+    barcode: Option<String>,
+    category_id: Option<i64>,
+    buy_price: f64,
+    sell_price: f64,
+    stock: i64,
+    min_stock: i64,
+    unit: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProductIdPayload {
+    id: i64,
+}
+
+#[derive(Debug, Deserialize)]
 struct PosCheckoutItemPayload {
     product_id: i64,
     quantity: i64,
@@ -191,6 +209,22 @@ struct TransactionRow {
     status: String,
     notes: Option<String>,
     created_at: String,
+}
+
+#[derive(Debug, Serialize)]
+struct TransactionItemRow {
+    id: i64,
+    transaction_id: i64,
+    product_id: Option<i64>,
+    product_name: String,
+    quantity: i64,
+    unit_price: f64,
+    subtotal: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct TransactionIdPayload {
+    transaction_id: i64,
 }
 
 fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -811,6 +845,48 @@ fn create_product(app: AppHandle, payload: ProductPayload) -> Result<ProductRow,
     })
 }
 
+
+#[tauri::command]
+fn update_product(app: AppHandle, payload: ProductUpdatePayload) -> Result<ProductRow, String> {
+    let conn = init_schema(&app)?;
+    let name = payload.name.trim().to_string();
+    if name.is_empty() {
+        return Err("Nama produk wajib diisi".into());
+    }
+    if payload.buy_price < 0.0 || payload.sell_price < 0.0 || payload.stock < 0 || payload.min_stock < 0 {
+        return Err("Harga dan stok tidak boleh minus".into());
+    }
+    let barcode = trim_optional(payload.barcode);
+    let unit = trim_optional(payload.unit).unwrap_or_else(|| "pcs".to_string());
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        r#"
+        UPDATE products
+        SET name = ?1, barcode = ?2, category_id = ?3, buy_price = ?4, sell_price = ?5,
+            stock = ?6, min_stock = ?7, unit = ?8, updated_at = ?9
+        WHERE id = ?10 AND is_active = 1
+        "#,
+        params![name, barcode, payload.category_id, payload.buy_price, payload.sell_price, payload.stock, payload.min_stock, unit, now, payload.id],
+    )
+    .map_err(|e| e.to_string())?;
+    if conn.changes() == 0 {
+        return Err("Produk tidak ditemukan".into());
+    }
+    let category_name = if let Some(category_id) = payload.category_id {
+        conn.query_row("SELECT name FROM product_categories WHERE id = ?1", params![category_id], |row| row.get::<_, String>(0)).ok()
+    } else { None };
+    Ok(ProductRow { id: payload.id, name, barcode, category_id: payload.category_id, category_name, buy_price: payload.buy_price, sell_price: payload.sell_price, stock: payload.stock, min_stock: payload.min_stock, unit, is_active: true })
+}
+
+#[tauri::command]
+fn deactivate_product(app: AppHandle, payload: ProductIdPayload) -> Result<bool, String> {
+    let conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    conn.execute("UPDATE products SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, payload.id])
+        .map_err(|e| e.to_string())?;
+    Ok(conn.changes() > 0)
+}
+
 #[tauri::command]
 fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
     let conn = init_schema(&app)?;
@@ -844,6 +920,31 @@ fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
     for row in rows {
         out.push(row.map_err(|e| e.to_string())?);
     }
+    Ok(out)
+}
+
+
+#[tauri::command]
+fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Result<Vec<TransactionItemRow>, String> {
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT id, transaction_id, product_id, product_name, quantity, unit_price, subtotal FROM transaction_items WHERE transaction_id = ?1 ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(params![payload.transaction_id], |row| {
+            Ok(TransactionItemRow {
+                id: row.get(0)?,
+                transaction_id: row.get(1)?,
+                product_id: row.get(2)?,
+                product_name: row.get(3)?,
+                quantity: row.get(4)?,
+                unit_price: row.get(5)?,
+                subtotal: row.get(6)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
     Ok(out)
 }
 
@@ -936,7 +1037,10 @@ pub fn run() {
             create_category,
             list_products,
             create_product,
+            update_product,
+            deactivate_product,
             list_transactions,
+            list_transaction_items,
             checkout_pos_cash,
         ])
         .run(tauri::generate_context!())

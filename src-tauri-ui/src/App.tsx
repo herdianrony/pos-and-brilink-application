@@ -5,6 +5,7 @@ import {
   CategoryRow,
   ProductRow,
   PublicUser,
+  TransactionItemRow,
   TransactionRow,
   adjustAccountBalance,
   bankFee,
@@ -13,17 +14,20 @@ import {
   createAdmin,
   createCategory,
   createProduct,
+  deactivateProduct,
   dbInit,
   healthCheck,
   listAccountMutations,
   listAccounts,
   listCategories,
   listProducts,
+  listTransactionItems,
   listTransactions,
   login,
   ownerDraw,
   setupStatus,
   transferAccounts,
+  updateProduct,
 } from "./api";
 
 function formatRupiah(value: number) {
@@ -67,7 +71,10 @@ export default function App() {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
+  const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "qris">("cash");
@@ -191,7 +198,7 @@ export default function App() {
     event.preventDefault();
     setSaving(true);
     try {
-      await createProduct({
+      const payload = {
         name: productForm.name,
         barcode: productForm.barcode,
         category_id: productForm.category_id ? Number(productForm.category_id) : null,
@@ -200,10 +207,49 @@ export default function App() {
         stock: Number(productForm.stock || 0),
         min_stock: Number(productForm.min_stock || 0),
         unit: productForm.unit || "pcs",
-      });
-      setProductForm({ name: "", barcode: "", category_id: "", buy_price: "0", sell_price: "0", stock: "0", min_stock: "5", unit: "pcs" });
+      };
+      if (editingProductId) {
+        await updateProduct({ ...payload, id: editingProductId });
+      } else {
+        await createProduct(payload);
+      }
+      clearProductForm();
       await refreshData();
-      setMessage("Produk berhasil ditambahkan");
+      setMessage(editingProductId ? "Produk berhasil diperbarui" : "Produk berhasil ditambahkan");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function clearProductForm() {
+    setEditingProductId(null);
+    setProductForm({ name: "", barcode: "", category_id: "", buy_price: "0", sell_price: "0", stock: "0", min_stock: "5", unit: "pcs" });
+  }
+
+  function startEditProduct(product: ProductRow) {
+    setEditingProductId(product.id);
+    setProductForm({
+      name: product.name,
+      barcode: product.barcode || "",
+      category_id: product.category_id ? String(product.category_id) : "",
+      buy_price: String(product.buy_price),
+      sell_price: String(product.sell_price),
+      stock: String(product.stock),
+      min_stock: String(product.min_stock),
+      unit: product.unit || "pcs",
+    });
+    setActiveView("products");
+  }
+
+  async function removeProduct(product: ProductRow) {
+    if (!confirm(`Nonaktifkan produk ${product.name}?`)) return;
+    setSaving(true);
+    try {
+      await deactivateProduct({ id: product.id });
+      await refreshData();
+      setMessage("Produk berhasil dinonaktifkan");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -363,6 +409,17 @@ export default function App() {
     );
   }
 
+
+  async function openTransactionDetail(transaction: TransactionRow) {
+    setSelectedTransaction(transaction);
+    try {
+      setSelectedTransactionItems(await listTransactionItems({ transaction_id: transaction.id }));
+    } catch (error) {
+      setSelectedTransactionItems([]);
+      setMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function renderDashboard() {
     return (
       <>
@@ -414,7 +471,7 @@ export default function App() {
             </div>
             <div className="right">
               <strong>{formatRupiah(product.sell_price)}</strong>
-              {showSellButton && <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Tambah</button>}
+              {showSellButton ? <button onClick={() => addToCart(product)} disabled={product.stock <= 0}>Tambah</button> : <><button className="secondary" onClick={() => startEditProduct(product)}>Edit</button><button className="danger" onClick={() => removeProduct(product)}>Nonaktifkan</button></>}
             </div>
           </div>
         ))}
@@ -465,7 +522,7 @@ export default function App() {
         <div className="page-title"><div><p className="eyebrow">Data Master</p><h1>Produk & Kategori</h1></div></div>
         <section className="grid workspace-grid">
           <div className="card">
-            <h2>Tambah Produk</h2>
+            <h2>{editingProductId ? "Edit Produk" : "Tambah Produk"}</h2>
             <form onSubmit={submitCategory} className="inline-form">
               <input placeholder="Kategori baru" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
               <button type="submit" disabled={saving}>Tambah Kategori</button>
@@ -480,10 +537,11 @@ export default function App() {
               <label>Harga Jual<input type="number" min="0" value={productForm.sell_price} onChange={(e) => setProductForm({ ...productForm, sell_price: e.target.value })} /></label>
               <label>Stok<input type="number" min="0" value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} /></label>
               <label>Satuan<input value={productForm.unit} onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })} /></label>
-              <button type="submit" disabled={saving}>Tambah Produk</button>
+              <button type="submit" disabled={saving}>{editingProductId ? "Simpan Perubahan" : "Tambah Produk"}</button>
+              {editingProductId && <button type="button" className="secondary" onClick={clearProductForm}>Batal Edit</button>}
             </form>
           </div>
-          <div className="card"><h2>Daftar Produk</h2>{productList(true)}</div>
+          <div className="card"><h2>Daftar Produk</h2>{productList(false)}</div>
         </section>
       </>
     );
@@ -493,17 +551,38 @@ export default function App() {
     return (
       <>
         <div className="page-title"><div><p className="eyebrow">Audit</p><h1>Riwayat Transaksi</h1></div></div>
-        <section className="card history-card">
-          {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
-            <div className="history-list">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="history-row">
-                  <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
-                  <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
-                </div>
-              ))}
-            </div>
-          )}
+        <section className="grid workspace-grid">
+          <div className="card history-card">
+            <h2>Daftar Transaksi</h2>
+            {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
+              <div className="history-list">
+                {transactions.map((transaction) => (
+                  <button key={transaction.id} className="history-row clickable-row" onClick={() => openTransactionDetail(transaction)}>
+                    <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {transaction.payment_method.toUpperCase()} • {transaction.status}</small></div>
+                    <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="card">
+            <h2>Detail Transaksi</h2>
+            {!selectedTransaction ? <p>Pilih transaksi untuk melihat detail.</p> : (
+              <div className="detail-panel">
+                <div className="db-box"><strong>{selectedTransaction.invoice_no}</strong><span>{selectedTransaction.created_at}</span></div>
+                <div className="row"><span>Metode</span><strong>{selectedTransaction.payment_method.toUpperCase()}</strong></div>
+                <div className="row"><span>Status</span><strong>{selectedTransaction.status}</strong></div>
+                <div className="row"><span>Total</span><strong>{formatRupiah(selectedTransaction.total_amount)}</strong></div>
+                <h2>Item</h2>
+                {selectedTransactionItems.length === 0 ? <p>Belum ada item detail.</p> : selectedTransactionItems.map((item) => (
+                  <div key={item.id} className="row rich-row">
+                    <div><strong>{item.product_name}</strong><small>{item.quantity} x {formatRupiah(item.unit_price)}</small></div>
+                    <strong>{formatRupiah(item.subtotal)}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       </>
     );
@@ -633,6 +712,7 @@ export default function App() {
           <small>Login sebagai</small>
           <strong>{user.name}</strong>
           <span>{user.role}</span>
+          <button className="secondary logout-button" onClick={() => { setUser(null); setActiveView("dashboard"); }}>Keluar</button>
         </div>
       </aside>
       <section className="content-shell">
