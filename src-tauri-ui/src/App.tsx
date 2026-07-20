@@ -45,6 +45,13 @@ import {
 } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
+import { DashboardPage } from "./pages/DashboardPage";
+import { DebtsPage } from "./pages/DebtsPage";
+import { HistoryPage } from "./pages/HistoryPage";
+import { LogsPage } from "./pages/LogsPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { StatementPage } from "./pages/StatementPage";
 import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
@@ -619,281 +626,18 @@ export default function App() {
     }
   }
 
-  function renderDashboard() {
-    return (
-      <>
-        <div className="hero-panel">
-          <div>
-            <p className="eyebrow">CatatAgen Local</p>
-            <h1>Dashboard Operasional</h1>
-            <p>POS retail, layanan agen non-API, saldo virtual, dan buku utang dalam satu aplikasi ringan.</p>
-          </div>
-          <div className="hero-actions">
-            <button onClick={() => setActiveView("pos")}>Buka Kasir</button>
-            <button className="secondary" onClick={bootstrap} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
-          </div>
-        </div>
-        <section className="stat-grid">
-          <div className="stat-card green"><span>Saldo Kas</span><strong>{formatRupiah(totalCash)}</strong><small>Total saldo akun aktif</small></div>
-          <div className="stat-card blue"><span>Produk</span><strong>{products.length}</strong><small>{lowStockCount} stok menipis</small></div>
-          <div className="stat-card amber"><span>Transaksi</span><strong>{todayTransactions}</strong><small>Riwayat POC tersimpan</small></div>
-          <div className="stat-card purple"><span>Keranjang</span><strong>{formatRupiah(cartTotal)}</strong><small>{cart.length} item siap checkout</small></div>
-        </section>
-        <section className="quick-launch-grid">
-          <button onClick={() => setActiveView("pos")} className="launch-card"><Icon name="pos" /><strong>Kasir POS</strong><span>Jual barang fisik</span></button>
-          <button onClick={() => setActiveView("brilink")} className="launch-card"><Icon name="brilink" /><strong>Layanan Agen</strong><span>Catat transaksi non-API</span></button>
-          <button onClick={() => setActiveView("debts")} className="launch-card"><Icon name="debts" /><strong>Buku Utang</strong><span>Piutang & reminder</span></button>
-          <button onClick={() => setActiveView("cash")} className="launch-card"><Icon name="cash" /><strong>Kas & Saldo</strong><span>Saldo virtual</span></button>
-        </section>
-        <section className="grid dashboard-grid">
-          <div className="card">
-            <div className="card-header"><div><h2>Transaksi Terakhir</h2><p>Aktivitas POS dan layanan agen terbaru.</p></div></div>
-            {filteredTransactions.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi</strong><span>Mulai dari Kasir POS atau Layanan Agen.</span></div> : filteredTransactions.slice(0, 5).map((transaction) => (
-              <div key={transaction.id} className="row rich-row">
-                <div><strong>{transaction.invoice_no}</strong><small>{paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
-                <strong>{formatRupiah(transaction.total_amount)}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="card">
-            <div className="card-header"><div><h2>Perlu Perhatian</h2><p>Stok menipis dan posisi saldo.</p></div></div>
-            {products.filter((product) => product.stock <= product.min_stock).slice(0, 4).map((product) => (
-              <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className="status-badge warning">Stok rendah</span></div>
-            ))}
-            {lowStockCount === 0 && <div className="empty-state compact"><strong>Stok aman</strong><span>Tidak ada produk di bawah minimum.</span></div>}
-            <div className="divider" />
-            {accounts.slice(0, 3).map((account) => (
-              <div key={account.id} className="row rich-row">
-                <div><strong>{account.name}</strong><small>{account.code}</small></div>
-                <strong>{formatRupiah(account.balance)}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  function renderHistory() {
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Audit</p><h1>Riwayat Transaksi</h1></div></div>
-        <div className="page-help"><strong>Cara pakai:</strong><span>Klik transaksi di kiri untuk melihat detail item di kanan.</span></div>
-        <section className="grid workspace-grid">
-          <div className="card history-card">
-            <h2>Daftar Transaksi</h2>
-            {transactions.length === 0 ? <p>Belum ada transaksi.</p> : (
-              <div className="history-list">
-                {filteredTransactions.map((transaction) => (
-                  <button key={transaction.id} className="history-row clickable-row" onClick={() => openTransactionDetail(transaction)}>
-                    <div><strong>{transaction.invoice_no}</strong><small>{transaction.transaction_type.toUpperCase()} • {paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
-                    <div className="right history-amount"><span>{transaction.created_at}</span><strong>{formatRupiah(transaction.total_amount)}</strong></div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="card">
-            <h2>Detail Transaksi</h2>
-            {!selectedTransaction ? <p>Pilih transaksi untuk melihat detail.</p> : (
-              <div className="detail-panel">
-                <div className="db-box"><strong>{selectedTransaction.invoice_no}</strong><span>{selectedTransaction.created_at}</span></div>
-                <div className="row"><span>Metode</span><strong>{selectedTransaction.payment_method.toUpperCase()}</strong></div>
-                <div className="row"><span>Status</span><strong>{selectedTransaction.status}</strong></div>
-                <div className="row"><span>Total</span><strong>{formatRupiah(selectedTransaction.total_amount)}</strong></div>
-                <h2>Item</h2>
-                {selectedTransactionItems.length === 0 ? <p>Belum ada item detail.</p> : selectedTransactionItems.map((item) => (
-                  <div key={item.id} className="row rich-row">
-                    <div><strong>{item.product_name}</strong><small>{item.quantity} x {formatRupiah(item.unit_price)}</small></div>
-                    <strong>{formatRupiah(item.subtotal)}</strong>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  function renderDebts() {
-    const visibleDebts = filteredDebts;
-    const openDebts = visibleDebts.filter((debt) => debt.status !== "paid");
-    const totalOutstanding = debts.filter((debt) => debt.status !== "paid").reduce((sum, debt) => sum + debt.outstanding, 0);
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Piutang</p><h1>Buku Utang</h1></div><div className="total-row mini-total"><span>Total Belum Lunas</span><strong>{formatRupiah(totalOutstanding)}</strong></div></div>
-        <div className="page-help"><strong>Alur utang:</strong><span>Catat utang saat pelanggan belum bayar.</span><span>Catat cicilan saat pelanggan membayar.</span><span>Salin reminder untuk kirim via WhatsApp.</span></div>
-        <section className="grid workspace-grid">
-          <div className="card">
-            <h2>Tambah Utang Pelanggan</h2>
-            <form onSubmit={submitDebt} className="product-form">
-              <label>Nama Pelanggan<input value={debtForm.customer_name} onChange={(e) => setDebtForm({ ...debtForm, customer_name: e.target.value })} /></label>
-              <label>No WhatsApp<input value={debtForm.phone} onChange={(e) => setDebtForm({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
-              <label>Nominal Utang<CurrencyInput value={debtForm.amount} onChange={(value) => setDebtForm({ ...debtForm, amount: value })} /></label>
-              <label>Catatan<input value={debtForm.notes} onChange={(e) => setDebtForm({ ...debtForm, notes: e.target.value })} /></label>
-              <button type="submit" disabled={saving}>Simpan Utang</button>
-            </form>
-            <h2>Catat Cicilan / Pelunasan</h2>
-            <form onSubmit={submitDebtPayment} className="product-form">
-              <label>Pelanggan<select value={debtPaymentForm.debt_id} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, debt_id: e.target.value })}>
-                <option value="">Pilih utang</option>
-                {openDebts.map((debt) => <option key={debt.id} value={debt.id}>{debt.customer_name} — {formatRupiah(debt.outstanding)}</option>)}
-              </select></label>
-              <label>Nominal Bayar<CurrencyInput value={debtPaymentForm.amount} onChange={(value) => setDebtPaymentForm({ ...debtPaymentForm, amount: value })} /></label>
-              <label className="span-2">Catatan<input value={debtPaymentForm.notes} onChange={(e) => setDebtPaymentForm({ ...debtPaymentForm, notes: e.target.value })} /></label>
-              <button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</button>
-            </form>
-          </div>
-          <div className="card">
-            <h2>Daftar Utang</h2>
-            {visibleDebts.length === 0 ? <div className="empty-state"><strong>Belum ada data utang</strong><span>Catat utang pelanggan atau ubah pencarian.</span></div> : visibleDebts.map((debt) => (
-              <div key={debt.id} className="debt-row">
-                <div><strong>{debt.customer_name}</strong><small>{debt.phone || "Tanpa nomor"} • {debt.status === "paid" ? "Lunas" : "Belum lunas"}</small><small>{debt.notes || "-"}</small></div>
-                <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small><button className="secondary" onClick={() => copyDebtReminder(debt)} disabled={debt.status === "paid"}>Salin Reminder</button></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  function renderRekeningKoran() {
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Mutasi</p><h1>Rekening Koran</h1></div><button className="secondary" onClick={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Export CSV</button></div>
-        <section className="grid dashboard-grid">
-          <div className="card">
-            <h2>Ringkasan Saldo</h2>
-            {accounts.map((account) => (
-              <div key={account.id} className="row rich-row"><div><strong>{account.name}</strong><small>{account.code}</small></div><strong>{formatRupiah(account.balance)}</strong></div>
-            ))}
-          </div>
-          <div className="card">
-            <h2>Mutasi Terakhir</h2>
-            {accountMutations.length === 0 ? <p>Belum ada mutasi.</p> : accountMutations.map((mutation) => (
-              <div key={mutation.id} className="row rich-row">
-                <div><strong>{mutation.account_name}</strong><small>{mutationLabel(mutation.mutation_type)} • {mutation.created_at}</small></div>
-                <div className="amount-stack"><strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong><small>{mutation.notes || "-"}</small></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  function renderReports() {
-    const posTransactions = transactions.filter((transaction) => transaction.transaction_type === "pos");
-    const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
-    const posRevenue = posTransactions.reduce((sum, transaction) => sum + transaction.total_amount, 0);
-    const posProfit = posTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
-    const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Analitik</p><h1>Laporan</h1></div><button className="secondary" onClick={() => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])}>Export CSV</button></div>
-        <section className="stat-grid">
-          <div className="stat-card green"><span>Omzet POS</span><strong>{formatRupiah(posRevenue)}</strong><small>{posTransactions.length} transaksi POS</small></div>
-          <div className="stat-card blue"><span>Profit POS</span><strong>{formatRupiah(posProfit)}</strong><small>Dari margin produk</small></div>
-          <div className="stat-card amber"><span>Fee Agen</span><strong>{formatRupiah(agentProfit)}</strong><small>{agentTransactions.length} transaksi agen</small></div>
-          <div className="stat-card purple"><span>Total Mutasi</span><strong>{accountMutations.length}</strong><small>Mutasi saldo tersimpan</small></div>
-        </section>
-        <section className="card">
-          <h2>Catatan Export</h2>
-          <p>Export CSV/PDF native Tauri akan dibuat pada tahap berikutnya. Data laporan inti sudah tersedia di database lokal.</p>
-        </section>
-      </>
-    );
-  }
-
-
-  function renderLogs() {
-    const visibleLogs = normalizedSearch
-      ? appLogs.filter((log) => [log.level, log.source, log.message, log.created_at].join(" ").toLowerCase().includes(normalizedSearch))
-      : appLogs;
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Monitoring</p><h1>Log Aktivitas</h1></div><button className="secondary" onClick={bootstrap}>Refresh Log</button></div>
-        <div className="page-help"><strong>Tujuan log:</strong><span>Melihat aktivitas penting seperti checkout, backup, restore, dan pembuatan user.</span></div>
-        <section className="card">
-          {visibleLogs.length === 0 ? <div className="empty-state"><strong>Belum ada log</strong><span>Log akan muncul setelah ada aktivitas penting.</span></div> : (
-            <div className="log-list">
-              {visibleLogs.map((log) => (
-                <div key={log.id} className="log-row">
-                  <span className={`log-level ${log.level.toLowerCase()}`}>{log.level}</span>
-                  <div><strong>{log.message}</strong><small>{log.source} • {log.created_at}</small></div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </>
-    );
-  }
-
-  function renderSettings() {
-    return (
-      <>
-        <div className="page-title"><div><p className="eyebrow">Sistem</p><h1>Pengaturan</h1></div></div>
-        <section className="grid workspace-grid">
-          <div className="card">
-            <div className="card-header"><div><h2>Manajemen User</h2><p>Buat akun kasir agar staf tidak memakai akun owner.</p></div></div>
-            <form onSubmit={submitUser} className="product-form">
-              <label>Nama<input value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} /></label>
-              <label>Username<input value={userForm.username} onChange={(e) => setUserForm({ ...userForm, username: e.target.value })} /></label>
-              <label>Password<input type="password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} /></label>
-              <label>Role<select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as "admin" | "kasir" })}>
-                <option value="kasir">Kasir / Staff</option>
-                <option value="admin">Owner / Admin</option>
-              </select></label>
-              <button type="submit" disabled={saving}>Buat User</button>
-            </form>
-            <div className="list">
-              {users.map((item) => <div key={item.id} className="row rich-row"><div><strong>{item.name}</strong><small>{item.username}</small></div><span className="role-badge">{item.role}</span></div>)}
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-header"><div><h2>Export Data</h2><p>Export CSV ringan untuk arsip manual.</p></div></div>
-            <div className="quick-actions export-actions">
-              <button className="secondary" onClick={() => exportCsv("transaksi-catatagen.csv", transactions.map((t) => ({ invoice: t.invoice_no, tipe: t.transaction_type, pelanggan: t.customer_name, total: t.total_amount, profit: t.profit, metode: t.payment_method, status: t.status, tanggal: t.created_at })))}>Export Transaksi</button>
-              <button className="secondary" onClick={() => exportCsv("mutasi-saldo-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Export Mutasi</button>
-              <button className="secondary" onClick={() => exportCsv("utang-catatagen.csv", debts.map((d) => ({ pelanggan: d.customer_name, phone: d.phone, total: d.amount, terbayar: d.paid_amount, sisa: d.outstanding, status: d.status, catatan: d.notes })))}>Export Utang</button>
-              <button className="secondary" onClick={() => exportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Export Produk</button>
-            </div>
-            <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
-          </div>
-          <div className="card span-all">
-            <div className="card-header"><div><h2>Backup & Restore</h2><p>Backup disimpan lokal di folder data aplikasi. Sebelum restore, aplikasi otomatis membuat backup cadangan.</p></div><button onClick={handleCreateBackup} disabled={saving}>Buat Backup</button></div>
-            {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada backup</strong><span>Klik Buat Backup untuk menyimpan salinan database.</span></div> : (
-              <div className="backup-list">
-                {backups.map((backup) => (
-                  <div key={backup.path} className="backup-row">
-                    <div><strong>{backup.name}</strong><small>{backup.path}</small><small>{Math.ceil(backup.size / 1024)} KB</small></div>
-                    <button className="secondary" onClick={() => handleRestoreBackup(backup)} disabled={saving}>Restore</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-
   function renderActiveView() {
     if (activeView === "pos") return <POSPage categories={categories} products={filteredProducts} cart={cart} cartTotal={cartTotal} paymentMethod={paymentMethod} settlementAccountId={settlementAccountId} settlementAccounts={settlementAccounts} saving={saving} posCategoryFilter={posCategoryFilter} onCategoryFilterChange={setPosCategoryFilter} onAddToCart={addToCart} onUpdateQty={updateCartQty} onPaymentMethodChange={setPaymentMethod} onSettlementAccountChange={setSettlementAccountId} onHoldCart={holdCart} onClearCart={clearCart} onSubmitCheckout={submitCheckout} />;
     if (activeView === "brilink") return <AgentServicesPage accounts={accounts} transactions={transactions} agentForm={agentForm} agentStep={agentStep} saving={saving} onAgentFormChange={setAgentForm} onAgentStepChange={setAgentStep} onApplyPreset={applyAgentPreset} onSubmitAgentTransaction={submitAgentTransaction} />;
     if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={() => { clearProductForm(); setShowProductModal(true); }} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
-    if (activeView === "history") return renderHistory();
-    if (activeView === "debts") return renderDebts();
-    if (activeView === "rekeningKoran") return renderRekeningKoran();
+    if (activeView === "history") return <HistoryPage transactions={filteredTransactions} selectedTransaction={selectedTransaction} selectedTransactionItems={selectedTransactionItems} onOpenDetail={openTransactionDetail} />;
+    if (activeView === "debts") return <DebtsPage debts={filteredDebts} debtForm={debtForm} debtPaymentForm={debtPaymentForm} saving={saving} onDebtFormChange={setDebtForm} onDebtPaymentFormChange={setDebtPaymentForm} onSubmitDebt={submitDebt} onSubmitDebtPayment={submitDebtPayment} onCopyReminder={copyDebtReminder} />;
+    if (activeView === "rekeningKoran") return <StatementPage accounts={accounts} mutations={accountMutations} onExportCsv={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))} />;
     if (activeView === "cash") return <CashBalancePage accounts={accounts} mutations={accountMutations} onAddAccount={() => setCashModal("account")} onTransfer={(account) => { if (account) setTransferForm({ ...transferForm, from_account_id: String(account.id) }); setCashModal("transfer"); }} onAdjust={(account) => { setAdjustForm({ ...adjustForm, account_id: String(account.id) }); setCashModal("adjust"); }} onOwnerDraw={(account) => { setOwnerDrawForm({ ...ownerDrawForm, account_id: String(account.id) }); setCashModal("ownerDraw"); }} onBankFee={(account) => { setBankFeeForm({ ...bankFeeForm, account_id: String(account.id) }); setCashModal("bankFee"); }} />;
-    if (activeView === "reports") return renderReports();
-    if (activeView === "logs") return renderLogs();
-    if (activeView === "settings") return renderSettings();
-    return renderDashboard();
+    if (activeView === "reports") return <ReportsPage transactions={transactions} mutations={accountMutations} onExportCsv={({ posRevenue, posProfit, agentProfit }) => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])} />;
+    if (activeView === "logs") return <LogsPage logs={normalizedSearch ? appLogs.filter((log) => [log.level, log.source, log.message, log.created_at].join(" ").toLowerCase().includes(normalizedSearch)) : appLogs} onRefresh={bootstrap} />;
+    if (activeView === "settings") return <SettingsPage users={users} userForm={userForm} saving={saving} transactions={transactions} mutations={accountMutations} debts={debts} products={products} backups={backups} dbPath={dbPath} onUserFormChange={setUserForm} onSubmitUser={submitUser} onExportCsv={exportCsv} onCreateBackup={handleCreateBackup} onRestoreBackup={handleRestoreBackup} />;
+    return <DashboardPage accounts={accounts} products={products} transactions={filteredTransactions} totalCash={totalCash} lowStockCount={lowStockCount} cartTotal={cartTotal} cartCount={cart.length} loading={loading} onNavigate={setActiveView} onRefresh={bootstrap} />;
   }
 
   if (setupNeeded) {
