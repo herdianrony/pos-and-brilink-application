@@ -113,10 +113,10 @@ Status:
 
 ## Backup & Restore
 
-- [ ] Export database.
-- [ ] Restore database.
-- [ ] Validasi file backup.
-- [ ] Backup sebelum restore.
+- [~] Export database — backup lokal database sudah ada.
+- [~] Restore database — restore dari daftar backup lokal sudah ada.
+- [~] Validasi file backup — restore dibatasi ke folder backup aplikasi.
+- [~] Backup sebelum restore — aplikasi membuat backup cadangan sebelum restore.
 
 ## Printer
 

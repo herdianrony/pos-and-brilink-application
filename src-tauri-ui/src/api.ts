@@ -110,6 +110,13 @@ export interface DebtRow {
   updated_at: string;
 }
 
+export interface BackupRow {
+  name: string;
+  path: string;
+  size: number;
+  created_at: string;
+}
+
 export function healthCheck() {
   return invoke<HealthCheck>("health_check");
 }
@@ -191,6 +198,18 @@ export function listTransactions() {
 
 export function listTransactionItems(payload: { transaction_id: number }) {
   return invoke<TransactionItemRow[]>("list_transaction_items", { payload });
+}
+
+export function createDatabaseBackup() {
+  return invoke<BackupRow>("create_database_backup");
+}
+
+export function listDatabaseBackups() {
+  return invoke<BackupRow[]>("list_database_backups");
+}
+
+export function restoreDatabaseBackup(payload: { path: string }) {
+  return invoke<boolean>("restore_database_backup", { payload });
 }
 
 export function listDebts() {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AccountMutationRow,
   AccountRow,
+  BackupRow,
   CategoryRow,
   DebtRow,
   ProductRow,
@@ -15,6 +16,7 @@ import {
   checkoutPosCash,
   createAccount,
   createAdmin,
+  createDatabaseBackup,
   createAgentTransaction,
   createDebt,
   createCategory,
@@ -26,6 +28,7 @@ import {
   listAccountMutations,
   listAccounts,
   listCategories,
+  listDatabaseBackups,
   listDebts,
   listProducts,
   listTransactionItems,
@@ -33,6 +36,7 @@ import {
   listUsers,
   login,
   ownerDraw,
+  restoreDatabaseBackup,
   setupStatus,
   transferAccounts,
   updateProduct,
@@ -124,6 +128,7 @@ export default function App() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [debts, setDebts] = useState<DebtRow[]>([]);
+  const [backups, setBackups] = useState<BackupRow[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [selectedTransactionItems, setSelectedTransactionItems] = useState<TransactionItemRow[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -175,7 +180,7 @@ export default function App() {
   const isAdmin = user?.role === "admin";
 
   async function refreshData() {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers] = await Promise.all([
+    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups] = await Promise.all([
       listAccounts(),
       listAccountMutations(),
       listCategories(),
@@ -183,6 +188,7 @@ export default function App() {
       listTransactions(),
       listDebts(),
       listUsers(),
+      listDatabaseBackups(),
     ]);
     setAccounts(nextAccounts);
     setAccountMutations(nextMutations);
@@ -191,6 +197,7 @@ export default function App() {
     setTransactions(nextTransactions);
     setDebts(nextDebts);
     setUsers(nextUsers);
+    setBackups(nextBackups);
     if (!settlementAccountId) {
       const firstBank = nextAccounts.find((account) => account.code !== "cash");
       if (firstBank) setSettlementAccountId(String(firstBank.id));
@@ -237,6 +244,34 @@ export default function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     setMessage(`Export ${filename} berhasil dibuat`);
+  }
+
+
+  async function handleCreateBackup() {
+    setSaving(true);
+    try {
+      const backup = await createDatabaseBackup();
+      await refreshData();
+      setMessage(`Backup berhasil dibuat: ${backup.name}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRestoreBackup(backup: BackupRow) {
+    if (!confirm(`Restore database dari ${backup.name}? Data saat ini akan dibackup otomatis sebelum restore.`)) return;
+    setSaving(true);
+    try {
+      await restoreDatabaseBackup({ path: backup.path });
+      await refreshData();
+      setMessage("Restore database berhasil. Jika ada data yang belum berubah, tutup dan buka ulang aplikasi.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function submitUser(event: React.FormEvent) {
@@ -1119,6 +1154,19 @@ export default function App() {
               <button className="secondary" onClick={() => exportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Export Produk</button>
             </div>
             <div className="db-box"><strong>Database lokal</strong><span>{dbPath || "—"}</span></div>
+          </div>
+          <div className="card span-all">
+            <div className="card-header"><div><h2>Backup & Restore</h2><p>Backup disimpan lokal di folder data aplikasi. Sebelum restore, aplikasi otomatis membuat backup cadangan.</p></div><button onClick={handleCreateBackup} disabled={saving}>Buat Backup</button></div>
+            {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada backup</strong><span>Klik Buat Backup untuk menyimpan salinan database.</span></div> : (
+              <div className="backup-list">
+                {backups.map((backup) => (
+                  <div key={backup.path} className="backup-row">
+                    <div><strong>{backup.name}</strong><small>{backup.path}</small><small>{Math.ceil(backup.size / 1024)} KB</small></div>
+                    <button className="secondary" onClick={() => handleRestoreBackup(backup)} disabled={saving}>Restore</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </>

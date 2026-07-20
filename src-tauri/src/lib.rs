@@ -3,7 +3,7 @@ use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Serialize)]
@@ -281,6 +281,19 @@ struct DebtIdPayload {
     debt_id: i64,
 }
 
+#[derive(Debug, Serialize)]
+struct BackupRow {
+    name: String,
+    path: String,
+    size: u64,
+    created_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RestoreBackupPayload {
+    path: String,
+}
+
 fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -292,6 +305,19 @@ fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
 
 fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_data_dir(app)?.join("catatagen-local.db"))
+}
+
+fn backup_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app_data_dir(app)?.join("backups");
+    fs::create_dir_all(&dir).map_err(|e| format!("Gagal membuat folder backup: {e}"))?;
+    Ok(dir)
+}
+
+fn safe_file_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("backup.db")
+        .to_string()
 }
 
 fn open_db(app: &AppHandle) -> Result<Connection, String> {
@@ -1064,6 +1090,83 @@ fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Resu
 
 
 
+
+#[tauri::command]
+fn create_database_backup(app: AppHandle) -> Result<BackupRow, String> {
+    let conn = init_schema(&app)?;
+    conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);").ok();
+    drop(conn);
+
+    let source = db_path(&app)?;
+    if !source.exists() {
+        return Err("Database belum ditemukan".into());
+    }
+    let dir = backup_dir(&app)?;
+    let name = format!("catatagen-backup-{}.db", Utc::now().format("%Y%m%d-%H%M%S"));
+    let target = dir.join(&name);
+    fs::copy(&source, &target).map_err(|e| format!("Gagal membuat backup: {e}"))?;
+    let metadata = fs::metadata(&target).map_err(|e| e.to_string())?;
+    Ok(BackupRow {
+        name,
+        path: target.display().to_string(),
+        size: metadata.len(),
+        created_at: Utc::now().to_rfc3339(),
+    })
+}
+
+#[tauri::command]
+fn list_database_backups(app: AppHandle) -> Result<Vec<BackupRow>, String> {
+    let dir = backup_dir(&app)?;
+    let mut backups = Vec::new();
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) != Some("db") {
+            continue;
+        }
+        let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+        let created_at = metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|duration| duration.as_secs().to_string())
+            .unwrap_or_else(|| "-".to_string());
+        backups.push(BackupRow {
+            name: safe_file_name(&path),
+            path: path.display().to_string(),
+            size: metadata.len(),
+            created_at,
+        });
+    }
+    backups.sort_by(|a, b| b.name.cmp(&a.name));
+    Ok(backups)
+}
+
+#[tauri::command]
+fn restore_database_backup(app: AppHandle, payload: RestoreBackupPayload) -> Result<bool, String> {
+    let backup_path = PathBuf::from(payload.path);
+    if !backup_path.exists() {
+        return Err("File backup tidak ditemukan".into());
+    }
+    let allowed_dir = backup_dir(&app)?.canonicalize().map_err(|e| e.to_string())?;
+    let canonical_backup = backup_path.canonicalize().map_err(|e| e.to_string())?;
+    if !canonical_backup.starts_with(&allowed_dir) {
+        return Err("File backup tidak valid".into());
+    }
+
+    let target = db_path(&app)?;
+    if target.exists() {
+        let pre_restore = backup_dir(&app)?.join(format!("pre-restore-{}.db", Utc::now().format("%Y%m%d-%H%M%S")));
+        fs::copy(&target, pre_restore).map_err(|e| format!("Gagal membuat backup sebelum restore: {e}"))?;
+    }
+    let wal = target.with_extension("db-wal");
+    let shm = target.with_extension("db-shm");
+    let _ = fs::remove_file(&wal);
+    let _ = fs::remove_file(&shm);
+    fs::copy(&canonical_backup, &target).map_err(|e| format!("Gagal restore database: {e}"))?;
+    Ok(true)
+}
+
 #[tauri::command]
 fn list_debts(app: AppHandle) -> Result<Vec<DebtRow>, String> {
     let conn = init_schema(&app)?;
@@ -1272,6 +1375,9 @@ pub fn run() {
             deactivate_product,
             list_transactions,
             list_transaction_items,
+            create_database_backup,
+            list_database_backups,
+            restore_database_backup,
             list_debts,
             create_debt,
             add_debt_payment,
