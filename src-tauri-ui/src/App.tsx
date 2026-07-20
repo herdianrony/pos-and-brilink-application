@@ -3,6 +3,8 @@ import {
   ArrowRight,
   BarChart3,
   ClipboardList,
+  Eye,
+  EyeOff,
   FileText,
   Landmark,
   LayoutDashboard,
@@ -752,7 +754,7 @@ export default function App() {
                 <div className="login-input-wrap"><User size={20} /><input autoFocus={!isSetup} value={usernameValue} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} placeholder="Masukkan username" /></div>
               </label>
               <label>Password
-                <div className="login-input-wrap"><Lock size={20} /><input type={showAuthPassword ? "text" : "password"} value={passwordValue} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Masukkan password" /><button type="button" className="input-ghost-button" onClick={() => setShowAuthPassword(!showAuthPassword)}>{showAuthPassword ? "Sembunyikan" : "Lihat"}</button></div>
+                <div className="login-input-wrap"><Lock size={20} /><input type={showAuthPassword ? "text" : "password"} value={passwordValue} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Masukkan password" /><button type="button" className="input-icon-button" onClick={() => setShowAuthPassword(!showAuthPassword)} aria-label={showAuthPassword ? "Sembunyikan password" : "Lihat password"}>{showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
               </label>
               <button className="login-submit" type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : <>Masuk <ArrowRight size={20} /></>}</button>
             </form>
