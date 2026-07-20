@@ -292,3 +292,111 @@
     box-shadow: none;
   }
 }
+
+/* Electron-like POS and service pages */
+.pos-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  align-items: start;
+}
+.pos-catalog { min-width: 0; }
+.pos-cart-panel {
+  position: sticky;
+  top: 96px;
+}
+.category-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.filter-chip {
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  font-size: 13px;
+}
+.filter-chip.active {
+  color: white;
+  background: linear-gradient(135deg, #00875a, #00b37e);
+  border-color: transparent;
+}
+.electron-cart-row {
+  grid-template-columns: minmax(0, 1fr) 72px auto;
+}
+.compact-payment-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.compact-payment-grid .choice-card {
+  min-height: 58px;
+  justify-items: center;
+  text-align: center;
+}
+.service-section-title {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  font-weight: 950;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.service-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.service-card {
+  min-height: 150px;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  color: #0f172a;
+  background: #fff;
+  border: 2px solid transparent;
+  box-shadow: 0 8px 22px rgba(15,23,42,.05);
+}
+.service-card:hover {
+  color: #0f172a;
+  background: #faf5ff;
+  border-color: #c084fc;
+  box-shadow: 0 14px 32px rgba(124,58,237,.12);
+}
+.service-card small {
+  color: #64748b;
+  font-weight: 700;
+}
+.service-card em {
+  font-style: normal;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 900;
+}
+.service-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 16px;
+  color: white;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  font-weight: 950;
+}
+@media (max-width: 1100px) {
+  .pos-shell { grid-template-columns: 1fr; }
+  .pos-cart-panel { position: static; }
+}
+@media (max-width: 640px) {
+  .service-card-grid,
+  .compact-payment-grid { grid-template-columns: 1fr; }
+  .electron-cart-row { grid-template-columns: 1fr; }
+}
