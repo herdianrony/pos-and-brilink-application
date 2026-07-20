@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowRight,
   BarChart3,
   ClipboardList,
   FileText,
@@ -10,8 +11,12 @@ import {
   ScrollText,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingCart,
+  User,
+  Lock,
   Wallet,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -167,6 +172,7 @@ function Icon({ name }: { name: IconName }) {
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [dbPath, setDbPath] = useState("");
@@ -700,20 +706,58 @@ export default function App() {
 
   function authShell(kind: "setup" | "login") {
     const isSetup = kind === "setup";
+    const usernameValue = isSetup ? form.username : loginForm.username;
+    const passwordValue = isSetup ? form.password : loginForm.password;
     return (
-      <main className="auth-page">
-        <section className="auth-card">
-          <div className="brand-mark">CA</div>
-          <p className="eyebrow">CatatAgen</p>
-          <h1>{isSetup ? "Setup Admin Pertama" : "Masuk ke Aplikasi"}</h1>
-          <p className="muted">POS retail, saldo virtual agen, dan buku utang lokal.</p>
-          <form onSubmit={isSetup ? submitSetup : submitLogin} className="form">
-            {isSetup && <label>Nama<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>}
-            <label>Username<input value={isSetup ? form.username : loginForm.username} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} /></label>
-            <label>Password<input type="password" value={isSetup ? form.password : loginForm.password} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} /></label>
-            <button type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : "Masuk"}</button>
-          </form>
-          <div className="status-line">{message || "Menyiapkan aplikasi..."}</div>
+      <main className="login-shell">
+        <section className="login-brand-panel">
+          <div className="login-brand-content">
+            <div className="login-logo-row">
+              <div className="brand-mark">CA</div>
+              <div>
+                <h1>CatatAgen</h1>
+                <p>POS Retail & Ledger Agen Mikro</p>
+              </div>
+            </div>
+            <div className="login-copy">
+              <p className="eyebrow">Local-first Desktop</p>
+              <h2>{isSetup ? "Siapkan toko pertama Anda" : "Selamat datang kembali"}</h2>
+              <p>Kelola kasir POS, layanan agen non-API, saldo virtual, stok produk, dan buku utang dalam satu aplikasi ringan.</p>
+            </div>
+            <div className="login-feature-list">
+              <div><Zap size={18} /><span>Transaksi cepat untuk kasir harian</span></div>
+              <div><ShieldCheck size={18} /><span>Data tersimpan lokal di perangkat</span></div>
+              <div><Wallet size={18} /><span>Kas, rekening, QRIS, dan utang tercatat rapi</span></div>
+            </div>
+          </div>
+        </section>
+        <section className="login-form-panel">
+          <div className="login-mobile-brand">
+            <div className="brand-mark small">CA</div>
+            <div><strong>CatatAgen</strong><small>Local Edition</small></div>
+          </div>
+          <div className="login-card">
+            <div className="login-card-header">
+              <p className="eyebrow">{isSetup ? "Setup Awal" : "Masuk"}</p>
+              <h2>{isSetup ? "Buat Admin Pertama" : "Masuk ke Aplikasi"}</h2>
+              <p>{isSetup ? "Akun ini akan menjadi owner/admin toko." : "Gunakan akun owner atau kasir yang sudah dibuat."}</p>
+            </div>
+            <form onSubmit={isSetup ? submitSetup : submitLogin} className="login-form">
+              {isSetup && (
+                <label>Nama Owner
+                  <div className="login-input-wrap"><User size={20} /><input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama pemilik toko" /></div>
+                </label>
+              )}
+              <label>Username
+                <div className="login-input-wrap"><User size={20} /><input autoFocus={!isSetup} value={usernameValue} onChange={(e) => isSetup ? setForm({ ...form, username: e.target.value }) : setLoginForm({ ...loginForm, username: e.target.value })} placeholder="Masukkan username" /></div>
+              </label>
+              <label>Password
+                <div className="login-input-wrap"><Lock size={20} /><input type={showAuthPassword ? "text" : "password"} value={passwordValue} onChange={(e) => isSetup ? setForm({ ...form, password: e.target.value }) : setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Masukkan password" /><button type="button" className="input-ghost-button" onClick={() => setShowAuthPassword(!showAuthPassword)}>{showAuthPassword ? "Sembunyikan" : "Lihat"}</button></div>
+              </label>
+              <button className="login-submit" type="submit" disabled={saving}>{saving ? "Memproses..." : isSetup ? "Buat Admin" : <>Masuk <ArrowRight size={20} /></>}</button>
+            </form>
+            <div className="status-line">{message || "Database lokal siap digunakan."}</div>
+          </div>
         </section>
       </main>
     );

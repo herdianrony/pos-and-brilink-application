@@ -400,3 +400,52 @@
   .compact-payment-grid { grid-template-columns: 1fr; }
   .electron-cart-row { grid-template-columns: 1fr; }
 }
+
+/* Electron-like login page */
+.login-shell {
+  @apply min-h-screen grid;
+  grid-template-columns: minmax(0, 1fr) minmax(460px, 1fr);
+}
+.login-brand-panel {
+  @apply hidden lg:flex relative overflow-hidden items-center justify-center p-12 text-white;
+  background: linear-gradient(135deg, #0f172a 0%, #052e2b 55%, #111827 100%);
+}
+.login-brand-panel::before {
+  content: "";
+  @apply absolute -top-32 -right-32 w-96 h-96 rounded-full blur-3xl bg-emerald-500/30;
+}
+.login-brand-panel::after {
+  content: "";
+  @apply absolute -bottom-28 -left-24 w-80 h-80 rounded-full blur-3xl bg-violet-500/20;
+}
+.login-brand-content { @apply relative z-10 max-w-md; }
+.login-logo-row { @apply flex items-center gap-3 mb-12; }
+.login-logo-row h1 { @apply text-3xl font-black tracking-tight; }
+.login-logo-row p { @apply text-slate-400 text-sm font-semibold m-0; }
+.login-copy { @apply mb-10; }
+.login-copy .eyebrow { @apply text-emerald-200; }
+.login-copy h2 { @apply text-5xl leading-tight mb-4 font-black tracking-tight; }
+.login-copy p { @apply text-slate-300 text-base leading-relaxed; }
+.login-feature-list { @apply grid gap-3; }
+.login-feature-list div { @apply flex items-center gap-3 text-slate-200 font-bold text-sm; }
+.login-feature-list svg { @apply text-emerald-400; }
+.login-form-panel { @apply flex items-center justify-center p-6 lg:p-12 bg-slate-50; }
+.login-mobile-brand { @apply lg:hidden flex items-center justify-center gap-3 mb-8; }
+.login-mobile-brand strong { @apply block text-slate-900 text-xl font-black; }
+.login-mobile-brand small { @apply block text-slate-400 text-xs font-semibold; }
+.login-card { @apply w-full max-w-md bg-white rounded-3xl border border-slate-200/70 p-8; box-shadow: 0 18px 54px rgba(15, 23, 42, .12); }
+.login-card-header { @apply mb-6; }
+.login-card-header h2 { @apply text-2xl font-black text-slate-900 mb-1; }
+.login-card-header p { @apply text-sm text-slate-400 font-semibold m-0; }
+.login-form { @apply grid gap-5; }
+.login-input-wrap { @apply relative flex items-center; }
+.login-input-wrap svg { @apply absolute left-4 text-slate-400; }
+.login-input-wrap input { @apply pl-12 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/60 font-semibold focus:bg-white; }
+.login-input-wrap input[type="password"],
+.login-input-wrap input[type="text"] { @apply pr-28; }
+.input-ghost-button { @apply absolute right-2 px-3 py-2 rounded-xl bg-transparent text-slate-500 shadow-none border-0 text-xs; }
+.input-ghost-button:hover:not(:disabled) { @apply bg-slate-100 transform-none shadow-none; }
+.login-submit { @apply w-full py-4 rounded-2xl text-base flex items-center justify-center gap-2; }
+@media (max-width: 1024px) {
+  .login-shell { grid-template-columns: 1fr; }
+}
