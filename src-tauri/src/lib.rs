@@ -82,6 +82,21 @@ struct BalanceAdjustmentPayload {
     notes: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct AccountTransferPayload {
+    from_account_id: i64,
+    to_account_id: i64,
+    amount: f64,
+    notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AccountExpensePayload {
+    account_id: i64,
+    amount: f64,
+    notes: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 struct AccountMutationRow {
     id: i64,
@@ -551,6 +566,82 @@ fn adjust_account_balance(app: AppHandle, payload: BalanceAdjustmentPayload) -> 
     Ok(AccountRow { id: account.0, code: account.1, name: account.2, icon: account.3, color: account.4, balance: next_balance, min_balance: account.6, is_active: account.7 == 1 })
 }
 
+
+#[tauri::command]
+fn transfer_accounts(app: AppHandle, payload: AccountTransferPayload) -> Result<bool, String> {
+    if payload.from_account_id == payload.to_account_id {
+        return Err("Rekening asal dan tujuan tidak boleh sama".into());
+    }
+    if payload.amount <= 0.0 {
+        return Err("Nominal transfer harus lebih dari 0".into());
+    }
+    let mut conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let from = tx.query_row(
+        "SELECT id, name, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+        params![payload.from_account_id],
+        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, f64>(2)?)),
+    ).map_err(|_| "Rekening asal tidak ditemukan".to_string())?;
+    let to = tx.query_row(
+        "SELECT id, name, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+        params![payload.to_account_id],
+        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, f64>(2)?)),
+    ).map_err(|_| "Rekening tujuan tidak ditemukan".to_string())?;
+    let from_balance = from.2 - payload.amount;
+    if from_balance < 0.0 {
+        return Err("Saldo rekening asal tidak cukup".into());
+    }
+    let to_balance = to.2 + payload.amount;
+    tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![from_balance, now, from.0]).map_err(|e| e.to_string())?;
+    tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![to_balance, now, to.0]).map_err(|e| e.to_string())?;
+    let note = trim_optional(payload.notes).unwrap_or_else(|| format!("Transfer {} ke {}", from.1, to.1));
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -payload.amount, from_balance, note, now]).map_err(|e| e.to_string())?;
+    let note_in = format!("Transfer dari {}", from.1);
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_in', ?2, ?3, ?4, NULL, ?5)", params![to.0, payload.amount, to_balance, note_in, now]).map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+fn account_expense(app: AppHandle, payload: AccountExpensePayload, mutation_type: &str, default_note: &str) -> Result<AccountRow, String> {
+    if payload.amount <= 0.0 {
+        return Err("Nominal harus lebih dari 0".into());
+    }
+    let mut conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let account = tx.query_row(
+        "SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+        params![payload.account_id],
+        |row| Ok((
+            row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?,
+            row.get::<_, Option<String>>(3)?, row.get::<_, Option<String>>(4)?, row.get::<_, f64>(5)?,
+            row.get::<_, f64>(6)?, row.get::<_, i64>(7)?,
+        )),
+    ).map_err(|_| "Rekening tidak ditemukan".to_string())?;
+    let next_balance = account.5 - payload.amount;
+    if next_balance < 0.0 {
+        return Err("Saldo tidak cukup".into());
+    }
+    tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![next_balance, now, account.0]).map_err(|e| e.to_string())?;
+    tx.execute(
+        "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)",
+        params![account.0, mutation_type, -payload.amount, next_balance, trim_optional(payload.notes).unwrap_or_else(|| default_note.to_string()), now],
+    ).map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(AccountRow { id: account.0, code: account.1, name: account.2, icon: account.3, color: account.4, balance: next_balance, min_balance: account.6, is_active: account.7 == 1 })
+}
+
+#[tauri::command]
+fn owner_draw(app: AppHandle, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+    account_expense(app, payload, "owner_draw", "Prive Owner")
+}
+
+#[tauri::command]
+fn bank_fee(app: AppHandle, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+    account_expense(app, payload, "bank_fee", "Biaya Bank / MDR")
+}
+
 #[tauri::command]
 fn list_account_mutations(app: AppHandle) -> Result<Vec<AccountMutationRow>, String> {
     let conn = init_schema(&app)?;
@@ -837,6 +928,9 @@ pub fn run() {
             list_accounts,
             create_account,
             adjust_account_balance,
+            transfer_accounts,
+            owner_draw,
+            bank_fee,
             list_account_mutations,
             list_categories,
             create_category,

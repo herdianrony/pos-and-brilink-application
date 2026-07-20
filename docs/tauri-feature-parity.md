@@ -68,10 +68,10 @@ Status:
 - [~] List akun — command/UI awal sudah ada.
 - [~] Tambah/edit akun — tambah rekening non-tunai sudah ada, edit belum.
 - [ ] Aktif/nonaktif akun.
-- [ ] Transfer antar akun.
+- [~] Transfer antar akun — backend/UI awal sudah ada.
 - [~] Sesuaikan saldo — penyesuaian saldo plus/minus sudah ada.
-- [ ] Ambil profit owner.
-- [ ] Biaya admin bank/MDR QRIS.
+- [~] Ambil profit owner — backend/UI awal `owner_draw` sudah ada.
+- [~] Biaya admin bank/MDR QRIS — backend/UI awal `bank_fee` sudah ada.
 - [~] Mutasi saldo — daftar mutasi saldo terakhir sudah ada.
 - [ ] Proteksi saldo minus.
 

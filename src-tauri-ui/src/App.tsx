@@ -7,6 +7,7 @@ import {
   PublicUser,
   TransactionRow,
   adjustAccountBalance,
+  bankFee,
   checkoutPosCash,
   createAccount,
   createAdmin,
@@ -20,7 +21,9 @@ import {
   listProducts,
   listTransactions,
   login,
+  ownerDraw,
   setupStatus,
+  transferAccounts,
 } from "./api";
 
 function formatRupiah(value: number) {
@@ -72,6 +75,9 @@ export default function App() {
   const [categoryForm, setCategoryForm] = useState({ name: "", icon: "package", color: "#059669" });
   const [accountForm, setAccountForm] = useState({ code: "bri", name: "Rekening BRI", initial_balance: "0", min_balance: "0" });
   const [adjustForm, setAdjustForm] = useState({ account_id: "", amount: "0", notes: "Penyesuaian saldo" });
+  const [transferForm, setTransferForm] = useState({ from_account_id: "", to_account_id: "", amount: "0", notes: "Transfer antar rekening" });
+  const [ownerDrawForm, setOwnerDrawForm] = useState({ account_id: "", amount: "0", notes: "Prive Owner" });
+  const [bankFeeForm, setBankFeeForm] = useState({ account_id: "", amount: "0", notes: "Biaya Bank / MDR" });
   const [productForm, setProductForm] = useState({
     name: "",
     barcode: "",
@@ -285,6 +291,57 @@ export default function App() {
     }
   }
 
+
+  async function submitTransfer(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await transferAccounts({
+        from_account_id: Number(transferForm.from_account_id),
+        to_account_id: Number(transferForm.to_account_id),
+        amount: Number(transferForm.amount || 0),
+        notes: transferForm.notes,
+      });
+      setTransferForm({ ...transferForm, amount: "0" });
+      await refreshData();
+      setMessage("Transfer antar rekening berhasil");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitOwnerDraw(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await ownerDraw({ account_id: Number(ownerDrawForm.account_id), amount: Number(ownerDrawForm.amount || 0), notes: ownerDrawForm.notes });
+      setOwnerDrawForm({ ...ownerDrawForm, amount: "0" });
+      await refreshData();
+      setMessage("Ambil profit owner berhasil dicatat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitBankFee(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await bankFee({ account_id: Number(bankFeeForm.account_id), amount: Number(bankFeeForm.amount || 0), notes: bankFeeForm.notes });
+      setBankFeeForm({ ...bankFeeForm, amount: "0" });
+      await refreshData();
+      setMessage("Biaya bank/MDR berhasil dicatat");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function authShell(kind: "setup" | "login") {
     const isSetup = kind === "setup";
     return (
@@ -485,6 +542,41 @@ export default function App() {
               <label>Nominal (+ / -)<input type="number" value={adjustForm.amount} onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })} /></label>
               <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })} /></label>
               <button type="submit" disabled={saving || !adjustForm.account_id}>Simpan Penyesuaian</button>
+            </form>
+
+            <h2>Transfer Antar Rekening</h2>
+            <form onSubmit={submitTransfer} className="product-form">
+              <label>Dari<select value={transferForm.from_account_id} onChange={(e) => setTransferForm({ ...transferForm, from_account_id: e.target.value })}>
+                <option value="">Pilih asal</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Ke<select value={transferForm.to_account_id} onChange={(e) => setTransferForm({ ...transferForm, to_account_id: e.target.value })}>
+                <option value="">Pilih tujuan</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Nominal<input type="number" min="0" value={transferForm.amount} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} /></label>
+              <label>Catatan<input value={transferForm.notes} onChange={(e) => setTransferForm({ ...transferForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</button>
+            </form>
+
+            <h2>Ambil Profit / Biaya Bank</h2>
+            <form onSubmit={submitOwnerDraw} className="product-form compact-form">
+              <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, account_id: e.target.value })}>
+                <option value="">Pilih rekening</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Nominal<input type="number" min="0" value={ownerDrawForm.amount} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, amount: e.target.value })} /></label>
+              <label className="span-2">Catatan<input value={ownerDrawForm.notes} onChange={(e) => setOwnerDrawForm({ ...ownerDrawForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Prive Owner</button>
+            </form>
+            <form onSubmit={submitBankFee} className="product-form compact-form">
+              <label>Rekening<select value={bankFeeForm.account_id} onChange={(e) => setBankFeeForm({ ...bankFeeForm, account_id: e.target.value })}>
+                <option value="">Pilih rekening</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select></label>
+              <label>Nominal<input type="number" min="0" value={bankFeeForm.amount} onChange={(e) => setBankFeeForm({ ...bankFeeForm, amount: e.target.value })} /></label>
+              <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => setBankFeeForm({ ...bankFeeForm, notes: e.target.value })} /></label>
+              <button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Biaya Bank/MDR</button>
             </form>
           </div>
           <div className="card">

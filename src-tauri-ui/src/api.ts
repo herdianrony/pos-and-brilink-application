@@ -126,6 +126,18 @@ export function adjustAccountBalance(payload: { account_id: number; amount: numb
   return invoke<AccountRow>("adjust_account_balance", { payload });
 }
 
+export function transferAccounts(payload: { from_account_id: number; to_account_id: number; amount: number; notes?: string }) {
+  return invoke<boolean>("transfer_accounts", { payload });
+}
+
+export function ownerDraw(payload: { account_id: number; amount: number; notes?: string }) {
+  return invoke<AccountRow>("owner_draw", { payload });
+}
+
+export function bankFee(payload: { account_id: number; amount: number; notes?: string }) {
+  return invoke<AccountRow>("bank_fee", { payload });
+}
+
 export function listAccountMutations() {
   return invoke<AccountMutationRow[]>("list_account_mutations");
 }
