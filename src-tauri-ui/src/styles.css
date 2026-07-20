@@ -600,3 +600,43 @@
   .status-strip-redesign { position: static; justify-content: stretch; }
   .page-content-redesign { padding: 18px; }
 }
+
+/* Electron parity POS */
+.electron-pos-shell {
+  grid-template-columns: minmax(0, 1fr) 410px;
+}
+.electron-pos-catalog,
+.electron-cart-panel {
+  @apply rounded-[28px];
+}
+.pos-search-row {
+  @apply mb-3 flex gap-2;
+}
+.pos-search-input {
+  @apply flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-0 text-slate-500;
+}
+.pos-search-input input {
+  @apply border-0 bg-transparent px-0 py-3 shadow-none focus:ring-0;
+}
+.electron-filter-row {
+  @apply mb-4 border-b border-slate-100 pb-3;
+}
+.electron-product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+.electron-product-card {
+  @apply min-h-[135px] cursor-pointer text-left shadow-[0_6px_18px_rgba(15,23,42,.04)] hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_12px_26px_rgba(0,135,90,.10)] disabled:cursor-not-allowed disabled:opacity-50;
+}
+.cart-list-scroll {
+  @apply max-h-[42vh] overflow-y-auto pr-1;
+}
+.electron-cart-panel {
+  @apply sticky top-24;
+}
+@media (max-width: 1100px) {
+  .electron-pos-shell { grid-template-columns: 1fr; }
+  .electron-cart-panel { position: static; }
+}
+@media (max-width: 640px) {
+  .pos-search-row { flex-direction: column; }
+}
