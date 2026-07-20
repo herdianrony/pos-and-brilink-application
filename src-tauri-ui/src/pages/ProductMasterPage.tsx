@@ -1,6 +1,17 @@
+import { useState } from "react";
+import { FolderOpen, Landmark, Package, Tag } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
 import { Badge, Button, Card, CardHeader, EmptyState } from "../components/ui";
 import { formatRupiah } from "../lib/format";
+
+type MasterTab = "products" | "categories" | "agentServices" | "agentCategories";
+
+const tabs: Array<{ id: MasterTab; label: string; icon: typeof Package }> = [
+  { id: "products", label: "Produk", icon: Package },
+  { id: "categories", label: "Kategori Produk", icon: Tag },
+  { id: "agentServices", label: "Layanan Agen", icon: Landmark },
+  { id: "agentCategories", label: "Kategori Layanan", icon: FolderOpen },
+];
 
 export function ProductMasterPage({
   categories,
@@ -17,69 +28,112 @@ export function ProductMasterPage({
   onEditProduct: (product: ProductRow) => void;
   onRemoveProduct: (product: ProductRow) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<MasterTab>("products");
+  const lowStockProducts = products.filter((product) => product.stock <= product.min_stock);
+
   return (
-    <>
+    <div className="space-y-5 animate-fadeIn">
       <div className="page-title">
         <div>
-          <p className="eyebrow">Data Master</p>
-          <h1>Produk & Kategori</h1>
+          <h1>Manajemen Data</h1>
+          <p className="m-0 text-sm font-semibold text-slate-400">Kelola produk, kategori, dan layanan agen.</p>
         </div>
         <div className="page-actions">
-          <Button variant="secondary" onClick={onAddCategory}>Tambah Kategori</Button>
-          <Button onClick={onAddProduct}>Tambah Produk</Button>
+          {activeTab === "categories" ? <Button onClick={onAddCategory}>Tambah Kategori</Button> : null}
+          {activeTab === "products" ? <Button onClick={onAddProduct}>Tambah Produk</Button> : null}
         </div>
       </div>
-      <div className="page-help">
-        <strong>Halaman ini dibuat bersih:</strong>
-        <span>Daftar produk fokus di satu halaman.</span>
-        <span>Tambah/edit produk dibuka lewat dialog agar tidak menumpuk.</span>
+
+      <div className="electron-tabs master-tabs">
+        {tabs.map((tab) => {
+          const TabIcon = tab.icon;
+          return (
+            <button key={tab.id} className={activeTab === tab.id ? "electron-tab active" : "electron-tab"} onClick={() => setActiveTab(tab.id)}>
+              <TabIcon size={16} /> {tab.label}
+            </button>
+          );
+        })}
       </div>
-      <section className="grid product-master-grid">
+
+      {activeTab === "products" && (
+        <section className="grid dashboard-grid">
+          <Card className="min-w-0 xl:col-span-2">
+            <CardHeader>
+              <div>
+                <h2>Daftar Produk</h2>
+                <p>{products.length} produk ditampilkan. Gunakan pencarian di atas untuk memfilter.</p>
+              </div>
+              <Button onClick={onAddProduct}>Tambah Produk</Button>
+            </CardHeader>
+            <div className="product-table-like">
+              <div className="product-table-head"><span>Produk</span><span>Harga</span><span>Stok</span><span>Aksi</span></div>
+              {products.length === 0 ? (
+                <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
+              ) : products.map((product) => (
+                <div key={product.id} className="product-table-row">
+                  <div className="product-main">
+                    <strong>{product.name}</strong>
+                    <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
+                    <small>HPP {formatRupiah(product.buy_price)}</small>
+                  </div>
+                  <div className="product-meta"><strong>{formatRupiah(product.sell_price)}</strong><small>Harga jual</small></div>
+                  <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <Button variant="secondary" onClick={() => onEditProduct(product)}>Edit</Button>
+                    <Button variant="danger" onClick={() => onRemoveProduct(product)}>Nonaktifkan</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card>
+            <CardHeader><div><h2>Stok Menipis</h2><p>Produk yang perlu segera dicek.</p></div></CardHeader>
+            {lowStockProducts.length === 0 ? (
+              <EmptyState compact title="Stok aman" description="Tidak ada produk di bawah minimum." />
+            ) : lowStockProducts.slice(0, 8).map((product) => (
+              <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><Badge tone="warning">Rendah</Badge></div>
+            ))}
+          </Card>
+        </section>
+      )}
+
+      {activeTab === "categories" && (
         <Card>
           <CardHeader>
             <div>
-              <h2>Kategori</h2>
-              <p>Gunakan kategori untuk mempercepat pencarian produk di kasir.</p>
+              <h2>Kategori Produk</h2>
+              <p>Kategori membantu kasir mencari dan memfilter produk lebih cepat.</p>
             </div>
+            <Button onClick={onAddCategory}>Tambah Kategori</Button>
           </CardHeader>
           {categories.length === 0 ? (
-            <EmptyState compact title="Belum ada kategori" description="Klik Tambah Kategori untuk membuat kategori pertama." />
+            <EmptyState title="Belum ada kategori" description="Klik Tambah Kategori untuk membuat kategori pertama." />
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => <Badge key={category.id}>{category.name}</Badge>)}
+            <div className="category-grid">
+              {categories.map((category) => (
+                <div key={category.id} className="category-card">
+                  <Tag size={20} />
+                  <div><strong>{category.name}</strong><small>Kategori produk</small></div>
+                </div>
+              ))}
             </div>
           )}
         </Card>
-        <Card className="min-w-0">
-          <CardHeader>
-            <div>
-              <h2>Daftar Produk</h2>
-              <p>{products.length} produk ditampilkan. Gunakan pencarian di atas untuk memfilter.</p>
-            </div>
-          </CardHeader>
-          <div className="grid gap-2.5">
-            {products.length === 0 ? (
-              <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
-            ) : products.map((product) => (
-              <div key={product.id} className="grid items-center gap-3.5 rounded-[20px] border border-slate-200 bg-white p-3.5 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
-                <div className="grid min-w-0 gap-1">
-                  <strong className="truncate">{product.name}</strong>
-                  <small className="text-slate-500">{product.category_name || "Tanpa kategori"} • {product.unit}</small>
-                  <small className="text-slate-500">HPP {formatRupiah(product.buy_price)} • Jual {formatRupiah(product.sell_price)}</small>
-                </div>
-                <div className="grid gap-1.5 text-left lg:justify-items-end lg:text-right">
-                  <strong>{formatRupiah(product.sell_price)}</strong>
-                  <Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge>
-                </div>
-                <div className="flex flex-wrap gap-2 lg:justify-end">
-                  <Button variant="secondary" onClick={() => onEditProduct(product)}>Edit</Button>
-                  <Button variant="danger" onClick={() => onRemoveProduct(product)}>Nonaktifkan</Button>
-                </div>
-              </div>
-            ))}
-          </div>
+      )}
+
+      {activeTab === "agentServices" && (
+        <Card>
+          <CardHeader><div><h2>Layanan Agen</h2><p>Template layanan agen custom akan dikelola di sini pada tahap berikutnya.</p></div></CardHeader>
+          <EmptyState title="Template layanan belum tersedia" description="Untuk saat ini pencatatan layanan agen memakai preset di halaman Layanan Agen." />
         </Card>
-      </section>
-    </>
+      )}
+
+      {activeTab === "agentCategories" && (
+        <Card>
+          <CardHeader><div><h2>Kategori Layanan</h2><p>Kategori layanan akan dipakai untuk mengelompokkan jasa agen seperti transfer, tunai, dan payment.</p></div></CardHeader>
+          <EmptyState title="Kategori layanan belum tersedia" description="Fitur ini disiapkan untuk master layanan agen custom." />
+        </Card>
+      )}
+    </div>
   );
 }
