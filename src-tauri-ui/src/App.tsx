@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BarChart3,
+  ClipboardList,
+  FileText,
+  Landmark,
+  LayoutDashboard,
+  Package,
+  ReceiptText,
+  ScrollText,
+  Search,
+  Settings,
+  ShoppingCart,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import {
   AccountMutationRow,
   AccountRow,
   AppLogRow,
@@ -129,20 +144,24 @@ const navItems: Array<{ id: ViewKey; label: string; icon: IconName; adminOnly?: 
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];
 
+const iconMap: Record<IconName, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  pos: ShoppingCart,
+  brilink: Landmark,
+  products: Package,
+  history: ClipboardList,
+  debts: ReceiptText,
+  rekeningKoran: ScrollText,
+  cash: Wallet,
+  reports: BarChart3,
+  logs: FileText,
+  settings: Settings,
+  search: Search,
+};
+
 function Icon({ name }: { name: IconName }) {
-  const common = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
-  if (name === "dashboard") return <svg {...common}><rect x="3" y="3" width="7" height="8" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="15" width="7" height="6" rx="2" /></svg>;
-  if (name === "pos") return <svg {...common}><circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" /><path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H7" /><path d="M10 11h6" /></svg>;
-  if (name === "brilink") return <svg {...common}><path d="M3 21h18" /><path d="M5 21V8l7-5 7 5v13" /><path d="M9 21v-7h6v7" /><path d="M9 10h.01" /><path d="M15 10h.01" /></svg>;
-  if (name === "rekeningKoran") return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8" /><path d="M8 17h6" /></svg>;
-  if (name === "reports") return <svg {...common}><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="5" rx="1" /><rect x="12" y="8" width="3" height="9" rx="1" /><rect x="17" y="5" width="3" height="12" rx="1" /></svg>;
-  if (name === "products") return <svg {...common}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>;
-  if (name === "history") return <svg {...common}><path d="M8 3H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V5a2 2 0 0 0-2-2h-2" /><path d="M9 7h6" /><path d="M9 11h6" /><path d="M9 15h4" /></svg>;
-  if (name === "logs") return <svg {...common}><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h10" /><path d="M8 5v14" /></svg>;
-  if (name === "debts") return <svg {...common}><path d="M16 3h5v5" /><path d="m21 3-7 7" /><path d="M12 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7 14h6" /><path d="M7 18h4" /></svg>;
-  if (name === "cash") return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 9v.01" /><path d="M18 15v.01" /></svg>;
-  if (name === "settings") return <svg {...common}><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06A2 2 0 1 1 7.03 3.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.15.4.38.74.7 1 .32.25.7.4 1.1.4H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.6Z" /></svg>;
-  return <svg {...common}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>;
+  const LucideIcon = iconMap[name] || Search;
+  return <LucideIcon size={20} strokeWidth={2.2} aria-hidden />;
 }
 
 export default function App() {
