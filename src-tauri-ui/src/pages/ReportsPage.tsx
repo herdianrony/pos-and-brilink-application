@@ -1,4 +1,5 @@
 import { BarChart3, Download, Landmark, ReceiptText, TrendingUp, WalletCards } from "lucide-react";
+import { StatCard } from "../components/ui";
 import type { AccountMutationRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
 
@@ -47,10 +48,10 @@ export function ReportsPage({
       </div>
 
       <section className="electron-stat-grid reports-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon green"><ReceiptText size={20} /></span><div><small>Omzet POS</small><strong>{formatRupiah(posRevenue)}</strong><p>{posTransactions.length} transaksi POS</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon blue"><Landmark size={20} /></span><div><small>Volume Layanan</small><strong>{formatRupiah(agentRevenue)}</strong><p>{agentTransactions.length} transaksi agen</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon amber"><TrendingUp size={20} /></span><div><small>Total Keuntungan</small><strong>{formatRupiah(totalProfit)}</strong><p>POS + layanan</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon purple"><WalletCards size={20} /></span><div><small>Mutasi Saldo</small><strong>{mutations.length}</strong><p>catatan mutasi</p></div></div>
+        <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} transaksi POS`} />
+        <StatCard tone="blue" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} transaksi agen`} />
+        <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Total Keuntungan" value={formatRupiah(totalProfit)} sub="POS + layanan" />
+        <StatCard tone="purple" icon={<WalletCards size={20} />} label="Mutasi Saldo" value={mutations.length} sub="catatan mutasi" />
       </section>
 
       <section className="reports-layout">

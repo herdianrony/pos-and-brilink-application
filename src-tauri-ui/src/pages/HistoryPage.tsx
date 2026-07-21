@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Ban, CheckCircle, ClipboardList, Landmark, RotateCcw, ShoppingCart } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
+import { StatCard } from "../components/ui";
 
 const typeTabs = [
   { id: "all", label: "Semua", icon: ClipboardList },
@@ -60,10 +61,10 @@ export function HistoryPage({
       </div>
 
       <section className="electron-stat-grid history-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon blue"><ClipboardList size={20} /></span><div><small>Total Transaksi</small><strong>{filtered.length}</strong><p>sesuai filter</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon green"><CheckCircle size={20} /></span><div><small>Total Omzet</small><strong>{formatRupiah(revenue)}</strong><p>nilai transaksi</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon amber"><RotateCcw size={20} /></span><div><small>Profit</small><strong>{formatRupiah(profit)}</strong><p>estimasi keuntungan</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon purple"><Ban size={20} /></span><div><small>Pending</small><strong>{pendingCount}</strong><p>perlu diproses</p></div></div>
+        <StatCard tone="blue" icon={<ClipboardList size={20} />} label="Total Transaksi" value={filtered.length} sub="sesuai filter" />
+        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Total Omzet" value={formatRupiah(revenue)} sub="nilai transaksi" />
+        <StatCard tone="amber" icon={<RotateCcw size={20} />} label="Profit" value={formatRupiah(profit)} sub="estimasi keuntungan" />
+        <StatCard tone="purple" icon={<Ban size={20} />} label="Pending" value={pendingCount} sub="perlu diproses" />
       </section>
 
       <section className="history-filter-panel card">

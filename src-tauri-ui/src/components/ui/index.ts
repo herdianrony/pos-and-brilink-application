@@ -4,3 +4,4 @@ export { Card, CardHeader } from "./Card";
 export { EmptyState } from "./EmptyState";
 export { Field } from "./Field";
 export { Modal } from "./Modal";
+export { StatCard } from "./StatCard";

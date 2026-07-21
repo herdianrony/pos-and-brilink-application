@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Printer, Scale, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
+import { StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -80,10 +81,10 @@ export function StatementPage({
       </section>
 
       <section className="electron-stat-grid statement-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon blue"><Scale size={20} /></span><div><small>Saldo Awal</small><strong>{formatRupiah(openingBalance)}</strong><p>awal periode</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon green"><ArrowDownLeft size={20} /></span><div><small>Total Masuk</small><strong>{formatRupiah(totalIn)}</strong><p>{filteredMutations.length} mutasi</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon amber"><ArrowUpRight size={20} /></span><div><small>Total Keluar</small><strong>{formatRupiah(totalOut)}</strong><p>{filteredMutations.length} mutasi</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon purple"><Wallet size={20} /></span><div><small>Saldo Akhir</small><strong>{formatRupiah(latestBalance)}</strong><p>mutasi terbaru</p></div></div>
+        <StatCard tone="blue" icon={<Scale size={20} />} label="Saldo Awal" value={formatRupiah(openingBalance)} sub="awal periode" />
+        <StatCard tone="green" icon={<ArrowDownLeft size={20} />} label="Total Masuk" value={formatRupiah(totalIn)} sub={`${filteredMutations.length} mutasi`} />
+        <StatCard tone="amber" icon={<ArrowUpRight size={20} />} label="Total Keluar" value={formatRupiah(totalOut)} sub={`${filteredMutations.length} mutasi`} />
+        <StatCard tone="purple" icon={<Wallet size={20} />} label="Saldo Akhir" value={formatRupiah(latestBalance)} sub="mutasi terbaru" />
       </section>
 
       <section className="statement-layout">

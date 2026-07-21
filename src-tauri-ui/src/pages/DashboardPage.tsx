@@ -1,6 +1,8 @@
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
+import { StatCard } from "../components/ui";
 import { formatRupiah, paymentLabel } from "../lib/format";
 import type { ViewKey } from "../types";
+import { Landmark, ReceiptText, ShoppingCart, TrendingUp } from "lucide-react";
 
 function accountTone(index: number) {
   return ["account-green", "account-blue", "account-navy", "account-purple"][index % 4];
@@ -93,10 +95,10 @@ export function DashboardPage({
       </section>
 
       <section className="electron-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon green">⌁</span><div><small>Total Transaksi</small><strong>{transactions.length}</strong><p>hari ini</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon blue">↗</span><div><small>Omzet POS</small><strong>{formatRupiah(posRevenue)}</strong><p>{posTransactions.length} trx</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon purple">▥</span><div><small>Volume Layanan</small><strong>{formatRupiah(agentRevenue)}</strong><p>{agentTransactions.length} trx</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon amber">⌁</span><div><small>Keuntungan Agen</small><strong>{formatRupiah(agentProfit)}</strong><p>profit layanan</p></div></div>
+        <StatCard tone="green" icon={<ReceiptText size={20} />} label="Total Transaksi" value={transactions.length} sub="hari ini" />
+        <StatCard tone="blue" icon={<ShoppingCart size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} trx`} />
+        <StatCard tone="purple" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} trx`} />
+        <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Keuntungan Agen" value={formatRupiah(agentProfit)} sub="profit layanan" />
       </section>
 
       <section className="safe-banner">

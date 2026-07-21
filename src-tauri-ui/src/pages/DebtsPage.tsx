@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
+import { StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type DebtFilter = "open" | "paid" | "all";
@@ -51,9 +52,9 @@ export function DebtsPage({
       </div>
 
       <section className="electron-stat-grid debt-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon amber"><ReceiptText size={20} /></span><div><small>Belum Lunas</small><strong>{formatRupiah(totalOutstanding)}</strong><p>{openDebts.length} pelanggan</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon blue"><WalletCards size={20} /></span><div><small>Total Utang</small><strong>{formatRupiah(totalDebt)}</strong><p>semua catatan</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon green"><CheckCircle size={20} /></span><div><small>Terbayar</small><strong>{formatRupiah(totalPaid)}</strong><p>{paidDebts.length} lunas</p></div></div>
+        <StatCard tone="amber" icon={<ReceiptText size={20} />} label="Belum Lunas" value={formatRupiah(totalOutstanding)} sub={`${openDebts.length} pelanggan`} />
+        <StatCard tone="blue" icon={<WalletCards size={20} />} label="Total Utang" value={formatRupiah(totalDebt)} sub="semua catatan" />
+        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
       </section>
 
       <section className="history-filter-panel card debt-filter-panel">

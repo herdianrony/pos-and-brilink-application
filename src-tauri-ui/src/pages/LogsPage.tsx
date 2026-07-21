@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
+import { StatCard } from "../components/ui";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -58,10 +59,10 @@ export function LogsPage({
       </div>
 
       <section className="electron-stat-grid logs-stat-grid">
-        <div className="electron-stat-card"><span className="stat-icon blue"><Activity size={20} /></span><div><small>Total Aktivitas</small><strong>{logs.length}</strong><p>catatan tersimpan</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon green"><CheckCircle size={20} /></span><div><small>Info</small><strong>{infoCount}</strong><p>aktivitas normal</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon amber"><AlertTriangle size={20} /></span><div><small>Peringatan</small><strong>{warnCount}</strong><p>perlu diperiksa</p></div></div>
-        <div className="electron-stat-card"><span className="stat-icon purple"><ShieldAlert size={20} /></span><div><small>Error</small><strong>{errorCount}</strong><p>kendala teknis</p></div></div>
+        <StatCard tone="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
+        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
+        <StatCard tone="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
+        <StatCard tone="purple" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
       </section>
 
       <section className="logs-filter-card card">
