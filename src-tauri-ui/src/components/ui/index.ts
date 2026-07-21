@@ -8,3 +8,4 @@ export { PageHeader } from "./PageHeader";
 export { DataPanel, SectionCard } from "./SectionCard";
 export { DataCell, DataCellText, DataRow, DataTable } from "./DataTable";
 export { StatCard } from "./StatCard";
+export { ChipTabs, Tabs } from "./Tabs";

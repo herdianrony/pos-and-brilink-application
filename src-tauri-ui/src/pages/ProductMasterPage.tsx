@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FolderOpen, Landmark, Package, Pencil, Power, Tag } from "lucide-react";
 import { createAgentService, createFeeTier, listAgentServices, listFeeTiers, type AgentServiceRow, type CategoryRow, type FeeTierRow, type ProductRow } from "../api";
-import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, Modal, PageHeader } from "../components/ui";
+import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, Modal, PageHeader, Tabs } from "../components/ui";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { formatRupiah } from "../lib/format";
 import { tw } from "../lib/tw";
@@ -75,16 +75,7 @@ export function ProductMasterPage({
         actions={<>{activeTab === "categories" ? <Button onClick={onAddCategory}>Tambah Kategori</Button> : null}{activeTab === "products" ? <Button onClick={onAddProduct}>Tambah Produk</Button> : null}</>}
       />
 
-      <div className={tw("electron-tabs master-tabs")}>
-        {tabs.map((tab) => {
-          const TabIcon = tab.icon;
-          return (
-            <button key={tab.id} className={tw(activeTab === tab.id ? "electron-tab active" : "electron-tab")} onClick={() => setActiveTab(tab.id)}>
-              <TabIcon size={16} /> {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs items={tabs} active={activeTab} onChange={setActiveTab} ariaLabel="Tab manajemen data" />
 
       {activeTab === "products" && (
         <section className={tw("grid dashboard-grid")}>

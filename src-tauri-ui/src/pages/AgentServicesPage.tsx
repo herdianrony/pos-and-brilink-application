@@ -3,7 +3,7 @@ import { Landmark, Star } from "lucide-react";
 import type { AccountRow, TransactionRow } from "../api";
 import type { AgentForm } from "../types";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { Button, Card, CardHeader, EmptyState, PageHeader, SectionCard } from "../components/ui";
+import { Button, Card, CardHeader, ChipTabs, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 import { tw } from "../lib/tw";
 
@@ -63,11 +63,13 @@ export function AgentServicesPage({
 
       <section className={tw("electron-service-layout")}>
         <SectionCard className={tw("service-catalog-panel")} title="Katalog Layanan" description="Pilih layanan yang paling sesuai dengan transaksi pelanggan.">
-          <div className={tw("service-filter-row")}>
-            {(["Semua", "Favorit", "Tunai", "Transfer", "Payment"] as ServiceFilter[]).map((filter) => (
-              <button key={filter} className={tw(serviceFilter === filter ? "filter-chip active" : "filter-chip")} onClick={() => setServiceFilter(filter)}>{filter}</button>
-            ))}
-          </div>
+          <ChipTabs
+            className={tw("service-filter-row")}
+            items={(["Semua", "Favorit", "Tunai", "Transfer", "Payment"] as ServiceFilter[]).map((filter) => ({ id: filter, label: filter }))}
+            active={serviceFilter}
+            onChange={setServiceFilter}
+            ariaLabel="Filter layanan agen"
+          />
           <div className={tw("service-section-title")}>{serviceFilter === "Semua" ? "Semua Layanan" : `Layanan ${serviceFilter}`}</div>
           <div className={tw("electron-service-grid")}>
             {filteredServices.map((service) => (

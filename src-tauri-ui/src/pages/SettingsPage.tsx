@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Activity, Archive, Database, Download, RefreshCw, Shield, Users } from "lucide-react";
 import type { AccountMutationRow, AppLogRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow } from "../api";
-import { Button, EmptyState, PageHeader, SectionCard } from "../components/ui";
+import { Button, EmptyState, PageHeader, SectionCard, Tabs } from "../components/ui";
 import { tw } from "../lib/tw";
 
 export function SettingsPage({
@@ -44,15 +44,18 @@ export function SettingsPage({
   return (
     <div className={tw("settings-page")}>
       <PageHeader eyebrow="Sistem" title="Pengaturan" description="Kelola pengguna, unduhan data, cadangan, dan aktivitas aplikasi." />
-      <div className={tw("electron-tabs master-tabs")}>
-        {[
-          ["user", "User"],
-          ["data", "Data"],
-          ["backup", "Backup"],
-          ["info", "Info"],
-          ["activity", "Aktivitas"],
-        ].map(([id, label]) => <button key={id} className={tw(activeTab === id ? "electron-tab active" : "electron-tab")} onClick={() => setActiveTab(id as typeof activeTab)}>{label}</button>)}
-      </div>
+      <Tabs
+        items={[
+          { id: "user", label: "User" },
+          { id: "data", label: "Data" },
+          { id: "backup", label: "Backup" },
+          { id: "info", label: "Info" },
+          { id: "activity", label: "Aktivitas" },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Tab pengaturan"
+      />
 
       <section className={tw("settings-grid")}> 
         {activeTab === "user" && <SectionCard

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { AccountMutationRow, AccountRow, DebtRow, TransactionRow } from "../api";
-import { PageHeader } from "../components/ui";
+import { PageHeader, Tabs } from "../components/ui";
 import { tw } from "../lib/tw";
 import { CashBalancePage } from "./CashBalancePage";
 import { DebtsPage } from "./DebtsPage";
@@ -71,9 +71,7 @@ export function FinancePage({
   return (
     <div className={tw("settings-page")}>
       <PageHeader eyebrow="Keuangan" title="Keuangan" description="Kas, rekening koran, utang, laporan, dan transaksi dalam satu tempat." />
-      <div className={tw("electron-tabs master-tabs")}>
-        {tabs.map((tab) => <button key={tab.id} className={tw(activeTab === tab.id ? "electron-tab active" : "electron-tab")} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
-      </div>
+      <Tabs items={tabs} active={activeTab} onChange={setActiveTab} ariaLabel="Tab keuangan" />
       {activeTab === "cash" && <CashBalancePage accounts={accounts} mutations={mutations} onAddAccount={onAddAccount} onTransfer={onTransfer} onAdjust={onAdjust} onOwnerDraw={onOwnerDraw} onBankFee={onBankFee} />}
       {activeTab === "statement" && <StatementPage accounts={accounts} mutations={mutations} onExportCsv={onExportStatementCsv} />}
       {activeTab === "debts" && <DebtsPage debts={debts} debtForm={debtForm} debtPaymentForm={debtPaymentForm} saving={saving} onDebtFormChange={onDebtFormChange} onDebtPaymentFormChange={onDebtPaymentFormChange} onSubmitDebt={onSubmitDebt} onSubmitDebtPayment={onSubmitDebtPayment} onCopyReminder={onCopyReminder} />}

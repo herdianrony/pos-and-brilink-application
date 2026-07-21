@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Banknote, CreditCard, Landmark, Plus, QrCode, Search, ScanLine, Pause, Trash2 } from "lucide-react";
-import { Button, EmptyState, PageHeader, SectionCard } from "../components/ui";
+import { Button, ChipTabs, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { PaymentModal } from "../components/PaymentModal";
 import { CurrencyInput } from "../components/CurrencyInput";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
@@ -79,12 +79,13 @@ export function POSPage({
             <label className={tw("pos-search-input")}><Search size={18} /><input className={tw("form-input")} ref={searchRef} value={localSearch} onChange={(event) => setLocalSearch(event.target.value)} placeholder="Cari nama produk atau barcode..." /></label>
             <Button variant="secondary" onClick={() => searchRef.current?.focus()}><ScanLine size={16} /> Scan</Button>
           </div>
-          <div className={tw("category-filter-row electron-filter-row")}>
-            <button className={tw(posCategoryFilter === "all" ? "filter-chip active" : "filter-chip")} onClick={() => onCategoryFilterChange("all")}>Semua</button>
-            {categories.map((category) => (
-              <button key={category.id} className={tw(posCategoryFilter === String(category.id) ? "filter-chip active" : "filter-chip")} onClick={() => onCategoryFilterChange(String(category.id))}>{category.name}</button>
-            ))}
-          </div>
+          <ChipTabs
+            className={tw("category-filter-row electron-filter-row")}
+            items={[{ id: "all", label: "Semua" }, ...categories.map((category) => ({ id: String(category.id), label: category.name }))]}
+            active={posCategoryFilter}
+            onChange={onCategoryFilterChange}
+            ariaLabel="Filter kategori produk"
+          />
           <div className={tw("pos-product-grid electron-product-grid")}>
             {visibleProducts.length === 0 ? <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." /> : visibleProducts.map((product) => (
               <button key={product.id} className={tw("pos-product-card electron-product-card")} onClick={() => onAddToCart(product)} disabled={product.stock <= 0}>
@@ -104,9 +105,16 @@ export function POSPage({
           <Button variant="secondary" className={tw("mb-3 w-full")} onClick={() => setShowServiceForm(!showServiceForm)}><Landmark size={16} /> Tambah Layanan Agen</Button>
           {showServiceForm && (
             <div className={tw("pos-service-form")}>
-              <div className={tw("service-preset-row span-2")}>
-                {posServicePresets.map((preset) => <button key={preset.label} type="button" className={tw(serviceForm.service_name === preset.label ? "filter-chip active" : "filter-chip")} onClick={() => setServiceForm({ ...serviceForm, service_name: preset.label, fee: preset.fee })}>{preset.label}</button>)}
-              </div>
+              <ChipTabs
+                className={tw("service-preset-row span-2")}
+                items={posServicePresets.map((preset) => ({ id: preset.label, label: preset.label }))}
+                active={serviceForm.service_name}
+                onChange={(label) => {
+                  const preset = posServicePresets.find((item) => item.label === label);
+                  setServiceForm({ ...serviceForm, service_name: label, fee: preset?.fee || serviceForm.fee });
+                }}
+                ariaLabel="Preset layanan POS"
+              />
               <label className={tw("field-label")}>Layanan<input className={tw("form-input")} value={serviceForm.service_name} onChange={(event) => setServiceForm({ ...serviceForm, service_name: event.target.value })} /></label>
               <label className={tw("field-label")}>Nominal<CurrencyInput value={serviceForm.amount} onChange={(value) => setServiceForm({ ...serviceForm, amount: value })} /></label>
               <label className={tw("field-label")}>Admin<CurrencyInput value={serviceForm.fee} onChange={(value) => setServiceForm({ ...serviceForm, fee: value })} /></label>
