@@ -3,8 +3,7 @@ import type { FormEvent } from "react";
 import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { PageHeader } from "../components/ui";
-import { StatCard } from "../components/ui";
+import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type DebtFilter = "open" | "paid" | "all";
@@ -64,20 +63,19 @@ export function DebtsPage({
         <div className="card debt-list-card">
           <div className="card-header"><div><h2>Daftar Utang</h2><p>{visibleDebts.length} catatan sesuai filter.</p></div></div>
           {visibleDebts.length === 0 ? <div className="empty-state"><strong>Belum ada data utang</strong><span>Catat utang pelanggan dari panel kanan.</span></div> : (
-            <div className="debt-table-like">
-              <div className="debt-table-head"><span>Pelanggan</span><span>Status</span><span>Sisa</span><span>Aksi</span></div>
+            <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 190px" minWidth={780}>
               {visibleDebts.map((debt) => (
-                <div key={debt.id} className="debt-table-row">
-                  <div><strong>{debt.customer_name}</strong><small>{debt.phone || "Tanpa nomor"}</small><small>{debt.notes || "-"}</small></div>
+                <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 190px">
+                  <DataCell><strong>{debt.customer_name}</strong><DataCellText>{debt.phone || "Tanpa nomor"}</DataCellText><DataCellText>{debt.notes || "-"}</DataCellText></DataCell>
                   <span className={debt.status === "paid" ? "history-status-badge completed" : "history-status-badge pending"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
                   <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
                   <div className="debt-actions">
                     <button className="secondary" onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><Plus size={14} /> Bayar</button>
                     <button className="secondary" onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={14} /> Reminder</button>
                   </div>
-                </div>
+                </DataRow>
               ))}
-            </div>
+            </DataTable>
           )}
         </div>
 

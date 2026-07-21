@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
-import { PageHeader, StatCard } from "../components/ui";
+import { DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -83,17 +83,16 @@ export function LogsPage({
         <div className="card logs-table-card">
           <div className="card-header"><div><h2>Daftar Aktivitas</h2><p>{visibleLogs.length} catatan sesuai filter.</p></div></div>
           {visibleLogs.length === 0 ? <div className="empty-state"><strong>Belum ada aktivitas</strong><span>Aktivitas penting akan muncul setelah aplikasi digunakan.</span></div> : (
-            <div className="activity-table-like">
-              <div className="activity-table-head"><span>Level</span><span>Sumber</span><span>Pesan</span><span>Waktu</span></div>
+            <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={860}>
               {visibleLogs.map((log) => (
-                <div key={log.id} className="activity-row-like">
+                <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
                   <span className={`log-level ${log.level.toLowerCase()}`}>{levelLabel(log.level)}</span>
                   <span>{sourceLabel(log.source)}</span>
                   <strong>{log.message}</strong>
                   <small>{log.created_at}</small>
-                </div>
+                </DataRow>
               ))}
-            </div>
+            </DataTable>
           )}
         </div>
         <aside className="card logs-side-card">

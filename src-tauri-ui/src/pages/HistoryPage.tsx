@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Ban, CheckCircle, ClipboardList, Landmark, RotateCcw, ShoppingCart } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
-import { PageHeader, StatCard } from "../components/ui";
+import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 
 const typeTabs = [
   { id: "all", label: "Semua", icon: ClipboardList },
@@ -87,17 +87,16 @@ export function HistoryPage({
         <div className="card history-table-card">
           <div className="card-header"><div><h2>Daftar Transaksi</h2><p>Klik salah satu transaksi untuk melihat detail.</p></div></div>
           {filtered.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi</strong><span>Transaksi akan muncul setelah kasir atau layanan agen digunakan.</span></div> : (
-            <div className="transaction-table-like">
-              <div className="transaction-table-head"><span>Invoice</span><span>Tipe</span><span>Status</span><span>Total</span></div>
+            <DataTable columns={["Invoice", "Tipe", "Status", "Total"]} template="minmax(0,1.4fr) 120px 110px 130px">
               {filtered.map((transaction) => (
-                <button key={transaction.id} className={selectedTransaction?.id === transaction.id ? "transaction-row-like active" : "transaction-row-like"} onClick={() => onOpenDetail(transaction)}>
-                  <span><strong>{transaction.invoice_no}</strong><small>{transaction.created_at}</small></span>
-                  <span>{transaction.transaction_type === "pos" ? "POS" : "Layanan"}<small>{paymentLabel(transaction.payment_method)}</small></span>
+                <DataRow key={transaction.id} template="minmax(0,1.4fr) 120px 110px 130px" active={selectedTransaction?.id === transaction.id} onClick={() => onOpenDetail(transaction)}>
+                  <DataCell><strong>{transaction.invoice_no}</strong><DataCellText>{transaction.created_at}</DataCellText></DataCell>
+                  <DataCell>{transaction.transaction_type === "pos" ? "POS" : "Layanan"}<DataCellText>{paymentLabel(transaction.payment_method)}</DataCellText></DataCell>
                   <span className={`history-status-badge ${transaction.status}`}>{statusLabel(transaction.status)}</span>
                   <strong>{formatRupiah(transaction.total_amount)}</strong>
-                </button>
+                </DataRow>
               ))}
-            </div>
+            </DataTable>
           )}
         </div>
 

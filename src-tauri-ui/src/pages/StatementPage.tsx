@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Printer, Scale, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
-import { PageHeader, StatCard } from "../components/ui";
+import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -86,18 +86,17 @@ export function StatementPage({
         <div className="card statement-table-card">
           <div className="card-header"><div><h2>Mutasi Rekening</h2><p>{filteredMutations.length} mutasi sesuai filter.</p></div></div>
           {filteredMutations.length === 0 ? <div className="empty-state"><strong>Belum ada mutasi</strong><span>Mutasi muncul setelah transaksi atau aksi saldo.</span></div> : (
-            <div className="statement-table-like">
-              <div className="statement-table-head"><span>Tanggal</span><span>Akun</span><span>Tipe</span><span>Masuk/Keluar</span><span>Saldo</span></div>
+            <DataTable columns={["Tanggal", "Akun", "Tipe", "Masuk/Keluar", "Saldo"]} template="minmax(0,1.1fr) 140px 160px 130px 130px" minWidth={900}>
               {filteredMutations.map((mutation) => (
-                <div key={mutation.id} className="statement-row-like">
-                  <span><strong>{mutation.created_at}</strong><small>{mutation.notes || "-"}</small></span>
+                <DataRow key={mutation.id} template="minmax(0,1.1fr) 140px 160px 130px 130px">
+                  <DataCell><strong>{mutation.created_at}</strong><DataCellText>{mutation.notes || "-"}</DataCellText></DataCell>
                   <span>{mutation.account_name}</span>
                   <span>{mutationLabel(mutation.mutation_type)}</span>
                   <strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong>
                   <strong>{formatRupiah(mutation.balance_after)}</strong>
-                </div>
+                </DataRow>
               ))}
-            </div>
+            </DataTable>
           )}
         </div>
         <aside className="card statement-side-card">

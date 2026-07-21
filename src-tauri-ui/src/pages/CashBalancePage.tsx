@@ -1,6 +1,7 @@
 import { ArrowRightLeft, HandCoins, Plus, ReceiptText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { PageHeader } from "../components/ui";
+import { DataCell, DataCellText, DataRow, DataTable } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
 
 function accountTone(index: number, code: string) {
@@ -84,17 +85,16 @@ export function CashBalancePage({
         <div className="card cash-mutation-card">
           <div className="card-header"><div><h2>Mutasi Saldo Terakhir</h2><p>Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.</p></div></div>
           {mutations.length === 0 ? <div className="empty-state compact"><strong>Belum ada mutasi saldo</strong><span>Mutasi muncul setelah POS, transaksi agen, atau aksi saldo.</span></div> : (
-            <div className="cash-mutation-table">
-              <div className="cash-mutation-head"><span>Akun</span><span>Tipe</span><span>Nominal</span><span>Saldo</span></div>
+            <DataTable columns={["Akun", "Tipe", "Nominal", "Saldo"]} template="minmax(0,1fr) 160px 130px 130px" minWidth={760}>
               {mutations.map((mutation) => (
-                <div key={mutation.id} className="cash-mutation-row">
-                  <span><strong>{mutation.account_name}</strong><small>{mutation.notes || "-"}</small></span>
-                  <span>{mutationLabel(mutation.mutation_type)}<small>{mutation.created_at}</small></span>
+                <DataRow key={mutation.id} template="minmax(0,1fr) 160px 130px 130px">
+                  <DataCell><strong>{mutation.account_name}</strong><DataCellText>{mutation.notes || "-"}</DataCellText></DataCell>
+                  <DataCell>{mutationLabel(mutation.mutation_type)}<DataCellText>{mutation.created_at}</DataCellText></DataCell>
                   <strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong>
                   <strong>{formatRupiah(mutation.balance_after)}</strong>
-                </div>
+                </DataRow>
               ))}
-            </div>
+            </DataTable>
           )}
         </div>
         <aside className="card cash-side-panel">

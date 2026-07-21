@@ -555,12 +555,6 @@
 .history-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(360px, .8fr); gap: 18px; align-items: start; }
 .history-table-card, .transaction-detail-card { @apply rounded-[28px]; }
 .transaction-detail-card { @apply sticky top-24; }
-.transaction-table-like { @apply grid gap-2; }
-.transaction-table-head { @apply hidden grid-cols-[minmax(0,1.4fr)_120px_110px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 md:grid; }
-.transaction-row-like { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left text-slate-900 shadow-none hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-[0_8px_24px_rgba(15,23,42,.06)] md:grid-cols-[minmax(0,1.4fr)_120px_110px_130px] md:items-center; }
-.transaction-row-like.active { @apply border-emerald-400 bg-emerald-50; }
-.transaction-row-like span { @apply grid gap-1; }
-.transaction-row-like small { @apply text-xs text-slate-500; }
 .history-status-badge { @apply inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black; }
 .history-status-badge.completed { @apply bg-emerald-50 text-emerald-700; }
 .history-status-badge.pending { @apply bg-amber-50 text-amber-700; }
@@ -573,8 +567,6 @@
 
 /* Electron parity product master */
 .master-tabs { @apply rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_8px_22px_rgba(15,23,42,.05)]; }
-.product-table-like { @apply grid gap-2; }
-.product-table-head { @apply hidden grid-cols-[minmax(0,1.4fr)_130px_110px_170px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid; }
 .product-table-row { @apply grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1.4fr)_130px_110px_170px] lg:items-center; }
 .product-table-row:hover { @apply border-emerald-200 bg-emerald-50/20; }
 .category-grid { @apply grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3; }
@@ -613,11 +605,6 @@
 .cash-layout-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,.7fr)]; }
 .cash-mutation-card, .cash-side-panel { @apply rounded-[28px]; }
 .cash-side-panel { @apply xl:sticky xl:top-24; }
-.cash-mutation-table { @apply grid gap-2; }
-.cash-mutation-head { @apply hidden grid-cols-[minmax(0,1fr)_160px_130px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid; }
-.cash-mutation-row { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1fr)_160px_130px_130px] lg:items-center; }
-.cash-mutation-row span { @apply grid gap-1; }
-.cash-mutation-row small { @apply text-xs text-slate-500; }
 
 /* Electron parity statement page */
 .statement-page { @apply grid gap-5; }
@@ -629,12 +616,6 @@
 .statement-table-card,
 .statement-side-card { @apply rounded-[28px]; }
 .statement-side-card { @apply sticky top-24; }
-.statement-table-like { @apply grid gap-2; }
-.statement-table-head { @apply hidden grid-cols-[minmax(0,1.1fr)_140px_160px_130px_130px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 xl:grid; }
-.statement-row-like { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 xl:grid-cols-[minmax(0,1.1fr)_140px_160px_130px_130px] xl:items-center; }
-.statement-row-like:hover { @apply border-emerald-200 bg-emerald-50/20; }
-.statement-row-like span { @apply grid gap-1; }
-.statement-row-like small { @apply text-xs text-slate-500; }
 @media (max-width: 1100px) {
   .statement-layout { grid-template-columns: 1fr; }
   .statement-side-card { position: static; }
@@ -647,8 +628,6 @@
 .debt-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .8fr); gap: 18px; align-items: start; }
 .debt-list-card, .debt-form-stack .card { @apply rounded-[28px]; }
 .debt-form-stack { @apply grid gap-4 xl:sticky xl:top-24; }
-.debt-table-like { @apply grid gap-2; }
-.debt-table-head { @apply hidden grid-cols-[minmax(0,1.2fr)_110px_130px_190px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid; }
 .debt-table-row { @apply grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1.2fr)_110px_130px_190px] lg:items-center; }
 .debt-table-row:hover { @apply border-emerald-200 bg-emerald-50/20; }
 .debt-table-row small { @apply mt-1 block text-xs text-slate-500; }
@@ -699,11 +678,6 @@
 .logs-table-card,
 .logs-side-card { @apply rounded-[28px]; }
 .logs-side-card { @apply sticky top-24; }
-.activity-table-like { @apply grid gap-2; }
-.activity-table-head { @apply hidden grid-cols-[110px_150px_minmax(0,1fr)_190px] gap-3 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-400 xl:grid; }
-.activity-row-like { @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 xl:grid-cols-[110px_150px_minmax(0,1fr)_190px] xl:items-center; }
-.activity-row-like:hover { @apply border-emerald-200 bg-emerald-50/20; }
-.activity-row-like small { @apply text-xs text-slate-500; }
 @media (max-width: 1100px) {
   .logs-layout { grid-template-columns: 1fr; }
   .logs-side-card { position: static; }

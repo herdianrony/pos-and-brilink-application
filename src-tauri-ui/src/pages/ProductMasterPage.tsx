@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FolderOpen, Landmark, Package, Tag } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
-import { Badge, Button, Card, CardHeader, EmptyState, PageHeader } from "../components/ui";
+import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type MasterTab = "products" | "categories" | "agentServices" | "agentCategories";
@@ -60,26 +60,23 @@ export function ProductMasterPage({
               </div>
               <Button onClick={onAddProduct}>Tambah Produk</Button>
             </CardHeader>
-            <div className="product-table-like">
-              <div className="product-table-head"><span>Produk</span><span>Harga</span><span>Stok</span><span>Aksi</span></div>
-              {products.length === 0 ? (
-                <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
-              ) : products.map((product) => (
-                <div key={product.id} className="product-table-row">
-                  <div className="product-main">
-                    <strong>{product.name}</strong>
-                    <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
-                    <small>HPP {formatRupiah(product.buy_price)}</small>
-                  </div>
-                  <div className="product-meta"><strong>{formatRupiah(product.sell_price)}</strong><small>Harga jual</small></div>
-                  <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
-                  <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <Button variant="secondary" onClick={() => onEditProduct(product)}>Edit</Button>
-                    <Button variant="danger" onClick={() => onRemoveProduct(product)}>Nonaktifkan</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {products.length === 0 ? (
+              <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
+            ) : (
+              <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 170px" minWidth={820}>
+                {products.map((product) => (
+                  <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 170px">
+                    <DataCell><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></DataCell>
+                    <DataCell><strong>{formatRupiah(product.sell_price)}</strong><DataCellText>Harga jual</DataCellText></DataCell>
+                    <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <Button variant="secondary" onClick={() => onEditProduct(product)}>Edit</Button>
+                      <Button variant="danger" onClick={() => onRemoveProduct(product)}>Nonaktifkan</Button>
+                    </div>
+                  </DataRow>
+                ))}
+              </DataTable>
+            )}
           </Card>
           <Card>
             <CardHeader><div><h2>Stok Menipis</h2><p>Produk yang perlu segera dicek.</p></div></CardHeader>
