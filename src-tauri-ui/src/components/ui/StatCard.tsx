@@ -3,9 +3,9 @@ import { cn } from "../../lib/cn";
 
 const toneClass = {
   green: "bg-emerald-50 text-emerald-600",
-  blue: "bg-blue-50 text-blue-600",
+  blue: "bg-cyan-50 text-cyan-700",
   amber: "bg-amber-50 text-amber-600",
-  purple: "bg-violet-50 text-violet-600",
+  purple: "bg-teal-50 text-teal-700",
 };
 
 export function StatCard({

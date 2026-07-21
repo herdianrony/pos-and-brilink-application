@@ -22,14 +22,14 @@ export function ReportsPage({
   const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
   const totalProfit = posProfit + agentProfit;
   const chartRows = [
-    { label: "Omzet POS", value: posRevenue, color: "#00875a" },
-    { label: "Omzet Layanan", value: agentRevenue, color: "#2563eb" },
-    { label: "Profit POS", value: posProfit, color: "#7c3aed" },
+    { label: "Omzet POS", value: posRevenue, color: "#047857" },
+    { label: "Omzet Layanan", value: agentRevenue, color: "#0f766e" },
+    { label: "Profit POS", value: posProfit, color: "#0284c7" },
     { label: "Keuntungan Agen", value: agentProfit, color: "#d97706" },
   ];
   const paymentRows = ["cash", "transfer", "qris", "mixed"].map((method) => {
     const value = transactions.filter((transaction) => transaction.payment_method === method).reduce((sum, transaction) => sum + transaction.total_amount, 0);
-    const colors: Record<string, string> = { cash: "#00875a", transfer: "#2563eb", qris: "#7c3aed", mixed: "#d97706" };
+    const colors: Record<string, string> = { cash: "#047857", transfer: "#0f766e", qris: "#0284c7", mixed: "#d97706" };
     return { label: paymentLabel(method), value, color: colors[method] ?? "#64748b" };
   }).filter((row) => row.value > 0);
 

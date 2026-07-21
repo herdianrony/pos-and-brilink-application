@@ -90,20 +90,20 @@ export function DailyRevenueChart({ transactions }: { transactions: TransactionR
         <AreaChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="omzetGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#00875a" stopOpacity={0.22} />
-              <stop offset="100%" stopColor="#00875a" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#047857" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="#047857" stopOpacity={0.02} />
             </linearGradient>
             <linearGradient id="profitGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#d97706" stopOpacity={0.18} />
-              <stop offset="100%" stopColor="#d97706" stopOpacity={0.01} />
+              <stop offset="0%" stopColor="#b45309" stopOpacity={0.18} />
+              <stop offset="100%" stopColor="#b45309" stopOpacity={0.01} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} tickFormatter={compactCurrency} width={58} />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#94a3b8", strokeDasharray: "4 4" }} />
-          <Area type="monotone" dataKey="omzet" name="Omzet" stroke="#00875a" strokeWidth={3} fill="url(#omzetGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="profit" name="Profit" stroke="#d97706" strokeWidth={3} fill="url(#profitGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
+          <Area type="monotone" dataKey="omzet" name="Omzet" stroke="#047857" strokeWidth={3} fill="url(#omzetGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
+          <Area type="monotone" dataKey="profit" name="Profit" stroke="#b45309" strokeWidth={3} fill="url(#profitGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

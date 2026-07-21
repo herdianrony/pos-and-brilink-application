@@ -5,10 +5,10 @@
 
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-primary: #00875a;
-  --color-primary-light: #00b37e;
-  --color-secondary: #0066ff;
-  --color-accent: #7c3aed;
+  --color-primary: #047857;
+  --color-primary-light: #10b981;
+  --color-secondary: #0f766e;
+  --color-accent: #d97706;
   --color-ink: #0f172a;
   --color-muted: #64748b;
   --color-line: #e2e8f0;
@@ -21,8 +21,8 @@
     @apply m-0 min-h-screen bg-slate-100 text-slate-900 antialiased font-sans;
     background:
       radial-gradient(circle at 18% 0%, #d1fae5 0, transparent 30%),
-      radial-gradient(circle at 100% 12%, #dbeafe 0, transparent 26%),
-      #f4f7fb;
+      radial-gradient(circle at 100% 12%, #ccfbf1 0, transparent 26%),
+      #f7faf9;
   }
   h1 { @apply m-0 text-[34px] leading-none font-extrabold tracking-[-0.04em]; }
   h2 { @apply mt-0 mb-4 text-xl font-extrabold tracking-tight; }
@@ -31,12 +31,12 @@
   small { @apply text-slate-500; }
   button {
     @apply border-0 rounded-2xl px-4 py-3 font-black cursor-pointer text-white transition-all duration-200 disabled:opacity-55 disabled:cursor-not-allowed disabled:shadow-none;
-    background: linear-gradient(135deg, #00875a, #00b37e);
-    box-shadow: 0 10px 24px rgba(0, 135, 90, .18);
+    background: linear-gradient(135deg, #047857, #10b981);
+    box-shadow: 0 10px 24px rgba(4, 120, 87, .18);
   }
   button:hover:not(:disabled) {
     @apply -translate-y-0.5;
-    box-shadow: 0 14px 30px rgba(0, 135, 90, .26);
+    box-shadow: 0 14px 30px rgba(4, 120, 87, .26);
   }
   label { @apply grid gap-2 text-[13px] text-slate-600 font-black; }
   input, select { @apply w-full border border-slate-200 rounded-2xl px-3.5 py-3 text-[15px] bg-white text-slate-900 transition-all duration-150; }
@@ -44,7 +44,7 @@
 }
 
 @layer components {
-  .brand-mark { @apply w-16 h-16 grid place-items-center rounded-[22px] text-white font-black tracking-tighter; background: linear-gradient(135deg, #00875a, #00b37e); box-shadow: 0 16px 30px rgba(0, 135, 90, .30); }
+  .brand-mark { @apply w-16 h-16 grid place-items-center rounded-[22px] text-white font-black tracking-tighter; background: linear-gradient(135deg, #047857, #10b981); box-shadow: 0 16px 30px rgba(4, 120, 87, .30); }
   .brand-mark.small { @apply w-11 h-11 rounded-[17px] text-sm; }
   .eyebrow { @apply m-0 mb-2 uppercase tracking-[0.14em] text-emerald-600 font-black text-xs; }
   .form { @apply grid gap-3.5 mt-5; }
@@ -52,14 +52,14 @@
 
   .app-shell { @apply min-h-screen grid; grid-template-columns: 292px 1fr; }
   .sidebar { @apply sticky top-0 h-screen flex flex-col gap-5 px-4.5 py-5.5 text-white overflow-hidden; background: linear-gradient(155deg, #052e2b 0%, #0f172a 58%, #111827 100%); box-shadow: 22px 0 60px rgba(15, 23, 42, .18); }
-  .sidebar::before { content: ""; @apply absolute inset-0 pointer-events-none; background: radial-gradient(circle at 0 0, rgba(0,179,126,.32), transparent 42%), radial-gradient(circle at 100% 100%, rgba(124,58,237,.24), transparent 32%); }
+  .sidebar::before { content: ""; @apply absolute inset-0 pointer-events-none; background: radial-gradient(circle at 0 0, rgba(0,179,126,.32), transparent 42%), radial-gradient(circle at 100% 100%, rgba(20,184,166,.18), transparent 32%); }
   .sidebar > * { @apply relative; }
   nav { @apply grid gap-2 overflow-y-auto pr-1; }
   .nav-item { @apply w-full flex items-center justify-start gap-3 bg-transparent text-slate-300 border border-transparent shadow-none px-3.5 py-3; }
   .nav-icon { @apply w-5.5 h-5.5 inline-grid place-items-center flex-none; }
   .nav-icon svg { @apply block; }
   .nav-item:hover:not(:disabled) { @apply transform-none bg-white/10 shadow-none; }
-  .nav-item.active { @apply text-white border-white/15; background: linear-gradient(135deg, #00875a, #00b37e); box-shadow: 0 14px 28px rgba(0, 135, 90, .26); }
+  .nav-item.active { @apply text-white border-white/15; background: linear-gradient(135deg, #047857, #10b981); box-shadow: 0 14px 28px rgba(4, 120, 87, .26); }
 
   .content-shell { @apply min-w-0; }
   .page-content { @apply max-w-[1320px] mx-auto p-7; }
@@ -102,7 +102,7 @@
 
   .pos-product-grid { @apply grid gap-3; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   .pos-product-card { @apply grid gap-3 p-3.5 border border-slate-200 rounded-[20px] bg-white; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); }
-  .pos-product-card:hover { @apply border-emerald-300; box-shadow: 0 14px 30px rgba(0, 135, 90, .10); }
+  .pos-product-card:hover { @apply border-emerald-300; box-shadow: 0 14px 30px rgba(4, 120, 87, .10); }
   .product-main { @apply grid gap-1 min-w-0; }
   .product-main strong { @apply overflow-hidden text-ellipsis whitespace-nowrap; }
   .product-main small { @apply text-slate-500; }
@@ -112,13 +112,13 @@
   .agent-stepper { @apply grid-cols-4; }
   .step { @apply flex items-center justify-start gap-2.5 px-3.5 py-3 text-slate-700 bg-white border border-slate-200 shadow-sm; }
   .step span { @apply w-7 h-7 inline-grid place-items-center rounded-full text-emerald-600 bg-emerald-50; }
-  .step.active { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
+  .step.active { @apply text-white border-transparent; background: linear-gradient(135deg, #047857, #10b981); }
   .step.active span { @apply text-emerald-700 bg-white; }
   .payment-choice-grid { @apply grid gap-2.5 mb-3.5; }
   .payment-choice-grid { @apply grid-cols-3; }
   .choice-card { @apply min-h-[88px] grid content-center gap-1.5 text-left text-slate-900 bg-white border border-slate-200 shadow-none; }
   .choice-card span { @apply text-slate-500 text-xs font-bold; }
-  .choice-card.selected { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
+  .choice-card.selected { @apply text-white border-transparent; background: linear-gradient(135deg, #047857, #10b981); }
   .choice-card.selected span { @apply text-emerald-100; }
   .review-box { @apply grid gap-2.5 p-4 my-3.5 rounded-[20px] bg-slate-50 border border-slate-200; }
   .review-box div { @apply flex items-center justify-between gap-3 pb-2 border-b border-slate-200; }
@@ -224,7 +224,7 @@
 }
 .filter-chip.active {
   color: white;
-  background: linear-gradient(135deg, #00875a, #00b37e);
+  background: linear-gradient(135deg, #047857, #10b981);
   border-color: transparent;
 }
 .electron-cart-row {
@@ -253,7 +253,7 @@
   place-items: center;
   border-radius: 16px;
   color: white;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #047857, #14b8a6);
   font-weight: 950;
 }
 @media (max-width: 1100px) {
@@ -280,7 +280,7 @@
 }
 .login-brand-panel::after {
   content: "";
-  @apply absolute -bottom-28 -left-24 w-80 h-80 rounded-full blur-3xl bg-violet-500/20;
+  @apply absolute -bottom-28 -left-24 w-80 h-80 rounded-full blur-3xl bg-teal-500/20;
 }
 .login-brand-content { @apply relative z-10 max-w-md; }
 .login-logo-row { @apply flex items-center gap-3 mb-12; }
@@ -315,7 +315,7 @@
 }
 
 /* Electron parity dashboard */
-.electron-hero-card { @apply mb-4 grid min-h-[144px] content-center rounded-[24px] p-6 text-white; background: radial-gradient(circle at 92% 10%, rgba(16,185,129,.35), transparent 20%), linear-gradient(135deg,#0f172a,#111827 55%,#0f3b37); }
+.electron-hero-card { @apply mb-4 grid min-h-[144px] content-center rounded-[24px] p-6 text-white; background: radial-gradient(circle at 92% 10%, rgba(16,185,129,.35), transparent 20%), linear-gradient(135deg,#0f172a,#111827 55%,#0f4a43); }
 .electron-hero-card > span { @apply text-sm font-black; }
 .electron-hero-card > strong { @apply my-3 text-4xl font-black tracking-tight; }
 .hero-icon-box { @apply mb-3 grid h-9 w-9 place-items-center rounded-2xl bg-white/10 text-slate-200; }
@@ -334,10 +334,10 @@
 .account-balance-card strong { @apply mt-1 block text-sm font-black; }
 .account-balance-card small { @apply mt-3 block text-[10px] uppercase text-white/70; }
 .account-balance-card b { @apply block text-xl font-black; }
-.account-green { background: linear-gradient(135deg,#22c55e,#059669); }
-.account-blue { background: linear-gradient(135deg,#0369a1,#1d4ed8); }
-.account-navy { background: linear-gradient(135deg,#0f172a,#1e40af); }
-.account-purple { background: linear-gradient(135deg,#8b5cf6,#6d28d9); }
+.account-green { background: linear-gradient(135deg,#10b981,#047857); }
+.account-blue { background: linear-gradient(135deg,#0e7490,#0284c7); }
+.account-navy { background: linear-gradient(135deg,#0f172a,#0f766e); }
+.account-purple { background: linear-gradient(135deg,#14b8a6,#0f766e); }
 .electron-dashboard-grid { @apply mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(320px,.8fr)]; }
 .chart-card { @apply min-h-[320px]; }
 .stock-card { @apply min-h-[320px]; }
@@ -361,7 +361,7 @@
     box-shadow: 18px 0 45px rgba(15, 23, 42, .14);
   }
   .sidebar-redesign::before {
-    background: radial-gradient(circle at 0 0, rgba(16,185,129,.2), transparent 38%), radial-gradient(circle at 100% 100%, rgba(124,58,237,.12), transparent 36%);
+    background: radial-gradient(circle at 0 0, rgba(16,185,129,.2), transparent 38%), radial-gradient(circle at 100% 100%, rgba(20,184,166,.12), transparent 36%);
   }
   .brand-block {
     @apply flex items-center gap-3 px-0 pb-4 text-white;
@@ -382,7 +382,7 @@
     @apply rounded-2xl px-3.5 py-3 text-[13px] font-black text-slate-300;
   }
   .nav-redesign .nav-item.active {
-    background: linear-gradient(135deg, #00875a 0%, #00d68f 100%);
+    background: linear-gradient(135deg, #047857 0%, #10b981 100%);
     box-shadow: 0 12px 24px rgba(0, 179, 126, .28);
   }
   .sidebar-bottom-redesign {
@@ -395,7 +395,7 @@
     @apply flex items-center justify-center gap-1.5 rounded-2xl bg-white/5 px-2 py-2 text-xs font-black text-slate-300 shadow-none hover:bg-white/10 hover:shadow-none hover:transform-none;
   }
   .support-button.support {
-    @apply bg-violet-500/20 text-violet-300;
+    @apply bg-teal-500/20 text-teal-200;
   }
   .user-card-redesign {
     @apply grid items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-white;
@@ -499,9 +499,9 @@
 .service-filter-row { @apply mb-4 flex flex-wrap gap-2 border-b border-slate-100 pb-3; }
 .electron-service-grid { @apply grid grid-cols-2 gap-3; }
 .electron-service-card {
-  @apply relative grid min-h-[150px] content-center justify-items-center gap-2 rounded-2xl border-2 border-transparent bg-white p-4 text-center text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,.05)] hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-[0_14px_32px_rgba(124,58,237,.12)];
+  @apply relative grid min-h-[150px] content-center justify-items-center gap-2 rounded-2xl border-2 border-transparent bg-white p-4 text-center text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,.05)] hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50 hover:shadow-[0_14px_32px_rgba(20,184,166,.12)];
 }
-.electron-service-card.selected { @apply border-violet-400 bg-violet-50; }
+.electron-service-card.selected { @apply border-teal-400 bg-teal-50; }
 .electron-service-card small { @apply text-xs font-bold text-slate-500; }
 .electron-service-card em { @apply rounded-full bg-amber-100 px-2 py-1 text-[11px] font-black not-italic text-amber-700; }
 .service-fav { @apply absolute right-2 top-2 text-amber-400; }
@@ -549,8 +549,6 @@
 
 /* Electron parity product master */
 .master-tabs { @apply rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_8px_22px_rgba(15,23,42,.05)]; }
-.product-table-row { @apply grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1.4fr)_130px_110px_170px] lg:items-center; }
-.product-table-row:hover { @apply border-emerald-200 bg-emerald-50/20; }
 .category-grid { @apply grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3; }
 .category-card { @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,.04)]; }
 .category-card svg { @apply text-emerald-600; }
@@ -579,10 +577,10 @@
 .cash-account-card p { @apply mt-1 text-xs font-semibold text-white/75; }
 .cash-account-actions { @apply mt-4 grid grid-cols-2 gap-2; }
 .cash-account-actions button { @apply rounded-xl bg-white/15 px-2 py-2 text-xs font-black text-white shadow-none hover:bg-white/25 hover:shadow-none hover:transform-none; }
-.cash-account-green { background: linear-gradient(135deg,#22c55e,#059669); }
-.cash-account-blue { background: linear-gradient(135deg,#0369a1,#1d4ed8); }
-.cash-account-navy { background: linear-gradient(135deg,#0f172a,#1e40af); }
-.cash-account-purple { background: linear-gradient(135deg,#8b5cf6,#6d28d9); }
+.cash-account-green { background: linear-gradient(135deg,#10b981,#047857); }
+.cash-account-blue { background: linear-gradient(135deg,#0e7490,#0284c7); }
+.cash-account-navy { background: linear-gradient(135deg,#0f172a,#0f766e); }
+.cash-account-purple { background: linear-gradient(135deg,#14b8a6,#0f766e); }
 .cash-account-teal { background: linear-gradient(135deg,#0f766e,#14b8a6); }
 .cash-layout-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,.7fr)]; }
 .cash-mutation-card, .cash-side-panel { @apply rounded-[28px]; }
@@ -610,9 +608,6 @@
 .debt-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .8fr); gap: 18px; align-items: start; }
 .debt-list-card, .debt-form-stack > div { @apply rounded-[28px]; }
 .debt-form-stack { @apply grid gap-4 xl:sticky xl:top-24; }
-.debt-table-row { @apply grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1.2fr)_110px_130px_190px] lg:items-center; }
-.debt-table-row:hover { @apply border-emerald-200 bg-emerald-50/20; }
-.debt-table-row small { @apply mt-1 block text-xs text-slate-500; }
 .debt-actions { @apply flex flex-wrap gap-2 lg:justify-end; }
 .debt-actions button { @apply px-3 py-2 text-xs; }
 @media (max-width: 1100px) {
@@ -631,9 +626,9 @@
 .settings-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-2; }
 .settings-card { @apply relative overflow-hidden rounded-[28px]; }
 .settings-card-icon { @apply mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-600; }
-.settings-card-icon.blue { @apply bg-blue-50 text-blue-600; }
+.settings-card-icon.blue { @apply bg-cyan-50 text-cyan-700; }
 .settings-card-icon.amber { @apply bg-amber-50 text-amber-600; }
-.settings-card-icon.purple { @apply bg-violet-50 text-violet-600; }
+.settings-card-icon.purple { @apply bg-teal-50 text-teal-700; }
 .settings-user-form { @apply mb-4; }
 .settings-user-list { @apply grid gap-2; }
 .settings-action-grid { @apply grid grid-cols-1 gap-2 sm:grid-cols-2; }
