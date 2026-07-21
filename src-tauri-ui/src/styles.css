@@ -47,12 +47,9 @@
 }
 
 @layer components {
-  .auth-page { @apply min-h-screen grid place-items-center p-6; background: radial-gradient(circle at top left, rgba(52,211,153,.5), transparent 34%), linear-gradient(135deg, #052e2b, #0f172a); }
-  .auth-card { @apply w-[min(470px,100%)] bg-white/95 border border-white/60 rounded-[32px] p-8; box-shadow: 0 28px 90px rgba(15, 23, 42, .32); }
   .brand-mark { @apply w-16 h-16 grid place-items-center rounded-[22px] text-white font-black tracking-tighter; background: linear-gradient(135deg, #00875a, #00b37e); box-shadow: 0 16px 30px rgba(0, 135, 90, .30); }
   .brand-mark.small { @apply w-11 h-11 rounded-[17px] text-sm; }
   .eyebrow { @apply m-0 mb-2 uppercase tracking-[0.14em] text-emerald-600 font-black text-xs; }
-  .muted { @apply text-slate-500; }
   .form { @apply grid gap-3.5 mt-5; }
   .status-line { @apply mt-5 px-3.5 py-3 rounded-2xl bg-emerald-50 text-emerald-800 font-extrabold; }
 
@@ -60,47 +57,24 @@
   .sidebar { @apply sticky top-0 h-screen flex flex-col gap-5 px-4.5 py-5.5 text-white overflow-hidden; background: linear-gradient(155deg, #052e2b 0%, #0f172a 58%, #111827 100%); box-shadow: 22px 0 60px rgba(15, 23, 42, .18); }
   .sidebar::before { content: ""; @apply absolute inset-0 pointer-events-none; background: radial-gradient(circle at 0 0, rgba(0,179,126,.32), transparent 42%), radial-gradient(circle at 100% 100%, rgba(124,58,237,.24), transparent 32%); }
   .sidebar > * { @apply relative; }
-  .logo-row { @apply flex items-center gap-3 px-1 pb-4.5 border-b border-white/10; }
-  .logo-row small { @apply block text-emerald-200 mt-0.5; }
   nav { @apply grid gap-2 overflow-y-auto pr-1; }
   .nav-item { @apply w-full flex items-center justify-start gap-3 bg-transparent text-slate-300 border border-transparent shadow-none px-3.5 py-3; }
   .nav-icon { @apply w-5.5 h-5.5 inline-grid place-items-center flex-none; }
   .nav-icon svg { @apply block; }
   .nav-item:hover:not(:disabled) { @apply transform-none bg-white/10 shadow-none; }
   .nav-item.active { @apply text-white border-white/15; background: linear-gradient(135deg, #00875a, #00b37e); box-shadow: 0 14px 28px rgba(0, 135, 90, .26); }
-  .sidebar-footer { @apply mt-auto p-4 rounded-[20px] bg-white/10 border border-white/10 backdrop-blur; }
-  .sidebar-footer small, .sidebar-footer span { @apply block text-slate-300; }
-  .sidebar-footer strong { @apply block my-1; }
-  .logout-button { @apply w-full mt-3; }
 
   .content-shell { @apply min-w-0; }
-  .topbar { @apply min-h-[78px] flex items-center justify-between gap-4 px-7 py-4 bg-white/85 border-b border-slate-200/80 backdrop-blur sticky top-0 z-10; }
-  .search-box { @apply flex-1 max-w-xl flex items-center gap-2.5 px-3.5 border border-slate-200 rounded-[18px] bg-slate-50 text-slate-500 font-extrabold; }
-  .search-box input { @apply border-0 bg-transparent shadow-none py-3 px-0 focus:ring-0; }
-  .search-box svg { @apply flex-none text-slate-400; }
-  .topbar-actions { @apply flex items-center gap-3 text-slate-600 font-extrabold; }
-  .status-pill { @apply max-w-[420px] overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 rounded-full text-emerald-800 bg-emerald-50 border border-emerald-200 text-[13px]; }
   .page-content { @apply max-w-[1320px] mx-auto p-7; }
-
-  .hero-panel { @apply flex items-center justify-between gap-5 mb-5 p-6 rounded-[30px] text-white; background: radial-gradient(circle at top left, rgba(52,211,153,.45), transparent 34%), linear-gradient(135deg, #052e2b, #0f172a); box-shadow: 0 18px 48px rgba(15,23,42,.16); }
   .hero-panel .eyebrow { @apply text-emerald-200; }
-  .hero-panel p { @apply text-slate-300 max-w-2xl mt-2.5 mb-0; }
   .hero-actions, .page-actions, .wizard-actions, .modal-actions { @apply flex items-center justify-end gap-2.5 flex-wrap; }
   .page-title { @apply flex items-center justify-between gap-4 mb-5.5; }
   .page-help { @apply flex items-center gap-2.5 flex-wrap -mt-2 mb-4.5 px-4 py-3 rounded-[18px] bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 text-emerald-800 text-[13px] font-extrabold; }
   .page-help span { @apply text-slate-700 font-bold; }
-
-  .stat-grid { @apply grid grid-cols-4 gap-4 mb-4.5; }
   .grid { @apply grid grid-cols-2 gap-4.5 mb-4.5; }
   .dashboard-grid { @apply items-stretch; }
-  .workspace-grid { @apply items-start; grid-template-columns: minmax(0,1.2fr) minmax(380px,.8fr); }
-  .product-master-grid { grid-template-columns: 300px minmax(0, 1fr); }
   .stat-card, .balance-card, .card { @apply bg-white/95 border border-slate-200/90 rounded-3xl p-5.5; box-shadow: 0 10px 30px rgba(15, 23, 42, .06); }
   .card { @apply backdrop-blur; }
-  .stat-card { @apply overflow-hidden relative min-h-[142px]; }
-  .stat-card::after { content: ""; @apply absolute -right-7 -top-7 w-24 h-24 rounded-full bg-current opacity-10; }
-  .stat-card span, .balance-card span { @apply block text-slate-500 font-black text-[13px]; }
-  .stat-card strong { @apply block my-3.5 text-[27px] tracking-[-0.04em] text-slate-900; }
   .stat-card.green { @apply text-emerald-600; }
   .stat-card.blue { @apply text-blue-600; }
   .stat-card.amber { @apply text-amber-600; }
@@ -109,7 +83,6 @@
   .card-header { @apply flex items-start justify-between gap-3.5 mb-4; }
   .card-header h2 { @apply mb-1; }
   .card-header p { @apply m-0 text-[13px] text-slate-500; }
-  .subsection-title { @apply mt-0 mb-2.5 text-sm text-slate-700 font-extrabold tracking-tight; }
   .field-note { @apply block -mt-0.5 text-xs leading-snug text-slate-500 font-semibold; }
   .hint { @apply mb-0 text-[13px] text-slate-500; }
 
@@ -117,28 +90,16 @@
   .launch-card { @apply min-h-[118px] grid content-center justify-items-start gap-2 text-left text-slate-900 bg-white/95 border border-slate-200 rounded-2xl; box-shadow: 0 10px 30px rgba(15, 23, 42, .06); }
   .launch-card svg { @apply text-emerald-600; }
   .launch-card span { @apply text-slate-500 text-[13px]; }
-
-  .inline-form { @apply grid gap-2.5 mb-4; grid-template-columns: 1fr auto; }
-  .quick-actions { @apply grid grid-cols-4 gap-2.5 mb-4; }
   .product-form { @apply grid grid-cols-2 gap-3 mb-5 p-4 rounded-[20px] bg-slate-50 border border-slate-200; }
   .product-form button, .span-2 { @apply col-span-full; }
   .no-box { @apply p-0 border-0 bg-transparent; }
-  .payment-box { @apply grid gap-3 p-3.5 mt-3.5 rounded-[20px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-cyan-50; }
 
   .row { @apply flex justify-between items-center gap-3 py-3 border-b border-slate-100; }
   .rich-row div small { @apply block mt-1; }
-  .list, .history-list, .product-list, .admin-product-list { @apply grid gap-2.5; }
-  .product-row, .history-row, .debt-row { @apply grid items-center gap-3.5 p-3.5 border border-slate-200 rounded-[20px] bg-white text-slate-900 text-left shadow-none; grid-template-columns: 1fr auto; }
-  .product-row:hover, .debt-row:hover { @apply border-emerald-200; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
-  .clickable-row { @apply w-full; }
-  .clickable-row:hover:not(:disabled) { @apply transform-none border-emerald-500; box-shadow: 0 8px 24px rgba(15, 23, 42, .08); }
   .product-row small, .cart-row small, .history-row small, .debt-row small { @apply block text-slate-500 mt-1; }
-  .right { @apply flex items-center gap-2.5 flex-wrap; }
-  .cart-card { @apply sticky top-24; }
   .cart-row { @apply grid items-center gap-3 py-3 border-b border-slate-100; grid-template-columns: 1fr 86px auto; }
   .cart-row input { @apply p-2.5 text-center; }
   .total-row { @apply flex items-center justify-between gap-3 my-4.5 p-4 rounded-[18px] bg-emerald-50 text-emerald-800 text-lg border border-emerald-200; }
-  .mini-total { @apply m-0 min-w-64; }
   .checkout { @apply w-full text-base; }
 
   .empty-state { @apply grid gap-1.5 place-items-center text-center px-4.5 py-8 border border-dashed border-slate-300 rounded-[22px] bg-slate-50 text-slate-500; }
@@ -146,13 +107,6 @@
   .empty-state.compact { @apply p-4.5; }
   .divider { @apply h-px bg-slate-200 my-3; }
   .warning-row { @apply bg-amber-50 mx-0 my-1 px-3 rounded-2xl; }
-
-  .history-card { @apply mb-4.5; }
-  .history-amount { @apply flex-col items-end; }
-  .history-amount span { @apply text-slate-500 text-xs; }
-  .balance-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-  .balance-card strong { @apply block my-3 text-[28px] text-emerald-600; }
-  .balance-card h2 { @apply mt-1.5 mb-0; }
   .amount-stack { @apply grid gap-1 justify-items-end text-right; }
   .positive { @apply text-emerald-600; }
   .negative { @apply text-red-600; }
@@ -167,18 +121,10 @@
   .pos-product-grid { @apply grid gap-3; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   .pos-product-card { @apply grid gap-3 p-3.5 border border-slate-200 rounded-[20px] bg-white; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); }
   .pos-product-card:hover { @apply border-emerald-300; box-shadow: 0 14px 30px rgba(0, 135, 90, .10); }
-  .admin-product-row { @apply grid gap-3.5 items-center p-3.5 border border-slate-200 rounded-[20px] bg-white; grid-template-columns: minmax(0, 1fr) auto auto; }
   .product-main { @apply grid gap-1 min-w-0; }
   .product-main strong { @apply overflow-hidden text-ellipsis whitespace-nowrap; }
   .product-main small { @apply text-slate-500; }
   .product-meta { @apply grid gap-1.5 justify-items-end text-right; }
-  .product-actions, .account-card-actions { @apply flex gap-2 flex-wrap justify-end; }
-  .account-card-actions { @apply mt-3.5 justify-start; }
-  .account-card-actions button { @apply px-3 py-2 text-xs; }
-
-  .category-chip-list { @apply flex gap-2 flex-wrap; }
-  .category-chip { @apply inline-flex items-center px-3 py-2 rounded-full bg-emerald-50 text-emerald-700 text-[13px] font-black border border-emerald-200; }
-  .product-list-card { @apply min-w-0; }
 
   .stepper { @apply grid grid-cols-3 gap-2.5 mb-4.5 -mt-1; }
   .agent-stepper { @apply grid-cols-4; }
@@ -186,19 +132,15 @@
   .step span { @apply w-7 h-7 inline-grid place-items-center rounded-full text-emerald-600 bg-emerald-50; }
   .step.active { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
   .step.active span { @apply text-emerald-700 bg-white; }
-  .cashier-layout { @apply grid gap-4.5 items-start; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr) minmax(360px,.8fr); }
-  .workflow-panel { @apply opacity-70 grayscale-[.08]; }
   .workflow-panel.active { @apply opacity-100 grayscale-0; }
   .workflow-panel.active .card { @apply border-emerald-300; box-shadow: 0 18px 42px rgba(0,135,90,.10); }
   .payment-choice-grid, .preset-grid { @apply grid gap-2.5 mb-3.5; }
   .payment-choice-grid { @apply grid-cols-3; }
-  .preset-grid { @apply grid-cols-2; }
   .choice-card, .preset-card { @apply min-h-[88px] grid content-center gap-1.5 text-left text-slate-900 bg-white border border-slate-200 shadow-none; }
   .choice-card span, .preset-card span { @apply text-slate-500 text-xs font-bold; }
   .choice-card.selected, .preset-card:hover { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
   .choice-card.selected span, .preset-card:hover span { @apply text-emerald-100; }
   .receipt-preview, .review-box { @apply grid gap-2.5 p-4 my-3.5 rounded-[20px] bg-slate-50 border border-slate-200; }
-  .receipt-preview { @apply items-center; grid-template-columns: 1fr auto auto; }
   .review-box div { @apply flex items-center justify-between gap-3 pb-2 border-b border-slate-200; }
   .review-box div:last-child { @apply border-b-0 pb-0; }
   .review-box span { @apply text-slate-500 font-extrabold; }
@@ -206,7 +148,6 @@
 
   .modal-backdrop { @apply fixed inset-0 z-[80] grid place-items-center p-6 bg-slate-900/55 backdrop-blur; }
   .dialog-card, .receipt-modal { @apply w-[min(720px,100%)] max-h-[calc(100vh-48px)] overflow-auto p-5.5 rounded-[28px] bg-white; box-shadow: 0 30px 90px rgba(15,23,42,.35); }
-  .small-dialog { @apply w-[min(440px,100%)]; }
   .product-dialog { @apply w-[min(780px,100%)]; }
   .dialog-form { @apply grid gap-3.5; }
   .dialog-form.product-form { @apply grid-cols-2; }
@@ -228,31 +169,20 @@
   .backup-row { grid-template-columns: minmax(0, 1fr) auto; }
   .backup-row div, .log-row div { @apply min-w-0 grid gap-1; }
   .backup-row small, .log-row small { @apply overflow-hidden text-ellipsis whitespace-nowrap text-slate-500; }
-  .log-row { grid-template-columns: auto minmax(0, 1fr); }
   .log-level { @apply inline-flex min-w-14 justify-center px-2.5 py-1.5 rounded-full text-[11px] font-black bg-sky-100 text-sky-700; }
   .log-level.warn { @apply bg-amber-50 text-amber-700; }
   .log-level.error { @apply bg-red-50 text-red-600; }
   .log-level.info { @apply bg-emerald-50 text-emerald-700; }
-  .export-actions { @apply grid-cols-2; }
   .span-all { @apply col-span-full; }
-}
-
-@media (max-width: 1180px) {
-  .cashier-layout { grid-template-columns: 1fr; }
-  .workflow-panel { opacity: 1; filter: none; }
 }
 @media (max-width: 1120px) {
   .app-shell { grid-template-columns: 96px 1fr; }
   .logo-row div:not(.brand-mark), .nav-item { font-size: 0; }
   .nav-icon { margin: 0 auto; }
-  .sidebar-footer { display: none; }
-  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 980px) {
   .quick-launch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-product-row, .product-master-grid { grid-template-columns: 1fr; }
   .product-meta { justify-items: start; text-align: left; }
-  .product-actions { justify-content: flex-start; }
 }
 @media (max-width: 860px) {
   .app-shell { display: block; }
@@ -261,19 +191,14 @@
   .nav-item { font-size: 13px; justify-content: center; }
   .topbar, .page-title, .hero-panel { align-items: stretch; flex-direction: column; }
   .grid, .workspace-grid { grid-template-columns: 1fr; }
-  .cart-card { position: static; }
   .page-content { padding: 18px; }
 }
 @media (max-width: 720px) {
   .stepper, .agent-stepper, .payment-choice-grid, .preset-grid { grid-template-columns: 1fr; }
-  .receipt-preview { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .stat-grid, .quick-launch-grid, .quick-actions, .inline-form, .product-form, .dialog-form.product-form, .product-row, .cart-row, .history-row, .debt-row, .backup-row { grid-template-columns: 1fr; }
-  .right { align-items: stretch; flex-direction: column; }
   h1 { font-size: 28px; }
-  .topbar-actions { flex-direction: column; align-items: stretch; }
-  .status-pill { max-width: 100%; }
   .page-actions { justify-content: stretch; }
   .page-actions button { flex: 1; }
 }
@@ -343,43 +268,6 @@
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: .12em;
-}
-.service-card-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.service-card {
-  min-height: 150px;
-  display: grid;
-  gap: 7px;
-  justify-items: center;
-  align-content: center;
-  text-align: center;
-  color: #0f172a;
-  background: #fff;
-  border: 2px solid transparent;
-  box-shadow: 0 8px 22px rgba(15,23,42,.05);
-}
-.service-card:hover {
-  color: #0f172a;
-  background: #faf5ff;
-  border-color: #c084fc;
-  box-shadow: 0 14px 32px rgba(124,58,237,.12);
-}
-.service-card small {
-  color: #64748b;
-  font-weight: 700;
-}
-.service-card em {
-  font-style: normal;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #b45309;
-  font-size: 11px;
-  font-weight: 900;
 }
 .service-icon {
   width: 42px;
