@@ -66,19 +66,13 @@
 
   .content-shell { @apply min-w-0; }
   .page-content { @apply max-w-[1320px] mx-auto p-7; }
-  .hero-panel .eyebrow { @apply text-emerald-200; }
-  .hero-actions, .page-actions, .wizard-actions, .modal-actions { @apply flex items-center justify-end gap-2.5 flex-wrap; }
+  .page-actions, .wizard-actions, .modal-actions { @apply flex items-center justify-end gap-2.5 flex-wrap; }
   .page-title { @apply flex items-center justify-between gap-4 mb-5.5; }
   .page-help { @apply flex items-center gap-2.5 flex-wrap -mt-2 mb-4.5 px-4 py-3 rounded-[18px] bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 text-emerald-800 text-[13px] font-extrabold; }
   .page-help span { @apply text-slate-700 font-bold; }
   .grid { @apply grid grid-cols-2 gap-4.5 mb-4.5; }
   .dashboard-grid { @apply items-stretch; }
-  .stat-card, .balance-card, .card { @apply bg-white/95 border border-slate-200/90 rounded-3xl p-5.5; box-shadow: 0 10px 30px rgba(15, 23, 42, .06); }
-  .card { @apply backdrop-blur; }
-  .stat-card.green { @apply text-emerald-600; }
-  .stat-card.blue { @apply text-blue-600; }
-  .stat-card.amber { @apply text-amber-600; }
-  .stat-card.purple { @apply text-violet-600; }
+  .card { @apply bg-white/95 border border-slate-200/90 rounded-3xl p-5.5 backdrop-blur; box-shadow: 0 10px 30px rgba(15, 23, 42, .06); }
 
   .card-header { @apply flex items-start justify-between gap-3.5 mb-4; }
   .card-header h2 { @apply mb-1; }
@@ -96,7 +90,7 @@
 
   .row { @apply flex justify-between items-center gap-3 py-3 border-b border-slate-100; }
   .rich-row div small { @apply block mt-1; }
-  .product-row small, .cart-row small, .history-row small, .debt-row small { @apply block text-slate-500 mt-1; }
+  .cart-row small { @apply block text-slate-500 mt-1; }
   .cart-row { @apply grid items-center gap-3 py-3 border-b border-slate-100; grid-template-columns: 1fr 86px auto; }
   .cart-row input { @apply p-2.5 text-center; }
   .total-row { @apply flex items-center justify-between gap-3 my-4.5 p-4 rounded-[18px] bg-emerald-50 text-emerald-800 text-lg border border-emerald-200; }
@@ -132,15 +126,13 @@
   .step span { @apply w-7 h-7 inline-grid place-items-center rounded-full text-emerald-600 bg-emerald-50; }
   .step.active { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
   .step.active span { @apply text-emerald-700 bg-white; }
-  .workflow-panel.active { @apply opacity-100 grayscale-0; }
-  .workflow-panel.active .card { @apply border-emerald-300; box-shadow: 0 18px 42px rgba(0,135,90,.10); }
-  .payment-choice-grid, .preset-grid { @apply grid gap-2.5 mb-3.5; }
+  .payment-choice-grid { @apply grid gap-2.5 mb-3.5; }
   .payment-choice-grid { @apply grid-cols-3; }
-  .choice-card, .preset-card { @apply min-h-[88px] grid content-center gap-1.5 text-left text-slate-900 bg-white border border-slate-200 shadow-none; }
-  .choice-card span, .preset-card span { @apply text-slate-500 text-xs font-bold; }
-  .choice-card.selected, .preset-card:hover { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
-  .choice-card.selected span, .preset-card:hover span { @apply text-emerald-100; }
-  .receipt-preview, .review-box { @apply grid gap-2.5 p-4 my-3.5 rounded-[20px] bg-slate-50 border border-slate-200; }
+  .choice-card { @apply min-h-[88px] grid content-center gap-1.5 text-left text-slate-900 bg-white border border-slate-200 shadow-none; }
+  .choice-card span { @apply text-slate-500 text-xs font-bold; }
+  .choice-card.selected { @apply text-white border-transparent; background: linear-gradient(135deg, #00875a, #00b37e); }
+  .choice-card.selected span { @apply text-emerald-100; }
+  .review-box { @apply grid gap-2.5 p-4 my-3.5 rounded-[20px] bg-slate-50 border border-slate-200; }
   .review-box div { @apply flex items-center justify-between gap-3 pb-2 border-b border-slate-200; }
   .review-box div:last-child { @apply border-b-0 pb-0; }
   .review-box span { @apply text-slate-500 font-extrabold; }
@@ -164,11 +156,11 @@
   .receipt-footer { @apply mt-2; }
   .receipt-modal { @apply w-[min(520px,100%)]; }
 
-  .backup-list, .log-list { @apply grid gap-2.5; }
-  .backup-row, .log-row { @apply grid gap-3 items-center p-3.5 border border-slate-200 rounded-[18px] bg-slate-50; }
+  .backup-list { @apply grid gap-2.5; }
+  .backup-row { @apply grid gap-3 items-center p-3.5 border border-slate-200 rounded-[18px] bg-slate-50; }
   .backup-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .backup-row div, .log-row div { @apply min-w-0 grid gap-1; }
-  .backup-row small, .log-row small { @apply overflow-hidden text-ellipsis whitespace-nowrap text-slate-500; }
+  .backup-row div { @apply min-w-0 grid gap-1; }
+  .backup-row small { @apply overflow-hidden text-ellipsis whitespace-nowrap text-slate-500; }
   .log-level { @apply inline-flex min-w-14 justify-center px-2.5 py-1.5 rounded-full text-[11px] font-black bg-sky-100 text-sky-700; }
   .log-level.warn { @apply bg-amber-50 text-amber-700; }
   .log-level.error { @apply bg-red-50 text-red-600; }
@@ -177,7 +169,7 @@
 }
 @media (max-width: 1120px) {
   .app-shell { grid-template-columns: 96px 1fr; }
-  .logo-row div:not(.brand-mark), .nav-item { font-size: 0; }
+  .brand-block div:not(.brand-mark), .nav-item { font-size: 0; }
   .nav-icon { margin: 0 auto; }
 }
 @media (max-width: 980px) {
@@ -189,15 +181,15 @@
   .sidebar { position: static; height: auto; }
   nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .nav-item { font-size: 13px; justify-content: center; }
-  .topbar, .page-title, .hero-panel { align-items: stretch; flex-direction: column; }
-  .grid, .workspace-grid { grid-template-columns: 1fr; }
+  .page-title { align-items: stretch; flex-direction: column; }
+  .grid { grid-template-columns: 1fr; }
   .page-content { padding: 18px; }
 }
 @media (max-width: 720px) {
-  .stepper, .agent-stepper, .payment-choice-grid, .preset-grid { grid-template-columns: 1fr; }
+  .stepper, .agent-stepper, .payment-choice-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .stat-grid, .quick-launch-grid, .quick-actions, .inline-form, .product-form, .dialog-form.product-form, .product-row, .cart-row, .history-row, .debt-row, .backup-row { grid-template-columns: 1fr; }
+  .quick-launch-grid, .product-form, .dialog-form.product-form, .cart-row, .backup-row { grid-template-columns: 1fr; }
   h1 { font-size: 28px; }
   .page-actions { justify-content: stretch; }
   .page-actions button { flex: 1; }
@@ -284,7 +276,6 @@
   .pos-cart-panel { position: static; }
 }
 @media (max-width: 640px) {
-  .service-card-grid,
   .compact-payment-grid { grid-template-columns: 1fr; }
   .electron-cart-row { grid-template-columns: 1fr; }
 }
