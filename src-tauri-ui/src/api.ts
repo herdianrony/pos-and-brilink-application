@@ -216,8 +216,8 @@ export function bankFee(payload: { account_id: number; amount: number; notes?: s
   return invokeCommand<AccountRow>("bank_fee", { payload });
 }
 
-export function listAccountMutations() {
-  return invokeCommand<AccountMutationRow[]>("list_account_mutations");
+export function listAccountMutations(options: { limit?: number } = {}) {
+  return invokeCommand<AccountMutationRow[]>("list_account_mutations", { payload: options });
 }
 
 export function listCategories() {
@@ -232,16 +232,16 @@ export function listProducts() {
   return invokeCommand<ProductRow[]>("list_products");
 }
 
-export function listTransactions() {
-  return invokeCommand<TransactionRow[]>("list_transactions");
+export function listTransactions(options: { limit?: number } = {}) {
+  return invokeCommand<TransactionRow[]>("list_transactions", { payload: options });
 }
 
 export function listTransactionItems(payload: { transaction_id: number }) {
   return invokeCommand<TransactionItemRow[]>("list_transaction_items", { payload });
 }
 
-export function listAppLogs() {
-  return invokeCommand<AppLogRow[]>("list_app_logs");
+export function listAppLogs(options: { limit?: number } = {}) {
+  return invokeCommand<AppLogRow[]>("list_app_logs", { payload: options });
 }
 
 export function createDatabaseBackup() {
@@ -256,8 +256,8 @@ export function restoreDatabaseBackup(payload: { path: string }) {
   return invokeCommand<boolean>("restore_database_backup", { payload });
 }
 
-export function listDebts() {
-  return invokeCommand<DebtRow[]>("list_debts");
+export function listDebts(options: { limit?: number } = {}) {
+  return invokeCommand<DebtRow[]>("list_debts", { payload: options });
 }
 
 export function createDebt(payload: { customer_name: string; phone?: string; amount: number; notes?: string }) {

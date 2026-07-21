@@ -62,7 +62,7 @@ export function DebtsPage({
       <section className="grid grid-cols-[minmax(0,1.35fr)_minmax(360px,.8fr)] items-start gap-[18px] max-[1080px]:grid-cols-1">
         <SectionCard className="rounded-[28px]" title="Daftar Utang" description={`${visibleDebts.length} catatan sesuai filter.`}>
           {visibleDebts.length === 0 ? <EmptyState title="Belum ada data utang" description="Catat utang pelanggan dari panel kanan." /> : (
-            <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 104px" minWidth={720}>
+            <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 104px" minWidth={640}>
               {visibleDebts.map((debt) => (
                 <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 104px">
                   <DataCell><strong>{debt.customer_name}</strong><DataCellText>{debt.phone || "Tanpa nomor"}</DataCellText><DataCellText>{debt.notes || "-"}</DataCellText></DataCell>

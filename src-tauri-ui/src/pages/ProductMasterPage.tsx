@@ -89,7 +89,7 @@ export function ProductMasterPage({
             {products.length === 0 ? (
               <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
             ) : (
-              <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 112px" minWidth={760}>
+              <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 112px" minWidth={640}>
                 {products.map((product) => (
                   <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 112px">
                     <DataCell><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></DataCell>

@@ -333,6 +333,15 @@ struct TransactionIdPayload {
 }
 
 #[derive(Debug, Deserialize)]
+struct ListLimitPayload {
+    limit: Option<i64>,
+}
+
+fn bounded_limit(payload: Option<ListLimitPayload>, default_limit: i64, max_limit: i64) -> i64 {
+    payload.and_then(|value| value.limit).unwrap_or(default_limit).clamp(1, max_limit)
+}
+
+#[derive(Debug, Deserialize)]
 struct AgentTransactionPayload {
     service_name: String,
     customer_name: Option<String>,
@@ -981,8 +990,9 @@ fn bank_fee(app: AppHandle, session: State<'_, SessionState>, payload: AccountEx
 }
 
 #[tauri::command]
-fn list_account_mutations(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AccountMutationRow>, String> {
+fn list_account_mutations(app: AppHandle, session: State<'_, SessionState>, payload: Option<ListLimitPayload>) -> Result<Vec<AccountMutationRow>, String> {
     let _user = require_admin(&session)?;
+    let limit = bounded_limit(payload, 80, 500);
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -991,12 +1001,12 @@ fn list_account_mutations(app: AppHandle, session: State<'_, SessionState>) -> R
             FROM account_mutations m
             JOIN accounts a ON a.id = m.account_id
             ORDER BY m.id DESC
-            LIMIT 100
+            LIMIT ?1
             "#,
         )
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit], |row| {
             Ok(AccountMutationRow {
                 id: row.get(0)?, account_id: row.get(1)?, account_name: row.get(2)?, mutation_type: row.get(3)?, amount: row.get(4)?, balance_after: row.get(5)?, notes: row.get(6)?, reference_id: row.get(7)?, created_at: row.get(8)?,
             })
@@ -1199,8 +1209,9 @@ fn deactivate_product(app: AppHandle, session: State<'_, SessionState>, payload:
 }
 
 #[tauri::command]
-fn list_transactions(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<TransactionRow>, String> {
+fn list_transactions(app: AppHandle, session: State<'_, SessionState>, payload: Option<ListLimitPayload>) -> Result<Vec<TransactionRow>, String> {
     let _user = require_auth(&session)?;
+    let limit = bounded_limit(payload, 50, 500);
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -1208,12 +1219,12 @@ fn list_transactions(app: AppHandle, session: State<'_, SessionState>) -> Result
             SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
             FROM transactions
             ORDER BY id DESC
-            LIMIT 100
+            LIMIT ?1
             "#,
         )
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit], |row| {
             Ok(TransactionRow {
                 id: row.get(0)?,
                 invoice_no: row.get(1)?,
@@ -1266,14 +1277,15 @@ fn list_transaction_items(app: AppHandle, session: State<'_, SessionState>, payl
 
 
 #[tauri::command]
-fn list_app_logs(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AppLogRow>, String> {
+fn list_app_logs(app: AppHandle, session: State<'_, SessionState>, payload: Option<ListLimitPayload>) -> Result<Vec<AppLogRow>, String> {
     let _user = require_admin(&session)?;
+    let limit = bounded_limit(payload, 80, 500);
     let conn = init_schema(&app)?;
     let mut stmt = conn
-        .prepare("SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT 300")
+        .prepare("SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT ?1")
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit], |row| {
             Ok(AppLogRow {
                 id: row.get(0)?,
                 level: row.get(1)?,
@@ -1371,14 +1383,15 @@ fn restore_database_backup(app: AppHandle, session: State<'_, SessionState>, pay
 }
 
 #[tauri::command]
-fn list_debts(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<DebtRow>, String> {
+fn list_debts(app: AppHandle, session: State<'_, SessionState>, payload: Option<ListLimitPayload>) -> Result<Vec<DebtRow>, String> {
     let _user = require_auth(&session)?;
+    let limit = bounded_limit(payload, 100, 500);
     let conn = init_schema(&app)?;
     let mut stmt = conn
-        .prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT 200")
+        .prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT ?1")
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit], |row| {
             let amount = row.get::<_, f64>(3)?;
             let paid_amount = row.get::<_, f64>(4)?;
             Ok(DebtRow {

@@ -83,7 +83,7 @@ export function CashBalancePage({
       <section className="grid grid-cols-[minmax(0,1.35fr)_minmax(300px,.65fr)] items-start gap-4 max-[1080px]:grid-cols-1">
         <SectionCard className="rounded-[28px]" title="Mutasi Saldo Terakhir" description="Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.">
           {mutations.length === 0 ? <EmptyState compact title="Belum ada mutasi saldo" description="Mutasi muncul setelah POS, transaksi agen, atau aksi saldo." /> : (
-            <DataTable columns={["Akun", "Tipe", "Nominal", "Saldo"]} template="minmax(0,1fr) 160px 130px 130px" minWidth={760}>
+            <DataTable columns={["Akun", "Tipe", "Nominal", "Saldo"]} template="minmax(0,1fr) 160px 130px 130px" minWidth={640}>
               {mutations.map((mutation) => (
                 <DataRow key={mutation.id} template="minmax(0,1fr) 160px 130px 130px">
                   <DataCell><strong>{mutation.account_name}</strong><DataCellText>{mutation.notes || "-"}</DataCellText></DataCell>

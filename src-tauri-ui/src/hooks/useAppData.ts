@@ -40,14 +40,14 @@ export function useAppData(onMessage: (message: string) => void) {
   const refreshData = useCallback(async () => {
     const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups, nextLogs] = await Promise.all([
       listAccounts(),
-      listAccountMutations(),
+      listAccountMutations({ limit: 80 }),
       listCategories(),
       listProducts(),
-      listTransactions(),
-      listDebts(),
+      listTransactions({ limit: 50 }),
+      listDebts({ limit: 100 }),
       listUsers(),
       listDatabaseBackups(),
-      listAppLogs(),
+      listAppLogs({ limit: 80 }),
     ]);
     setAccounts(nextAccounts);
     setAccountMutations(nextMutations);

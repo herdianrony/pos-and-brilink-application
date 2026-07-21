@@ -145,7 +145,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       return account as T;
     }
     case "list_account_mutations":
-      return [...mutations] as T;
+      return mutations.slice(0, Number(payload.limit || 80)) as T;
     case "list_categories":
       return [...categories] as T;
     case "create_category": {
@@ -230,7 +230,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
     case "print_thermal_receipt":
       return true as T;
     case "list_transactions":
-      return [...transactions] as T;
+      return transactions.slice(0, Number(payload.limit || 50)) as T;
     case "list_transaction_items":
       return transactionItems.filter((item) => item.transaction_id === payload.transaction_id) as T;
     case "create_agent_transaction": {
@@ -246,7 +246,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       return transactions[0] as T;
     }
     case "list_debts":
-      return [...debts] as T;
+      return debts.slice(0, Number(payload.limit || 100)) as T;
     case "create_debt": {
       const row = { id: debtId++, customer_name: payload.customer_name, phone: payload.phone || null, amount: Number(payload.amount || 0), paid_amount: 0, outstanding: Number(payload.amount || 0), status: "open", notes: payload.notes || null, created_at: now(), updated_at: now() };
       debts.unshift(row);
@@ -277,7 +277,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       log("backup", `Database dipulihkan dari ${payload.path}`, "WARN");
       return true as T;
     case "list_app_logs":
-      return [...logs] as T;
+      return logs.slice(0, Number(payload.limit || 80)) as T;
     default:
       throw new Error(`Mock command belum tersedia: ${command}`);
   }

@@ -85,7 +85,7 @@ export function StatementPage({
       <section className="grid grid-cols-[minmax(0,1.35fr)_minmax(300px,.65fr)] items-start gap-4 max-[1080px]:grid-cols-1">
         <SectionCard className="min-w-0 rounded-[28px]" title="Mutasi Rekening" description={`${filteredMutations.length} mutasi sesuai filter.`}>
           {filteredMutations.length === 0 ? <EmptyState title="Belum ada mutasi" description="Mutasi muncul setelah transaksi atau aksi saldo." /> : (
-            <DataTable columns={["Tanggal", "Akun", "Tipe", "Masuk/Keluar", "Saldo"]} template="minmax(0,1.1fr) 140px 160px 130px 130px" minWidth={900}>
+            <DataTable columns={["Tanggal", "Akun", "Tipe", "Masuk/Keluar", "Saldo"]} template="minmax(0,1.1fr) 140px 160px 130px 130px" minWidth={640}>
               {filteredMutations.map((mutation) => (
                 <DataRow key={mutation.id} template="minmax(0,1.1fr) 140px 160px 130px 130px">
                   <DataCell><strong>{mutation.created_at}</strong><DataCellText>{mutation.notes || "-"}</DataCellText></DataCell>

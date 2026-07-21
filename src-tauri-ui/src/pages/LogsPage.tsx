@@ -88,7 +88,7 @@ export function LogsPage({
       <section className="grid grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)] items-start gap-4 max-[1080px]:grid-cols-1">
         <SectionCard className="min-w-0 rounded-[28px]" title="Daftar Aktivitas" description={`${visibleLogs.length} catatan sesuai filter.`}>
           {visibleLogs.length === 0 ? <EmptyState title="Belum ada aktivitas" description="Aktivitas penting akan muncul setelah aplikasi digunakan." /> : (
-            <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={860}>
+            <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={640}>
               {visibleLogs.map((log) => (
                 <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
                   <span className={logLevelClass(log.level)}>{levelLabel(log.level)}</span>
