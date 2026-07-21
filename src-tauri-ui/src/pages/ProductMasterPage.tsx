@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderOpen, Landmark, Package, Tag } from "lucide-react";
+import { FolderOpen, Landmark, Package, Pencil, Power, Tag } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
 import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
@@ -63,15 +63,15 @@ export function ProductMasterPage({
             {products.length === 0 ? (
               <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." />
             ) : (
-              <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 170px" minWidth={820}>
+              <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 112px" minWidth={760}>
                 {products.map((product) => (
-                  <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 170px">
+                  <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 112px">
                     <DataCell><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></DataCell>
                     <DataCell><strong>{formatRupiah(product.sell_price)}</strong><DataCellText>Harga jual</DataCellText></DataCell>
                     <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
-                      <Button variant="secondary" onClick={() => onEditProduct(product)}>Edit</Button>
-                      <Button variant="danger" onClick={() => onRemoveProduct(product)}>Nonaktifkan</Button>
+                      <Button variant="secondary" className="h-10 w-10 p-0" title="Edit produk" aria-label={`Edit produk ${product.name}`} onClick={() => onEditProduct(product)}><Pencil size={16} /></Button>
+                      <Button variant="danger" className="h-10 w-10 p-0" title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => onRemoveProduct(product)}><Power size={16} /></Button>
                     </div>
                   </DataRow>
                 ))}

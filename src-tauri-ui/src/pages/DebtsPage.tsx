@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
+import { CheckCircle, HandCoins, MessageCircle, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
@@ -62,15 +62,15 @@ export function DebtsPage({
       <section className="debt-layout">
         <SectionCard className="debt-list-card" title="Daftar Utang" description={`${visibleDebts.length} catatan sesuai filter.`}>
           {visibleDebts.length === 0 ? <EmptyState title="Belum ada data utang" description="Catat utang pelanggan dari panel kanan." /> : (
-            <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 190px" minWidth={780}>
+            <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 104px" minWidth={720}>
               {visibleDebts.map((debt) => (
-                <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 190px">
+                <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 104px">
                   <DataCell><strong>{debt.customer_name}</strong><DataCellText>{debt.phone || "Tanpa nomor"}</DataCellText><DataCellText>{debt.notes || "-"}</DataCellText></DataCell>
                   <span className={debt.status === "paid" ? "history-status-badge completed" : "history-status-badge pending"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
                   <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
                   <div className="debt-actions">
-                    <Button variant="secondary" onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><Plus size={14} /> Bayar</Button>
-                    <Button variant="secondary" onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={14} /> Reminder</Button>
+                    <Button variant="secondary" className="h-10 w-10 p-0" title="Catat pembayaran" aria-label={`Catat pembayaran utang ${debt.customer_name}`} onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><HandCoins size={16} /></Button>
+                    <Button variant="secondary" className="h-10 w-10 p-0" title="Salin reminder" aria-label={`Salin reminder utang ${debt.customer_name}`} onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={16} /></Button>
                   </div>
                 </DataRow>
               ))}
