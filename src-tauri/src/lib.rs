@@ -4,7 +4,8 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Manager};
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager, State};
 
 #[derive(Debug, Serialize)]
 struct HealthCheck {
@@ -32,12 +33,23 @@ struct LoginResponse {
     user: PublicUser,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct PublicUser {
     id: i64,
     name: String,
     username: String,
     role: String,
+}
+
+struct SessionState(Mutex<Option<PublicUser>>);
+
+fn require_auth(session: &State<'_, SessionState>) -> Result<PublicUser, String> {
+    session
+        .0
+        .lock()
+        .map_err(|_| "Session tidak valid".to_string())?
+        .clone()
+        .ok_or_else(|| "Sesi login tidak aktif. Silakan login ulang.".to_string())
 }
 
 #[derive(Debug, Deserialize)]
@@ -565,7 +577,7 @@ fn setup_status(app: AppHandle) -> Result<SetupStatus, String> {
 }
 
 #[tauri::command]
-fn create_admin(app: AppHandle, payload: CreateAdminPayload) -> Result<PublicUser, String> {
+fn create_admin(app: AppHandle, payload: CreateAdminPayload, session: State<'_, SessionState>) -> Result<PublicUser, String> {
     let conn = init_schema(&app)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
@@ -586,17 +598,20 @@ fn create_admin(app: AppHandle, payload: CreateAdminPayload) -> Result<PublicUse
     )
     .map_err(|e| e.to_string())?;
     let id = conn.last_insert_rowid();
-    Ok(PublicUser {
+    let user = PublicUser {
         id,
         name,
         username,
         role: "admin".into(),
-    })
+    };
+    *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
+    Ok(user)
 }
 
 
 #[tauri::command]
-fn list_users(app: AppHandle) -> Result<Vec<PublicUser>, String> {
+fn list_users(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<PublicUser>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, role FROM users WHERE is_active = 1 ORDER BY id ASC")
@@ -612,7 +627,8 @@ fn list_users(app: AppHandle) -> Result<Vec<PublicUser>, String> {
 }
 
 #[tauri::command]
-fn create_user(app: AppHandle, payload: CreateUserPayload) -> Result<PublicUser, String> {
+fn create_user(app: AppHandle, session: State<'_, SessionState>, payload: CreateUserPayload) -> Result<PublicUser, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     let username = payload.username.trim().to_string();
@@ -635,7 +651,7 @@ fn create_user(app: AppHandle, payload: CreateUserPayload) -> Result<PublicUser,
 }
 
 #[tauri::command]
-fn login(app: AppHandle, payload: LoginPayload) -> Result<LoginResponse, String> {
+fn login(app: AppHandle, payload: LoginPayload, session: State<'_, SessionState>) -> Result<LoginResponse, String> {
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, password_hash, role FROM users WHERE username = ?1 AND is_active = 1 LIMIT 1")
@@ -656,19 +672,25 @@ fn login(app: AppHandle, payload: LoginPayload) -> Result<LoginResponse, String>
         return Err("Username atau password salah".into());
     }
 
-    Ok(LoginResponse {
-        ok: true,
-        user: PublicUser {
-            id: user.0,
-            name: user.1,
-            username: user.2,
-            role: user.4,
-        },
-    })
+    let public_user = PublicUser {
+        id: user.0,
+        name: user.1,
+        username: user.2,
+        role: user.4,
+    };
+    *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = Some(public_user.clone());
+    Ok(LoginResponse { ok: true, user: public_user })
 }
 
 #[tauri::command]
-fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
+fn logout(session: State<'_, SessionState>) -> Result<bool, String> {
+    *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = None;
+    Ok(true)
+}
+
+#[tauri::command]
+fn list_accounts(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AccountRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE is_active = 1 ORDER BY id ASC")
@@ -696,7 +718,8 @@ fn list_accounts(app: AppHandle) -> Result<Vec<AccountRow>, String> {
 }
 
 #[tauri::command]
-fn create_account(app: AppHandle, payload: AccountPayload) -> Result<AccountRow, String> {
+fn create_account(app: AppHandle, session: State<'_, SessionState>, payload: AccountPayload) -> Result<AccountRow, String> {
+    let _user = require_auth(&session)?;
     let mut conn = init_schema(&app)?;
     let code = normalize_code(&payload.code);
     let name = payload.name.trim().to_string();
@@ -733,7 +756,8 @@ fn create_account(app: AppHandle, payload: AccountPayload) -> Result<AccountRow,
 }
 
 #[tauri::command]
-fn adjust_account_balance(app: AppHandle, payload: BalanceAdjustmentPayload) -> Result<AccountRow, String> {
+fn adjust_account_balance(app: AppHandle, session: State<'_, SessionState>, payload: BalanceAdjustmentPayload) -> Result<AccountRow, String> {
+    let _user = require_auth(&session)?;
     if payload.amount == 0.0 {
         return Err("Nominal penyesuaian tidak boleh 0".into());
     }
@@ -776,7 +800,8 @@ fn adjust_account_balance(app: AppHandle, payload: BalanceAdjustmentPayload) -> 
 
 
 #[tauri::command]
-fn transfer_accounts(app: AppHandle, payload: AccountTransferPayload) -> Result<bool, String> {
+fn transfer_accounts(app: AppHandle, session: State<'_, SessionState>, payload: AccountTransferPayload) -> Result<bool, String> {
+    let _user = require_auth(&session)?;
     if payload.from_account_id == payload.to_account_id {
         return Err("Rekening asal dan tujuan tidak boleh sama".into());
     }
@@ -841,17 +866,20 @@ fn account_expense(app: AppHandle, payload: AccountExpensePayload, mutation_type
 }
 
 #[tauri::command]
-fn owner_draw(app: AppHandle, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+fn owner_draw(app: AppHandle, session: State<'_, SessionState>, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+    let _user = require_auth(&session)?;
     account_expense(app, payload, "owner_draw", "Prive Owner")
 }
 
 #[tauri::command]
-fn bank_fee(app: AppHandle, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+fn bank_fee(app: AppHandle, session: State<'_, SessionState>, payload: AccountExpensePayload) -> Result<AccountRow, String> {
+    let _user = require_auth(&session)?;
     account_expense(app, payload, "bank_fee", "Biaya Bank / MDR")
 }
 
 #[tauri::command]
-fn list_account_mutations(app: AppHandle) -> Result<Vec<AccountMutationRow>, String> {
+fn list_account_mutations(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AccountMutationRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -876,7 +904,8 @@ fn list_account_mutations(app: AppHandle) -> Result<Vec<AccountMutationRow>, Str
     Ok(out)
 }
 #[tauri::command]
-fn list_categories(app: AppHandle) -> Result<Vec<CategoryRow>, String> {
+fn list_categories(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<CategoryRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, name, icon, color, is_active FROM product_categories WHERE is_active = 1 ORDER BY name ASC")
@@ -900,7 +929,8 @@ fn list_categories(app: AppHandle) -> Result<Vec<CategoryRow>, String> {
 }
 
 #[tauri::command]
-fn create_category(app: AppHandle, payload: CategoryPayload) -> Result<CategoryRow, String> {
+fn create_category(app: AppHandle, session: State<'_, SessionState>, payload: CategoryPayload) -> Result<CategoryRow, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -924,7 +954,8 @@ fn create_category(app: AppHandle, payload: CategoryPayload) -> Result<CategoryR
 }
 
 #[tauri::command]
-fn list_products(app: AppHandle) -> Result<Vec<ProductRow>, String> {
+fn list_products(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<ProductRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -963,7 +994,8 @@ fn list_products(app: AppHandle) -> Result<Vec<ProductRow>, String> {
 }
 
 #[tauri::command]
-fn create_product(app: AppHandle, payload: ProductPayload) -> Result<ProductRow, String> {
+fn create_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductPayload) -> Result<ProductRow, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -1021,7 +1053,8 @@ fn create_product(app: AppHandle, payload: ProductPayload) -> Result<ProductRow,
 
 
 #[tauri::command]
-fn update_product(app: AppHandle, payload: ProductUpdatePayload) -> Result<ProductRow, String> {
+fn update_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductUpdatePayload) -> Result<ProductRow, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -1053,7 +1086,8 @@ fn update_product(app: AppHandle, payload: ProductUpdatePayload) -> Result<Produ
 }
 
 #[tauri::command]
-fn deactivate_product(app: AppHandle, payload: ProductIdPayload) -> Result<bool, String> {
+fn deactivate_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductIdPayload) -> Result<bool, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let now = Utc::now().to_rfc3339();
     conn.execute("UPDATE products SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, payload.id])
@@ -1062,7 +1096,8 @@ fn deactivate_product(app: AppHandle, payload: ProductIdPayload) -> Result<bool,
 }
 
 #[tauri::command]
-fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
+fn list_transactions(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<TransactionRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -1099,7 +1134,8 @@ fn list_transactions(app: AppHandle) -> Result<Vec<TransactionRow>, String> {
 
 
 #[tauri::command]
-fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Result<Vec<TransactionItemRow>, String> {
+fn list_transaction_items(app: AppHandle, session: State<'_, SessionState>, payload: TransactionIdPayload) -> Result<Vec<TransactionItemRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, transaction_id, product_id, product_name, quantity, unit_price, subtotal FROM transaction_items WHERE transaction_id = ?1 ORDER BY id ASC")
@@ -1127,7 +1163,8 @@ fn list_transaction_items(app: AppHandle, payload: TransactionIdPayload) -> Resu
 
 
 #[tauri::command]
-fn list_app_logs(app: AppHandle) -> Result<Vec<AppLogRow>, String> {
+fn list_app_logs(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AppLogRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT 300")
@@ -1149,7 +1186,8 @@ fn list_app_logs(app: AppHandle) -> Result<Vec<AppLogRow>, String> {
 }
 
 #[tauri::command]
-fn create_database_backup(app: AppHandle) -> Result<BackupRow, String> {
+fn create_database_backup(app: AppHandle, session: State<'_, SessionState>) -> Result<BackupRow, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);").ok();
     drop(conn);
@@ -1174,7 +1212,8 @@ fn create_database_backup(app: AppHandle) -> Result<BackupRow, String> {
 }
 
 #[tauri::command]
-fn list_database_backups(app: AppHandle) -> Result<Vec<BackupRow>, String> {
+fn list_database_backups(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<BackupRow>, String> {
+    let _user = require_auth(&session)?;
     let dir = backup_dir(&app)?;
     let mut backups = Vec::new();
     for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
@@ -1201,7 +1240,8 @@ fn list_database_backups(app: AppHandle) -> Result<Vec<BackupRow>, String> {
 }
 
 #[tauri::command]
-fn restore_database_backup(app: AppHandle, payload: RestoreBackupPayload) -> Result<bool, String> {
+fn restore_database_backup(app: AppHandle, session: State<'_, SessionState>, payload: RestoreBackupPayload) -> Result<bool, String> {
+    let _user = require_auth(&session)?;
     let backup_path = PathBuf::from(payload.path);
     if !backup_path.exists() {
         return Err("File backup tidak ditemukan".into());
@@ -1228,7 +1268,8 @@ fn restore_database_backup(app: AppHandle, payload: RestoreBackupPayload) -> Res
 }
 
 #[tauri::command]
-fn list_debts(app: AppHandle) -> Result<Vec<DebtRow>, String> {
+fn list_debts(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<DebtRow>, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT 200")
@@ -1257,7 +1298,8 @@ fn list_debts(app: AppHandle) -> Result<Vec<DebtRow>, String> {
 }
 
 #[tauri::command]
-fn create_debt(app: AppHandle, payload: DebtPayload) -> Result<DebtRow, String> {
+fn create_debt(app: AppHandle, session: State<'_, SessionState>, payload: DebtPayload) -> Result<DebtRow, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let customer_name = payload.customer_name.trim().to_string();
     if customer_name.is_empty() { return Err("Nama pelanggan wajib diisi".into()); }
@@ -1273,7 +1315,8 @@ fn create_debt(app: AppHandle, payload: DebtPayload) -> Result<DebtRow, String> 
 }
 
 #[tauri::command]
-fn add_debt_payment(app: AppHandle, payload: DebtPaymentPayload) -> Result<DebtRow, String> {
+fn add_debt_payment(app: AppHandle, session: State<'_, SessionState>, payload: DebtPaymentPayload) -> Result<DebtRow, String> {
+    let _user = require_auth(&session)?;
     if payload.amount <= 0.0 { return Err("Nominal pembayaran harus lebih dari 0".into()); }
     let mut conn = init_schema(&app)?;
     let now = Utc::now().to_rfc3339();
@@ -1293,7 +1336,8 @@ fn add_debt_payment(app: AppHandle, payload: DebtPaymentPayload) -> Result<DebtR
 }
 
 #[tauri::command]
-fn build_debt_reminder(app: AppHandle, payload: DebtIdPayload) -> Result<String, String> {
+fn build_debt_reminder(app: AppHandle, session: State<'_, SessionState>, payload: DebtIdPayload) -> Result<String, String> {
+    let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
     let debt = conn.query_row(
         "SELECT customer_name, amount, paid_amount, notes FROM debts WHERE id = ?1 LIMIT 1",
@@ -1305,7 +1349,8 @@ fn build_debt_reminder(app: AppHandle, payload: DebtIdPayload) -> Result<String,
 }
 
 #[tauri::command]
-fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) -> Result<TransactionRow, String> {
+fn create_agent_transaction(app: AppHandle, session: State<'_, SessionState>, payload: AgentTransactionPayload) -> Result<TransactionRow, String> {
+    let _user = require_auth(&session)?;
     let service_name = payload.service_name.trim().to_string();
     if service_name.is_empty() { return Err("Nama layanan wajib diisi".into()); }
     let provider_cost = payload.provider_cost.unwrap_or(0.0);
@@ -1345,7 +1390,8 @@ fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) ->
 }
 
 #[tauri::command]
-fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
+fn checkout_pos_cash(app: AppHandle, session: State<'_, SessionState>, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
+    let _user = require_auth(&session)?;
     if payload.items.is_empty() && payload.agent_items.is_empty() { return Err("Keranjang masih kosong".into()); }
     if payload.items.iter().any(|item| item.quantity <= 0) { return Err("Jumlah produk harus lebih dari 0".into()); }
 
@@ -1463,6 +1509,7 @@ pub fn run() {
             });
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .manage(SessionState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             health_check,
             db_init,
@@ -1471,6 +1518,7 @@ pub fn run() {
             list_users,
             create_user,
             login,
+            logout,
             list_accounts,
             create_account,
             adjust_account_balance,

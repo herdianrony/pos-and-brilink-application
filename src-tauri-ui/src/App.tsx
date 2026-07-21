@@ -217,6 +217,14 @@ export default function App() {
   }, [accounts, settlementAccountId, setSettlementAccountId]);
 
 
+  async function refreshApp() {
+    if (user) {
+      await refreshData();
+    } else {
+      await bootstrap();
+    }
+  }
+
   function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
     try {
       exportCsvFile(filename, rows);
@@ -257,9 +265,9 @@ export default function App() {
     if (activeView === "rekeningKoran") return <StatementPage accounts={accounts} mutations={accountMutations} onExportCsv={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))} />;
     if (activeView === "cash") return <CashBalancePage accounts={accounts} mutations={accountMutations} onAddAccount={openAddAccount} onTransfer={openTransfer} onAdjust={openAdjust} onOwnerDraw={openOwnerDraw} onBankFee={openBankFee} />;
     if (activeView === "reports") return <ReportsPage transactions={transactions} mutations={accountMutations} onExportCsv={({ posRevenue, posProfit, agentProfit }) => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])} />;
-    if (activeView === "logs") return <LogsPage logs={appLogs} onRefresh={bootstrap} />;
+    if (activeView === "logs") return <LogsPage logs={appLogs} onRefresh={refreshApp} />;
     if (activeView === "settings") return <SettingsPage users={users} userForm={userForm} saving={saving} transactions={transactions} mutations={accountMutations} debts={debts} products={products} backups={backups} dbPath={dbPath} onUserFormChange={setUserForm} onSubmitUser={submitUser} onExportCsv={exportCsv} onCreateBackup={handleCreateBackup} onRestoreBackup={handleRestoreBackup} />;
-    return <DashboardPage accounts={accounts} products={products} transactions={filteredTransactions} totalCash={totalCash} lowStockCount={lowStockCount} loading={loading} onNavigate={setActiveView} onRefresh={bootstrap} />;
+    return <DashboardPage accounts={accounts} products={products} transactions={filteredTransactions} totalCash={totalCash} lowStockCount={lowStockCount} loading={loading} onNavigate={setActiveView} onRefresh={refreshApp} />;
   }
 
   if (setupNeeded) {
@@ -304,7 +312,7 @@ export default function App() {
       message={message}
       loading={loading}
       onNavigate={setActiveView}
-      onRefresh={bootstrap}
+      onRefresh={refreshApp}
       onLogout={logout}
     >
       {renderActiveView()}

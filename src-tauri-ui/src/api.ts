@@ -162,6 +162,10 @@ export function login(payload: { username: string; password: string }) {
   return invokeCommand<{ ok: boolean; user: PublicUser }>("login", { payload });
 }
 
+export function logoutSession() {
+  return invokeCommand<boolean>("logout");
+}
+
 export function listAccounts() {
   return invokeCommand<AccountRow[]>("list_accounts");
 }

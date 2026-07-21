@@ -70,13 +70,12 @@ export function useAppData(onMessage: (message: string) => void) {
       setDbPath(db.path);
       setSetupNeeded(setup.setup_needed);
       onMessage(`${health.app} siap (${health.backend})`);
-      if (!setup.setup_needed) await refreshData();
     } catch (error) {
       onMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
-  }, [onMessage, refreshData]);
+  }, [onMessage]);
 
   return {
     loading,

@@ -84,6 +84,8 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       if (!found || passwords.get(payload.username) !== payload.password) throw new Error("Username atau password salah");
       return { ok: true, user: found } as T;
     }
+    case "logout":
+      return true as T;
     case "list_users":
       return [...users] as T;
     case "create_user": {

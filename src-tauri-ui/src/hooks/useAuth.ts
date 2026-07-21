@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { createAdmin, createUser, login, type PublicUser } from "../api";
+import { createAdmin, createUser, login, logoutSession, type PublicUser } from "../api";
 import type { ViewKey } from "../types";
 
 export function useAuth({
@@ -73,7 +73,12 @@ export function useAuth({
     }
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await logoutSession();
+    } catch {
+      // Local UI logout must still proceed even if the backend session is already cleared.
+    }
     setUser(null);
     onNavigate("dashboard");
   }
