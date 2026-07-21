@@ -1,5 +1,5 @@
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
-import { StatCard } from "../components/ui";
+import { PageHeader, StatCard } from "../components/ui";
 import { formatRupiah, paymentLabel } from "../lib/format";
 import type { ViewKey } from "../types";
 import { Landmark, ReceiptText, ShoppingCart, TrendingUp } from "lucide-react";
@@ -76,13 +76,11 @@ export function DashboardPage({
 
   return (
     <>
-      <div className="electron-page-title">
-        <div>
-          <h1>Dashboard</h1>
-          <p>Ringkasan aktivitas bisnis Anda</p>
-        </div>
-        <button className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Ringkasan aktivitas bisnis Anda"
+        actions={<button className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>}
+      />
 
       <section className="electron-hero-card">
         <div className="hero-icon-box">▣</div>

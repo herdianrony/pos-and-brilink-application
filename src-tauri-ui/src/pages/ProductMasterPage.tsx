@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FolderOpen, Landmark, Package, Tag } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
-import { Badge, Button, Card, CardHeader, EmptyState } from "../components/ui";
+import { Badge, Button, Card, CardHeader, EmptyState, PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type MasterTab = "products" | "categories" | "agentServices" | "agentCategories";
@@ -33,16 +33,11 @@ export function ProductMasterPage({
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="page-title">
-        <div>
-          <h1>Manajemen Data</h1>
-          <p className="m-0 text-sm font-semibold text-slate-400">Kelola produk, kategori, dan layanan agen.</p>
-        </div>
-        <div className="page-actions">
-          {activeTab === "categories" ? <Button onClick={onAddCategory}>Tambah Kategori</Button> : null}
-          {activeTab === "products" ? <Button onClick={onAddProduct}>Tambah Produk</Button> : null}
-        </div>
-      </div>
+      <PageHeader
+        title="Manajemen Data"
+        description="Kelola produk, kategori, dan layanan agen."
+        actions={<>{activeTab === "categories" ? <Button onClick={onAddCategory}>Tambah Kategori</Button> : null}{activeTab === "products" ? <Button onClick={onAddProduct}>Tambah Produk</Button> : null}</>}
+      />
 
       <div className="electron-tabs master-tabs">
         {tabs.map((tab) => {

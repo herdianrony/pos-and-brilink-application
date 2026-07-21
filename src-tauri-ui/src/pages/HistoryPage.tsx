@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Ban, CheckCircle, ClipboardList, Landmark, RotateCcw, ShoppingCart } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
-import { StatCard } from "../components/ui";
+import { PageHeader, StatCard } from "../components/ui";
 
 const typeTabs = [
   { id: "all", label: "Semua", icon: ClipboardList },
@@ -53,12 +53,10 @@ export function HistoryPage({
 
   return (
     <div className="history-electron-page">
-      <div className="page-title history-title">
-        <div>
-          <h1><ClipboardList size={26} /> Riwayat Transaksi</h1>
-          <p>{filtered.length} transaksi ditemukan{pendingCount > 0 ? ` • ${pendingCount} pending` : ""}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><ClipboardList size={26} /> Riwayat Transaksi</span>}
+        description={`${filtered.length} transaksi ditemukan${pendingCount > 0 ? ` • ${pendingCount} pending` : ""}`}
+      />
 
       <section className="electron-stat-grid history-stat-grid">
         <StatCard tone="blue" icon={<ClipboardList size={20} />} label="Total Transaksi" value={filtered.length} sub="sesuai filter" />

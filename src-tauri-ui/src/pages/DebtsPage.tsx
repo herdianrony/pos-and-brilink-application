@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
+import { PageHeader } from "../components/ui";
 import { StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
@@ -43,13 +44,7 @@ export function DebtsPage({
 
   return (
     <div className="debt-page">
-      <div className="page-title debt-title">
-        <div>
-          <p className="eyebrow">Piutang Pelanggan</p>
-          <h1>Buku Utang</h1>
-          <p>Catat utang, cicilan, dan salin pengingat WhatsApp untuk pelanggan.</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="Piutang Pelanggan" title="Buku Utang" description="Catat utang, cicilan, dan salin pengingat WhatsApp untuk pelanggan." />
 
       <section className="electron-stat-grid debt-stat-grid">
         <StatCard tone="amber" icon={<ReceiptText size={20} />} label="Belum Lunas" value={formatRupiah(totalOutstanding)} sub={`${openDebts.length} pelanggan`} />

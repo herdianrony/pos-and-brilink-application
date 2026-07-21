@@ -3,6 +3,7 @@ import { Landmark, Star } from "lucide-react";
 import type { AccountRow, TransactionRow } from "../api";
 import type { AgentForm } from "../types";
 import { CurrencyInput } from "../components/CurrencyInput";
+import { PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 const servicePresets: Array<{
@@ -47,17 +48,12 @@ export function AgentServicesPage({
 
   return (
     <>
-      <div className="page-title electron-service-title">
-        <div>
-          <p className="eyebrow">Pencatatan Layanan</p>
-          <h1>Layanan Agen</h1>
-          <p>Catat transaksi jasa agen tanpa koneksi API bank/provider.</p>
-        </div>
-        <div className="page-actions">
-          <button className="secondary" onClick={() => onAgentStepChange(1)}>Pilih Layanan</button>
-          <button onClick={() => onAgentStepChange(4)}>Review</button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Pencatatan Layanan"
+        title="Layanan Agen"
+        description="Catat transaksi jasa agen tanpa koneksi API bank/provider."
+        actions={<><button className="secondary" onClick={() => onAgentStepChange(1)}>Pilih Layanan</button><button onClick={() => onAgentStepChange(4)}>Review</button></>}
+      />
 
       <section className="electron-service-layout">
         <aside className="card service-catalog-panel">

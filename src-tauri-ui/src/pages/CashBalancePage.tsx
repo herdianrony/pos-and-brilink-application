@@ -1,5 +1,6 @@
 import { ArrowRightLeft, HandCoins, Plus, ReceiptText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
+import { PageHeader } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
 
 function accountTone(index: number, code: string) {
@@ -32,17 +33,12 @@ export function CashBalancePage({
 
   return (
     <>
-      <div className="page-title cash-page-title">
-        <div>
-          <p className="eyebrow">Keuangan</p>
-          <h1>Kas & Saldo</h1>
-          <p className="m-0 text-sm font-semibold text-slate-400">Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi.</p>
-        </div>
-        <div className="page-actions">
-          <button className="secondary" onClick={onAddAccount}><Plus size={16} /> Tambah Rekening</button>
-          <button onClick={() => onTransfer()}><ArrowRightLeft size={16} /> Transfer Saldo</button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Keuangan"
+        title="Kas & Saldo"
+        description="Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi."
+        actions={<><button className="secondary" onClick={onAddAccount}><Plus size={16} /> Tambah Rekening</button><button onClick={() => onTransfer()}><ArrowRightLeft size={16} /> Transfer Saldo</button></>}
+      />
 
       <section className="cash-summary-grid">
         <div className="cash-total-card">

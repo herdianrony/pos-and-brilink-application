@@ -1,5 +1,5 @@
 import { BarChart3, Download, Landmark, ReceiptText, TrendingUp, WalletCards } from "lucide-react";
-import { StatCard } from "../components/ui";
+import { PageHeader, StatCard } from "../components/ui";
 import type { AccountMutationRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
 
@@ -38,14 +38,12 @@ export function ReportsPage({
 
   return (
     <div className="reports-page">
-      <div className="page-title reports-title">
-        <div>
-          <p className="eyebrow">Analitik Bisnis</p>
-          <h1>Laporan</h1>
-          <p>Ringkasan omzet, keuntungan, dan aktivitas kasir.</p>
-        </div>
-        <button className="secondary" onClick={() => onExportCsv({ posRevenue, posProfit, agentProfit })}><Download size={16} /> Unduh CSV</button>
-      </div>
+      <PageHeader
+        eyebrow="Analitik Bisnis"
+        title="Laporan"
+        description="Ringkasan omzet, keuntungan, dan aktivitas kasir."
+        actions={<button className="secondary" onClick={() => onExportCsv({ posRevenue, posProfit, agentProfit })}><Download size={16} /> Unduh CSV</button>}
+      />
 
       <section className="electron-stat-grid reports-stat-grid">
         <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} transaksi POS`} />

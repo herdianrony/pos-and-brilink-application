@@ -66,8 +66,7 @@
 
   .content-shell { @apply min-w-0; }
   .page-content { @apply max-w-[1320px] mx-auto p-7; }
-  .page-actions, .wizard-actions, .modal-actions { @apply flex items-center justify-end gap-2.5 flex-wrap; }
-  .page-title { @apply flex items-center justify-between gap-4 mb-5.5; }
+  .wizard-actions, .modal-actions { @apply flex items-center justify-end gap-2.5 flex-wrap; }
   .page-help { @apply flex items-center gap-2.5 flex-wrap -mt-2 mb-4.5 px-4 py-3 rounded-[18px] bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 text-emerald-800 text-[13px] font-extrabold; }
   .page-help span { @apply text-slate-700 font-bold; }
   .grid { @apply grid grid-cols-2 gap-4.5 mb-4.5; }
@@ -181,7 +180,6 @@
   .sidebar { position: static; height: auto; }
   nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .nav-item { font-size: 13px; justify-content: center; }
-  .page-title { align-items: stretch; flex-direction: column; }
   .grid { grid-template-columns: 1fr; }
   .page-content { padding: 18px; }
 }
@@ -191,8 +189,6 @@
 @media (max-width: 640px) {
   .quick-launch-grid, .product-form, .dialog-form.product-form, .cart-row, .backup-row { grid-template-columns: 1fr; }
   h1 { font-size: 28px; }
-  .page-actions { justify-content: stretch; }
-  .page-actions button { flex: 1; }
 }
 
 @media print {
@@ -330,9 +326,6 @@
 }
 
 /* Electron parity dashboard */
-.electron-page-title { @apply mb-5 flex items-center justify-between gap-4; }
-.electron-page-title h1 { @apply text-2xl font-black tracking-tight text-slate-950; }
-.electron-page-title p { @apply m-0 text-sm font-semibold text-slate-400; }
 .electron-hero-card { @apply mb-4 grid min-h-[144px] content-center rounded-[24px] p-6 text-white; background: radial-gradient(circle at 92% 10%, rgba(16,185,129,.35), transparent 20%), linear-gradient(135deg,#0f172a,#111827 55%,#0f3b37); }
 .electron-hero-card > span { @apply text-sm font-black; }
 .electron-hero-card > strong { @apply my-3 text-4xl font-black tracking-tight; }
@@ -512,8 +505,6 @@
 }
 
 /* Electron parity service page */
-.electron-service-title h1 { @apply text-2xl font-black text-slate-950; }
-.electron-service-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
 .electron-service-layout {
   display: grid;
   grid-template-columns: minmax(280px, .95fr) minmax(420px, 1.25fr) minmax(300px, .8fr);
@@ -555,8 +546,6 @@
 
 /* Electron parity history page */
 .history-electron-page { @apply grid gap-5; }
-.history-title h1 { @apply flex items-center gap-2 text-2xl font-black text-slate-950; }
-.history-title p { @apply m-0 text-sm font-semibold text-slate-400; }
 .history-stat-grid { @apply mb-0; }
 .history-filter-panel { @apply flex flex-col gap-3 p-3; }
 .electron-tabs { @apply flex flex-wrap gap-2; }
@@ -595,7 +584,6 @@
 .category-card small { @apply block text-slate-500; }
 
 /* Electron parity cash page */
-.cash-page-title h1 { @apply text-2xl font-black text-slate-950; }
 .cash-summary-grid { @apply mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.4fr)_repeat(3,minmax(0,1fr))]; }
 .cash-total-card { @apply rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 p-5 text-white shadow-[0_12px_30px_rgba(16,185,129,.25)]; }
 .cash-total-card span { @apply text-sm font-bold text-emerald-100; }
@@ -633,8 +621,6 @@
 
 /* Electron parity statement page */
 .statement-page { @apply grid gap-5; }
-.statement-title h1 { @apply text-2xl font-black text-slate-950; }
-.statement-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
 .statement-filter-card { @apply grid grid-cols-1 gap-4 md:grid-cols-[minmax(260px,.5fr)_minmax(0,1fr)]; }
 .statement-filter-label { @apply mb-2 block text-[13px] font-black text-slate-600; }
 .statement-preset-row { @apply flex flex-wrap gap-2; }
@@ -656,8 +642,6 @@
 
 /* Electron parity debt page */
 .debt-page { @apply grid gap-5; }
-.debt-title h1 { @apply text-2xl font-black text-slate-950; }
-.debt-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
 .debt-stat-grid { @apply mb-0 xl:grid-cols-3; }
 .debt-filter-panel { @apply p-3; }
 .debt-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .8fr); gap: 18px; align-items: start; }
@@ -677,8 +661,6 @@
 
 /* Electron parity reports and settings */
 .reports-page, .settings-page { @apply grid gap-5; }
-.reports-title h1, .settings-title h1 { @apply text-2xl font-black text-slate-950; }
-.reports-title p:not(.eyebrow), .settings-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
 .reports-stat-grid { @apply mb-0; }
 .reports-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px,.8fr); gap: 18px; align-items: start; }
 .reports-chart-card, .reports-side-card, .reports-note-card { @apply rounded-[28px]; }
@@ -711,8 +693,6 @@
 
 /* Electron parity activity logs */
 .logs-page { @apply grid gap-5; }
-.logs-title h1 { @apply text-2xl font-black text-slate-950; }
-.logs-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
 .logs-stat-grid { @apply mb-0; }
 .logs-filter-card { @apply flex flex-col gap-3 p-3; }
 .logs-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .7fr); gap: 18px; align-items: start; }

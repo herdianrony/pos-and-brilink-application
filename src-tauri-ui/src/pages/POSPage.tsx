@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Search, ScanLine, Pause, Trash2 } from "lucide-react";
+import { PageHeader } from "../components/ui";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
@@ -52,13 +53,11 @@ export function POSPage({
 
   return (
     <>
-      <div className="page-title pos-page-title">
-        <div><p className="eyebrow">Penjualan Retail</p><h1>Kasir POS</h1></div>
-        <div className="page-actions">
-          <button className="secondary" onClick={onHoldCart} disabled={!cart.length}><Pause size={16} /> Hold</button>
-          <button className="danger" onClick={onClearCart} disabled={!cart.length}><Trash2 size={16} /> Kosongkan</button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Penjualan Retail"
+        title="Kasir POS"
+        actions={<><button className="secondary" onClick={onHoldCart} disabled={!cart.length}><Pause size={16} /> Hold</button><button className="danger" onClick={onClearCart} disabled={!cart.length}><Trash2 size={16} /> Kosongkan</button></>}
+      />
       <div className="pos-shell electron-pos-shell">
         <section className="pos-catalog card electron-pos-catalog">
           <div className="card-header"><div><h2>Pilih Produk</h2><p>Cari produk, pilih kategori, lalu tekan Tambah.</p></div></div>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
-import { StatCard } from "../components/ui";
+import { PageHeader, StatCard } from "../components/ui";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -49,14 +49,12 @@ export function LogsPage({
 
   return (
     <div className="logs-page">
-      <div className="page-title logs-title">
-        <div>
-          <p className="eyebrow">Monitoring</p>
-          <h1>Riwayat Aktivitas</h1>
-          <p>Catatan aktivitas penting aplikasi untuk membantu pemeriksaan dan dukungan.</p>
-        </div>
-        <button className="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</button>
-      </div>
+      <PageHeader
+        eyebrow="Monitoring"
+        title="Riwayat Aktivitas"
+        description="Catatan aktivitas penting aplikasi untuk membantu pemeriksaan dan dukungan."
+        actions={<button className="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</button>}
+      />
 
       <section className="electron-stat-grid logs-stat-grid">
         <StatCard tone="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />

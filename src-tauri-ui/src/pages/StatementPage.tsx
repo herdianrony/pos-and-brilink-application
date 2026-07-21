@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Printer, Scale, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
-import { StatCard } from "../components/ui";
+import { PageHeader, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -46,17 +46,12 @@ export function StatementPage({
 
   return (
     <div className="statement-page">
-      <div className="page-title statement-title">
-        <div>
-          <p className="eyebrow">Mutasi Rekening</p>
-          <h1>Rekening Koran</h1>
-          <p>Mutasi rekening instan — mirip rekening koran bank.</p>
-        </div>
-        <div className="page-actions">
-          <button className="secondary" onClick={onExportCsv} disabled={filteredMutations.length === 0}><Download size={16} /> Unduh CSV</button>
-          <button className="secondary" onClick={() => window.print()} disabled={filteredMutations.length === 0}><Printer size={16} /> Print</button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Mutasi Rekening"
+        title="Rekening Koran"
+        description="Mutasi rekening instan — mirip rekening koran bank."
+        actions={<><button className="secondary" onClick={onExportCsv} disabled={filteredMutations.length === 0}><Download size={16} /> Unduh CSV</button><button className="secondary" onClick={() => window.print()} disabled={filteredMutations.length === 0}><Printer size={16} /> Print</button></>}
+      />
 
       <section className="statement-filter-card card">
         <label>Rekening

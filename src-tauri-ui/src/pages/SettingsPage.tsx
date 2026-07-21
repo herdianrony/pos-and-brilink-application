@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import { Archive, Database, Download, Shield, Users } from "lucide-react";
+import { PageHeader } from "../components/ui";
 import type { AccountMutationRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow } from "../api";
 
 export function SettingsPage({
@@ -35,13 +36,7 @@ export function SettingsPage({
 }) {
   return (
     <div className="settings-page">
-      <div className="page-title settings-title">
-        <div>
-          <p className="eyebrow">Sistem</p>
-          <h1>Pengaturan</h1>
-          <p>Kelola pengguna, unduhan data, dan cadangan data lokal.</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="Sistem" title="Pengaturan" description="Kelola pengguna, unduhan data, dan cadangan data lokal." />
 
       <section className="settings-grid">
         <div className="card settings-card">
