@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Landmark, Star } from "lucide-react";
 import type { AccountRow, TransactionRow } from "../api";
 import type { AgentForm } from "../types";
@@ -7,17 +7,20 @@ import { Button, Card, CardHeader, EmptyState, PageHeader, SectionCard } from ".
 import { formatRupiah } from "../lib/format";
 import { tw } from "../lib/tw";
 
+type ServiceFilter = "Semua" | "Favorit" | "Tunai" | "Transfer" | "Payment";
+
 const servicePresets: Array<{
   key: "withdraw" | "deposit" | "transfer" | "payment";
   code: string;
   name: string;
   description: string;
   fee: string;
-  group: string;
+  group: ServiceFilter;
+  favorite?: boolean;
 }> = [
-  { key: "withdraw", code: "TT", name: "Tarik Tunai", description: "Pelanggan ambil uang tunai", fee: "Admin umum Rp5.000", group: "Tunai" },
+  { key: "withdraw", code: "TT", name: "Tarik Tunai", description: "Pelanggan ambil uang tunai", fee: "Admin umum Rp5.000", group: "Tunai", favorite: true },
   { key: "deposit", code: "ST", name: "Setor Tunai", description: "Setor ke rekening/e-wallet", fee: "Admin umum Rp5.000", group: "Tunai" },
-  { key: "transfer", code: "TR", name: "Transfer", description: "Transfer bank/provider", fee: "Admin umum Rp5.000", group: "Transfer" },
+  { key: "transfer", code: "TR", name: "Transfer", description: "Transfer bank/provider", fee: "Admin umum Rp5.000", group: "Transfer", favorite: true },
   { key: "payment", code: "TP", name: "Payment/Topup", description: "Token, pulsa, tagihan", fee: "Admin mulai Rp2.500", group: "Payment" },
 ];
 
@@ -42,7 +45,9 @@ export function AgentServicesPage({
   onApplyPreset: (kind: "withdraw" | "deposit" | "transfer" | "payment") => void;
   onSubmitAgentTransaction: (event: FormEvent) => void;
 }) {
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("Semua");
   const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
+  const filteredServices = servicePresets.filter((service) => serviceFilter === "Semua" || (serviceFilter === "Favorit" ? service.favorite : service.group === serviceFilter));
   const totalCustomerPay = Number(agentForm.amount || 0) + Number(agentForm.fee || 0);
   const agentProfit = Number(agentForm.fee || 0) - Number(agentForm.provider_cost || 0);
   const selectedPreset = servicePresets.find((preset) => preset.name === agentForm.service_name);
@@ -59,15 +64,13 @@ export function AgentServicesPage({
       <section className={tw("electron-service-layout")}>
         <SectionCard className={tw("service-catalog-panel")} title="Katalog Layanan" description="Pilih layanan yang paling sesuai dengan transaksi pelanggan.">
           <div className={tw("service-filter-row")}>
-            <button className={tw("filter-chip active")}>Semua</button>
-            <button className={tw("filter-chip")}>Favorit</button>
-            <button className={tw("filter-chip")}>Tunai</button>
-            <button className={tw("filter-chip")}>Transfer</button>
-            <button className={tw("filter-chip")}>Payment</button>
+            {(["Semua", "Favorit", "Tunai", "Transfer", "Payment"] as ServiceFilter[]).map((filter) => (
+              <button key={filter} className={tw(serviceFilter === filter ? "filter-chip active" : "filter-chip")} onClick={() => setServiceFilter(filter)}>{filter}</button>
+            ))}
           </div>
-          <div className={tw("service-section-title")}>Layanan Favorit</div>
+          <div className={tw("service-section-title")}>{serviceFilter === "Semua" ? "Semua Layanan" : `Layanan ${serviceFilter}`}</div>
           <div className={tw("electron-service-grid")}>
-            {servicePresets.map((service) => (
+            {filteredServices.map((service) => (
               <button key={service.key} type="button" className={tw(agentForm.service_name === service.name ? "electron-service-card selected" : "electron-service-card")} onClick={() => onApplyPreset(service.key)}>
                 <span className={tw("service-fav")}><Star size={13} /></span>
                 <span className={tw("service-icon")}><Landmark size={20} /></span>

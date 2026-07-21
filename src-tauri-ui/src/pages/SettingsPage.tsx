@@ -54,7 +54,7 @@ export function SettingsPage({
               <option value="kasir">Kasir / Staff</option>
               <option value="admin">Owner / Admin</option>
             </select></label>
-            <button type="submit" disabled={saving}>Buat User</button>
+            <Button type="submit" disabled={saving}>Buat User</Button>
           </form>
           <div className={tw("settings-user-list")}>
             {users.map((item) => <div key={item.id} className={tw("row rich-row")}><div><strong>{item.name}</strong><small>{item.username}</small></div><span className={tw("role-badge")}>{item.role}</span></div>)}

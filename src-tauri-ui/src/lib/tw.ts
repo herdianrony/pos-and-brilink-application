@@ -160,6 +160,7 @@ const customClasses: Record<string, string> = {
   "service-form-panel": "rounded-[28px]",
   "service-history-panel": "rounded-[28px]",
   "service-filter-row": "mb-4 flex flex-wrap gap-2 border-b border-slate-100 pb-3",
+  "service-preset-row": "flex flex-wrap gap-2",
   "electron-service-grid": "grid grid-cols-2 gap-3 max-[640px]:grid-cols-1",
   "electron-service-card": "relative grid min-h-[150px] content-center justify-items-center gap-2 rounded-2xl border-2 border-transparent bg-white p-4 text-center text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,.05)] hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50 hover:shadow-[0_14px_32px_rgba(20,184,166,.12)] [&_small]:text-xs [&_small]:font-bold [&_small]:text-slate-500 [&_em]:rounded-full [&_em]:bg-amber-100 [&_em]:px-2 [&_em]:py-1 [&_em]:text-[11px] [&_em]:font-black [&_em]:not-italic [&_em]:text-amber-700",
   "service-fav": "absolute right-2 top-2 text-amber-400",

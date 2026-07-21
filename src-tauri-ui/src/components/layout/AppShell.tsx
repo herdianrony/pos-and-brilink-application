@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Clock, Heart, Info, LogOut } from "lucide-react";
 import type { PublicUser } from "../../api";
 import type { ViewKey } from "../../types";
@@ -32,6 +32,20 @@ export function AppShell({
     .map((part) => part[0])
     .join("")
     .toUpperCase() || "U";
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function showAbout() {
+    window.alert("CatatAgen Local\nAplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.");
+  }
+
+  function showSupport() {
+    window.alert("Support CatatAgen Local\nUntuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek.");
+  }
 
   return (
     <div className={tw("app-shell app-shell-redesign")}>
@@ -54,8 +68,8 @@ export function AppShell({
 
         <div className={tw("sidebar-bottom-redesign")}>
           <div className={tw("support-row")}>
-            <button type="button" className={tw("support-button")}><Info size={14} /> Tentang</button>
-            <button type="button" className={tw("support-button support")}><Heart size={14} /> Support</button>
+            <button type="button" className={tw("support-button")} onClick={showAbout}><Info size={14} /> Tentang</button>
+            <button type="button" className={tw("support-button support")} onClick={showSupport}><Heart size={14} /> Support</button>
           </div>
           <div className={tw("user-card-redesign")}>
             <div className={tw("user-avatar")}>{initials}</div>
@@ -68,8 +82,8 @@ export function AppShell({
           <div className={tw("time-card-redesign")}>
             <Clock size={18} />
             <div>
-              <strong>{new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong>
-              <small>{new Date().toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}</small>
+              <strong>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong>
+              <small>{now.toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}</small>
             </div>
           </div>
         </div>

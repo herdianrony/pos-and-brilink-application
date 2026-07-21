@@ -8,6 +8,13 @@ import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
 import { tw } from "../lib/tw";
 
+const posServicePresets = [
+  { label: "Tarik Tunai", fee: "5000" },
+  { label: "Setor Tunai", fee: "5000" },
+  { label: "Transfer", fee: "5000" },
+  { label: "Payment/Topup", fee: "2500" },
+];
+
 export function POSPage({
   categories,
   products,
@@ -97,6 +104,9 @@ export function POSPage({
           <Button variant="secondary" className={tw("mb-3 w-full")} onClick={() => setShowServiceForm(!showServiceForm)}><Landmark size={16} /> Tambah Layanan Agen</Button>
           {showServiceForm && (
             <div className={tw("pos-service-form")}>
+              <div className={tw("service-preset-row span-2")}>
+                {posServicePresets.map((preset) => <button key={preset.label} type="button" className={tw(serviceForm.service_name === preset.label ? "filter-chip active" : "filter-chip")} onClick={() => setServiceForm({ ...serviceForm, service_name: preset.label, fee: preset.fee })}>{preset.label}</button>)}
+              </div>
               <label className={tw("field-label")}>Layanan<input className={tw("form-input")} value={serviceForm.service_name} onChange={(event) => setServiceForm({ ...serviceForm, service_name: event.target.value })} /></label>
               <label className={tw("field-label")}>Nominal<CurrencyInput value={serviceForm.amount} onChange={(value) => setServiceForm({ ...serviceForm, amount: value })} /></label>
               <label className={tw("field-label")}>Admin<CurrencyInput value={serviceForm.fee} onChange={(value) => setServiceForm({ ...serviceForm, fee: value })} /></label>

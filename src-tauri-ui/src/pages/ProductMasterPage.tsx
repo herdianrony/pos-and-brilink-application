@@ -72,7 +72,7 @@ export function ProductMasterPage({
                     <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className={tw("mt-1 block text-slate-500")}>Min {product.min_stock}</small></div>
                     <div className={tw("flex flex-wrap gap-2 lg:justify-end")}>
                       <Button variant="secondary" className={tw("h-10 w-10 p-0")} title="Edit produk" aria-label={`Edit produk ${product.name}`} onClick={() => onEditProduct(product)}><Pencil size={16} /></Button>
-                      <Button variant="danger" className={tw("h-10 w-10 p-0")} title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => onRemoveProduct(product)}><Power size={16} /></Button>
+                      <Button variant="danger" className={tw("h-10 w-10 p-0")} title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => { if (window.confirm(`Nonaktifkan produk ${product.name}? Produk tidak akan tampil di kasir.`)) onRemoveProduct(product); }}><Power size={16} /></Button>
                     </div>
                   </DataRow>
                 ))}
