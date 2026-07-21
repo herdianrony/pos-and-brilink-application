@@ -292,6 +292,17 @@ export function checkoutPosCash(payload: {
   payment_method?: "cash" | "transfer" | "qris";
   settlement_account_id?: number | null;
   items: Array<{ product_id: number; quantity: number }>;
+  agent_items?: Array<{
+    service_name: string;
+    customer_name?: string;
+    amount: number;
+    fee: number;
+    provider_cost?: number;
+    account_id?: number | null;
+    cash_effect?: number;
+    bank_effect?: number;
+    notes?: string;
+  }>;
 }) {
   return invokeCommand<PosCheckoutResponse>("checkout_pos_cash", { payload });
 }

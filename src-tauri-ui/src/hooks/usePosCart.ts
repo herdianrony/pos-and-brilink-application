@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { checkoutPosCash } from "../api";
 import type { ProductRow } from "../api";
 import { formatRupiah } from "../lib/format";
-import type { CartItem, ReceiptState } from "../types";
+import type { AgentCartItem, CartItem, ReceiptState } from "../types";
 
 export function usePosCart({
   onMessage,
@@ -17,7 +17,7 @@ export function usePosCart({
   const [settlementAccountId, setSettlementAccountId] = useState("");
 
   const cartTotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.product.sell_price * item.quantity, 0),
+    () => cart.reduce((sum, item) => sum + (item.type === "product" ? item.product.sell_price * item.quantity : item.amount + item.fee), 0),
     [cart],
   );
 
@@ -27,20 +27,38 @@ export function usePosCart({
       return;
     }
     setCart((items) => {
-      const existing = items.find((item) => item.product.id === product.id);
-      if (existing) {
-        return items.map((item) => item.product.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item);
+      const existing = items.find((item) => item.type === "product" && item.product.id === product.id);
+      if (existing?.type === "product") {
+        return items.map((item) => item.type === "product" && item.product.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item);
       }
-      return [...items, { product, quantity: 1 }];
+      return [...items, { type: "product", product, quantity: 1 }];
     });
+  }
+
+  function addAgentService(service: Omit<AgentCartItem, "type" | "id">) {
+    const serviceName = service.service_name.trim();
+    if (!serviceName) {
+      onMessage("Nama layanan wajib diisi");
+      return;
+    }
+    if (service.amount < 0 || service.fee < 0 || service.provider_cost < 0) {
+      onMessage("Nominal layanan, admin, dan biaya provider tidak boleh minus");
+      return;
+    }
+    setCart((items) => [...items, { ...service, type: "agent", id: `agent-${Date.now()}-${Math.random().toString(16).slice(2)}`, service_name: serviceName }]);
+    onMessage(`Layanan ${serviceName} ditambahkan ke keranjang`);
   }
 
   function updateCartQty(productId: number, quantity: number) {
     setCart((items) => items.flatMap((item) => {
-      if (item.product.id !== productId) return [item];
+      if (item.type !== "product" || item.product.id !== productId) return [item];
       if (quantity <= 0) return [];
       return [{ ...item, quantity: Math.min(quantity, item.product.stock) }];
     }));
+  }
+
+  function removeCartItem(itemKey: string | number) {
+    setCart((items) => items.filter((item) => item.type === "product" ? item.product.id !== itemKey : item.id !== itemKey));
   }
 
   function clearCart() {
@@ -73,7 +91,18 @@ export function usePosCart({
       const result = await checkoutPosCash({
         payment_method: paymentMethod,
         settlement_account_id: paymentMethod === "cash" ? null : Number(settlementAccountId),
-        items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+        items: cart.filter((item) => item.type === "product").map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+        agent_items: cart.filter((item) => item.type === "agent").map((item) => ({
+          service_name: item.service_name,
+          customer_name: item.customer_name,
+          amount: item.amount,
+          fee: item.fee,
+          provider_cost: item.provider_cost,
+          account_id: item.account_id ?? null,
+          cash_effect: item.cash_effect,
+          bank_effect: item.bank_effect,
+          notes: item.notes,
+        })),
       });
       setLastReceipt({
         invoice_no: result.invoice_no,
@@ -105,7 +134,9 @@ export function usePosCart({
     settlementAccountId,
     setSettlementAccountId,
     addToCart,
+    addAgentService,
     updateCartQty,
+    removeCartItem,
     clearCart,
     holdCart,
     submitCheckout,

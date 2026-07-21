@@ -29,9 +29,12 @@ export function ReceiptModal({
           <div className={tw("receipt-meta")}><span>Bayar</span><strong>{paymentLabel(receipt.payment_method)}</strong></div>
           <div className={tw("receipt-line")} />
           {receipt.items.map((item) => (
-            <div key={item.product.id} className={tw("receipt-item")}>
-              <div><strong>{item.product.name}</strong><span>{item.quantity} x {formatRupiah(item.product.sell_price)}</span></div>
-              <strong>{formatRupiah(item.quantity * item.product.sell_price)}</strong>
+            <div key={item.type === "product" ? `product-${item.product.id}` : item.id} className={tw("receipt-item")}>
+              {item.type === "product" ? (
+                <><div><strong>{item.product.name}</strong><span>{item.quantity} x {formatRupiah(item.product.sell_price)}</span></div><strong>{formatRupiah(item.quantity * item.product.sell_price)}</strong></>
+              ) : (
+                <><div><strong>{item.service_name}</strong><span>Layanan agen • admin {formatRupiah(item.fee)}</span></div><strong>{formatRupiah(item.amount + item.fee)}</strong></>
+              )}
             </div>
           ))}
           <div className={tw("receipt-line")} />

@@ -1,6 +1,20 @@
 import type { ProductRow } from "./api";
 
-export type CartItem = { product: ProductRow; quantity: number };
+export type ProductCartItem = { type: "product"; product: ProductRow; quantity: number };
+export type AgentCartItem = {
+  type: "agent";
+  id: string;
+  service_name: string;
+  customer_name?: string;
+  amount: number;
+  fee: number;
+  provider_cost: number;
+  account_id?: number | null;
+  cash_effect: number;
+  bank_effect: number;
+  notes?: string;
+};
+export type CartItem = ProductCartItem | AgentCartItem;
 
 export type ReceiptState = {
   invoice_no: string;

@@ -192,6 +192,12 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
         profit += (product.sell_price - product.buy_price) * item.quantity;
         transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: product.id, product_name: product.name, quantity: item.quantity, unit_price: product.sell_price, subtotal });
       }
+      for (const service of payload.agent_items || []) {
+        const subtotal = Number(service.amount || 0) + Number(service.fee || 0);
+        total += subtotal;
+        profit += Number(service.fee || 0) - Number(service.provider_cost || 0);
+        transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: null, product_name: `Layanan: ${service.service_name}`, quantity: 1, unit_price: subtotal, subtotal });
+      }
       const invoice = `POS-MOCK-${trxId}`;
       transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "pos", customer_name: null, total_amount: total, profit, payment_method: method, status: "completed", notes: null, created_at: now() });
       addMutation(settlement, method === "transfer" ? "pos_transfer_in" : method === "qris" ? "pos_qris_in" : "pos_in", total, invoice, trxId);

@@ -99,6 +99,7 @@ const customClasses: Record<string, string> = {
   "receipt-footer": "mt-2",
   "printable-receipt": "print:block",
   "cart-list-scroll": "max-h-[48vh] overflow-auto pr-1",
+  "pos-service-form": "mb-3 grid grid-cols-2 gap-3 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-3 max-[640px]:grid-cols-1",
   "animate-fadeIn": "animate-[fadeIn_.18s_ease-out]",
   "compact-agent-stepper": "grid-cols-4 max-[720px]:grid-cols-1",
   "electron-cart-panel": "rounded-[28px]",

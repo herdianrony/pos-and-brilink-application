@@ -186,12 +186,28 @@ struct PosCheckoutItemPayload {
 }
 
 #[derive(Debug, Deserialize)]
+struct PosCheckoutAgentItemPayload {
+    service_name: String,
+    customer_name: Option<String>,
+    amount: f64,
+    fee: f64,
+    provider_cost: Option<f64>,
+    account_id: Option<i64>,
+    cash_effect: Option<f64>,
+    bank_effect: Option<f64>,
+    notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct PosCheckoutPayload {
     customer_name: Option<String>,
     notes: Option<String>,
     payment_method: Option<String>,
     settlement_account_id: Option<i64>,
+    #[serde(default)]
     items: Vec<PosCheckoutItemPayload>,
+    #[serde(default)]
+    agent_items: Vec<PosCheckoutAgentItemPayload>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1329,7 +1345,7 @@ fn create_agent_transaction(app: AppHandle, payload: AgentTransactionPayload) ->
 
 #[tauri::command]
 fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosCheckoutResponse, String> {
-    if payload.items.is_empty() { return Err("Keranjang masih kosong".into()); }
+    if payload.items.is_empty() && payload.agent_items.is_empty() { return Err("Keranjang masih kosong".into()); }
     if payload.items.iter().any(|item| item.quantity <= 0) { return Err("Jumlah produk harus lebih dari 0".into()); }
 
     let payment_method = trim_optional(payload.payment_method).unwrap_or_else(|| "cash".to_string()).to_lowercase();
@@ -1341,7 +1357,8 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
     let invoice_no = format!("POS-{}-{}", Utc::now().format("%Y%m%d%H%M%S"), Utc::now().timestamp_subsec_millis());
     let mut total_amount = 0.0;
     let mut total_profit = 0.0;
-    let mut prepared_items: Vec<(i64, String, i64, f64, f64)> = Vec::new();
+    let mut prepared_items: Vec<(Option<i64>, String, i64, f64, f64, bool)> = Vec::new();
+    let mut prepared_agent_effects: Vec<(String, Option<i64>, f64, f64)> = Vec::new();
 
     for item in &payload.items {
         let product = tx.query_row(
@@ -1354,7 +1371,27 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
         let profit = (product.2 - product.1) * item.quantity as f64;
         total_amount += subtotal;
         total_profit += profit;
-        prepared_items.push((item.product_id, product.0, item.quantity, product.2, subtotal));
+        prepared_items.push((Some(item.product_id), product.0, item.quantity, product.2, subtotal, true));
+    }
+
+    for service in &payload.agent_items {
+        let service_name = service.service_name.trim().to_string();
+        if service_name.is_empty() { return Err("Nama layanan wajib diisi".into()); }
+        let provider_cost = service.provider_cost.unwrap_or(0.0);
+        let cash_effect = service.cash_effect.unwrap_or(0.0);
+        let bank_effect = service.bank_effect.unwrap_or(0.0);
+        if service.amount < 0.0 || service.fee < 0.0 || provider_cost < 0.0 { return Err("Nominal, admin, dan biaya modal provider tidak boleh minus".into()); }
+        let subtotal = service.amount + service.fee;
+        let profit = service.fee - provider_cost;
+        total_amount += subtotal;
+        total_profit += profit;
+        let label = if let Some(customer) = trim_optional(service.customer_name.clone()) {
+            format!("Layanan: {service_name} ({customer})")
+        } else {
+            format!("Layanan: {service_name}")
+        };
+        prepared_items.push((None, label, 1, subtotal, subtotal, false));
+        prepared_agent_effects.push((service_name, service.account_id, cash_effect, bank_effect));
     }
 
     let settlement_account = if payment_method == "cash" {
@@ -1375,7 +1412,11 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
 
     for item in prepared_items {
         tx.execute("INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", params![transaction_id, item.0, item.1, item.2, item.3, item.4]).map_err(|e| e.to_string())?;
-        tx.execute("UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3", params![item.2, now, item.0]).map_err(|e| e.to_string())?;
+        if item.5 {
+            if let Some(product_id) = item.0 {
+                tx.execute("UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3", params![item.2, now, product_id]).map_err(|e| e.to_string())?;
+            }
+        }
     }
 
     let settlement_balance = settlement_account.3 + total_amount;
@@ -1383,11 +1424,31 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
     let mutation_type = match payment_method.as_str() { "transfer" => "pos_transfer_in", "qris" => "pos_qris_in", _ => "pos_in" };
     let mutation_label = match payment_method.as_str() { "transfer" => "POS Transfer", "qris" => "POS QRIS", _ => "POS Tunai" };
     tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", params![settlement_account.0, mutation_type, total_amount, settlement_balance, format!("{mutation_label} {invoice_no}"), transaction_id, now]).map_err(|e| e.to_string())?;
+
+    for (service_name, account_id, cash_effect, bank_effect) in prepared_agent_effects {
+        if cash_effect != 0.0 {
+            let cash = tx.query_row("SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1", [], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))).map_err(|_| "Akun Kas Tunai tidak ditemukan".to_string())?;
+            let next_balance = cash.1 + cash_effect;
+            if next_balance < 0.0 { return Err("Saldo Kas Tunai tidak cukup untuk efek layanan".into()); }
+            tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![next_balance, now, cash.0]).map_err(|e| e.to_string())?;
+            tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'pos_agent_cash_effect', ?2, ?3, ?4, ?5, ?6)", params![cash.0, cash_effect, next_balance, service_name, transaction_id, now]).map_err(|e| e.to_string())?;
+        }
+        if bank_effect != 0.0 {
+            let selected_account_id = account_id.ok_or_else(|| "Rekening layanan wajib dipilih jika efek rekening tidak 0".to_string())?;
+            let account = tx.query_row("SELECT id, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1", params![selected_account_id], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))).map_err(|_| "Rekening layanan tidak ditemukan".to_string())?;
+            let next_balance = account.1 + bank_effect;
+            if next_balance < 0.0 { return Err("Saldo rekening layanan tidak cukup".into()); }
+            tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3", params![next_balance, now, account.0]).map_err(|e| e.to_string())?;
+            tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'pos_agent_bank_effect', ?2, ?3, ?4, ?5, ?6)", params![account.0, bank_effect, next_balance, service_name, transaction_id, now]).map_err(|e| e.to_string())?;
+        }
+    }
+
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(&conn, "INFO", "pos", &format!("Checkout POS berhasil: {invoice_no}"));
 
     Ok(PosCheckoutResponse { ok: true, transaction_id, invoice_no, total_amount, profit: total_profit, settlement_account_id: settlement_account.0, settlement_balance })
 }
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())

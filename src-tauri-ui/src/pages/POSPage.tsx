@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { Banknote, CreditCard, QrCode, Search, ScanLine, Pause, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, Landmark, Plus, QrCode, Search, ScanLine, Pause, Trash2 } from "lucide-react";
 import { Button, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { PaymentModal } from "../components/PaymentModal";
+import { CurrencyInput } from "../components/CurrencyInput";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
@@ -19,6 +20,7 @@ export function POSPage({
   posCategoryFilter,
   onCategoryFilterChange,
   onAddToCart,
+  onAddAgentService,
   onUpdateQty,
   onPaymentMethodChange,
   onSettlementAccountChange,
@@ -37,6 +39,7 @@ export function POSPage({
   posCategoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
   onAddToCart: (product: ProductRow) => void;
+  onAddAgentService: (service: { service_name: string; customer_name?: string; amount: number; fee: number; provider_cost: number; account_id?: number | null; cash_effect: number; bank_effect: number; notes?: string }) => void;
   onUpdateQty: (productId: number, quantity: number) => void;
   onPaymentMethodChange: (method: "cash" | "transfer" | "qris") => void;
   onSettlementAccountChange: (value: string) => void;
@@ -46,6 +49,8 @@ export function POSPage({
 }) {
   const [localSearch, setLocalSearch] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [serviceForm, setServiceForm] = useState({ service_name: "Transfer", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
   const searchRef = useRef<HTMLInputElement>(null);
   const canPay = cart.length > 0;
   const visibleProducts = useMemo(() => {
@@ -89,12 +94,27 @@ export function POSPage({
           </div>
         </SectionCard>
         <SectionCard className={tw("pos-cart-panel electron-cart-panel")} title="Keranjang" description={`${cart.length} item dipilih.`}>
+          <Button variant="secondary" className={tw("mb-3 w-full")} onClick={() => setShowServiceForm(!showServiceForm)}><Landmark size={16} /> Tambah Layanan Agen</Button>
+          {showServiceForm && (
+            <div className={tw("pos-service-form")}>
+              <label className={tw("field-label")}>Layanan<input className={tw("form-input")} value={serviceForm.service_name} onChange={(event) => setServiceForm({ ...serviceForm, service_name: event.target.value })} /></label>
+              <label className={tw("field-label")}>Nominal<CurrencyInput value={serviceForm.amount} onChange={(value) => setServiceForm({ ...serviceForm, amount: value })} /></label>
+              <label className={tw("field-label")}>Admin<CurrencyInput value={serviceForm.fee} onChange={(value) => setServiceForm({ ...serviceForm, fee: value })} /></label>
+              <label className={tw("field-label")}>Biaya Provider<CurrencyInput value={serviceForm.provider_cost} onChange={(value) => setServiceForm({ ...serviceForm, provider_cost: value })} /></label>
+              <label className={tw("field-label span-2")}>Rekening Efek Layanan<select className={tw("form-input")} value={serviceForm.account_id} onChange={(event) => setServiceForm({ ...serviceForm, account_id: event.target.value })}><option value="">Tidak ada efek rekening</option>{settlementAccounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+              <label className={tw("field-label")}>Efek Rekening<CurrencyInput allowNegative value={serviceForm.bank_effect} onChange={(value) => setServiceForm({ ...serviceForm, bank_effect: value })} /></label>
+              <label className={tw("field-label")}>Efek Kas<CurrencyInput allowNegative value={serviceForm.cash_effect} onChange={(value) => setServiceForm({ ...serviceForm, cash_effect: value })} /></label>
+              <Button className={tw("span-2")} onClick={() => { onAddAgentService({ service_name: serviceForm.service_name, customer_name: serviceForm.customer_name, amount: Number(serviceForm.amount || 0), fee: Number(serviceForm.fee || 0), provider_cost: Number(serviceForm.provider_cost || 0), account_id: serviceForm.account_id ? Number(serviceForm.account_id) : null, cash_effect: Number(serviceForm.cash_effect || 0), bank_effect: Number(serviceForm.bank_effect || 0), notes: serviceForm.notes }); setShowServiceForm(false); }}><Plus size={16} /> Masukkan ke Keranjang</Button>
+            </div>
+          )}
           <div className={tw("cart-list-scroll")}>
-            {cart.length === 0 ? <EmptyState title="Keranjang kosong" description="Pilih produk dari katalog." /> : cart.map((item) => (
-              <div key={item.product.id} className={tw("cart-row electron-cart-row")}>
-                <div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div>
-                <input className={tw("form-input")} type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(event) => onUpdateQty(item.product.id, Number(event.target.value))} />
-                <strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong>
+            {cart.length === 0 ? <EmptyState title="Keranjang kosong" description="Pilih produk dari katalog atau tambah layanan agen." /> : cart.map((item) => (
+              <div key={item.type === "product" ? `product-${item.product.id}` : item.id} className={tw("cart-row electron-cart-row")}>
+                {item.type === "product" ? (
+                  <><div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div><input className={tw("form-input")} type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(event) => onUpdateQty(item.product.id, Number(event.target.value))} /><strong>{formatRupiah(item.product.sell_price * item.quantity)}</strong></>
+                ) : (
+                  <><div><strong>{item.service_name}</strong><small>Layanan agen • admin {formatRupiah(item.fee)}</small></div><span className={tw("status-badge")}>Jasa</span><strong>{formatRupiah(item.amount + item.fee)}</strong></>
+                )}
               </div>
             ))}
           </div>
