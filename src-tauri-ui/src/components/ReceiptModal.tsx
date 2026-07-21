@@ -12,11 +12,13 @@ export function ReceiptModal({
   onClose: () => void;
 }) {
   const [printerHost, setPrinterHost] = useState("");
+  const [printerPort, setPrinterPort] = useState("9100");
   const [printStatus, setPrintStatus] = useState("");
 
   useEffect(() => {
     if (!receipt) return;
     setPrinterHost(localStorage.getItem("catatagen.printer.host") || "");
+    setPrinterPort(localStorage.getItem("catatagen.printer.port") || "9100");
     setPrintStatus("");
   }, [receipt]);
 
@@ -33,7 +35,7 @@ export function ReceiptModal({
     try {
       await printThermalReceipt({
         host,
-        port: 9100,
+        port: Number(printerPort || 9100),
         invoice_no: currentReceipt.invoice_no,
         payment_method: paymentLabel(currentReceipt.payment_method),
         total_amount: currentReceipt.total_amount,
@@ -44,6 +46,7 @@ export function ReceiptModal({
           : { name: item.service_name, quantity: 1, unit_price: item.amount + item.fee, subtotal: item.amount + item.fee }),
       });
       localStorage.setItem("catatagen.printer.host", host);
+      localStorage.setItem("catatagen.printer.port", printerPort.trim() || "9100");
       setPrintStatus("Struk berhasil dikirim ke printer thermal.");
     } catch (error) {
       setPrintStatus(error instanceof Error ? error.message : String(error));
@@ -87,9 +90,14 @@ export function ReceiptModal({
           <div className="grid justify-items-center gap-1 text-center [&_strong]:text-lg [&_span]:text-xs [&_span]:text-slate-500 mt-2"><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
         </div>
         <div className="mt-4 grid gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <label className="grid gap-2 text-[13px] font-black text-slate-600">IP Printer Thermal
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerHost} onChange={(event) => setPrinterHost(event.target.value)} placeholder="192.168.1.100" />
-          </label>
+          <div className="grid grid-cols-[minmax(0,1fr)_100px] gap-2 max-[520px]:grid-cols-1">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">IP Printer Thermal
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerHost} onChange={(event) => setPrinterHost(event.target.value)} placeholder="192.168.1.100" />
+            </label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Port
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerPort} onChange={(event) => setPrinterPort(event.target.value)} placeholder="9100" />
+            </label>
+          </div>
           {printStatus && <div className="mt-5 rounded-2xl bg-emerald-50 px-3.5 py-3 font-extrabold text-emerald-800">{printStatus}</div>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden">

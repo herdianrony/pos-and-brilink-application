@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
-import { Activity, Archive, Database, Download, RefreshCw, Shield, Users } from "lucide-react";
-import type { AccountMutationRow, AppLogRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow } from "../api";
+import { useEffect, useState, type FormEvent } from "react";
+import { Activity, Archive, Database, Download, Printer, RefreshCw, Shield, Users } from "lucide-react";
+import { printThermalReceipt, type AccountMutationRow, type AppLogRow, type BackupRow, type DebtRow, type ProductRow, type PublicUser, type TransactionRow } from "../api";
 import { Button, EmptyState, PageHeader, SectionCard, Tabs } from "../components/ui";
 
 
@@ -44,7 +44,48 @@ export function SettingsPage({
   onCreateBackup: () => void;
   onRestoreBackup: (backup: BackupRow) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"user" | "data" | "backup" | "info" | "activity">("user");
+  const [activeTab, setActiveTab] = useState<"user" | "data" | "backup" | "printer" | "info" | "activity">("user");
+  const [printerForm, setPrinterForm] = useState({ host: "", port: "9100", paper: "58" as "58" | "80" });
+  const [printerStatus, setPrinterStatus] = useState("");
+
+  useEffect(() => {
+    setPrinterForm({
+      host: localStorage.getItem("catatagen.printer.host") || "",
+      port: localStorage.getItem("catatagen.printer.port") || "9100",
+      paper: (localStorage.getItem("catatagen.printer.paper") as "58" | "80") || "58",
+    });
+  }, []);
+
+  function savePrinterSettings() {
+    localStorage.setItem("catatagen.printer.host", printerForm.host.trim());
+    localStorage.setItem("catatagen.printer.port", printerForm.port.trim() || "9100");
+    localStorage.setItem("catatagen.printer.paper", printerForm.paper);
+    setPrinterStatus("Pengaturan printer disimpan.");
+  }
+
+  async function testPrinter() {
+    const host = printerForm.host.trim();
+    if (!host) {
+      setPrinterStatus("Isi IP printer terlebih dahulu.");
+      return;
+    }
+    savePrinterSettings();
+    setPrinterStatus("Mengirim test print...");
+    try {
+      await printThermalReceipt({
+        host,
+        port: Number(printerForm.port || 9100),
+        store_name: "CatatAgen Local",
+        invoice_no: "TEST-PRINT",
+        payment_method: "Test",
+        total_amount: 0,
+        items: [{ name: `Test Print ${printerForm.paper}mm`, quantity: 1, unit_price: 0, subtotal: 0 }],
+      });
+      setPrinterStatus("Test print berhasil dikirim.");
+    } catch (error) {
+      setPrinterStatus(error instanceof Error ? error.message : String(error));
+    }
+  }
 
   return (
     <div className="grid gap-4">
@@ -54,6 +95,7 @@ export function SettingsPage({
           { id: "user", label: "User" },
           { id: "data", label: "Data" },
           { id: "backup", label: "Backup" },
+          { id: "printer", label: "Printer" },
           { id: "info", label: "Info" },
           { id: "activity", label: "Aktivitas" },
         ]}
@@ -111,6 +153,31 @@ export function SettingsPage({
               ))}
             </div>
           )}
+        </SectionCard>}
+
+
+        {activeTab === "printer" && <SectionCard className="relative overflow-hidden rounded-[28px] col-span-full" title="Printer Thermal" description="Simpan printer ESC/POS network agar kasir tidak perlu mengetik IP setiap cetak struk.">
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Printer size={22} /></div>
+          <div className="grid grid-cols-3 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[760px]:grid-cols-1">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">IP / Host Printer
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerForm.host} onChange={(event) => setPrinterForm({ ...printerForm, host: event.target.value })} placeholder="192.168.1.100" />
+            </label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Port
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerForm.port} onChange={(event) => setPrinterForm({ ...printerForm, port: event.target.value })} placeholder="9100" />
+            </label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Lebar Kertas
+              <select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerForm.paper} onChange={(event) => setPrinterForm({ ...printerForm, paper: event.target.value as "58" | "80" })}>
+                <option value="58">58mm</option>
+                <option value="80">80mm</option>
+              </select>
+            </label>
+            <div className="col-span-full flex flex-wrap gap-2">
+              <Button onClick={savePrinterSettings}>Simpan Printer</Button>
+              <Button variant="secondary" onClick={testPrinter}>Test Print</Button>
+            </div>
+          </div>
+          {printerStatus && <div className="mt-3 rounded-2xl bg-emerald-50 px-3.5 py-3 text-sm font-extrabold text-emerald-800">{printerStatus}</div>}
+          <p className="mt-3 text-sm font-semibold text-slate-500">Saat ini didukung printer thermal network ESC/POS via TCP port 9100. USB/COM akan ditambahkan tahap berikutnya.</p>
         </SectionCard>}
 
         {activeTab === "info" && <SectionCard className="relative overflow-hidden rounded-[28px] col-span-full" title="Info Aplikasi" description="Informasi penyimpanan lokal dan status keamanan data.">
