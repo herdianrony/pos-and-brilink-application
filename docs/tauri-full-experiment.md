@@ -359,3 +359,26 @@ Langkah berikut:
 4. Lanjutkan POC 2 dengan riwayat transaksi POS.
 5. Tambahkan checkout transfer/QRIS + rekening penerima.
 6. Setelah POC POS tunai stabil, lanjutkan POC Kas & Saldo.
+
+---
+
+## 14. Update Status Validasi Windows — 2026-07-21
+
+Branch `experiment/tauri-full` sudah divalidasi di Windows oleh owner repo:
+
+```bat
+npm run dev:tauri
+npm run build:tauri
+```
+
+Hasil:
+
+- `dev:tauri` berhasil menjalankan Vite + Cargo/Tauri.
+- `build:tauri` berhasil membuat build Tauri Windows.
+- Rust compile berjalan di environment Windows owner.
+- Tauri Full sekarang berstatus **MVP candidate untuk pengujian intensif**, bukan lagi hanya scaffold eksperimen.
+
+Catatan tetap berlaku:
+
+- Electron masih baseline production sampai printer native, E2E, stress test, dan installer validation selesai.
+- Branch ini belum boleh di-merge ke `main` tanpa review release checklist.

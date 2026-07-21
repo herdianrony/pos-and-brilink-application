@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("CatatAgen Tauri auth", () => {
-  test("shows Electron-like login page and logs in", async ({ page }) => {
+  test("shows login page and logs in to simplified dashboard", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Masuk ke Aplikasi" })).toBeVisible();
@@ -11,7 +11,8 @@ test.describe("CatatAgen Tauri auth", () => {
     await page.getByPlaceholder("Masukkan password").fill("Admin123");
     await page.getByRole("button", { name: /masuk/i }).click();
 
-    await expect(page.getByRole("heading", { name: "Dashboard Operasional" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Kasir POS", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Keuangan", exact: true })).toBeVisible();
   });
 });

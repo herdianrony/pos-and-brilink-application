@@ -148,3 +148,28 @@ Tahap awal Tauri tidak menargetkan otomatisasi WhatsApp.
 ## Catatan
 
 Tauri full tidak wajib kompatibel dengan database Electron. Parity yang dicari adalah **alur fitur**, bukan data lama.
+
+---
+
+## Update Parity — 2026-07-21
+
+Status terbaru Tauri Full:
+
+- [x] Sidebar disederhanakan menjadi 6 menu utama.
+- [x] Dashboard disederhanakan untuk UMKM/kasir awam.
+- [x] Keuangan digabung menjadi tab: Kas & Saldo, Rekening Koran, Buku Utang, Laporan, Transaksi.
+- [x] Pengaturan digabung menjadi tab: User, Data, Backup, Info, Aktivitas.
+- [x] Payment modal POS dengan Tunai/Transfer/QRIS, icon, shortcut, dan kembalian.
+- [x] Layanan agen bisa dimasukkan ke POS checkout sebagai item jasa.
+- [x] Tauri backend memakai session guard dan admin guard.
+- [x] Capability default Tauri v2 sudah tersedia.
+- [x] `npm run dev:tauri` lolos di Windows.
+- [x] `npm run build:tauri` lolos di Windows.
+
+Gap utama sebelum menggantikan Electron:
+
+- [ ] Printer thermal native ESC/POS.
+- [ ] E2E Tauri dijalankan di Windows/CI setelah browser Playwright terpasang.
+- [ ] Stress test transaksi dan backup/restore.
+- [ ] Migrasi uang `f64` ke `i64` Rupiah.
+- [ ] Modularisasi backend Rust.
