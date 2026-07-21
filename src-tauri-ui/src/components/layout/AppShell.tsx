@@ -26,6 +26,36 @@ const SidebarClock = memo(function SidebarClock() {
   );
 });
 
+
+type ToastItem = { id: number; message: string; tone: "success" | "error" | "info" };
+
+function ToastViewport({ message }: { message: string }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  useEffect(() => {
+    const text = message.trim();
+    if (!text || text === "Siap") return;
+    const tone: ToastItem["tone"] = /gagal|error|salah|tidak|wajib/i.test(text) ? "error" : /berhasil|siap|selamat/i.test(text) ? "success" : "info";
+    const toast = { id: Date.now(), message: text, tone };
+    setToasts((items) => [...items.slice(-2), toast]);
+    const timer = window.setTimeout(() => setToasts((items) => items.filter((item) => item.id !== toast.id)), 3600);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  if (toasts.length === 0) return null;
+
+  return (
+    <div className={tw("toast-viewport")} aria-live="polite" aria-atomic="false">
+      {toasts.map((toast) => (
+        <div key={toast.id} className={tw(`toast-card ${toast.tone}`)}>
+          <span>{toast.message}</span>
+          <button type="button" onClick={() => setToasts((items) => items.filter((item) => item.id !== toast.id))} aria-label="Tutup notifikasi"><X size={14} /></button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AppShell({
   user,
   activeView,
@@ -110,10 +140,11 @@ export function AppShell({
 
       <section className={tw("content-shell content-shell-redesign")}>
         <div className={tw("status-strip-redesign")}>
-          <span>{message || "Siap"}</span>
+          <span>CatatAgen Local siap</span>
           <button onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
         </div>
         <main className={tw("page-content page-content-redesign")}>{children}</main>
+        <ToastViewport message={message} />
       </section>
     </div>
   );

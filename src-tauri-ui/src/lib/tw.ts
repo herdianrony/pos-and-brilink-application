@@ -4,6 +4,9 @@ const customClasses: Record<string, string> = {
   eyebrow: "m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600",
   form: "mt-5 grid gap-3.5",
   "status-line": "mt-5 rounded-2xl bg-emerald-50 px-3.5 py-3 font-extrabold text-emerald-800",
+  "toast-viewport": "fixed bottom-5 right-5 z-[120] grid w-[min(380px,calc(100vw-32px))] gap-2 print:hidden",
+  "toast-card": "flex items-start justify-between gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold shadow-[0_18px_48px_rgba(15,23,42,.18)] [&_button]:grid [&_button]:h-7 [&_button]:w-7 [&_button]:place-items-center [&_button]:rounded-xl [&_button]:bg-slate-100 [&_button]:p-0 [&_button]:text-slate-500 [&_button]:shadow-none",
+
   "app-shell": "min-h-screen grid grid-cols-[292px_1fr] max-[860px]:block max-[1120px]:grid-cols-[96px_1fr] print:hidden",
   "app-shell-redesign": "min-h-screen bg-[#f8f9fb] max-[860px]:block",
   sidebar: "sticky top-0 flex h-screen flex-col gap-5 overflow-hidden px-4.5 py-5.5 text-white shadow-[22px_0_60px_rgba(15,23,42,.18)] max-[860px]:static max-[860px]:h-auto",
