@@ -31,6 +31,8 @@ const customClasses: Record<string, string> = {
   "modal-actions": "flex flex-wrap items-center justify-end gap-2.5 print:hidden",
   "page-help": "-mt-2 mb-4.5 flex flex-wrap items-center gap-2.5 rounded-[18px] border border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 text-[13px] font-extrabold text-emerald-800 [&_span]:font-bold [&_span]:text-slate-700",
   "dashboard-grid": "mb-4 grid grid-cols-2 items-stretch gap-4 max-[980px]:grid-cols-1",
+  "dashboard-bottom-grid": "mb-4 grid grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)] items-start gap-4 max-[980px]:grid-cols-1",
+  "dashboard-check-list": "grid gap-3 [&>div]:flex [&>div]:items-start [&>div]:gap-3 [&>div]:rounded-2xl [&>div]:border [&>div]:border-slate-100 [&>div]:bg-slate-50 [&>div]:p-3.5 [&_small]:mt-1 [&_small]:block [&_small]:text-slate-500",
   "field-label": "grid gap-2 text-[13px] font-black text-slate-600",
   "form-input": "w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15",
   "field-note": "-mt-0.5 block text-xs font-semibold leading-snug text-slate-500",

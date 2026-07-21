@@ -16,8 +16,6 @@ export function DashboardPage({
   transactions,
   totalCash,
   lowStockCount,
-  cartTotal,
-  cartCount,
   loading,
   onNavigate,
   onRefresh,
@@ -27,8 +25,6 @@ export function DashboardPage({
   transactions: TransactionRow[];
   totalCash: number;
   lowStockCount: number;
-  cartTotal: number;
-  cartCount: number;
   loading: boolean;
   onNavigate: (view: ViewKey) => void;
   onRefresh: () => void;
@@ -114,25 +110,21 @@ export function DashboardPage({
         </SectionCard>
       </section>
 
-      <section className={tw("grid dashboard-grid")}>
-        <SectionCard title="Transaksi Terakhir" description="Aktivitas POS dan layanan agen terbaru.">
-          {transactions.length === 0 ? <EmptyState title="Belum ada transaksi" description="Mulai dari Kasir POS atau Layanan Agen." /> : transactions.slice(0, 5).map((transaction) => (
+      <section className={tw("dashboard-bottom-grid")}>
+        <SectionCard title="Transaksi Terakhir" description="Aktivitas terbaru yang tercatat di kasir dan layanan.">
+          {transactions.length === 0 ? <EmptyState title="Belum ada transaksi" description="Jika sudah ada penjualan atau layanan, datanya akan muncul di sini." /> : transactions.slice(0, 6).map((transaction) => (
             <div key={transaction.id} className={tw("row rich-row")}>
-              <div><strong>{transaction.invoice_no}</strong><small>{paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
+              <div><strong>{transaction.invoice_no}</strong><small>{paymentLabel(transaction.payment_method)} • {transaction.transaction_type === "pos" ? "Kasir POS" : "Layanan Agen"}</small></div>
               <strong>{formatRupiah(transaction.total_amount)}</strong>
             </div>
           ))}
         </SectionCard>
-        <SectionCard title="Aksi Cepat" description="Mulai aktivitas utama.">
-          <div className={tw("quick-launch-grid compact-launch")}>
-            <button onClick={() => onNavigate("pos")} className={tw("launch-card")}><span>Kasir POS</span></button>
-            <button onClick={() => onNavigate("brilink")} className={tw("launch-card")}><span>Layanan</span></button>
-            <button onClick={() => onNavigate("debts")} className={tw("launch-card")}><span>Buku Utang</span></button>
-            <button onClick={() => onNavigate("cash")} className={tw("launch-card")}><span>Kas & Saldo</span></button>
+        <SectionCard title="Yang Perlu Dicek" description="Ringkasan sederhana agar pemilik toko mudah memantau kondisi usaha.">
+          <div className={tw("dashboard-check-list")}>
+            <div><span className={tw(lowStockCount === 0 ? "status-badge" : "status-badge warning")}>{lowStockCount === 0 ? "Aman" : "Cek"}</span><div><strong>Stok Barang</strong><small>{lowStockCount === 0 ? "Tidak ada produk di bawah stok minimum." : `${lowStockCount} produk perlu segera ditambah.`}</small></div></div>
+            <div><span className={tw("status-badge")}>Saldo</span><div><strong>{formatRupiah(totalCash)}</strong><small>Total kas dan rekening yang tercatat.</small></div></div>
+            <div><span className={tw(transactions.length === 0 ? "status-badge warning" : "status-badge")}>{transactions.length}</span><div><strong>Transaksi Hari Ini</strong><small>{transactions.length === 0 ? "Belum ada aktivitas penjualan/layanan." : "Aktivitas usaha sudah tercatat."}</small></div></div>
           </div>
-          <div className={tw("divider")} />
-          <div className={tw("row rich-row")}><div><strong>Keranjang Aktif</strong><small>{cartCount} item siap checkout</small></div><strong>{formatRupiah(cartTotal)}</strong></div>
-          <div className={tw("row rich-row")}><div><strong>Total Saldo</strong><small>Semua akun aktif</small></div><strong>{formatRupiah(totalCash)}</strong></div>
         </SectionCard>
       </section>
     </>
