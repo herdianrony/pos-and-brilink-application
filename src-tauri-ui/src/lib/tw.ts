@@ -75,7 +75,7 @@ const customClasses: Record<string, string> = {
   "choice-card": "grid min-h-[88px] content-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 shadow-none [&_span]:text-xs [&_span]:font-bold [&_span]:text-slate-500",
   "review-box": "my-3.5 grid gap-2.5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 [&_div]:flex [&_div]:items-center [&_div]:justify-between [&_div]:gap-3 [&_div]:border-b [&_div]:border-slate-200 [&_div]:pb-2 [&_div:last-child]:border-b-0 [&_div:last-child]:pb-0 [&_span]:font-extrabold [&_span]:text-slate-500",
   "workflow-content": "grid gap-3.5",
-  "modal-backdrop": "fixed inset-0 z-[80] grid place-items-center bg-slate-900/55 p-6 backdrop-blur print:bg-white print:p-0 print:backdrop-blur-none",
+  "modal-backdrop": "fixed inset-y-0 right-0 left-[292px] z-[80] grid place-items-center bg-slate-900/55 p-6 backdrop-blur max-[1120px]:left-[96px] max-[860px]:left-0 print:left-0 print:bg-white print:p-0 print:backdrop-blur-none",
   "payment-modal": "max-h-[calc(100vh-48px)] w-[min(620px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]",
   "payment-total-box": "mb-4 rounded-3xl bg-gradient-to-br from-slate-900 to-emerald-900 p-5 text-white [&_span]:text-sm [&_span]:font-bold [&_span]:text-emerald-100 [&_strong]:block [&_strong]:text-4xl [&_strong]:font-black [&_small]:mt-1 [&_small]:block [&_small]:text-xs [&_small]:text-emerald-100/80",
   "payment-method-grid": "mb-4 grid grid-cols-3 gap-3 max-[560px]:grid-cols-1",
