@@ -52,6 +52,14 @@ fn require_auth(session: &State<'_, SessionState>) -> Result<PublicUser, String>
         .ok_or_else(|| "Sesi login tidak aktif. Silakan login ulang.".to_string())
 }
 
+fn require_admin(session: &State<'_, SessionState>) -> Result<PublicUser, String> {
+    let user = require_auth(session)?;
+    if user.role != "admin" {
+        return Err("Aksi ini hanya boleh dilakukan Administrator".into());
+    }
+    Ok(user)
+}
+
 #[derive(Debug, Deserialize)]
 struct CreateAdminPayload {
     name: String,
@@ -611,7 +619,7 @@ fn create_admin(app: AppHandle, payload: CreateAdminPayload, session: State<'_, 
 
 #[tauri::command]
 fn list_users(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<PublicUser>, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, role FROM users WHERE is_active = 1 ORDER BY id ASC")
@@ -628,7 +636,7 @@ fn list_users(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<Pu
 
 #[tauri::command]
 fn create_user(app: AppHandle, session: State<'_, SessionState>, payload: CreateUserPayload) -> Result<PublicUser, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     let username = payload.username.trim().to_string();
@@ -638,6 +646,12 @@ fn create_user(app: AppHandle, session: State<'_, SessionState>, payload: Create
     }
     if !matches!(role.as_str(), "admin" | "kasir") {
         return Err("Role harus admin atau kasir".into());
+    }
+    let existing_username: i64 = conn
+        .query_row("SELECT COUNT(*) FROM users WHERE username = ?1", params![&username], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+    if existing_username > 0 {
+        return Err("Username sudah digunakan".into());
     }
     let now = Utc::now().to_rfc3339();
     let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| e.to_string())?;
@@ -719,7 +733,7 @@ fn list_accounts(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec
 
 #[tauri::command]
 fn create_account(app: AppHandle, session: State<'_, SessionState>, payload: AccountPayload) -> Result<AccountRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let mut conn = init_schema(&app)?;
     let code = normalize_code(&payload.code);
     let name = payload.name.trim().to_string();
@@ -757,7 +771,7 @@ fn create_account(app: AppHandle, session: State<'_, SessionState>, payload: Acc
 
 #[tauri::command]
 fn adjust_account_balance(app: AppHandle, session: State<'_, SessionState>, payload: BalanceAdjustmentPayload) -> Result<AccountRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     if payload.amount == 0.0 {
         return Err("Nominal penyesuaian tidak boleh 0".into());
     }
@@ -801,7 +815,7 @@ fn adjust_account_balance(app: AppHandle, session: State<'_, SessionState>, payl
 
 #[tauri::command]
 fn transfer_accounts(app: AppHandle, session: State<'_, SessionState>, payload: AccountTransferPayload) -> Result<bool, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     if payload.from_account_id == payload.to_account_id {
         return Err("Rekening asal dan tujuan tidak boleh sama".into());
     }
@@ -867,19 +881,19 @@ fn account_expense(app: AppHandle, payload: AccountExpensePayload, mutation_type
 
 #[tauri::command]
 fn owner_draw(app: AppHandle, session: State<'_, SessionState>, payload: AccountExpensePayload) -> Result<AccountRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     account_expense(app, payload, "owner_draw", "Prive Owner")
 }
 
 #[tauri::command]
 fn bank_fee(app: AppHandle, session: State<'_, SessionState>, payload: AccountExpensePayload) -> Result<AccountRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     account_expense(app, payload, "bank_fee", "Biaya Bank / MDR")
 }
 
 #[tauri::command]
 fn list_account_mutations(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AccountMutationRow>, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare(
@@ -930,7 +944,7 @@ fn list_categories(app: AppHandle, session: State<'_, SessionState>) -> Result<V
 
 #[tauri::command]
 fn create_category(app: AppHandle, session: State<'_, SessionState>, payload: CategoryPayload) -> Result<CategoryRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -995,7 +1009,7 @@ fn list_products(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec
 
 #[tauri::command]
 fn create_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductPayload) -> Result<ProductRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -1054,7 +1068,7 @@ fn create_product(app: AppHandle, session: State<'_, SessionState>, payload: Pro
 
 #[tauri::command]
 fn update_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductUpdatePayload) -> Result<ProductRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
@@ -1087,7 +1101,7 @@ fn update_product(app: AppHandle, session: State<'_, SessionState>, payload: Pro
 
 #[tauri::command]
 fn deactivate_product(app: AppHandle, session: State<'_, SessionState>, payload: ProductIdPayload) -> Result<bool, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let now = Utc::now().to_rfc3339();
     conn.execute("UPDATE products SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, payload.id])
@@ -1164,7 +1178,7 @@ fn list_transaction_items(app: AppHandle, session: State<'_, SessionState>, payl
 
 #[tauri::command]
 fn list_app_logs(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AppLogRow>, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT 300")
@@ -1187,7 +1201,7 @@ fn list_app_logs(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec
 
 #[tauri::command]
 fn create_database_backup(app: AppHandle, session: State<'_, SessionState>) -> Result<BackupRow, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);").ok();
     drop(conn);
@@ -1213,7 +1227,7 @@ fn create_database_backup(app: AppHandle, session: State<'_, SessionState>) -> R
 
 #[tauri::command]
 fn list_database_backups(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<BackupRow>, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let dir = backup_dir(&app)?;
     let mut backups = Vec::new();
     for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
@@ -1241,7 +1255,7 @@ fn list_database_backups(app: AppHandle, session: State<'_, SessionState>) -> Re
 
 #[tauri::command]
 fn restore_database_backup(app: AppHandle, session: State<'_, SessionState>, payload: RestoreBackupPayload) -> Result<bool, String> {
-    let _user = require_auth(&session)?;
+    let _user = require_admin(&session)?;
     let backup_path = PathBuf::from(payload.path);
     if !backup_path.exists() {
         return Err("File backup tidak ditemukan".into());
