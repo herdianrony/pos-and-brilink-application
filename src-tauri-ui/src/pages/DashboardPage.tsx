@@ -4,6 +4,7 @@ import { Button, EmptyState, PageHeader, SectionCard, StatCard } from "../compon
 import { formatRupiah, paymentLabel } from "../lib/format";
 import type { ViewKey } from "../types";
 import { Landmark, ReceiptText, ShoppingCart, TrendingUp } from "lucide-react";
+import { tw } from "../lib/tw";
 
 function accountTone(index: number) {
   return ["account-green", "account-blue", "account-navy", "account-purple"][index % 4];
@@ -49,24 +50,24 @@ export function DashboardPage({
         actions={<Button variant="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</Button>}
       />
 
-      <section className="electron-hero-card">
-        <div className="hero-icon-box">▣</div>
+      <section className={tw("electron-hero-card")}>
+        <div className={tw("hero-icon-box")}>▣</div>
         <span>Keuntungan Hari Ini</span>
         <strong>{formatRupiah(totalProfit)}</strong>
-        <div className="hero-chip-row">
+        <div className={tw("hero-chip-row")}>
           <button type="button" onClick={() => onNavigate("pos")}>POS: {formatRupiah(posProfit)}</button>
           <button type="button" onClick={() => onNavigate("brilink")}>Layanan: {formatRupiah(agentProfit)}</button>
         </div>
       </section>
 
-      <section className="electron-stat-grid">
+      <section className={tw("electron-stat-grid")}>
         <StatCard tone="green" icon={<ReceiptText size={20} />} label="Total Transaksi" value={transactions.length} sub="hari ini" />
         <StatCard tone="blue" icon={<ShoppingCart size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} trx`} />
         <StatCard tone="purple" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} trx`} />
         <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Keuntungan Agen" value={formatRupiah(agentProfit)} sub="profit layanan" />
       </section>
 
-      <section className="safe-banner">
+      <section className={tw("safe-banner")}>
         <span>✓</span>
         <div>
           <strong>{lowStockCount === 0 ? "Semua aman hari ini" : `${lowStockCount} produk stok menipis`}</strong>
@@ -74,13 +75,13 @@ export function DashboardPage({
         </div>
       </section>
 
-      <section className="account-section-head">
+      <section className={tw("account-section-head")}>
         <strong>Saldo Rekening</strong>
         <span>{accounts.length} akun</span>
       </section>
-      <section className="account-card-row">
+      <section className={tw("account-card-row")}>
         {accounts.slice(0, 4).map((account, index) => (
-          <button key={account.id} className={`account-balance-card ${accountTone(index)}`} onClick={() => onNavigate("cash")}>
+          <button key={account.id} className={tw(`account-balance-card ${accountTone(index)}`)} onClick={() => onNavigate("cash")}>
             <span>{account.code === "cash" ? "Kas Tunai" : "Rekening"}</span>
             <strong>{account.name}</strong>
             <small>Saldo Tercatat</small>
@@ -89,49 +90,49 @@ export function DashboardPage({
         ))}
       </section>
 
-      <section className="electron-dashboard-grid">
+      <section className={tw("electron-dashboard-grid")}>
         <SectionCard
-          className="chart-card"
+          className={tw("chart-card")}
           title="Pendapatan 7 Hari"
           description="Omzet, profit, dan jumlah transaksi harian."
           actions={(
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div className="chart-summary-pill"><span>Omzet</span><strong>{formatRupiah(posRevenue + agentRevenue)}</strong></div>
-              <div className="chart-summary-pill green"><span>Profit</span><strong>{formatRupiah(totalProfit)}</strong></div>
-              <div className="chart-summary-pill"><span>TRX</span><strong>{transactions.length}</strong></div>
+            <div className={tw("flex flex-wrap items-center justify-end gap-2")}>
+              <div className={tw("chart-summary-pill")}><span>Omzet</span><strong>{formatRupiah(posRevenue + agentRevenue)}</strong></div>
+              <div className={tw("chart-summary-pill green")}><span>Profit</span><strong>{formatRupiah(totalProfit)}</strong></div>
+              <div className={tw("chart-summary-pill")}><span>TRX</span><strong>{transactions.length}</strong></div>
             </div>
           )}
         >
           <DailyRevenueChart transactions={transactions} />
         </SectionCard>
 
-        <SectionCard className="stock-card" title="Stok Menipis" description="Produk yang perlu segera dicek.">
+        <SectionCard className={tw("stock-card")} title="Stok Menipis" description="Produk yang perlu segera dicek.">
           {lowStockProducts.map((product) => (
-            <div key={product.id} className="row rich-row warning-row"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className="status-badge warning">Stok rendah</span></div>
+            <div key={product.id} className={tw("row rich-row warning-row")}><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><span className={tw("status-badge warning")}>Stok rendah</span></div>
           ))}
           {lowStockCount === 0 && <EmptyState compact title="Semua stok aman" description="Tidak ada produk di bawah minimum." />}
         </SectionCard>
       </section>
 
-      <section className="grid dashboard-grid">
+      <section className={tw("grid dashboard-grid")}>
         <SectionCard title="Transaksi Terakhir" description="Aktivitas POS dan layanan agen terbaru.">
           {transactions.length === 0 ? <EmptyState title="Belum ada transaksi" description="Mulai dari Kasir POS atau Layanan Agen." /> : transactions.slice(0, 5).map((transaction) => (
-            <div key={transaction.id} className="row rich-row">
+            <div key={transaction.id} className={tw("row rich-row")}>
               <div><strong>{transaction.invoice_no}</strong><small>{paymentLabel(transaction.payment_method)} • {transaction.status}</small></div>
               <strong>{formatRupiah(transaction.total_amount)}</strong>
             </div>
           ))}
         </SectionCard>
         <SectionCard title="Aksi Cepat" description="Mulai aktivitas utama.">
-          <div className="quick-launch-grid compact-launch">
-            <button onClick={() => onNavigate("pos")} className="launch-card"><span>Kasir POS</span></button>
-            <button onClick={() => onNavigate("brilink")} className="launch-card"><span>Layanan</span></button>
-            <button onClick={() => onNavigate("debts")} className="launch-card"><span>Buku Utang</span></button>
-            <button onClick={() => onNavigate("cash")} className="launch-card"><span>Kas & Saldo</span></button>
+          <div className={tw("quick-launch-grid compact-launch")}>
+            <button onClick={() => onNavigate("pos")} className={tw("launch-card")}><span>Kasir POS</span></button>
+            <button onClick={() => onNavigate("brilink")} className={tw("launch-card")}><span>Layanan</span></button>
+            <button onClick={() => onNavigate("debts")} className={tw("launch-card")}><span>Buku Utang</span></button>
+            <button onClick={() => onNavigate("cash")} className={tw("launch-card")}><span>Kas & Saldo</span></button>
           </div>
-          <div className="divider" />
-          <div className="row rich-row"><div><strong>Keranjang Aktif</strong><small>{cartCount} item siap checkout</small></div><strong>{formatRupiah(cartTotal)}</strong></div>
-          <div className="row rich-row"><div><strong>Total Saldo</strong><small>Semua akun aktif</small></div><strong>{formatRupiah(totalCash)}</strong></div>
+          <div className={tw("divider")} />
+          <div className={tw("row rich-row")}><div><strong>Keranjang Aktif</strong><small>{cartCount} item siap checkout</small></div><strong>{formatRupiah(cartTotal)}</strong></div>
+          <div className={tw("row rich-row")}><div><strong>Total Saldo</strong><small>Semua akun aktif</small></div><strong>{formatRupiah(totalCash)}</strong></div>
         </SectionCard>
       </section>
     </>

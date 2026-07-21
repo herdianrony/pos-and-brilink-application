@@ -2,6 +2,7 @@ import { ArrowRightLeft, HandCoins, Plus, ReceiptText, Wallet } from "lucide-rea
 import type { AccountMutationRow, AccountRow } from "../api";
 import { Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
+import { tw } from "../lib/tw";
 
 function accountTone(index: number, code: string) {
   if (code === "cash") return "cash-account-green";
@@ -40,18 +41,18 @@ export function CashBalancePage({
         actions={<><Button variant="secondary" onClick={onAddAccount}><Plus size={16} /> Tambah Rekening</Button><Button onClick={() => onTransfer()}><ArrowRightLeft size={16} /> Transfer Saldo</Button></>}
       />
 
-      <section className="cash-summary-grid">
-        <div className="cash-total-card">
+      <section className={tw("cash-summary-grid")}>
+        <div className={tw("cash-total-card")}>
           <span>Total Saldo Aktif</span>
           <strong>{formatRupiah(totalBalance)}</strong>
           <small>{accounts.length} akun aktif</small>
         </div>
-        <div className="cash-summary-card"><Wallet size={20} /><div><span>Kas Tunai</span><strong>{formatRupiah(cashAccount?.balance || 0)}</strong></div></div>
-        <div className="cash-summary-card"><Plus size={20} /><div><span>Mutasi Masuk</span><strong>{formatRupiah(incomingTotal)}</strong></div></div>
-        <div className="cash-summary-card"><ReceiptText size={20} /><div><span>Mutasi Keluar</span><strong>{formatRupiah(outgoingTotal)}</strong></div></div>
+        <div className={tw("cash-summary-card")}><Wallet size={20} /><div><span>Kas Tunai</span><strong>{formatRupiah(cashAccount?.balance || 0)}</strong></div></div>
+        <div className={tw("cash-summary-card")}><Plus size={20} /><div><span>Mutasi Masuk</span><strong>{formatRupiah(incomingTotal)}</strong></div></div>
+        <div className={tw("cash-summary-card")}><ReceiptText size={20} /><div><span>Mutasi Keluar</span><strong>{formatRupiah(outgoingTotal)}</strong></div></div>
       </section>
 
-      <section className="cash-section-head">
+      <section className={tw("cash-section-head")}>
         <div>
           <strong>Saldo Rekening</strong>
           <span>Gunakan tombol di kartu untuk aksi saldo.</span>
@@ -59,10 +60,10 @@ export function CashBalancePage({
         <small>{accounts.length} akun</small>
       </section>
 
-      <section className="cash-account-grid">
+      <section className={tw("cash-account-grid")}>
         {accounts.map((account, index) => (
-          <article key={account.id} className={`cash-account-card ${accountTone(index, account.code)}`}>
-            <div className="cash-account-top">
+          <article key={account.id} className={tw(`cash-account-card ${accountTone(index, account.code)}`)}>
+            <div className={tw("cash-account-top")}>
               <span>{account.code === "cash" ? "Kas Tunai" : "Rekening"}</span>
               <Wallet size={18} />
             </div>
@@ -70,7 +71,7 @@ export function CashBalancePage({
             <small>Saldo Tercatat</small>
             <strong>{formatRupiah(account.balance)}</strong>
             <p>Minimum: {formatRupiah(account.min_balance || 0)}</p>
-            <div className="cash-account-actions">
+            <div className={tw("cash-account-actions")}>
               <Button onClick={() => onAdjust(account)}>Sesuaikan</Button>
               <Button onClick={() => onTransfer(account)}>Transfer</Button>
               <Button onClick={() => onOwnerDraw(account)}><HandCoins size={13} /> Owner</Button>
@@ -80,24 +81,24 @@ export function CashBalancePage({
         ))}
       </section>
 
-      <section className="cash-layout-grid">
-        <SectionCard className="cash-mutation-card" title="Mutasi Saldo Terakhir" description="Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.">
+      <section className={tw("cash-layout-grid")}>
+        <SectionCard className={tw("cash-mutation-card")} title="Mutasi Saldo Terakhir" description="Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.">
           {mutations.length === 0 ? <EmptyState compact title="Belum ada mutasi saldo" description="Mutasi muncul setelah POS, transaksi agen, atau aksi saldo." /> : (
             <DataTable columns={["Akun", "Tipe", "Nominal", "Saldo"]} template="minmax(0,1fr) 160px 130px 130px" minWidth={760}>
               {mutations.map((mutation) => (
                 <DataRow key={mutation.id} template="minmax(0,1fr) 160px 130px 130px">
                   <DataCell><strong>{mutation.account_name}</strong><DataCellText>{mutation.notes || "-"}</DataCellText></DataCell>
                   <DataCell>{mutationLabel(mutation.mutation_type)}<DataCellText>{mutation.created_at}</DataCellText></DataCell>
-                  <strong className={mutation.amount < 0 ? "negative" : "positive"}>{formatRupiah(mutation.amount)}</strong>
+                  <strong className={tw(mutation.amount < 0 ? "negative" : "positive")}>{formatRupiah(mutation.amount)}</strong>
                   <strong>{formatRupiah(mutation.balance_after)}</strong>
                 </DataRow>
               ))}
             </DataTable>
           )}
         </SectionCard>
-        <SectionCard className="cash-side-panel" title="Rekening Non-Tunai" description="Bank, QRIS, dan saldo provider.">
+        <SectionCard className={tw("cash-side-panel")} title="Rekening Non-Tunai" description="Bank, QRIS, dan saldo provider.">
           {nonCashAccounts.length === 0 ? <EmptyState compact title="Belum ada rekening" description="Tambahkan rekening bank atau QRIS." /> : nonCashAccounts.map((account) => (
-            <div key={account.id} className="row rich-row">
+            <div key={account.id} className={tw("row rich-row")}>
               <div><strong>{account.name}</strong><small>{account.code}</small></div>
               <strong>{formatRupiah(account.balance)}</strong>
             </div>

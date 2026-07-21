@@ -5,6 +5,7 @@ import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
+import { tw } from "../lib/tw";
 
 type DebtFilter = "open" | "paid" | "all";
 
@@ -42,35 +43,35 @@ export function DebtsPage({
   const totalPaid = debts.reduce((sum, debt) => sum + debt.paid_amount, 0);
 
   return (
-    <div className="debt-page">
+    <div className={tw("debt-page")}>
       <PageHeader eyebrow="Piutang Pelanggan" title="Buku Utang" description="Catat utang, cicilan, dan salin pengingat WhatsApp untuk pelanggan." />
 
-      <section className="electron-stat-grid debt-stat-grid">
+      <section className={tw("electron-stat-grid debt-stat-grid")}>
         <StatCard tone="amber" icon={<ReceiptText size={20} />} label="Belum Lunas" value={formatRupiah(totalOutstanding)} sub={`${openDebts.length} pelanggan`} />
         <StatCard tone="blue" icon={<WalletCards size={20} />} label="Total Utang" value={formatRupiah(totalDebt)} sub="semua catatan" />
         <StatCard tone="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
       </section>
 
-      <Card className="history-filter-panel debt-filter-panel">
-        <div className="electron-tabs">
-          <button className={filter === "open" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("open")}>Belum Lunas</button>
-          <button className={filter === "paid" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("paid")}>Lunas</button>
-          <button className={filter === "all" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("all")}>Semua</button>
+      <Card className={tw("history-filter-panel debt-filter-panel")}>
+        <div className={tw("electron-tabs")}>
+          <button className={tw(filter === "open" ? "electron-tab active" : "electron-tab")} onClick={() => setFilter("open")}>Belum Lunas</button>
+          <button className={tw(filter === "paid" ? "electron-tab active" : "electron-tab")} onClick={() => setFilter("paid")}>Lunas</button>
+          <button className={tw(filter === "all" ? "electron-tab active" : "electron-tab")} onClick={() => setFilter("all")}>Semua</button>
         </div>
       </Card>
 
-      <section className="debt-layout">
-        <SectionCard className="debt-list-card" title="Daftar Utang" description={`${visibleDebts.length} catatan sesuai filter.`}>
+      <section className={tw("debt-layout")}>
+        <SectionCard className={tw("debt-list-card")} title="Daftar Utang" description={`${visibleDebts.length} catatan sesuai filter.`}>
           {visibleDebts.length === 0 ? <EmptyState title="Belum ada data utang" description="Catat utang pelanggan dari panel kanan." /> : (
             <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 104px" minWidth={720}>
               {visibleDebts.map((debt) => (
                 <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 104px">
                   <DataCell><strong>{debt.customer_name}</strong><DataCellText>{debt.phone || "Tanpa nomor"}</DataCellText><DataCellText>{debt.notes || "-"}</DataCellText></DataCell>
-                  <span className={debt.status === "paid" ? "history-status-badge completed" : "history-status-badge pending"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
-                  <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
-                  <div className="debt-actions">
-                    <Button variant="secondary" className="h-10 w-10 p-0" title="Catat pembayaran" aria-label={`Catat pembayaran utang ${debt.customer_name}`} onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><HandCoins size={16} /></Button>
-                    <Button variant="secondary" className="h-10 w-10 p-0" title="Salin reminder" aria-label={`Salin reminder utang ${debt.customer_name}`} onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={16} /></Button>
+                  <span className={tw(debt.status === "paid" ? "history-status-badge completed" : "history-status-badge pending")}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
+                  <div className={tw("amount-stack")}><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
+                  <div className={tw("debt-actions")}>
+                    <Button variant="secondary" className={tw("h-10 w-10 p-0")} title="Catat pembayaran" aria-label={`Catat pembayaran utang ${debt.customer_name}`} onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><HandCoins size={16} /></Button>
+                    <Button variant="secondary" className={tw("h-10 w-10 p-0")} title="Salin reminder" aria-label={`Salin reminder utang ${debt.customer_name}`} onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={16} /></Button>
                   </div>
                 </DataRow>
               ))}
@@ -78,25 +79,25 @@ export function DebtsPage({
           )}
         </SectionCard>
 
-        <aside className="debt-form-stack">
+        <aside className={tw("debt-form-stack")}>
           <SectionCard title="Tambah Utang" description="Gunakan saat pelanggan belum membayar.">
-            <form onSubmit={onSubmitDebt} className="product-form no-box">
-              <label>Nama Pelanggan<input value={debtForm.customer_name} onChange={(e) => onDebtFormChange({ ...debtForm, customer_name: e.target.value })} /></label>
-              <label>No WhatsApp<input value={debtForm.phone} onChange={(e) => onDebtFormChange({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
-              <label>Nominal Utang<CurrencyInput value={debtForm.amount} onChange={(value) => onDebtFormChange({ ...debtForm, amount: value })} /></label>
-              <label>Catatan<input value={debtForm.notes} onChange={(e) => onDebtFormChange({ ...debtForm, notes: e.target.value })} /></label>
+            <form onSubmit={onSubmitDebt} className={tw("product-form no-box")}>
+              <label className={tw("field-label")}>Nama Pelanggan<input className={tw("form-input")} value={debtForm.customer_name} onChange={(e) => onDebtFormChange({ ...debtForm, customer_name: e.target.value })} /></label>
+              <label className={tw("field-label")}>No WhatsApp<input className={tw("form-input")} value={debtForm.phone} onChange={(e) => onDebtFormChange({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
+              <label className={tw("field-label")}>Nominal Utang<CurrencyInput value={debtForm.amount} onChange={(value) => onDebtFormChange({ ...debtForm, amount: value })} /></label>
+              <label className={tw("field-label")}>Catatan<input className={tw("form-input")} value={debtForm.notes} onChange={(e) => onDebtFormChange({ ...debtForm, notes: e.target.value })} /></label>
               <Button type="submit" disabled={saving}>Simpan Utang</Button>
             </form>
           </SectionCard>
 
           <SectionCard title="Catat Pembayaran" description="Catat cicilan atau pelunasan utang.">
-            <form onSubmit={onSubmitDebtPayment} className="product-form no-box">
-              <label>Pelanggan<select value={debtPaymentForm.debt_id} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: e.target.value })}>
+            <form onSubmit={onSubmitDebtPayment} className={tw("product-form no-box")}>
+              <label className={tw("field-label")}>Pelanggan<select className={tw("form-input")} value={debtPaymentForm.debt_id} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: e.target.value })}>
                 <option value="">Pilih utang</option>
                 {openDebts.map((debt) => <option key={debt.id} value={debt.id}>{debt.customer_name} — {formatRupiah(debt.outstanding)}</option>)}
               </select></label>
-              <label>Nominal Bayar<CurrencyInput value={debtPaymentForm.amount} onChange={(value) => onDebtPaymentFormChange({ ...debtPaymentForm, amount: value })} /></label>
-              <label className="span-2">Catatan<input value={debtPaymentForm.notes} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, notes: e.target.value })} /></label>
+              <label className={tw("field-label")}>Nominal Bayar<CurrencyInput value={debtPaymentForm.amount} onChange={(value) => onDebtPaymentFormChange({ ...debtPaymentForm, amount: value })} /></label>
+              <label className={tw("field-label span-2")}>Catatan<input className={tw("form-input")} value={debtPaymentForm.notes} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, notes: e.target.value })} /></label>
               <Button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</Button>
             </form>
           </SectionCard>

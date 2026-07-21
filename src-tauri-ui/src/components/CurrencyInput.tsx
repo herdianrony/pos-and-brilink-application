@@ -1,4 +1,5 @@
 import { formatRupiah, parseCurrencyInput } from "../lib/format";
+import { tw } from "../lib/tw";
 
 export function CurrencyInput({
   value,
@@ -13,7 +14,7 @@ export function CurrencyInput({
 }) {
   const displayValue = value && value !== "-" ? formatRupiah(Number(value)) : value;
   return (
-    <input
+    <input className={tw("form-input")}
       type="text"
       inputMode="numeric"
       placeholder={placeholder}

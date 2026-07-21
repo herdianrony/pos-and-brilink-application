@@ -5,6 +5,7 @@ import type { AgentForm } from "../types";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { Button, Card, CardHeader, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
+import { tw } from "../lib/tw";
 
 const servicePresets: Array<{
   key: "withdraw" | "deposit" | "transfer" | "payment";
@@ -55,21 +56,21 @@ export function AgentServicesPage({
         actions={<><Button variant="secondary" onClick={() => onAgentStepChange(1)}>Pilih Layanan</Button><Button onClick={() => onAgentStepChange(4)}>Review</Button></>}
       />
 
-      <section className="electron-service-layout">
-        <SectionCard className="service-catalog-panel" title="Katalog Layanan" description="Pilih layanan yang paling sesuai dengan transaksi pelanggan.">
-          <div className="service-filter-row">
-            <button className="filter-chip active">Semua</button>
-            <button className="filter-chip">Favorit</button>
-            <button className="filter-chip">Tunai</button>
-            <button className="filter-chip">Transfer</button>
-            <button className="filter-chip">Payment</button>
+      <section className={tw("electron-service-layout")}>
+        <SectionCard className={tw("service-catalog-panel")} title="Katalog Layanan" description="Pilih layanan yang paling sesuai dengan transaksi pelanggan.">
+          <div className={tw("service-filter-row")}>
+            <button className={tw("filter-chip active")}>Semua</button>
+            <button className={tw("filter-chip")}>Favorit</button>
+            <button className={tw("filter-chip")}>Tunai</button>
+            <button className={tw("filter-chip")}>Transfer</button>
+            <button className={tw("filter-chip")}>Payment</button>
           </div>
-          <div className="service-section-title">Layanan Favorit</div>
-          <div className="electron-service-grid">
+          <div className={tw("service-section-title")}>Layanan Favorit</div>
+          <div className={tw("electron-service-grid")}>
             {servicePresets.map((service) => (
-              <button key={service.key} type="button" className={agentForm.service_name === service.name ? "electron-service-card selected" : "electron-service-card"} onClick={() => onApplyPreset(service.key)}>
-                <span className="service-fav"><Star size={13} /></span>
-                <span className="service-icon"><Landmark size={20} /></span>
+              <button key={service.key} type="button" className={tw(agentForm.service_name === service.name ? "electron-service-card selected" : "electron-service-card")} onClick={() => onApplyPreset(service.key)}>
+                <span className={tw("service-fav")}><Star size={13} /></span>
+                <span className={tw("service-icon")}><Landmark size={20} /></span>
                 <strong>{service.name}</strong>
                 <small>{service.description}</small>
                 <em>{service.fee}</em>
@@ -78,8 +79,8 @@ export function AgentServicesPage({
           </div>
         </SectionCard>
 
-        <Card className="service-form-panel">
-          <div className="service-progress-header">
+        <Card className={tw("service-form-panel")}>
+          <div className={tw("service-progress-header")}>
             <div>
               <h2>{selectedPreset?.name || agentForm.service_name || "Pilih layanan"}</h2>
               <p>{selectedPreset?.description || "Pilih layanan dari katalog, lalu lengkapi nominal dan perubahan saldo."}</p>
@@ -87,58 +88,58 @@ export function AgentServicesPage({
             <span>{agentStep}/4</span>
           </div>
 
-          <div className="stepper agent-stepper compact-agent-stepper">
-            <button className={agentStep === 1 ? "step active" : "step"} onClick={() => onAgentStepChange(1)}><span>1</span>Layanan</button>
-            <button className={agentStep === 2 ? "step active" : "step"} onClick={() => onAgentStepChange(2)}><span>2</span>Nominal</button>
-            <button className={agentStep === 3 ? "step active" : "step"} onClick={() => onAgentStepChange(3)}><span>3</span>Saldo</button>
-            <button className={agentStep === 4 ? "step active" : "step"} onClick={() => onAgentStepChange(4)}><span>4</span>Simpan</button>
+          <div className={tw("stepper agent-stepper compact-agent-stepper")}>
+            <button className={tw(agentStep === 1 ? "step active" : "step")} onClick={() => onAgentStepChange(1)}><span>1</span>Layanan</button>
+            <button className={tw(agentStep === 2 ? "step active" : "step")} onClick={() => onAgentStepChange(2)}><span>2</span>Nominal</button>
+            <button className={tw(agentStep === 3 ? "step active" : "step")} onClick={() => onAgentStepChange(3)}><span>3</span>Saldo</button>
+            <button className={tw(agentStep === 4 ? "step active" : "step")} onClick={() => onAgentStepChange(4)}><span>4</span>Simpan</button>
           </div>
 
           {agentStep === 1 && (
-            <div className="workflow-content">
-              <div className="page-help"><strong>Langkah 1:</strong><span>Pilih kartu layanan di kiri atau ketik nama layanan manual.</span></div>
-              <label>Nama Layanan<input value={agentForm.service_name} onChange={(event) => onAgentFormChange({ ...agentForm, service_name: event.target.value })} /></label>
-              <div className="wizard-actions"><Button onClick={() => onAgentStepChange(2)}>Lanjut Isi Nominal</Button></div>
+            <div className={tw("workflow-content")}>
+              <div className={tw("page-help")}><strong>Langkah 1:</strong><span>Pilih kartu layanan di kiri atau ketik nama layanan manual.</span></div>
+              <label className={tw("field-label")}>Nama Layanan<input className={tw("form-input")} value={agentForm.service_name} onChange={(event) => onAgentFormChange({ ...agentForm, service_name: event.target.value })} /></label>
+              <div className={tw("wizard-actions")}><Button onClick={() => onAgentStepChange(2)}>Lanjut Isi Nominal</Button></div>
             </div>
           )}
 
           {agentStep === 2 && (
-            <div className="workflow-content">
+            <div className={tw("workflow-content")}>
               <CardHeader><div><h2>Isi Nominal</h2><p>Pisahkan nominal transaksi dan admin toko agar keuntungan jasa jelas.</p></div></CardHeader>
-              <div className="product-form no-box">
-                <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(event) => onAgentFormChange({ ...agentForm, customer_name: event.target.value })} /></label>
-                <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => onAgentFormChange({ ...agentForm, amount: value })} /></label>
-                <label>Admin Toko<span className="field-note">Biaya admin yang dibayar pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => onAgentFormChange({ ...agentForm, fee: value })} /></label>
-                <label>Potongan Bank/Provider<span className="field-note">Keuntungan = Admin Toko - Potongan.</span><CurrencyInput value={agentForm.provider_cost} onChange={(value) => onAgentFormChange({ ...agentForm, provider_cost: value })} /></label>
-                <label className="span-2">Catatan<input value={agentForm.notes} onChange={(event) => onAgentFormChange({ ...agentForm, notes: event.target.value })} /></label>
+              <div className={tw("product-form no-box")}>
+                <label className={tw("field-label")}>Nama Pelanggan<input className={tw("form-input")} value={agentForm.customer_name} onChange={(event) => onAgentFormChange({ ...agentForm, customer_name: event.target.value })} /></label>
+                <label className={tw("field-label")}>Nominal Transaksi<span className={tw("field-note")}>Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => onAgentFormChange({ ...agentForm, amount: value })} /></label>
+                <label className={tw("field-label")}>Admin Toko<span className={tw("field-note")}>Biaya admin yang dibayar pelanggan.</span><CurrencyInput value={agentForm.fee} onChange={(value) => onAgentFormChange({ ...agentForm, fee: value })} /></label>
+                <label className={tw("field-label")}>Potongan Bank/Provider<span className={tw("field-note")}>Keuntungan = Admin Toko - Potongan.</span><CurrencyInput value={agentForm.provider_cost} onChange={(value) => onAgentFormChange({ ...agentForm, provider_cost: value })} /></label>
+                <label className={tw("field-label span-2")}>Catatan<input className={tw("form-input")} value={agentForm.notes} onChange={(event) => onAgentFormChange({ ...agentForm, notes: event.target.value })} /></label>
               </div>
-              <div className="agent-summary-grid">
+              <div className={tw("agent-summary-grid")}>
                 <div><span>Total Bayar Pelanggan</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
                 <div><span>Estimasi Keuntungan</span><strong>{formatRupiah(agentProfit)}</strong></div>
               </div>
-              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(1)}>Kembali</Button><Button onClick={() => onAgentStepChange(3)}>Lanjut Perubahan Saldo</Button></div>
+              <div className={tw("wizard-actions")}><Button variant="secondary" onClick={() => onAgentStepChange(1)}>Kembali</Button><Button onClick={() => onAgentStepChange(3)}>Lanjut Perubahan Saldo</Button></div>
             </div>
           )}
 
           {agentStep === 3 && (
-            <div className="workflow-content">
+            <div className={tw("workflow-content")}>
               <CardHeader><div><h2>Atur Perubahan Saldo</h2><p>Isi hanya saldo yang benar-benar berubah. Positif menambah, negatif mengurangi.</p></div></CardHeader>
-              <div className="product-form no-box">
-                <label>Rekening Layanan<select value={agentForm.account_id} onChange={(event) => onAgentFormChange({ ...agentForm, account_id: event.target.value })}>
+              <div className={tw("product-form no-box")}>
+                <label className={tw("field-label")}>Rekening Layanan<select className={tw("form-input")} value={agentForm.account_id} onChange={(event) => onAgentFormChange({ ...agentForm, account_id: event.target.value })}>
                   <option value="">Tidak ada perubahan rekening</option>
                   {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
                 </select></label>
-                <label>Perubahan Saldo Rekening<span className="field-note">Contoh transfer keluar: -100000</span><CurrencyInput allowNegative value={agentForm.bank_effect} onChange={(value) => onAgentFormChange({ ...agentForm, bank_effect: value })} /></label>
-                <label>Perubahan Kas Tunai<span className="field-note">Contoh pelanggan bayar tunai: 105000</span><CurrencyInput allowNegative value={agentForm.cash_effect} onChange={(value) => onAgentFormChange({ ...agentForm, cash_effect: value })} /></label>
+                <label className={tw("field-label")}>Perubahan Saldo Rekening<span className={tw("field-note")}>Contoh transfer keluar: -100000</span><CurrencyInput allowNegative value={agentForm.bank_effect} onChange={(value) => onAgentFormChange({ ...agentForm, bank_effect: value })} /></label>
+                <label className={tw("field-label")}>Perubahan Kas Tunai<span className={tw("field-note")}>Contoh pelanggan bayar tunai: 105000</span><CurrencyInput allowNegative value={agentForm.cash_effect} onChange={(value) => onAgentFormChange({ ...agentForm, cash_effect: value })} /></label>
               </div>
-              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(2)}>Kembali</Button><Button onClick={() => onAgentStepChange(4)}>Review & Simpan</Button></div>
+              <div className={tw("wizard-actions")}><Button variant="secondary" onClick={() => onAgentStepChange(2)}>Kembali</Button><Button onClick={() => onAgentStepChange(4)}>Review & Simpan</Button></div>
             </div>
           )}
 
           {agentStep === 4 && (
-            <div className="workflow-content">
+            <div className={tw("workflow-content")}>
               <CardHeader><div><h2>Review Transaksi</h2><p>Pastikan ringkasan sudah benar sebelum disimpan.</p></div></CardHeader>
-              <div className="review-box electron-review-box">
+              <div className={tw("review-box electron-review-box")}>
                 <div><span>Layanan</span><strong>{agentForm.service_name || "-"}</strong></div>
                 <div><span>Nominal</span><strong>{formatRupiah(Number(agentForm.amount || 0))}</strong></div>
                 <div><span>Admin Toko</span><strong>{formatRupiah(Number(agentForm.fee || 0))}</strong></div>
@@ -148,14 +149,14 @@ export function AgentServicesPage({
                 <div><span>Perubahan Rekening</span><strong>{formatRupiah(Number(agentForm.bank_effect || 0))}</strong></div>
                 <div><span>Perubahan Kas</span><strong>{formatRupiah(Number(agentForm.cash_effect || 0))}</strong></div>
               </div>
-              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(3)}>Kembali</Button><Button onClick={(event) => onSubmitAgentTransaction(event as unknown as FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</Button></div>
+              <div className={tw("wizard-actions")}><Button variant="secondary" onClick={() => onAgentStepChange(3)}>Kembali</Button><Button onClick={(event) => onSubmitAgentTransaction(event as unknown as FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</Button></div>
             </div>
           )}
         </Card>
 
-        <SectionCard className="service-history-panel" title="Riwayat Layanan" description="Transaksi layanan terbaru.">
+        <SectionCard className={tw("service-history-panel")} title="Riwayat Layanan" description="Transaksi layanan terbaru.">
           {agentTransactions.length === 0 ? <EmptyState title="Belum ada transaksi agen" description="Pilih layanan untuk mulai mencatat transaksi." /> : agentTransactions.slice(0, 8).map((transaction) => (
-            <div key={transaction.id} className="row rich-row">
+            <div key={transaction.id} className={tw("row rich-row")}>
               <div><strong>{transaction.notes || transaction.invoice_no}</strong><small>{transaction.invoice_no} • Untung {formatRupiah(transaction.profit)}</small></div>
               <strong>{formatRupiah(transaction.total_amount)}</strong>
             </div>

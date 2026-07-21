@@ -28,7 +28,7 @@ export function Modal({
       >
         <CardHeader>
           <div>
-            {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+            {eyebrow && <p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">{eyebrow}</p>}
             <h2>{title}</h2>
           </div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
