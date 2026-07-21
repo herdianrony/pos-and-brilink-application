@@ -1,6 +1,6 @@
 import { BarChart3, Download, Landmark, ReceiptText, TrendingUp, WalletCards } from "lucide-react";
-import { PageHeader, StatCard } from "../components/ui";
 import type { AccountMutationRow, TransactionRow } from "../api";
+import { Button, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 import { formatRupiah, paymentLabel } from "../lib/format";
 
 function maxValue(values: number[]) {
@@ -42,7 +42,7 @@ export function ReportsPage({
         eyebrow="Analitik Bisnis"
         title="Laporan"
         description="Ringkasan omzet, keuntungan, dan aktivitas kasir."
-        actions={<button className="secondary" onClick={() => onExportCsv({ posRevenue, posProfit, agentProfit })}><Download size={16} /> Unduh CSV</button>}
+        actions={<Button variant="secondary" onClick={() => onExportCsv({ posRevenue, posProfit, agentProfit })}><Download size={16} /> Unduh CSV</Button>}
       />
 
       <section className="electron-stat-grid reports-stat-grid">
@@ -53,8 +53,12 @@ export function ReportsPage({
       </section>
 
       <section className="reports-layout">
-        <div className="card reports-chart-card">
-          <div className="card-header"><div><h2>Performa Penjualan</h2><p>Perbandingan omzet dan keuntungan berdasarkan data transaksi.</p></div><BarChart3 className="text-emerald-600" size={22} /></div>
+        <SectionCard
+          className="reports-chart-card"
+          title="Performa Penjualan"
+          description="Perbandingan omzet dan keuntungan berdasarkan data transaksi."
+          actions={<BarChart3 className="text-emerald-600" size={22} />}
+        >
           <div className="reports-bar-list">
             {chartRows.map((row) => (
               <div key={row.label} className="reports-bar-row">
@@ -63,23 +67,21 @@ export function ReportsPage({
               </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
 
-        <div className="card reports-side-card">
-          <div className="card-header"><div><h2>Metode Pembayaran</h2><p>Komposisi pembayaran yang tercatat.</p></div></div>
-          {paymentRows.length === 0 ? <div className="empty-state compact"><strong>Belum ada pembayaran</strong><span>Data muncul setelah transaksi.</span></div> : paymentRows.map((row) => (
+        <SectionCard className="reports-side-card" title="Metode Pembayaran" description="Komposisi pembayaran yang tercatat.">
+          {paymentRows.length === 0 ? <EmptyState compact title="Belum ada pembayaran" description="Data muncul setelah transaksi." /> : paymentRows.map((row) => (
             <div key={row.method} className="reports-payment-row">
               <div><strong>{paymentLabel(row.method)}</strong><small>{formatRupiah(row.value)}</small></div>
               <div className="reports-payment-track"><span style={{ width: `${Math.max(8, Math.round((row.value / maxPayment) * 100))}%` }} /></div>
             </div>
           ))}
-        </div>
+        </SectionCard>
       </section>
 
-      <section className="card reports-note-card">
-        <h2>Catatan Laporan</h2>
+      <SectionCard className="reports-note-card" title="Catatan Laporan">
         <p>Laporan ini memakai data lokal yang sudah tersimpan. Unduh CSV tersedia untuk arsip manual, sedangkan PDF native Tauri akan ditambahkan pada tahap berikutnya.</p>
-      </section>
+      </SectionCard>
     </div>
   );
 }
