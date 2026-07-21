@@ -54,7 +54,7 @@ export function ReceiptModal({
   }
 
   return (
-    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 backdrop-blur print:bg-white print:p-0 print:backdrop-blur-none">
+    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
       <section className="max-h-[calc(100vh-48px)] w-[min(520px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)] print:max-h-none print:w-auto print:overflow-visible print:rounded-none print:p-0 print:shadow-none" role="dialog" aria-modal="true" aria-label="Struk Penjualan">
         <CardHeader>
           <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
@@ -92,10 +92,10 @@ export function ReceiptModal({
         <div className="mt-4 grid gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_100px] gap-2 max-[520px]:grid-cols-1">
             <label className="grid gap-2 text-[13px] font-black text-slate-600">IP Printer Thermal
-              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerHost} onChange={(event) => setPrinterHost(event.target.value)} placeholder="192.168.1.100" />
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerHost} onChange={(event) => setPrinterHost(event.target.value)} placeholder="192.168.1.100" />
             </label>
             <label className="grid gap-2 text-[13px] font-black text-slate-600">Port
-              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerPort} onChange={(event) => setPrinterPort(event.target.value)} placeholder="9100" />
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={printerPort} onChange={(event) => setPrinterPort(event.target.value)} placeholder="9100" />
             </label>
           </div>
           {printStatus && <div className="mt-5 rounded-2xl bg-emerald-50 px-3.5 py-3 font-extrabold text-emerald-800">{printStatus}</div>}

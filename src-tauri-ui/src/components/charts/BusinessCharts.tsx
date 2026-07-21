@@ -1,15 +1,3 @@
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { TransactionRow } from "../../api";
 import { formatRupiah } from "../../lib/format";
 
@@ -63,85 +51,98 @@ function buildDailyRevenueRows(transactions: TransactionRow[]): DailyRevenueRow[
   return rows.map(({ key: _key, ...row }) => row);
 }
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name?: string; value?: number; color?: string }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-3 text-xs shadow-xl backdrop-blur">
-      <strong className="mb-2 block text-slate-900">{label}</strong>
-      <div className="grid gap-1.5">
-        {payload.map((item) => (
-          <div key={item.name} className="flex items-center justify-between gap-5 font-extrabold text-slate-600">
-            <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />{item.name}</span>
-            <span className="text-slate-900">{item.name === "trx" ? item.value : formatRupiah(Number(item.value ?? 0))}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function DailyRevenueChart({ transactions }: { transactions: TransactionRow[] }) {
   const data = buildDailyRevenueRows(transactions);
+  const maxValue = Math.max(...data.flatMap((row) => [row.omzet, row.profit]), 1);
+  const width = 700;
+  const height = 230;
+  const chartTop = 18;
+  const chartBottom = 188;
+  const chartLeft = 38;
+  const chartRight = 680;
+  const chartHeight = chartBottom - chartTop;
+  const step = (chartRight - chartLeft) / Math.max(data.length - 1, 1);
+  const point = (value: number, index: number) => {
+    const x = chartLeft + index * step;
+    const y = chartBottom - (value / maxValue) * chartHeight;
+    return `${x},${y}`;
+  };
+  const omzetPoints = data.map((row, index) => point(row.omzet, index)).join(" ");
+  const profitPoints = data.map((row, index) => point(row.profit, index)).join(" ");
+  const areaPoints = `${chartLeft},${chartBottom} ${omzetPoints} ${chartRight},${chartBottom}`;
 
   return (
-    <div className="mt-2 h-[230px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="omzetGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#047857" stopOpacity={0.22} />
-              <stop offset="100%" stopColor="#047857" stopOpacity={0.02} />
-            </linearGradient>
-            <linearGradient id="profitGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#b45309" stopOpacity={0.18} />
-              <stop offset="100%" stopColor="#b45309" stopOpacity={0.01} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} tickFormatter={compactCurrency} width={58} />
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#94a3b8", strokeDasharray: "4 4" }} />
-          <Area type="monotone" dataKey="omzet" name="Omzet" stroke="#047857" strokeWidth={3} fill="url(#omzetGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="profit" name="Profit" stroke="#b45309" strokeWidth={3} fill="url(#profitGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 5 }} />
-        </AreaChart>
-      </ResponsiveContainer>
+    <div className="mt-2 h-[230px] w-full overflow-hidden">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" role="img" aria-label="Grafik pendapatan tujuh hari">
+        <defs>
+          <linearGradient id="dailyOmzetFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#047857" stopOpacity="0.20" />
+            <stop offset="100%" stopColor="#047857" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = chartBottom - ratio * chartHeight;
+          return <line key={ratio} x1={chartLeft} x2={chartRight} y1={y} y2={y} stroke="#e2e8f0" strokeDasharray="4 4" />;
+        })}
+        <text x="0" y={chartTop + 4} className="fill-slate-400 text-[11px] font-black">{compactCurrency(maxValue)}</text>
+        <text x="0" y={chartBottom} className="fill-slate-400 text-[11px] font-black">Rp0</text>
+        <polygon points={areaPoints} fill="url(#dailyOmzetFill)" />
+        <polyline points={omzetPoints} fill="none" stroke="#047857" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={profitPoints} fill="none" stroke="#b45309" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        {data.map((row, index) => {
+          const [x, y] = point(row.omzet, index).split(",").map(Number);
+          return <circle key={row.label} cx={x} cy={y} r="4" fill="white" stroke="#047857" strokeWidth="2" />;
+        })}
+        {data.map((row, index) => (
+          <text key={row.label} x={chartLeft + index * step} y="218" textAnchor="middle" className="fill-slate-500 text-[11px] font-black">{row.label}</text>
+        ))}
+        <g transform="translate(480 10)">
+          <circle cx="0" cy="0" r="4" fill="#047857" /><text x="10" y="4" className="fill-slate-600 text-[11px] font-black">Omzet</text>
+          <circle cx="80" cy="0" r="4" fill="#b45309" /><text x="90" y="4" className="fill-slate-600 text-[11px] font-black">Profit</text>
+        </g>
+      </svg>
     </div>
   );
 }
 
 export function ReportPerformanceChart({ data }: { data: ReportMetricRow[] }) {
+  const maxValue = Math.max(...data.map((row) => row.value), 1);
+
   return (
-    <div className="h-[292px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 22, left: 18, bottom: 8 }}>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" horizontal={false} />
-          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} tickFormatter={compactCurrency} />
-          <YAxis type="category" dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#334155", fontSize: 12, fontWeight: 900 }} width={112} />
-          <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(15,23,42,.04)" }} />
-          <Bar dataKey="value" name="Nilai" radius={[0, 12, 12, 0]} barSize={22}>
-            {data.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="grid h-[292px] content-center gap-4">
+      {data.map((row) => {
+        const width = Math.max(4, Math.round((row.value / maxValue) * 100));
+        return (
+          <div key={row.label} className="grid gap-2">
+            <div className="flex items-center justify-between gap-3 text-sm font-black">
+              <span className="text-slate-700">{row.label}</span>
+              <strong className="text-slate-950">{formatRupiah(row.value)}</strong>
+            </div>
+            <div className="h-5 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: row.color }} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export function PaymentMethodChart({ data }: { data: ReportMetricRow[] }) {
+  const maxValue = Math.max(...data.map((row) => row.value), 1);
+
   return (
-    <div className="h-[220px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11, fontWeight: 900 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 800 }} tickFormatter={compactCurrency} width={54} />
-          <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(15,23,42,.04)" }} />
-          <Bar dataKey="value" name="Nilai" radius={[12, 12, 0, 0]} barSize={34}>
-            {data.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="flex h-[220px] items-end gap-3 rounded-2xl bg-slate-50 p-4">
+      {data.map((row) => {
+        const height = Math.max(8, Math.round((row.value / maxValue) * 150));
+        return (
+          <div key={row.label} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+            <strong className="text-[11px] font-black text-slate-700">{formatRupiah(row.value)}</strong>
+            <div className="w-full rounded-t-2xl" style={{ height, backgroundColor: row.color }} />
+            <span className="max-w-full truncate text-[11px] font-black text-slate-500">{row.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

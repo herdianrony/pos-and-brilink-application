@@ -55,7 +55,7 @@ export function StatementPage({
 
       <Card className="grid gap-4 p-4">
         <label className="grid gap-2 text-[13px] font-black text-slate-600">Rekening
-          <select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={selectedAccountId} onChange={(event) => setSelectedAccountId(event.target.value)}>
+          <select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={selectedAccountId} onChange={(event) => setSelectedAccountId(event.target.value)}>
             <option value="all">Semua rekening</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
           </select>

@@ -89,7 +89,7 @@ export function PaymentModal({
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 backdrop-blur print:bg-white print:p-0 print:backdrop-blur-none">
+    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
       <section className="max-h-[calc(100vh-48px)] w-[min(620px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]" role="dialog" aria-modal="true" aria-label="Konfirmasi Pembayaran"> 
         <CardHeader>
           <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">Pembayaran POS</p><h2>Konfirmasi Pembayaran</h2></div>
@@ -133,7 +133,7 @@ export function PaymentModal({
         ) : (
           <div className="grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4"> 
             <label className="grid gap-2 text-[13px] font-black text-slate-600">Rekening Penerima
-              <select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={settlementAccountId} onChange={(event) => onSettlementAccountChange(event.target.value)}>
+              <select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={settlementAccountId} onChange={(event) => onSettlementAccountChange(event.target.value)}>
                 <option value="">Pilih rekening</option>
                 {settlementAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} — {formatRupiah(account.balance)}</option>)}
               </select>

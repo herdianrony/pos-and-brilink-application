@@ -99,7 +99,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen grid grid-cols-[292px_1fr] max-[860px]:block max-[1120px]:grid-cols-[96px_1fr] print:hidden min-h-screen bg-[#f8f9fb] max-[860px]:block">
-      <aside className="sticky top-0 flex h-screen flex-col gap-5 overflow-hidden px-4.5 py-5.5 text-white shadow-[22px_0_60px_rgba(15,23,42,.18)] max-[860px]:static max-[860px]:h-auto relative h-screen gap-5 bg-[linear-gradient(180deg,#0f2533_0%,#111827_58%,#101827_100%)] p-4 before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_0_0,rgba(16,185,129,.2),transparent_38%),radial-gradient(circle_at_100%_100%,rgba(20,184,166,.12),transparent_36%)] max-[860px]:static max-[860px]:h-auto">
+      <aside className="sticky top-0 flex h-screen flex-col gap-5 overflow-hidden px-4.5 py-5.5 text-white max-[860px]:static max-[860px]:h-auto relative h-screen gap-5 border-r border-white/10 bg-[#111827] p-4 max-[860px]:static max-[860px]:h-auto">
         <div className="relative grid items-center gap-3 text-white grid-cols-[auto_1fr] [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_small]:mt-1 [&_small]:block [&_small]:text-xs [&_small]:font-semibold [&_small]:text-slate-400">
           <div className="grid place-items-center rounded-[22px] bg-gradient-to-br from-emerald-700 to-emerald-500 text-white font-black tracking-tighter shadow-[0_16px_30px_rgba(4,120,87,.30)] h-16 w-16">CA</div>
           <div>
@@ -134,7 +134,7 @@ export function AppShell({
       </aside>
 
       {shellNotice && (
-        <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 backdrop-blur print:bg-white print:p-0 print:backdrop-blur-none">
+        <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
           <section className="max-h-[calc(100vh-48px)] w-[min(720px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]" role="dialog" aria-modal="true" aria-label={shellNotice.title}>
             <div className="flex items-start justify-between gap-3">
               <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">CatatAgen Local</p><h2>{shellNotice.title}</h2><p className="m-0 text-sm text-slate-600">{shellNotice.message}</p></div>
@@ -145,7 +145,7 @@ export function AppShell({
       )}
 
       <section className="min-w-0 min-w-0 bg-[#f8f9fb]">
-        <div className="sticky top-0 z-10 flex items-center justify-end gap-3 border-b border-slate-100 bg-[#f8f9fb]/90 px-8 py-3 backdrop-blur max-[860px]:static max-[860px]:justify-stretch [&_span]:rounded-full [&_span]:bg-emerald-50 [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_button]:rounded-xl [&_button]:bg-slate-900 [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs [&_button]:text-white">
+        <div className="sticky top-0 z-10 flex items-center justify-end gap-3 border-b border-slate-100 bg-[#f8f9fb]/90 px-8 py-3 max-[860px]:static max-[860px]:justify-stretch [&_span]:rounded-full [&_span]:bg-emerald-50 [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_button]:rounded-xl [&_button]:bg-slate-900 [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs [&_button]:text-white">
           <span>CatatAgen Local siap</span>
           <button onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
         </div>
