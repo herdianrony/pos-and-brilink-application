@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import type { AccountRow } from "../api";
 import { CurrencyInput } from "./CurrencyInput";
+import { Button } from "./ui";
 
 export type CashModalType = null | "account" | "adjust" | "transfer" | "ownerDraw" | "bankFee";
 
@@ -52,7 +53,7 @@ export function CashDialogs({
       <section className="dialog-card product-dialog">
         <div className="card-header">
           <div><p className="eyebrow">Kas & Saldo</p><h2>{title}</h2></div>
-          <button className="secondary" onClick={onClose}>Tutup</button>
+          <Button variant="secondary" onClick={onClose}>Tutup</Button>
         </div>
         {cashModal === "account" && (
           <form onSubmit={onSubmitAccount} className="dialog-form product-form no-box">
@@ -60,7 +61,7 @@ export function CashDialogs({
             <label>Nama<input value={accountForm.name} onChange={(e) => onAccountFormChange({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
             <label>Saldo Awal<CurrencyInput value={accountForm.initial_balance} onChange={(value) => onAccountFormChange({ ...accountForm, initial_balance: value })} /></label>
             <label>Saldo Minimum<CurrencyInput value={accountForm.min_balance} onChange={(value) => onAccountFormChange({ ...accountForm, min_balance: value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving}>Tambah Rekening</button></div>
+            <div className="modal-actions span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving}>Tambah Rekening</Button></div>
           </form>
         )}
         {cashModal === "adjust" && (
@@ -68,7 +69,7 @@ export function CashDialogs({
             <label>Rekening<select value={adjustForm.account_id} onChange={(e) => onAdjustFormChange({ ...adjustForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal (+ / -)<CurrencyInput allowNegative value={adjustForm.amount} onChange={(value) => onAdjustFormChange({ ...adjustForm, amount: value })} /></label>
             <label className="span-2">Catatan<input value={adjustForm.notes} onChange={(e) => onAdjustFormChange({ ...adjustForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</button></div>
+            <div className="modal-actions span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</Button></div>
           </form>
         )}
         {cashModal === "transfer" && (
@@ -77,7 +78,7 @@ export function CashDialogs({
             <label>Ke<select value={transferForm.to_account_id} onChange={(e) => onTransferFormChange({ ...transferForm, to_account_id: e.target.value })}><option value="">Pilih tujuan</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal<CurrencyInput value={transferForm.amount} onChange={(value) => onTransferFormChange({ ...transferForm, amount: value })} /></label>
             <label>Catatan<input value={transferForm.notes} onChange={(e) => onTransferFormChange({ ...transferForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</button></div>
+            <div className="modal-actions span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</Button></div>
           </form>
         )}
         {cashModal === "ownerDraw" && (
@@ -85,7 +86,7 @@ export function CashDialogs({
             <label>Rekening<select value={ownerDrawForm.account_id} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => onOwnerDrawFormChange({ ...ownerDrawForm, amount: value })} /></label>
             <label className="span-2">Catatan<input value={ownerDrawForm.notes} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Ambil Uang</button></div>
+            <div className="modal-actions span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Ambil Uang</Button></div>
           </form>
         )}
         {cashModal === "bankFee" && (
@@ -93,7 +94,7 @@ export function CashDialogs({
             <label>Rekening<select value={bankFeeForm.account_id} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
             <label>Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => onBankFeeFormChange({ ...bankFeeForm, amount: value })} /></label>
             <label className="span-2">Catatan<input value={bankFeeForm.notes} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, notes: e.target.value })} /></label>
-            <div className="modal-actions span-2"><button className="secondary" type="button" onClick={onClose}>Batal</button><button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</button></div>
+            <div className="modal-actions span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</Button></div>
           </form>
         )}
       </section>

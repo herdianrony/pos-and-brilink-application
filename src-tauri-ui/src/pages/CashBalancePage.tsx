@@ -1,6 +1,6 @@
 import { ArrowRightLeft, HandCoins, Plus, ReceiptText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
-import { PageHeader } from "../components/ui";
+import { Button, PageHeader } from "../components/ui";
 import { DataCell, DataCellText, DataRow, DataTable } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
 
@@ -38,7 +38,7 @@ export function CashBalancePage({
         eyebrow="Keuangan"
         title="Kas & Saldo"
         description="Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi."
-        actions={<><button className="secondary" onClick={onAddAccount}><Plus size={16} /> Tambah Rekening</button><button onClick={() => onTransfer()}><ArrowRightLeft size={16} /> Transfer Saldo</button></>}
+        actions={<><Button variant="secondary" onClick={onAddAccount}><Plus size={16} /> Tambah Rekening</Button><Button onClick={() => onTransfer()}><ArrowRightLeft size={16} /> Transfer Saldo</Button></>}
       />
 
       <section className="cash-summary-grid">
@@ -72,10 +72,10 @@ export function CashBalancePage({
             <strong>{formatRupiah(account.balance)}</strong>
             <p>Minimum: {formatRupiah(account.min_balance || 0)}</p>
             <div className="cash-account-actions">
-              <button onClick={() => onAdjust(account)}>Sesuaikan</button>
-              <button onClick={() => onTransfer(account)}>Transfer</button>
-              <button onClick={() => onOwnerDraw(account)}><HandCoins size={13} /> Owner</button>
-              <button onClick={() => onBankFee(account)}>Biaya</button>
+              <Button onClick={() => onAdjust(account)}>Sesuaikan</Button>
+              <Button onClick={() => onTransfer(account)}>Transfer</Button>
+              <Button onClick={() => onOwnerDraw(account)}><HandCoins size={13} /> Owner</Button>
+              <Button onClick={() => onBankFee(account)}>Biaya</Button>
             </div>
           </article>
         ))}

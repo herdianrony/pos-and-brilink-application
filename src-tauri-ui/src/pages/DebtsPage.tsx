@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Button, DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type DebtFilter = "open" | "paid" | "all";
@@ -70,8 +70,8 @@ export function DebtsPage({
                   <span className={debt.status === "paid" ? "history-status-badge completed" : "history-status-badge pending"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
                   <div className="amount-stack"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
                   <div className="debt-actions">
-                    <button className="secondary" onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><Plus size={14} /> Bayar</button>
-                    <button className="secondary" onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={14} /> Reminder</button>
+                    <Button variant="secondary" onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><Plus size={14} /> Bayar</Button>
+                    <Button variant="secondary" onClick={() => onCopyReminder(debt)} disabled={debt.status === "paid"}><MessageCircle size={14} /> Reminder</Button>
                   </div>
                 </DataRow>
               ))}

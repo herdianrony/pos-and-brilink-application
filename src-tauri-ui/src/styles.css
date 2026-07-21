@@ -38,9 +38,6 @@
     @apply -translate-y-0.5;
     box-shadow: 0 14px 30px rgba(0, 135, 90, .26);
   }
-  button.secondary { @apply text-slate-900 bg-slate-100 shadow-none border border-slate-200; }
-  button.secondary:hover:not(:disabled) { @apply bg-slate-200; box-shadow: 0 8px 20px rgba(15, 23, 42, .10); }
-  button.danger { background: linear-gradient(135deg, #dc2626, #f97316); box-shadow: 0 10px 24px rgba(220, 38, 38, .20); }
   label { @apply grid gap-2 text-[13px] text-slate-600 font-black; }
   input, select { @apply w-full border border-slate-200 rounded-2xl px-3.5 py-3 text-[15px] bg-white text-slate-900 transition-all duration-150; }
   input:focus, select:focus { @apply outline-none border-emerald-500 ring-4 ring-emerald-500/15; }
@@ -357,13 +354,6 @@
 .chart-summary-pill strong { @apply text-sm font-black text-blue-700; }
 .chart-summary-pill.green span { @apply text-emerald-500; }
 .chart-summary-pill.green strong { @apply text-emerald-700; }
-.dashboard-chart { @apply mt-2 h-[230px] w-full; }
-.chart-grid-line { stroke: #e2e8f0; stroke-width: 1; stroke-dasharray: 4 4; }
-.chart-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.chart-line-green { stroke: #00875a; }
-.chart-line-gold { stroke: #d97706; }
-.chart-dot { fill: white; stroke: #d97706; stroke-width: 2; }
-.chart-label { fill: #94a3b8; font-size: 10px; font-weight: 700; }
 .compact-launch { @apply grid-cols-2; }
 .compact-launch .launch-card { @apply min-h-0 p-4; }
 
@@ -644,17 +634,6 @@
 .reports-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px,.8fr); gap: 18px; align-items: start; }
 .reports-chart-card, .reports-side-card, .reports-note-card { @apply rounded-[28px]; }
 .reports-side-card { @apply sticky top-24; }
-.reports-bar-list { @apply grid gap-4; }
-.reports-bar-row { @apply grid gap-2; }
-.reports-bar-row span { @apply text-sm font-black text-slate-600; }
-.reports-bar-row strong { @apply text-sm font-black text-slate-950; }
-.reports-bar-track { @apply h-3 overflow-hidden rounded-full bg-slate-100; }
-.reports-bar-fill { @apply h-full rounded-full; }
-.reports-payment-row { @apply grid gap-2 border-b border-slate-100 py-3 last:border-b-0; }
-.reports-payment-row strong { @apply block text-sm font-black text-slate-900; }
-.reports-payment-row small { @apply text-slate-500; }
-.reports-payment-track { @apply h-2.5 overflow-hidden rounded-full bg-slate-100; }
-.reports-payment-track span { @apply block h-full rounded-full bg-gradient-to-r from-slate-700 to-slate-400; }
 @media (max-width: 1100px) { .reports-layout { grid-template-columns: 1fr; } .reports-side-card { position: static; } }
 
 .settings-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-2; }

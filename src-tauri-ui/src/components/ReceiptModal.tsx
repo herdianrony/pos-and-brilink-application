@@ -1,5 +1,6 @@
 import type { ReceiptState } from "../types";
 import { formatRupiah, paymentLabel } from "../lib/format";
+import { Button } from "./ui";
 
 export function ReceiptModal({
   receipt,
@@ -14,7 +15,7 @@ export function ReceiptModal({
       <section className="receipt-modal">
         <div className="card-header">
           <div><p className="eyebrow">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
-          <button className="secondary" onClick={onClose}>Tutup</button>
+          <Button variant="secondary" onClick={onClose}>Tutup</Button>
         </div>
         <div className="receipt-paper printable-receipt">
           <div className="receipt-center">
@@ -37,8 +38,8 @@ export function ReceiptModal({
           <div className="receipt-center receipt-footer"><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
         </div>
         <div className="modal-actions">
-          <button onClick={() => window.print()}>Print Struk</button>
-          <button className="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${receipt.invoice_no}\nTotal: ${formatRupiah(receipt.total_amount)}\nBayar: ${paymentLabel(receipt.payment_method)}`)}>Salin Ringkasan</button>
+          <Button onClick={() => window.print()}>Print Struk</Button>
+          <Button variant="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${receipt.invoice_no}\nTotal: ${formatRupiah(receipt.total_amount)}\nBayar: ${paymentLabel(receipt.payment_method)}`)}>Salin Ringkasan</Button>
         </div>
       </section>
     </div>

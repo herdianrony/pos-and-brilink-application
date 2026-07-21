@@ -3,7 +3,7 @@ import { Landmark, Star } from "lucide-react";
 import type { AccountRow, TransactionRow } from "../api";
 import type { AgentForm } from "../types";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { PageHeader } from "../components/ui";
+import { Button, PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 const servicePresets: Array<{
@@ -52,7 +52,7 @@ export function AgentServicesPage({
         eyebrow="Pencatatan Layanan"
         title="Layanan Agen"
         description="Catat transaksi jasa agen tanpa koneksi API bank/provider."
-        actions={<><button className="secondary" onClick={() => onAgentStepChange(1)}>Pilih Layanan</button><button onClick={() => onAgentStepChange(4)}>Review</button></>}
+        actions={<><Button variant="secondary" onClick={() => onAgentStepChange(1)}>Pilih Layanan</Button><Button onClick={() => onAgentStepChange(4)}>Review</Button></>}
       />
 
       <section className="electron-service-layout">
@@ -104,7 +104,7 @@ export function AgentServicesPage({
             <div className="workflow-content">
               <div className="page-help"><strong>Langkah 1:</strong><span>Pilih kartu layanan di kiri atau ketik nama layanan manual.</span></div>
               <label>Nama Layanan<input value={agentForm.service_name} onChange={(event) => onAgentFormChange({ ...agentForm, service_name: event.target.value })} /></label>
-              <div className="wizard-actions"><button onClick={() => onAgentStepChange(2)}>Lanjut Isi Nominal</button></div>
+              <div className="wizard-actions"><Button onClick={() => onAgentStepChange(2)}>Lanjut Isi Nominal</Button></div>
             </div>
           )}
 
@@ -122,7 +122,7 @@ export function AgentServicesPage({
                 <div><span>Total Bayar Pelanggan</span><strong>{formatRupiah(totalCustomerPay)}</strong></div>
                 <div><span>Estimasi Keuntungan</span><strong>{formatRupiah(agentProfit)}</strong></div>
               </div>
-              <div className="wizard-actions"><button className="secondary" onClick={() => onAgentStepChange(1)}>Kembali</button><button onClick={() => onAgentStepChange(3)}>Lanjut Perubahan Saldo</button></div>
+              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(1)}>Kembali</Button><Button onClick={() => onAgentStepChange(3)}>Lanjut Perubahan Saldo</Button></div>
             </div>
           )}
 
@@ -137,7 +137,7 @@ export function AgentServicesPage({
                 <label>Perubahan Saldo Rekening<span className="field-note">Contoh transfer keluar: -100000</span><CurrencyInput allowNegative value={agentForm.bank_effect} onChange={(value) => onAgentFormChange({ ...agentForm, bank_effect: value })} /></label>
                 <label>Perubahan Kas Tunai<span className="field-note">Contoh pelanggan bayar tunai: 105000</span><CurrencyInput allowNegative value={agentForm.cash_effect} onChange={(value) => onAgentFormChange({ ...agentForm, cash_effect: value })} /></label>
               </div>
-              <div className="wizard-actions"><button className="secondary" onClick={() => onAgentStepChange(2)}>Kembali</button><button onClick={() => onAgentStepChange(4)}>Review & Simpan</button></div>
+              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(2)}>Kembali</Button><Button onClick={() => onAgentStepChange(4)}>Review & Simpan</Button></div>
             </div>
           )}
 
@@ -154,7 +154,7 @@ export function AgentServicesPage({
                 <div><span>Perubahan Rekening</span><strong>{formatRupiah(Number(agentForm.bank_effect || 0))}</strong></div>
                 <div><span>Perubahan Kas</span><strong>{formatRupiah(Number(agentForm.cash_effect || 0))}</strong></div>
               </div>
-              <div className="wizard-actions"><button className="secondary" onClick={() => onAgentStepChange(3)}>Kembali</button><button onClick={(event) => onSubmitAgentTransaction(event as unknown as FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</button></div>
+              <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(3)}>Kembali</Button><Button onClick={(event) => onSubmitAgentTransaction(event as unknown as FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</Button></div>
             </div>
           )}
         </main>

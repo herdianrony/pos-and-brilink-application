@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Printer, Scale, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
-import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Button, DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -50,7 +50,7 @@ export function StatementPage({
         eyebrow="Mutasi Rekening"
         title="Rekening Koran"
         description="Mutasi rekening instan — mirip rekening koran bank."
-        actions={<><button className="secondary" onClick={onExportCsv} disabled={filteredMutations.length === 0}><Download size={16} /> Unduh CSV</button><button className="secondary" onClick={() => window.print()} disabled={filteredMutations.length === 0}><Printer size={16} /> Print</button></>}
+        actions={<><Button variant="secondary" onClick={onExportCsv} disabled={filteredMutations.length === 0}><Download size={16} /> Unduh CSV</Button><Button variant="secondary" onClick={() => window.print()} disabled={filteredMutations.length === 0}><Printer size={16} /> Print</Button></>}
       />
 
       <section className="statement-filter-card card">

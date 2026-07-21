@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Search, ScanLine, Pause, Trash2 } from "lucide-react";
-import { PageHeader } from "../components/ui";
+import { Button, PageHeader } from "../components/ui";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
@@ -56,14 +56,14 @@ export function POSPage({
       <PageHeader
         eyebrow="Penjualan Retail"
         title="Kasir POS"
-        actions={<><button className="secondary" onClick={onHoldCart} disabled={!cart.length}><Pause size={16} /> Hold</button><button className="danger" onClick={onClearCart} disabled={!cart.length}><Trash2 size={16} /> Kosongkan</button></>}
+        actions={<><Button variant="secondary" onClick={onHoldCart} disabled={!cart.length}><Pause size={16} /> Hold</Button><Button variant="danger" onClick={onClearCart} disabled={!cart.length}><Trash2 size={16} /> Kosongkan</Button></>}
       />
       <div className="pos-shell electron-pos-shell">
         <section className="pos-catalog card electron-pos-catalog">
           <div className="card-header"><div><h2>Pilih Produk</h2><p>Cari produk, pilih kategori, lalu tekan Tambah.</p></div></div>
           <div className="pos-search-row">
             <label className="pos-search-input"><Search size={18} /><input ref={searchRef} value={localSearch} onChange={(event) => setLocalSearch(event.target.value)} placeholder="Cari nama produk atau barcode..." /></label>
-            <button className="secondary" onClick={() => searchRef.current?.focus()}><ScanLine size={16} /> Scan</button>
+            <Button variant="secondary" onClick={() => searchRef.current?.focus()}><ScanLine size={16} /> Scan</Button>
           </div>
           <div className="category-filter-row electron-filter-row">
             <button className={posCategoryFilter === "all" ? "filter-chip active" : "filter-chip"} onClick={() => onCategoryFilterChange("all")}>Semua</button>

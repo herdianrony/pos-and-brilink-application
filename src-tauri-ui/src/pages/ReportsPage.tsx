@@ -1,11 +1,9 @@
 import { BarChart3, Download, Landmark, ReceiptText, TrendingUp, WalletCards } from "lucide-react";
 import type { AccountMutationRow, TransactionRow } from "../api";
+import { PaymentMethodChart, ReportPerformanceChart } from "../components/charts/BusinessCharts";
 import { Button, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 import { formatRupiah, paymentLabel } from "../lib/format";
 
-function maxValue(values: number[]) {
-  return Math.max(...values, 1);
-}
 
 export function ReportsPage({
   transactions,
@@ -24,17 +22,16 @@ export function ReportsPage({
   const agentProfit = agentTransactions.reduce((sum, transaction) => sum + transaction.profit, 0);
   const totalProfit = posProfit + agentProfit;
   const chartRows = [
-    { label: "Omzet POS", value: posRevenue, tone: "from-emerald-600 to-emerald-400" },
-    { label: "Omzet Layanan", value: agentRevenue, tone: "from-blue-600 to-cyan-400" },
-    { label: "Profit POS", value: posProfit, tone: "from-violet-600 to-fuchsia-400" },
-    { label: "Keuntungan Agen", value: agentProfit, tone: "from-amber-500 to-orange-400" },
+    { label: "Omzet POS", value: posRevenue, color: "#00875a" },
+    { label: "Omzet Layanan", value: agentRevenue, color: "#2563eb" },
+    { label: "Profit POS", value: posProfit, color: "#7c3aed" },
+    { label: "Keuntungan Agen", value: agentProfit, color: "#d97706" },
   ];
-  const maximum = maxValue(chartRows.map((row) => row.value));
   const paymentRows = ["cash", "transfer", "qris", "mixed"].map((method) => {
     const value = transactions.filter((transaction) => transaction.payment_method === method).reduce((sum, transaction) => sum + transaction.total_amount, 0);
-    return { method, value };
+    const colors: Record<string, string> = { cash: "#00875a", transfer: "#2563eb", qris: "#7c3aed", mixed: "#d97706" };
+    return { label: paymentLabel(method), value, color: colors[method] ?? "#64748b" };
   }).filter((row) => row.value > 0);
-  const maxPayment = maxValue(paymentRows.map((row) => row.value));
 
   return (
     <div className="reports-page">
@@ -59,23 +56,11 @@ export function ReportsPage({
           description="Perbandingan omzet dan keuntungan berdasarkan data transaksi."
           actions={<BarChart3 className="text-emerald-600" size={22} />}
         >
-          <div className="reports-bar-list">
-            {chartRows.map((row) => (
-              <div key={row.label} className="reports-bar-row">
-                <div className="flex items-center justify-between gap-3"><span>{row.label}</span><strong>{formatRupiah(row.value)}</strong></div>
-                <div className="reports-bar-track"><div className={`reports-bar-fill bg-gradient-to-r ${row.tone}`} style={{ width: `${Math.max(4, Math.round((row.value / maximum) * 100))}%` }} /></div>
-              </div>
-            ))}
-          </div>
+          <ReportPerformanceChart data={chartRows} />
         </SectionCard>
 
         <SectionCard className="reports-side-card" title="Metode Pembayaran" description="Komposisi pembayaran yang tercatat.">
-          {paymentRows.length === 0 ? <EmptyState compact title="Belum ada pembayaran" description="Data muncul setelah transaksi." /> : paymentRows.map((row) => (
-            <div key={row.method} className="reports-payment-row">
-              <div><strong>{paymentLabel(row.method)}</strong><small>{formatRupiah(row.value)}</small></div>
-              <div className="reports-payment-track"><span style={{ width: `${Math.max(8, Math.round((row.value / maxPayment) * 100))}%` }} /></div>
-            </div>
-          ))}
+          {paymentRows.length === 0 ? <EmptyState compact title="Belum ada pembayaran" description="Data muncul setelah transaksi." /> : <PaymentMethodChart data={paymentRows} />}
         </SectionCard>
       </section>
 

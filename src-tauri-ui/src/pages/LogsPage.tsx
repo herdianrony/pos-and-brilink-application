@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
-import { DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Button, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -53,7 +53,7 @@ export function LogsPage({
         eyebrow="Monitoring"
         title="Riwayat Aktivitas"
         description="Catatan aktivitas penting aplikasi untuk membantu pemeriksaan dan dukungan."
-        actions={<button className="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</button>}
+        actions={<Button variant="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</Button>}
       />
 
       <section className="electron-stat-grid logs-stat-grid">
