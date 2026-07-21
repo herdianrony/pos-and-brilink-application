@@ -47,7 +47,7 @@ export function ReportsPage({
         <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} transaksi POS`} />
         <StatCard tone="blue" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} transaksi agen`} />
         <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Total Keuntungan" value={formatRupiah(totalProfit)} sub="POS + layanan" />
-        <StatCard tone="purple" icon={<WalletCards size={20} />} label="Mutasi Saldo" value={mutations.length} sub="catatan mutasi" />
+        <StatCard tone="teal" icon={<WalletCards size={20} />} label="Mutasi Saldo" value={mutations.length} sub="catatan mutasi" />
       </section>
 
       <section className={tw("reports-layout")}>

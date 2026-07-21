@@ -109,7 +109,7 @@ export function SettingsPage({
         </SectionCard>}
 
         {activeTab === "info" && <SectionCard className={tw("settings-card span-all")} title="Info Aplikasi" description="Informasi penyimpanan lokal dan status keamanan data.">
-          <div className={tw("settings-card-icon purple")}><Database size={22} /></div>
+          <div className={tw("settings-card-icon teal")}><Database size={22} /></div>
           <div className={tw("settings-info-grid")}>
             <div><Shield size={18} /><span>Data tersimpan lokal di perangkat ini.</span></div>
             <div><Database size={18} /><span className={tw("break-all")}>{dbPath || "—"}</span></div>

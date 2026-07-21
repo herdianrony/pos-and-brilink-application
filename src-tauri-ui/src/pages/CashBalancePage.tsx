@@ -6,7 +6,7 @@ import { tw } from "../lib/tw";
 
 function accountTone(index: number, code: string) {
   if (code === "cash") return "cash-account-green";
-  return ["cash-account-blue", "cash-account-navy", "cash-account-purple", "cash-account-teal"][index % 4];
+  return ["cash-account-blue", "cash-account-navy", "cash-account-emerald", "cash-account-teal"][index % 4];
 }
 
 export function CashBalancePage({

@@ -1,5 +1,5 @@
 import { memo, useEffect, useState, type ReactNode } from "react";
-import { Clock, Heart, Info, LogOut } from "lucide-react";
+import { Clock, Heart, Info, LogOut, X } from "lucide-react";
 import type { PublicUser } from "../../api";
 import type { ViewKey } from "../../types";
 import { Icon } from "../AppIcon";
@@ -45,6 +45,7 @@ export function AppShell({
   onRefresh: () => void;
   onLogout: () => void;
 }) {
+  const [shellNotice, setShellNotice] = useState<null | { title: string; message: string }>(null);
   const isAdmin = user.role === "admin";
   const initials = user.name
     .split(" ")
@@ -53,11 +54,11 @@ export function AppShell({
     .join("")
     .toUpperCase() || "U";
   function showAbout() {
-    window.alert("CatatAgen Local\nAplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.");
+    setShellNotice({ title: "Tentang CatatAgen", message: "CatatAgen Local adalah aplikasi POS dan pencatatan layanan agen lokal berbasis Tauri." });
   }
 
   function showSupport() {
-    window.alert("Support CatatAgen Local\nUntuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek.");
+    setShellNotice({ title: "Support", message: "Untuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek." });
   }
 
   return (
@@ -95,6 +96,17 @@ export function AppShell({
           <SidebarClock />
         </div>
       </aside>
+
+      {shellNotice && (
+        <div className={tw("modal-backdrop")}>
+          <section className={tw("dialog-card")} role="dialog" aria-modal="true" aria-label={shellNotice.title}>
+            <div className={tw("flex items-start justify-between gap-3")}>
+              <div><p className={tw("eyebrow")}>CatatAgen Local</p><h2>{shellNotice.title}</h2><p className={tw("m-0 text-sm text-slate-600")}>{shellNotice.message}</p></div>
+              <button className={tw("logout-icon-button")} onClick={() => setShellNotice(null)} title="Tutup"><X size={18} /></button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <section className={tw("content-shell content-shell-redesign")}>
         <div className={tw("status-strip-redesign")}>

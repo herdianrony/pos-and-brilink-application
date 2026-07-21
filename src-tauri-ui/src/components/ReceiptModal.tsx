@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ReceiptState } from "../types";
 import { formatRupiah, paymentLabel } from "../lib/format";
 import { Button, CardHeader } from "./ui";
@@ -11,12 +12,25 @@ export function ReceiptModal({
   receipt: ReceiptState | null;
   onClose: () => void;
 }) {
+  const [printerHost, setPrinterHost] = useState("");
+  const [printStatus, setPrintStatus] = useState("");
+
+  useEffect(() => {
+    if (!receipt) return;
+    setPrinterHost(localStorage.getItem("catatagen.printer.host") || "");
+    setPrintStatus("");
+  }, [receipt]);
+
   if (!receipt) return null;
   const currentReceipt = receipt;
 
   async function printThermal() {
-    const host = window.prompt("Masukkan IP printer thermal / network printer", "192.168.1.100");
-    if (!host) return;
+    const host = printerHost.trim();
+    if (!host) {
+      setPrintStatus("Isi IP printer thermal terlebih dahulu.");
+      return;
+    }
+    setPrintStatus("Mengirim struk ke printer...");
     try {
       await printThermalReceipt({
         host,
@@ -30,9 +44,10 @@ export function ReceiptModal({
           ? { name: item.product.name, quantity: item.quantity, unit_price: item.product.sell_price, subtotal: item.quantity * item.product.sell_price }
           : { name: item.service_name, quantity: 1, unit_price: item.amount + item.fee, subtotal: item.amount + item.fee }),
       });
-      window.alert("Struk berhasil dikirim ke printer thermal.");
+      localStorage.setItem("catatagen.printer.host", host);
+      setPrintStatus("Struk berhasil dikirim ke printer thermal.");
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      setPrintStatus(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -72,8 +87,15 @@ export function ReceiptModal({
           )}
           <div className={tw("receipt-center receipt-footer")}><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
         </div>
+        <div className={tw("printer-panel")}>
+          <label className={tw("field-label")}>IP Printer Thermal
+            <input className={tw("form-input")} value={printerHost} onChange={(event) => setPrinterHost(event.target.value)} placeholder="192.168.1.100" />
+          </label>
+          {printStatus && <div className={tw("status-line")}>{printStatus}</div>}
+        </div>
         <div className={tw("modal-actions")}>
-          <Button onClick={printThermal}>Print Thermal</Button><Button variant="secondary" onClick={() => window.print()}>Print Sistem</Button>
+          <Button onClick={printThermal}>Print Thermal</Button>
+          <Button variant="secondary" onClick={() => window.print()}>Print Sistem</Button>
           <Button variant="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${currentReceipt.invoice_no}\nTotal: ${formatRupiah(currentReceipt.total_amount)}\nBayar: ${paymentLabel(currentReceipt.payment_method)}`)}>Salin Ringkasan</Button>
         </div>
       </section>

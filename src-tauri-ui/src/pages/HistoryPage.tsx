@@ -63,7 +63,7 @@ export function HistoryPage({
         <StatCard tone="blue" icon={<ClipboardList size={20} />} label="Total Transaksi" value={filtered.length} sub="sesuai filter" />
         <StatCard tone="green" icon={<CheckCircle size={20} />} label="Total Omzet" value={formatRupiah(revenue)} sub="nilai transaksi" />
         <StatCard tone="amber" icon={<RotateCcw size={20} />} label="Profit" value={formatRupiah(profit)} sub="estimasi keuntungan" />
-        <StatCard tone="purple" icon={<Ban size={20} />} label="Pending" value={pendingCount} sub="perlu diproses" />
+        <StatCard tone="teal" icon={<Ban size={20} />} label="Pending" value={pendingCount} sub="perlu diproses" />
       </section>
 
       <Card className={tw("history-filter-panel")}>

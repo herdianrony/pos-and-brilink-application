@@ -80,7 +80,7 @@ export function StatementPage({
         <StatCard tone="blue" icon={<Scale size={20} />} label="Saldo Awal" value={formatRupiah(openingBalance)} sub="awal periode" />
         <StatCard tone="green" icon={<ArrowDownLeft size={20} />} label="Total Masuk" value={formatRupiah(totalIn)} sub={`${filteredMutations.length} mutasi`} />
         <StatCard tone="amber" icon={<ArrowUpRight size={20} />} label="Total Keluar" value={formatRupiah(totalOut)} sub={`${filteredMutations.length} mutasi`} />
-        <StatCard tone="purple" icon={<Wallet size={20} />} label="Saldo Akhir" value={formatRupiah(latestBalance)} sub="mutasi terbaru" />
+        <StatCard tone="teal" icon={<Wallet size={20} />} label="Saldo Akhir" value={formatRupiah(latestBalance)} sub="mutasi terbaru" />
       </section>
 
       <section className={tw("statement-layout")}>

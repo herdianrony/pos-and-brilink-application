@@ -61,7 +61,7 @@ export function LogsPage({
         <StatCard tone="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
         <StatCard tone="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
         <StatCard tone="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
-        <StatCard tone="purple" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
+        <StatCard tone="teal" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
       </section>
 
       <Card className={tw("logs-filter-card")}>
