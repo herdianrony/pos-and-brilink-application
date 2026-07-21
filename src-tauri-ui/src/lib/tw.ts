@@ -142,6 +142,7 @@ const customClasses: Record<string, string> = {
   "hero-icon-box": "mb-3 grid h-9 w-9 place-items-center rounded-2xl bg-white/10 text-slate-200",
   "hero-chip-row": "mt-4 flex flex-wrap gap-2 [&_button]:rounded-full [&_button]:bg-white/10 [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs [&_button]:font-black [&_button]:text-white [&_button]:shadow-none",
   "electron-stat-grid": "mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1",
+  "dashboard-simple-stats": "grid-cols-3 max-[980px]:grid-cols-1",
   "safe-banner": "mb-5 flex items-center gap-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,.05)] [&>span]:grid [&>span]:h-12 [&>span]:w-12 [&>span]:place-items-center [&>span]:rounded-2xl [&>span]:bg-emerald-50 [&>span]:text-xl [&>span]:font-black [&>span]:text-emerald-600 [&_strong]:text-emerald-700 [&_p]:m-0 [&_p]:text-sm [&_p]:text-emerald-700/80",
   "account-section-head": "mb-3 flex items-center justify-between text-sm font-black uppercase tracking-wide text-slate-600 [&_span]:text-xs [&_span]:text-slate-400",
   "account-card-row": "mb-5 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1",

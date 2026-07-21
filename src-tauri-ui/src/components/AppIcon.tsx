@@ -1,16 +1,11 @@
 import {
-  BarChart3,
-  ClipboardList,
-  FileText,
   Landmark,
   LayoutDashboard,
   Package,
-  ReceiptText,
-  ScrollText,
   Search,
   Settings,
   ShoppingCart,
-  Wallet,
+  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import type { IconName } from "../types";
@@ -20,12 +15,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   pos: ShoppingCart,
   brilink: Landmark,
   products: Package,
-  history: ClipboardList,
-  debts: ReceiptText,
-  rekeningKoran: ScrollText,
-  cash: Wallet,
-  reports: BarChart3,
-  logs: FileText,
+  finance: WalletCards,
   settings: Settings,
   search: Search,
 };

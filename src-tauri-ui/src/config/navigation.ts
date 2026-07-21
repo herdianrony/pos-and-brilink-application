@@ -5,11 +5,6 @@ export const navItems: Array<{ id: ViewKey; label: string; icon: IconName; admin
   { id: "pos", label: "Kasir POS", icon: "pos" },
   { id: "brilink", label: "Layanan Agen", icon: "brilink" },
   { id: "products", label: "Produk", icon: "products", adminOnly: true },
-  { id: "history", label: "Transaksi", icon: "history" },
-  { id: "debts", label: "Buku Utang", icon: "debts" },
-  { id: "rekeningKoran", label: "Rekening Koran", icon: "rekeningKoran", adminOnly: true },
-  { id: "cash", label: "Kas & Saldo", icon: "cash", adminOnly: true },
-  { id: "reports", label: "Laporan", icon: "reports", adminOnly: true },
-  { id: "logs", label: "Riwayat Aktivitas", icon: "logs", adminOnly: true },
+  { id: "finance", label: "Keuangan", icon: "finance" },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];
