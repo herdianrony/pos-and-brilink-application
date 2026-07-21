@@ -243,8 +243,8 @@ export default function App() {
     setPosStep(1);
   }
 
-  async function submitCheckout() {
-    await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1) });
+  async function submitCheckout(cashReceived?: number) {
+    await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1), cashReceived });
   }
 
 

@@ -58,10 +58,12 @@ export function usePosCart({
     saving,
     setSaving,
     resetStep,
+    cashReceived,
   }: {
     saving: boolean;
     setSaving: (value: boolean) => void;
     resetStep: () => void;
+    cashReceived?: number;
   }) {
     if (saving) return;
     setSaving(true);
@@ -77,6 +79,8 @@ export function usePosCart({
         invoice_no: result.invoice_no,
         payment_method: receiptPayment,
         total_amount: result.total_amount,
+        cash_received: receiptPayment === "cash" ? cashReceived : undefined,
+        change_amount: receiptPayment === "cash" && typeof cashReceived === "number" ? Math.max(cashReceived - result.total_amount, 0) : undefined,
         created_at: new Date().toLocaleString("id-ID"),
         items: receiptItems,
       });

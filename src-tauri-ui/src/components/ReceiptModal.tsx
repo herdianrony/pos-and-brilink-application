@@ -36,6 +36,12 @@ export function ReceiptModal({
           ))}
           <div className={tw("receipt-line")} />
           <div className={tw("receipt-total")}><span>Total</span><strong>{formatRupiah(receipt.total_amount)}</strong></div>
+          {receipt.payment_method === "cash" && typeof receipt.cash_received === "number" && (
+            <>
+              <div className={tw("receipt-meta")}><span>Tunai</span><strong>{formatRupiah(receipt.cash_received)}</strong></div>
+              <div className={tw("receipt-meta")}><span>Kembalian</span><strong>{formatRupiah(receipt.change_amount || 0)}</strong></div>
+            </>
+          )}
           <div className={tw("receipt-center receipt-footer")}><span>Terima kasih</span><span>Simpan struk ini sebagai bukti transaksi.</span></div>
         </div>
         <div className={tw("modal-actions")}>

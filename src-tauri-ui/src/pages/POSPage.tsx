@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Search, ScanLine, Pause, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, QrCode, Search, ScanLine, Pause, Trash2 } from "lucide-react";
 import { Button, EmptyState, PageHeader, SectionCard } from "../components/ui";
+import { PaymentModal } from "../components/PaymentModal";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
@@ -41,11 +42,12 @@ export function POSPage({
   onSettlementAccountChange: (value: string) => void;
   onHoldCart: () => void;
   onClearCart: () => void;
-  onSubmitCheckout: () => void;
+  onSubmitCheckout: (cashReceived?: number) => void;
 }) {
   const [localSearch, setLocalSearch] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const canPay = cart.length > 0 && (paymentMethod === "cash" || Boolean(settlementAccountId));
+  const canPay = cart.length > 0;
   const visibleProducts = useMemo(() => {
     const term = localSearch.trim().toLowerCase();
     if (!term) return products;
@@ -98,20 +100,34 @@ export function POSPage({
           </div>
           <div className={tw("total-row")}><span>Total</span><strong>{formatRupiah(cartTotal)}</strong></div>
           <div className={tw("payment-choice-grid compact-payment-grid")}>
-            {(["cash", "transfer", "qris"] as const).map((method) => (
-              <button key={method} className={tw(paymentMethod === method ? "choice-card selected" : "choice-card")} onClick={() => onPaymentMethodChange(method)}>
-                <strong>{method === "cash" ? "Tunai" : method.toUpperCase()}</strong>
-              </button>
-            ))}
+            {(["cash", "transfer", "qris"] as const).map((method) => {
+              const MethodIcon = method === "cash" ? Banknote : method === "transfer" ? CreditCard : QrCode;
+              return (
+                <button key={method} className={tw(paymentMethod === method ? "choice-card selected" : "choice-card")} onClick={() => onPaymentMethodChange(method)}>
+                  <MethodIcon size={18} />
+                  <strong>{method === "cash" ? "Tunai" : method.toUpperCase()}</strong>
+                </button>
+              );
+            })}
           </div>
-          {paymentMethod !== "cash" && (
-            <label className={tw("field-label")}>Rekening Penerima<select className={tw("form-input")} value={settlementAccountId} onChange={(event) => onSettlementAccountChange(event.target.value)}>
-              <option value="">Pilih rekening</option>
-              {settlementAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} — {formatRupiah(account.balance)}</option>)}
-            </select></label>
-          )}
-          <button className={tw("checkout")} onClick={onSubmitCheckout} disabled={saving || !canPay}>{saving ? "Memproses..." : `Bayar ${paymentMethod === "cash" ? "Tunai" : paymentMethod.toUpperCase()}`}</button>
-          <p className={tw("hint")}>Shortcut kasir: pilih produk → cek total → bayar. Struk muncul setelah checkout.</p>
+          <button className={tw("checkout")} onClick={() => setShowPaymentModal(true)} disabled={saving || !canPay}>{saving ? "Memproses..." : "Bayar"}</button>
+          <p className={tw("hint")}>Shortcut pembayaran tersedia di modal: F2 Tunai, F3 Transfer, F4 QRIS, Enter Simpan.</p>
+          <PaymentModal
+            open={showPaymentModal}
+            total={cartTotal}
+            itemCount={cart.length}
+            paymentMethod={paymentMethod}
+            settlementAccountId={settlementAccountId}
+            settlementAccounts={settlementAccounts}
+            saving={saving}
+            onPaymentMethodChange={onPaymentMethodChange}
+            onSettlementAccountChange={onSettlementAccountChange}
+            onClose={() => setShowPaymentModal(false)}
+            onConfirm={(cashReceived) => {
+              setShowPaymentModal(false);
+              onSubmitCheckout(cashReceived);
+            }}
+          />
         </SectionCard>
       </div>
     </>

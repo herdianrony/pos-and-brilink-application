@@ -6,6 +6,8 @@ export type ReceiptState = {
   invoice_no: string;
   payment_method: "cash" | "transfer" | "qris";
   total_amount: number;
+  cash_received?: number;
+  change_amount?: number;
   created_at: string;
   items: CartItem[];
 };
