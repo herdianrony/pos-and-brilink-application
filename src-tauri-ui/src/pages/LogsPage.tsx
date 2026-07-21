@@ -2,11 +2,16 @@ import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
 import { Card, Button, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
-import { tw } from "../lib/tw";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
 type LevelFilter = (typeof levelFilters)[number];
+
+
+function logLevelClass(level: string) {
+  const tone = level === "WARN" ? "bg-amber-50 text-amber-700" : level === "ERROR" ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700";
+  return `inline-flex min-w-14 justify-center rounded-full px-2.5 py-1.5 text-[11px] font-black ${tone}`;
+}
 
 function levelLabel(level: string) {
   if (level === "INFO") return "Info";
@@ -49,7 +54,7 @@ export function LogsPage({
   const errorCount = logs.filter((log) => log.level === "ERROR").length;
 
   return (
-    <div className={tw("logs-page")}>
+    <div className="grid gap-4">
       <PageHeader
         eyebrow="Monitoring"
         title="Riwayat Aktivitas"
@@ -57,36 +62,36 @@ export function LogsPage({
         actions={<Button variant="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</Button>}
       />
 
-      <section className={tw("electron-stat-grid logs-stat-grid")}>
+      <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
         <StatCard tone="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
         <StatCard tone="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
         <StatCard tone="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
         <StatCard tone="teal" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
       </section>
 
-      <Card className={tw("logs-filter-card")}>
-        <div className={tw("electron-tabs")}>
+      <Card className="grid gap-3 p-3">
+        <div className="flex flex-wrap gap-2">
           {levelFilters.map((level) => (
-            <button key={level} className={tw(levelFilter === level ? "electron-tab active" : "electron-tab")} onClick={() => setLevelFilter(level)}>
+            <button key={level} className={levelFilter === level ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setLevelFilter(level)}>
               {level === "all" ? "Semua Level" : levelLabel(level)}
             </button>
           ))}
         </div>
-        <div className={tw("status-filter-row")}>
-          <button className={tw(sourceFilter === "all" ? "filter-chip active" : "filter-chip")} onClick={() => setSourceFilter("all")}>Semua Sumber</button>
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+          <button className={sourceFilter === "all" ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100 border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100"} onClick={() => setSourceFilter("all")}>Semua Sumber</button>
           {sources.map((source) => (
-            <button key={source} className={tw(sourceFilter === source ? "filter-chip active" : "filter-chip")} onClick={() => setSourceFilter(source)}>{sourceLabel(source)}</button>
+            <button key={source} className={sourceFilter === source ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100 border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100"} onClick={() => setSourceFilter(source)}>{sourceLabel(source)}</button>
           ))}
         </div>
       </Card>
 
-      <section className={tw("logs-layout")}>
-        <SectionCard className={tw("logs-table-card")} title="Daftar Aktivitas" description={`${visibleLogs.length} catatan sesuai filter.`}>
+      <section className="grid grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)] items-start gap-4 max-[1080px]:grid-cols-1">
+        <SectionCard className="min-w-0 rounded-[28px]" title="Daftar Aktivitas" description={`${visibleLogs.length} catatan sesuai filter.`}>
           {visibleLogs.length === 0 ? <EmptyState title="Belum ada aktivitas" description="Aktivitas penting akan muncul setelah aplikasi digunakan." /> : (
             <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={860}>
               {visibleLogs.map((log) => (
                 <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
-                  <span className={tw(`log-level ${log.level.toLowerCase()}`)}>{levelLabel(log.level)}</span>
+                  <span className={logLevelClass(log.level)}>{levelLabel(log.level)}</span>
                   <span>{sourceLabel(log.source)}</span>
                   <strong>{log.message}</strong>
                   <small>{log.created_at}</small>
@@ -95,8 +100,8 @@ export function LogsPage({
             </DataTable>
           )}
         </SectionCard>
-        <SectionCard className={tw("logs-side-card")} title="Panduan Membaca" description="Gunakan halaman ini saat butuh pemeriksaan aktivitas.">
-          <div className={tw("settings-info-grid")}>
+        <SectionCard className="rounded-[28px]" title="Panduan Membaca" description="Gunakan halaman ini saat butuh pemeriksaan aktivitas.">
+          <div className="grid gap-2.5 [&_div]:flex [&_div]:items-center [&_div]:gap-3 [&_div]:rounded-2xl [&_div]:border [&_div]:border-slate-200 [&_div]:bg-slate-50 [&_div]:p-4 [&_div]:text-sm [&_div]:font-semibold [&_div]:text-slate-600 [&_svg]:flex-none [&_svg]:text-emerald-600">
             <div><CheckCircle size={18} /><span>Info berarti aktivitas normal seperti checkout atau user dibuat.</span></div>
             <div><AlertTriangle size={18} /><span>Peringatan berarti aktivitas penting seperti pemulihan data.</span></div>
             <div><Database size={18} /><span>Cadangan data dan pemulihan juga dicatat di sini.</span></div>

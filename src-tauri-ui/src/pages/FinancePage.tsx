@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { AccountMutationRow, AccountRow, DebtRow, TransactionRow } from "../api";
 import { PageHeader, Tabs } from "../components/ui";
-import { tw } from "../lib/tw";
 import { CashBalancePage } from "./CashBalancePage";
 import { DebtsPage } from "./DebtsPage";
 import { HistoryPage } from "./HistoryPage";
@@ -69,7 +68,7 @@ export function FinancePage({
   const [activeTab, setActiveTab] = useState<FinanceTab>("cash");
 
   return (
-    <div className={tw("settings-page")}>
+    <div className="grid gap-4">
       <PageHeader eyebrow="Keuangan" title="Keuangan" description="Kas, rekening koran, utang, laporan, dan transaksi dalam satu tempat." />
       <Tabs items={tabs} active={activeTab} onChange={setActiveTab} ariaLabel="Tab keuangan" />
       {activeTab === "cash" && <CashBalancePage accounts={accounts} mutations={mutations} onAddAccount={onAddAccount} onTransfer={onTransfer} onAdjust={onAdjust} onOwnerDraw={onOwnerDraw} onBankFee={onBankFee} />}

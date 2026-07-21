@@ -4,7 +4,6 @@ import { createAgentService, createFeeTier, listAgentServices, listFeeTiers, typ
 import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, Modal, PageHeader, Tabs } from "../components/ui";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { formatRupiah } from "../lib/format";
-import { tw } from "../lib/tw";
 
 type MasterTab = "products" | "categories" | "agentServices" | "agentCategories";
 
@@ -68,7 +67,7 @@ export function ProductMasterPage({
   }
 
   return (
-    <div className={tw("space-y-5 animate-fadeIn")}>
+    <div className="space-y-5 animate-[fadeIn_.18s_ease-out]">
       <PageHeader
         title="Manajemen Data"
         description="Kelola produk, kategori, dan layanan agen."
@@ -78,8 +77,8 @@ export function ProductMasterPage({
       <Tabs items={tabs} active={activeTab} onChange={setActiveTab} ariaLabel="Tab manajemen data" />
 
       {activeTab === "products" && (
-        <section className={tw("grid dashboard-grid")}>
-          <Card className={tw("min-w-0 xl:col-span-2")}>
+        <section className="grid mb-4 grid grid-cols-2 items-stretch gap-4 max-[980px]:grid-cols-1">
+          <Card className="min-w-0 xl:col-span-2">
             <CardHeader>
               <div>
                 <h2>Daftar Produk</h2>
@@ -95,10 +94,10 @@ export function ProductMasterPage({
                   <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 112px">
                     <DataCell><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></DataCell>
                     <DataCell><strong>{formatRupiah(product.sell_price)}</strong><DataCellText>Harga jual</DataCellText></DataCell>
-                    <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className={tw("mt-1 block text-slate-500")}>Min {product.min_stock}</small></div>
-                    <div className={tw("flex flex-wrap gap-2 lg:justify-end")}>
-                      <Button variant="secondary" className={tw("h-10 w-10 p-0")} title="Edit produk" aria-label={`Edit produk ${product.name}`} onClick={() => onEditProduct(product)}><Pencil size={16} /></Button>
-                      <Button variant="danger" className={tw("h-10 w-10 p-0")} title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => setPendingDeactivate(product)}><Power size={16} /></Button>
+                    <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <Button variant="secondary" className="h-10 w-10 p-0" title="Edit produk" aria-label={`Edit produk ${product.name}`} onClick={() => onEditProduct(product)}><Pencil size={16} /></Button>
+                      <Button variant="danger" className="h-10 w-10 p-0" title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => setPendingDeactivate(product)}><Power size={16} /></Button>
                     </div>
                   </DataRow>
                 ))}
@@ -110,7 +109,7 @@ export function ProductMasterPage({
             {lowStockProducts.length === 0 ? (
               <EmptyState compact title="Stok aman" description="Tidak ada produk di bawah minimum." />
             ) : lowStockProducts.slice(0, 8).map((product) => (
-              <div key={product.id} className={tw("row rich-row warning-row")}><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><Badge tone="warning">Rendah</Badge></div>
+              <div key={product.id} className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 [&_small]:mt-1 [&_small]:block mx-0 my-1 rounded-2xl bg-amber-50 px-3"><div><strong>{product.name}</strong><small>Stok {product.stock} / min {product.min_stock}</small></div><Badge tone="warning">Rendah</Badge></div>
             ))}
           </Card>
         </section>
@@ -128,9 +127,9 @@ export function ProductMasterPage({
           {categories.length === 0 ? (
             <EmptyState title="Belum ada kategori" description="Klik Tambah Kategori untuk membuat kategori pertama." />
           ) : (
-            <div className={tw("category-grid")}>
+            <div className="grid grid-cols-3 gap-3 max-[980px]:grid-cols-2 max-[640px]:grid-cols-1">
               {categories.map((category) => (
-                <div key={category.id} className={tw("category-card")}>
+                <div key={category.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,.04)] [&_svg]:text-emerald-600 [&_strong]:block [&_strong]:font-black [&_strong]:text-slate-900 [&_small]:block [&_small]:text-slate-500">
                   <Tag size={20} />
                   <div><strong>{category.name}</strong><small>Kategori produk</small></div>
                 </div>
@@ -141,43 +140,43 @@ export function ProductMasterPage({
       )}
 
       {activeTab === "agentServices" && (
-        <section className={tw("grid dashboard-grid")}>
+        <section className="grid mb-4 grid grid-cols-2 items-stretch gap-4 max-[980px]:grid-cols-1">
           <Card>
             <CardHeader><div><h2>Tambah Layanan Agen</h2><p>Template layanan untuk dipakai kasir dan pencatatan agen.</p></div></CardHeader>
-            <div className={tw("product-form no-box")}>
-              <label className={tw("field-label")}>Nama Layanan<input className={tw("form-input")} value={serviceForm.name} onChange={(event) => setServiceForm({ ...serviceForm, name: event.target.value })} placeholder="Contoh: Transfer BRI" /></label>
-              <label className={tw("field-label")}>Kategori<input className={tw("form-input")} value={serviceForm.category} onChange={(event) => setServiceForm({ ...serviceForm, category: event.target.value })} /></label>
-              <label className={tw("field-label")}>Fee Default<CurrencyInput value={serviceForm.default_fee} onChange={(value) => setServiceForm({ ...serviceForm, default_fee: value })} /></label>
-              <label className={tw("field-label")}>Biaya Provider<CurrencyInput value={serviceForm.provider_cost} onChange={(value) => setServiceForm({ ...serviceForm, provider_cost: value })} /></label>
-              <Button className={tw("span-2")} onClick={submitAgentService}>Simpan Layanan</Button>
+            <div className="mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Nama Layanan<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={serviceForm.name} onChange={(event) => setServiceForm({ ...serviceForm, name: event.target.value })} placeholder="Contoh: Transfer BRI" /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Kategori<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={serviceForm.category} onChange={(event) => setServiceForm({ ...serviceForm, category: event.target.value })} /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Fee Default<CurrencyInput value={serviceForm.default_fee} onChange={(value) => setServiceForm({ ...serviceForm, default_fee: value })} /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Biaya Provider<CurrencyInput value={serviceForm.provider_cost} onChange={(value) => setServiceForm({ ...serviceForm, provider_cost: value })} /></label>
+              <Button className="col-span-full md:col-span-2" onClick={submitAgentService}>Simpan Layanan</Button>
             </div>
           </Card>
           <Card>
             <CardHeader><div><h2>Daftar Layanan</h2><p>{agentServices.length} layanan aktif.</p></div></CardHeader>
             {agentServices.length === 0 ? <EmptyState compact title="Belum ada layanan" description="Tambahkan template layanan pertama." /> : agentServices.map((service) => (
-              <div key={service.id} className={tw("row rich-row")}><div><strong>{service.name}</strong><small>{service.category || "Tanpa kategori"} • Provider {formatRupiah(service.provider_cost)}</small></div><strong>{formatRupiah(service.default_fee)}</strong></div>
+              <div key={service.id} className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 [&_small]:mt-1 [&_small]:block"><div><strong>{service.name}</strong><small>{service.category || "Tanpa kategori"} • Provider {formatRupiah(service.provider_cost)}</small></div><strong>{formatRupiah(service.default_fee)}</strong></div>
             ))}
           </Card>
         </section>
       )}
 
       {activeTab === "agentCategories" && (
-        <section className={tw("grid dashboard-grid")}>
+        <section className="grid mb-4 grid grid-cols-2 items-stretch gap-4 max-[980px]:grid-cols-1">
           <Card>
             <CardHeader><div><h2>Fee Bertingkat</h2><p>Atur fee berdasarkan nominal transaksi layanan.</p></div></CardHeader>
-            <div className={tw("product-form no-box")}>
-              <label className={tw("field-label span-2")}>Layanan<select className={tw("form-input")} value={tierForm.service_id} onChange={async (event) => { setTierForm({ ...tierForm, service_id: event.target.value }); setFeeTiers(await listFeeTiers(Number(event.target.value))); }}><option value="">Pilih layanan</option>{agentServices.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
-              <label className={tw("field-label")}>Min Nominal<CurrencyInput value={tierForm.min_amount} onChange={(value) => setTierForm({ ...tierForm, min_amount: value })} /></label>
-              <label className={tw("field-label")}>Max Nominal<CurrencyInput value={tierForm.max_amount} onChange={(value) => setTierForm({ ...tierForm, max_amount: value })} placeholder="Tanpa batas" /></label>
-              <label className={tw("field-label")}>Fee<CurrencyInput value={tierForm.fee} onChange={(value) => setTierForm({ ...tierForm, fee: value })} /></label>
-              <label className={tw("field-label")}>Biaya Provider<CurrencyInput value={tierForm.provider_cost} onChange={(value) => setTierForm({ ...tierForm, provider_cost: value })} /></label>
-              <Button className={tw("span-2")} onClick={submitFeeTier}>Simpan Tier Fee</Button>
+            <div className="mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+              <label className="grid gap-2 text-[13px] font-black text-slate-600 col-span-full md:col-span-2">Layanan<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={tierForm.service_id} onChange={async (event) => { setTierForm({ ...tierForm, service_id: event.target.value }); setFeeTiers(await listFeeTiers(Number(event.target.value))); }}><option value="">Pilih layanan</option>{agentServices.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Min Nominal<CurrencyInput value={tierForm.min_amount} onChange={(value) => setTierForm({ ...tierForm, min_amount: value })} /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Max Nominal<CurrencyInput value={tierForm.max_amount} onChange={(value) => setTierForm({ ...tierForm, max_amount: value })} placeholder="Tanpa batas" /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Fee<CurrencyInput value={tierForm.fee} onChange={(value) => setTierForm({ ...tierForm, fee: value })} /></label>
+              <label className="grid gap-2 text-[13px] font-black text-slate-600">Biaya Provider<CurrencyInput value={tierForm.provider_cost} onChange={(value) => setTierForm({ ...tierForm, provider_cost: value })} /></label>
+              <Button className="col-span-full md:col-span-2" onClick={submitFeeTier}>Simpan Tier Fee</Button>
             </div>
           </Card>
           <Card>
             <CardHeader><div><h2>Daftar Tier</h2><p>Fee untuk layanan terpilih.</p></div></CardHeader>
             {feeTiers.length === 0 ? <EmptyState compact title="Belum ada tier" description="Fee default layanan tetap dipakai." /> : feeTiers.map((tier) => (
-              <div key={tier.id} className={tw("row rich-row")}><div><strong>{formatRupiah(tier.min_amount)} - {tier.max_amount ? formatRupiah(tier.max_amount) : "∞"}</strong><small>Provider {formatRupiah(tier.provider_cost)}</small></div><strong>{formatRupiah(tier.fee)}</strong></div>
+              <div key={tier.id} className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 [&_small]:mt-1 [&_small]:block"><div><strong>{formatRupiah(tier.min_amount)} - {tier.max_amount ? formatRupiah(tier.max_amount) : "∞"}</strong><small>Provider {formatRupiah(tier.provider_cost)}</small></div><strong>{formatRupiah(tier.fee)}</strong></div>
             ))}
           </Card>
         </section>
@@ -185,9 +184,9 @@ export function ProductMasterPage({
 
       {pendingDeactivate && (
         <Modal size="sm" eyebrow="Konfirmasi" title="Nonaktifkan Produk" onClose={() => setPendingDeactivate(null)}>
-          <div className={tw("grid gap-4")}>
-            <p className={tw("m-0 text-sm font-semibold text-slate-600")}>Produk <strong>{pendingDeactivate.name}</strong> tidak akan tampil lagi di kasir. Lanjutkan?</p>
-            <div className={tw("modal-actions")}>
+          <div className="grid gap-4">
+            <p className="m-0 text-sm font-semibold text-slate-600">Produk <strong>{pendingDeactivate.name}</strong> tidak akan tampil lagi di kasir. Lanjutkan?</p>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden">
               <Button variant="secondary" onClick={() => setPendingDeactivate(null)}>Batal</Button>
               <Button variant="danger" onClick={() => { onRemoveProduct(pendingDeactivate); setPendingDeactivate(null); }}>Nonaktifkan</Button>
             </div>

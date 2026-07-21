@@ -2,7 +2,6 @@ import type { FormEvent } from "react";
 import type { CategoryRow } from "../api";
 import { Button, Field, Modal } from "./ui";
 import { CurrencyInput } from "./CurrencyInput";
-import { tw } from "../lib/tw";
 
 export function ProductDialogs({
   showCategoryModal,
@@ -55,29 +54,29 @@ export function ProductDialogs({
     <>
       {showCategoryModal && (
         <Modal size="sm" eyebrow="Kategori" title="Tambah Kategori" onClose={onCloseCategory}>
-          <form onSubmit={onSubmitCategory} className={tw("grid gap-3.5")}>
+          <form onSubmit={onSubmitCategory} className="grid gap-3.5">
             <Field label="Nama Kategori">
-              <input className={tw("form-input")} autoFocus placeholder="Contoh: Rokok, Snack, Aksesoris" value={categoryForm.name} onChange={(e) => onCategoryFormChange({ ...categoryForm, name: e.target.value })} />
+              <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" autoFocus placeholder="Contoh: Rokok, Snack, Aksesoris" value={categoryForm.name} onChange={(e) => onCategoryFormChange({ ...categoryForm, name: e.target.value })} />
             </Field>
-            <div className={tw("modal-actions")}><Button variant="secondary" type="button" onClick={onCloseCategory}>Batal</Button><Button type="submit" disabled={saving}>Simpan Kategori</Button></div>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden"><Button variant="secondary" type="button" onClick={onCloseCategory}>Batal</Button><Button type="submit" disabled={saving}>Simpan Kategori</Button></div>
           </form>
         </Modal>
       )}
       {showProductModal && (
         <Modal size="lg" eyebrow="Produk" title={editingProductId ? "Edit Produk" : "Tambah Produk"} onClose={onCloseProduct}>
-          <form onSubmit={onSubmitProduct} className={tw("grid gap-3.5 md:grid-cols-2")}>
-            <Field label="Nama Produk"><input className={tw("form-input")} autoFocus value={productForm.name} onChange={(e) => onProductFormChange({ ...productForm, name: e.target.value })} /></Field>
-            <Field label="Barcode"><input className={tw("form-input")} value={productForm.barcode} onChange={(e) => onProductFormChange({ ...productForm, barcode: e.target.value })} placeholder="Opsional" /></Field>
-            <Field label="Kategori"><select className={tw("form-input")} value={productForm.category_id} onChange={(e) => onProductFormChange({ ...productForm, category_id: e.target.value })}>
+          <form onSubmit={onSubmitProduct} className="grid gap-3.5 md:grid-cols-2">
+            <Field label="Nama Produk"><input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" autoFocus value={productForm.name} onChange={(e) => onProductFormChange({ ...productForm, name: e.target.value })} /></Field>
+            <Field label="Barcode"><input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={productForm.barcode} onChange={(e) => onProductFormChange({ ...productForm, barcode: e.target.value })} placeholder="Opsional" /></Field>
+            <Field label="Kategori"><select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={productForm.category_id} onChange={(e) => onProductFormChange({ ...productForm, category_id: e.target.value })}>
               <option value="">Tanpa kategori</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select></Field>
-            <Field label="Satuan"><input className={tw("form-input")} value={productForm.unit} onChange={(e) => onProductFormChange({ ...productForm, unit: e.target.value })} /></Field>
+            <Field label="Satuan"><input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={productForm.unit} onChange={(e) => onProductFormChange({ ...productForm, unit: e.target.value })} /></Field>
             <Field label="Harga Beli / HPP"><CurrencyInput value={productForm.buy_price} onChange={(value) => onProductFormChange({ ...productForm, buy_price: value })} /></Field>
             <Field label="Harga Jual"><CurrencyInput value={productForm.sell_price} onChange={(value) => onProductFormChange({ ...productForm, sell_price: value })} /></Field>
-            <Field label="Stok"><input className={tw("form-input")} type="number" min="0" value={productForm.stock} onChange={(e) => onProductFormChange({ ...productForm, stock: e.target.value })} /></Field>
-            <Field label="Minimum Stok"><input className={tw("form-input")} type="number" min="0" value={productForm.min_stock} onChange={(e) => onProductFormChange({ ...productForm, min_stock: e.target.value })} /></Field>
-            <div className={tw("modal-actions md:col-span-2")}><Button variant="secondary" type="button" onClick={onCloseProduct}>Batal</Button><Button type="submit" disabled={saving}>{editingProductId ? "Simpan Perubahan" : "Simpan Produk"}</Button></div>
+            <Field label="Stok"><input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" type="number" min="0" value={productForm.stock} onChange={(e) => onProductFormChange({ ...productForm, stock: e.target.value })} /></Field>
+            <Field label="Minimum Stok"><input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" type="number" min="0" value={productForm.min_stock} onChange={(e) => onProductFormChange({ ...productForm, min_stock: e.target.value })} /></Field>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden md:col-span-2"><Button variant="secondary" type="button" onClick={onCloseProduct}>Batal</Button><Button type="submit" disabled={saving}>{editingProductId ? "Simpan Perubahan" : "Simpan Produk"}</Button></div>
           </form>
         </Modal>
       )}

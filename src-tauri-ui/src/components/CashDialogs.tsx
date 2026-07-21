@@ -2,7 +2,6 @@ import type { FormEvent } from "react";
 import type { AccountRow } from "../api";
 import { CurrencyInput } from "./CurrencyInput";
 import { Button, CardHeader } from "./ui";
-import { tw } from "../lib/tw";
 
 export type CashModalType = null | "account" | "adjust" | "transfer" | "ownerDraw" | "bankFee";
 
@@ -50,52 +49,52 @@ export function CashDialogs({
   if (!cashModal) return null;
   const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Ambil Uang Owner" : "Potongan Bank/QRIS";
   return (
-    <div className={tw("modal-backdrop")}>
-      <section className={tw("dialog-card product-dialog")} role="dialog" aria-modal="true" aria-label="Dialog Kas dan Saldo">
+    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 backdrop-blur print:bg-white print:p-0 print:backdrop-blur-none">
+      <section className="max-h-[calc(100vh-48px)] w-[min(720px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)] w-[min(780px,100%)]" role="dialog" aria-modal="true" aria-label="Dialog Kas dan Saldo">
         <CardHeader>
-          <div><p className={tw("eyebrow")}>Kas & Saldo</p><h2>{title}</h2></div>
+          <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">Kas & Saldo</p><h2>{title}</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
         </CardHeader>
         {cashModal === "account" && (
-          <form onSubmit={onSubmitAccount} className={tw("dialog-form product-form no-box")}>
-            <label className={tw("field-label")}>Kode<input className={tw("form-input")} value={accountForm.code} onChange={(e) => onAccountFormChange({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
-            <label className={tw("field-label")}>Nama<input className={tw("form-input")} value={accountForm.name} onChange={(e) => onAccountFormChange({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
-            <label className={tw("field-label")}>Saldo Awal<CurrencyInput value={accountForm.initial_balance} onChange={(value) => onAccountFormChange({ ...accountForm, initial_balance: value })} /></label>
-            <label className={tw("field-label")}>Saldo Minimum<CurrencyInput value={accountForm.min_balance} onChange={(value) => onAccountFormChange({ ...accountForm, min_balance: value })} /></label>
-            <div className={tw("modal-actions span-2")}><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving}>Tambah Rekening</Button></div>
+          <form onSubmit={onSubmitAccount} className="grid gap-3.5 mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Kode<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={accountForm.code} onChange={(e) => onAccountFormChange({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Nama<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={accountForm.name} onChange={(e) => onAccountFormChange({ ...accountForm, name: e.target.value })} placeholder="Rekening BRI" /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Saldo Awal<CurrencyInput value={accountForm.initial_balance} onChange={(value) => onAccountFormChange({ ...accountForm, initial_balance: value })} /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Saldo Minimum<CurrencyInput value={accountForm.min_balance} onChange={(value) => onAccountFormChange({ ...accountForm, min_balance: value })} /></label>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving}>Tambah Rekening</Button></div>
           </form>
         )}
         {cashModal === "adjust" && (
-          <form onSubmit={onSubmitAdjustment} className={tw("dialog-form product-form no-box")}>
-            <label className={tw("field-label")}>Rekening<select className={tw("form-input")} value={adjustForm.account_id} onChange={(e) => onAdjustFormChange({ ...adjustForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-            <label className={tw("field-label")}>Nominal (+ / -)<CurrencyInput allowNegative value={adjustForm.amount} onChange={(value) => onAdjustFormChange({ ...adjustForm, amount: value })} /></label>
-            <label className={tw("field-label span-2")}>Catatan<input className={tw("form-input")} value={adjustForm.notes} onChange={(e) => onAdjustFormChange({ ...adjustForm, notes: e.target.value })} /></label>
-            <div className={tw("modal-actions span-2")}><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</Button></div>
+          <form onSubmit={onSubmitAdjustment} className="grid gap-3.5 mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Rekening<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={adjustForm.account_id} onChange={(e) => onAdjustFormChange({ ...adjustForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Nominal (+ / -)<CurrencyInput allowNegative value={adjustForm.amount} onChange={(value) => onAdjustFormChange({ ...adjustForm, amount: value })} /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600 col-span-full md:col-span-2">Catatan<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={adjustForm.notes} onChange={(e) => onAdjustFormChange({ ...adjustForm, notes: e.target.value })} /></label>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !adjustForm.account_id}>Simpan</Button></div>
           </form>
         )}
         {cashModal === "transfer" && (
-          <form onSubmit={onSubmitTransfer} className={tw("dialog-form product-form no-box")}>
-            <label className={tw("field-label")}>Dari<select className={tw("form-input")} value={transferForm.from_account_id} onChange={(e) => onTransferFormChange({ ...transferForm, from_account_id: e.target.value })}><option value="">Pilih asal</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-            <label className={tw("field-label")}>Ke<select className={tw("form-input")} value={transferForm.to_account_id} onChange={(e) => onTransferFormChange({ ...transferForm, to_account_id: e.target.value })}><option value="">Pilih tujuan</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-            <label className={tw("field-label")}>Nominal<CurrencyInput value={transferForm.amount} onChange={(value) => onTransferFormChange({ ...transferForm, amount: value })} /></label>
-            <label className={tw("field-label")}>Catatan<input className={tw("form-input")} value={transferForm.notes} onChange={(e) => onTransferFormChange({ ...transferForm, notes: e.target.value })} /></label>
-            <div className={tw("modal-actions span-2")}><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</Button></div>
+          <form onSubmit={onSubmitTransfer} className="grid gap-3.5 mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Dari<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={transferForm.from_account_id} onChange={(e) => onTransferFormChange({ ...transferForm, from_account_id: e.target.value })}><option value="">Pilih asal</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Ke<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={transferForm.to_account_id} onChange={(e) => onTransferFormChange({ ...transferForm, to_account_id: e.target.value })}><option value="">Pilih tujuan</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Nominal<CurrencyInput value={transferForm.amount} onChange={(value) => onTransferFormChange({ ...transferForm, amount: value })} /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Catatan<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={transferForm.notes} onChange={(e) => onTransferFormChange({ ...transferForm, notes: e.target.value })} /></label>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !transferForm.from_account_id || !transferForm.to_account_id}>Transfer</Button></div>
           </form>
         )}
         {cashModal === "ownerDraw" && (
-          <form onSubmit={onSubmitOwnerDraw} className={tw("dialog-form product-form no-box")}>
-            <label className={tw("field-label")}>Rekening<select className={tw("form-input")} value={ownerDrawForm.account_id} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-            <label className={tw("field-label")}>Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => onOwnerDrawFormChange({ ...ownerDrawForm, amount: value })} /></label>
-            <label className={tw("field-label span-2")}>Catatan<input className={tw("form-input")} value={ownerDrawForm.notes} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, notes: e.target.value })} /></label>
-            <div className={tw("modal-actions span-2")}><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Ambil Uang</Button></div>
+          <form onSubmit={onSubmitOwnerDraw} className="grid gap-3.5 mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Rekening<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={ownerDrawForm.account_id} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Nominal<CurrencyInput value={ownerDrawForm.amount} onChange={(value) => onOwnerDrawFormChange({ ...ownerDrawForm, amount: value })} /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600 col-span-full md:col-span-2">Catatan<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={ownerDrawForm.notes} onChange={(e) => onOwnerDrawFormChange({ ...ownerDrawForm, notes: e.target.value })} /></label>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !ownerDrawForm.account_id}>Catat Ambil Uang</Button></div>
           </form>
         )}
         {cashModal === "bankFee" && (
-          <form onSubmit={onSubmitBankFee} className={tw("dialog-form product-form no-box")}>
-            <label className={tw("field-label")}>Rekening<select className={tw("form-input")} value={bankFeeForm.account_id} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
-            <label className={tw("field-label")}>Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => onBankFeeFormChange({ ...bankFeeForm, amount: value })} /></label>
-            <label className={tw("field-label span-2")}>Catatan<input className={tw("form-input")} value={bankFeeForm.notes} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, notes: e.target.value })} /></label>
-            <div className={tw("modal-actions span-2")}><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</Button></div>
+          <form onSubmit={onSubmitBankFee} className="grid gap-3.5 mb-5 grid grid-cols-2 gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4 max-[640px]:grid-cols-1 [&_button]:col-span-full border-0 bg-transparent p-0">
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Rekening<select className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={bankFeeForm.account_id} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, account_id: e.target.value })}><option value="">Pilih rekening</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600">Nominal<CurrencyInput value={bankFeeForm.amount} onChange={(value) => onBankFeeFormChange({ ...bankFeeForm, amount: value })} /></label>
+            <label className="grid gap-2 text-[13px] font-black text-slate-600 col-span-full md:col-span-2">Catatan<input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15" value={bankFeeForm.notes} onChange={(e) => onBankFeeFormChange({ ...bankFeeForm, notes: e.target.value })} /></label>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</Button></div>
           </form>
         )}
       </section>
