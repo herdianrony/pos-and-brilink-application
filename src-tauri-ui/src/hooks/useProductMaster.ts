@@ -10,6 +10,9 @@ const emptyProductForm = {
   stock: "0",
   min_stock: "5",
   unit: "pcs",
+  image_data_url: "",
+  image_preview: "",
+  remove_image: false,
 };
 
 export function useProductMaster({
@@ -62,6 +65,8 @@ export function useProductMaster({
         stock: Number(productForm.stock || 0),
         min_stock: Number(productForm.min_stock || 0),
         unit: productForm.unit || "pcs",
+        image_data_url: productForm.image_data_url || null,
+        remove_image: productForm.remove_image,
       };
       if (editingProductId) {
         await updateProduct({ ...payload, id: editingProductId });
@@ -100,13 +105,15 @@ export function useProductMaster({
       stock: String(product.stock),
       min_stock: String(product.min_stock),
       unit: product.unit || "pcs",
+      image_data_url: "",
+      image_preview: product.image_path ? "loading" : "",
+      remove_image: false,
     });
     onNavigateProducts();
     setShowProductModal(true);
   }
 
   async function removeProduct(product: ProductRow) {
-    if (!confirm(`Nonaktifkan produk ${product.name}?`)) return;
     if (saving) return;
     setSaving(true);
     try {

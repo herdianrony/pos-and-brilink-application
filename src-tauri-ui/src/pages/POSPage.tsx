@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Banknote, CreditCard, Landmark, Plus, QrCode, Search, ScanLine, Pause, Trash2 } from "lucide-react";
 import { Button, ChipTabs, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { PaymentModal } from "../components/PaymentModal";
+import { ProductImage } from "../components/ProductImage";
 import { CurrencyInput } from "../components/CurrencyInput";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
@@ -87,14 +88,17 @@ export function POSPage({
           />
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))] grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))]">
             {visibleProducts.length === 0 ? <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." /> : visibleProducts.map((product) => (
-              <button key={product.id} className="grid gap-3 rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-[0_8px_20px_rgba(15,23,42,.04)] hover:border-emerald-300 hover:shadow-[0_14px_30px_rgba(4,120,87,.10)] min-h-[135px] cursor-pointer text-left shadow-[0_6px_18px_rgba(15,23,42,.04)] hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-50" onClick={() => onAddToCart(product)} disabled={product.stock <= 0}>
-                <div className="grid min-w-0 gap-1 [&_strong]:truncate [&_small]:text-slate-500">
-                  <strong>{product.name}</strong>
-                  <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
+              <button key={product.id} className="grid min-h-[135px] cursor-pointer gap-3 rounded-[20px] border border-slate-200 bg-white p-3.5 text-left shadow-sm hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-50" onClick={() => onAddToCart(product)} disabled={product.stock <= 0}>
+                <div className="flex items-start gap-3">
+                  <ProductImage product={product} />
+                  <div className="grid min-w-0 gap-1 [&_strong]:truncate [&_small]:text-slate-500">
+                    <strong>{product.name}</strong>
+                    <small>{product.category_name || "Tanpa kategori"} • {product.unit}</small>
+                  </div>
                 </div>
                 <div className="grid justify-items-end gap-1.5 text-right max-[980px]:justify-items-start max-[980px]:text-left">
                   <strong>{formatRupiah(product.sell_price)}</strong>
-                  <span className={product.stock <= product.min_stock ? "inline-flex items-center justify-center rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-700 bg-amber-50 text-amber-700" : "inline-flex items-center justify-center rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-700"}>Stok {product.stock}</span>
+                  <span className={product.stock <= product.min_stock ? "inline-flex items-center justify-center rounded-full bg-amber-50 px-2.5 py-1.5 text-xs font-black text-amber-700" : "inline-flex items-center justify-center rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-700"}>Stok {product.stock}</span>
                 </div>
               </button>
             ))}

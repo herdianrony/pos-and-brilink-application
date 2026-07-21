@@ -3,6 +3,7 @@ import { FolderOpen, Landmark, Package, Pencil, Power, Tag } from "lucide-react"
 import { createAgentService, createFeeTier, listAgentServices, listFeeTiers, type AgentServiceRow, type CategoryRow, type FeeTierRow, type ProductRow } from "../api";
 import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, Modal, PageHeader, Tabs } from "../components/ui";
 import { CurrencyInput } from "../components/CurrencyInput";
+import { ProductImage } from "../components/ProductImage";
 import { formatRupiah } from "../lib/format";
 
 type MasterTab = "products" | "categories" | "agentServices" | "agentCategories";
@@ -92,7 +93,7 @@ export function ProductMasterPage({
               <DataTable columns={["Produk", "Harga", "Stok", "Aksi"]} template="minmax(0,1.4fr) 130px 110px 112px" minWidth={640}>
                 {products.map((product) => (
                   <DataRow key={product.id} template="minmax(0,1.4fr) 130px 110px 112px">
-                    <DataCell><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></DataCell>
+                    <DataCell><div className="flex items-center gap-3"><ProductImage product={product} className="h-11 w-11" /><div><strong>{product.name}</strong><DataCellText>{product.category_name || "Tanpa kategori"} • {product.unit}</DataCellText><DataCellText>HPP {formatRupiah(product.buy_price)}</DataCellText></div></div></DataCell>
                     <DataCell><strong>{formatRupiah(product.sell_price)}</strong><DataCellText>Harga jual</DataCellText></DataCell>
                     <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className="mt-1 block text-slate-500">Min {product.min_stock}</small></div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">

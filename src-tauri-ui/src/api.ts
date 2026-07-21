@@ -70,6 +70,7 @@ export interface ProductRow {
   stock: number;
   min_stock: number;
   unit: string;
+  image_path?: string | null;
   is_active: boolean;
 }
 
@@ -295,6 +296,8 @@ export type ProductInput = {
   stock: number;
   min_stock: number;
   unit?: string;
+  image_data_url?: string | null;
+  remove_image?: boolean;
 };
 
 export function createProduct(payload: ProductInput) {
@@ -307,6 +310,10 @@ export function updateProduct(payload: ProductInput & { id: number }) {
 
 export function deactivateProduct(payload: { id: number }) {
   return invokeCommand<boolean>("deactivate_product", { payload });
+}
+
+export function getProductImage(payload: { id: number }) {
+  return invokeCommand<string | null>("get_product_image", { payload });
 }
 
 export function checkoutPosCash(payload: {

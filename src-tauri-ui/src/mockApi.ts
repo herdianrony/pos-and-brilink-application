@@ -168,6 +168,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
         stock: Number(payload.stock || 0),
         min_stock: Number(payload.min_stock || 0),
         unit: payload.unit || "pcs",
+        image_path: payload.image_data_url || null,
         is_active: true,
       };
       products.push(row);
@@ -177,8 +178,12 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       const index = products.findIndex((product) => product.id === payload.id);
       if (index < 0) throw new Error("Produk tidak ditemukan");
       const category = categories.find((item) => item.id === payload.category_id);
-      products[index] = { ...products[index], ...payload, category_name: category?.name || null };
+      products[index] = { ...products[index], ...payload, image_path: payload.remove_image ? null : payload.image_data_url || products[index].image_path, category_name: category?.name || null };
       return products[index] as T;
+    }
+    case "get_product_image": {
+      const product = products.find((item) => item.id === payload.id);
+      return (product?.image_path || null) as T;
     }
     case "deactivate_product": {
       const product = products.find((item) => item.id === payload.id);
