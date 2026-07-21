@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import { Archive, Database, Download, Shield, Users } from "lucide-react";
 import type { AccountMutationRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow } from "../api";
 
 export function SettingsPage({
@@ -33,12 +34,20 @@ export function SettingsPage({
   onRestoreBackup: (backup: BackupRow) => void;
 }) {
   return (
-    <>
-      <div className="page-title"><div><p className="eyebrow">Sistem</p><h1>Pengaturan</h1></div></div>
-      <section className="grid workspace-grid">
-        <div className="card">
+    <div className="settings-page">
+      <div className="page-title settings-title">
+        <div>
+          <p className="eyebrow">Sistem</p>
+          <h1>Pengaturan</h1>
+          <p>Kelola pengguna, unduhan data, dan cadangan data lokal.</p>
+        </div>
+      </div>
+
+      <section className="settings-grid">
+        <div className="card settings-card">
+          <div className="settings-card-icon"><Users size={22} /></div>
           <div className="card-header"><div><h2>Manajemen User</h2><p>Buat akun kasir agar staf tidak memakai akun owner.</p></div></div>
-          <form onSubmit={onSubmitUser} className="product-form">
+          <form onSubmit={onSubmitUser} className="product-form no-box settings-user-form">
             <label>Nama<input value={userForm.name} onChange={(e) => onUserFormChange({ ...userForm, name: e.target.value })} /></label>
             <label>Username<input value={userForm.username} onChange={(e) => onUserFormChange({ ...userForm, username: e.target.value })} /></label>
             <label>Password<input type="password" value={userForm.password} onChange={(e) => onUserFormChange({ ...userForm, password: e.target.value })} /></label>
@@ -48,23 +57,26 @@ export function SettingsPage({
             </select></label>
             <button type="submit" disabled={saving}>Buat User</button>
           </form>
-          <div className="list">
+          <div className="settings-user-list">
             {users.map((item) => <div key={item.id} className="row rich-row"><div><strong>{item.name}</strong><small>{item.username}</small></div><span className="role-badge">{item.role}</span></div>)}
           </div>
         </div>
-        <div className="card">
-          <div className="card-header"><div><h2>Unduh Data</h2><p>Unduh CSV ringan untuk arsip manual.</p></div></div>
-          <div className="quick-actions export-actions">
+
+        <div className="card settings-card">
+          <div className="settings-card-icon blue"><Download size={22} /></div>
+          <div className="card-header"><div><h2>Unduh Data</h2><p>Unduh CSV ringan untuk arsip manual atau olah data di spreadsheet.</p></div></div>
+          <div className="settings-action-grid">
             <button className="secondary" onClick={() => onExportCsv("transaksi-catatagen.csv", transactions.map((t) => ({ invoice: t.invoice_no, tipe: t.transaction_type, pelanggan: t.customer_name, total: t.total_amount, profit: t.profit, metode: t.payment_method, status: t.status, tanggal: t.created_at })))}>Unduh Transaksi</button>
             <button className="secondary" onClick={() => onExportCsv("mutasi-saldo-catatagen.csv", mutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))}>Unduh Mutasi</button>
             <button className="secondary" onClick={() => onExportCsv("utang-catatagen.csv", debts.map((d) => ({ pelanggan: d.customer_name, phone: d.phone, total: d.amount, terbayar: d.paid_amount, sisa: d.outstanding, status: d.status, catatan: d.notes })))}>Unduh Utang</button>
             <button className="secondary" onClick={() => onExportCsv("produk-catatagen.csv", products.map((p) => ({ nama: p.name, barcode: p.barcode, kategori: p.category_name, harga_beli: p.buy_price, harga_jual: p.sell_price, stok: p.stock, min_stok: p.min_stock })))}>Unduh Produk</button>
           </div>
-          <div className="db-box"><strong>Data lokal</strong><span>{dbPath || "—"}</span></div>
         </div>
-        <div className="card span-all">
+
+        <div className="card settings-card span-all">
+          <div className="settings-card-icon amber"><Archive size={22} /></div>
           <div className="card-header"><div><h2>Cadangkan & Pulihkan Data</h2><p>Cadangan data disimpan di folder data aplikasi. Sebelum memulihkan data, aplikasi otomatis membuat cadangan terlebih dahulu.</p></div><button onClick={onCreateBackup} disabled={saving}>Cadangkan Data</button></div>
-          {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada backup data</strong><span>Klik Cadangkan Data untuk menyimpan salinan database.</span></div> : (
+          {backups.length === 0 ? <div className="empty-state compact"><strong>Belum ada cadangan data</strong><span>Klik Cadangkan Data untuk menyimpan salinan database.</span></div> : (
             <div className="backup-list">
               {backups.map((backup) => (
                 <div key={backup.path} className="backup-row">
@@ -75,7 +87,16 @@ export function SettingsPage({
             </div>
           )}
         </div>
+
+        <div className="card settings-card span-all">
+          <div className="settings-card-icon purple"><Database size={22} /></div>
+          <div className="card-header"><div><h2>Info Aplikasi</h2><p>Informasi penyimpanan lokal dan status keamanan data.</p></div></div>
+          <div className="settings-info-grid">
+            <div><Shield size={18} /><span>Data tersimpan lokal di perangkat ini.</span></div>
+            <div><Database size={18} /><span className="break-all">{dbPath || "—"}</span></div>
+          </div>
+        </div>
       </section>
-    </>
+    </div>
   );
 }

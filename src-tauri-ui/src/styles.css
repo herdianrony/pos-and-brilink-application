@@ -804,3 +804,37 @@
   .debt-layout { grid-template-columns: 1fr; }
   .debt-form-stack { position: static; }
 }
+
+/* Electron parity reports and settings */
+.reports-page, .settings-page { @apply grid gap-5; }
+.reports-title h1, .settings-title h1 { @apply text-2xl font-black text-slate-950; }
+.reports-title p:not(.eyebrow), .settings-title p:not(.eyebrow) { @apply m-0 text-sm font-semibold text-slate-400; }
+.reports-stat-grid { @apply mb-0; }
+.reports-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px,.8fr); gap: 18px; align-items: start; }
+.reports-chart-card, .reports-side-card, .reports-note-card { @apply rounded-[28px]; }
+.reports-side-card { @apply sticky top-24; }
+.reports-bar-list { @apply grid gap-4; }
+.reports-bar-row { @apply grid gap-2; }
+.reports-bar-row span { @apply text-sm font-black text-slate-600; }
+.reports-bar-row strong { @apply text-sm font-black text-slate-950; }
+.reports-bar-track { @apply h-3 overflow-hidden rounded-full bg-slate-100; }
+.reports-bar-fill { @apply h-full rounded-full; }
+.reports-payment-row { @apply grid gap-2 border-b border-slate-100 py-3 last:border-b-0; }
+.reports-payment-row strong { @apply block text-sm font-black text-slate-900; }
+.reports-payment-row small { @apply text-slate-500; }
+.reports-payment-track { @apply h-2.5 overflow-hidden rounded-full bg-slate-100; }
+.reports-payment-track span { @apply block h-full rounded-full bg-gradient-to-r from-slate-700 to-slate-400; }
+@media (max-width: 1100px) { .reports-layout { grid-template-columns: 1fr; } .reports-side-card { position: static; } }
+
+.settings-grid { @apply grid grid-cols-1 gap-4 xl:grid-cols-2; }
+.settings-card { @apply relative overflow-hidden rounded-[28px]; }
+.settings-card-icon { @apply mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-600; }
+.settings-card-icon.blue { @apply bg-blue-50 text-blue-600; }
+.settings-card-icon.amber { @apply bg-amber-50 text-amber-600; }
+.settings-card-icon.purple { @apply bg-violet-50 text-violet-600; }
+.settings-user-form { @apply mb-4; }
+.settings-user-list { @apply grid gap-2; }
+.settings-action-grid { @apply grid grid-cols-1 gap-2 sm:grid-cols-2; }
+.settings-info-grid { @apply grid gap-3; }
+.settings-info-grid div { @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600; }
+.settings-info-grid svg { @apply flex-none text-emerald-600; }
