@@ -1,5 +1,5 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -1187,8 +1187,7 @@ fn list_database_backups(app: AppHandle) -> Result<Vec<BackupRow>, String> {
         let created_at = metadata
             .modified()
             .ok()
-            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|duration| duration.as_secs().to_string())
+            .map(|time| DateTime::<Utc>::from(time).to_rfc3339())
             .unwrap_or_else(|| "-".to_string());
         backups.push(BackupRow {
             name: safe_file_name(&path),
@@ -1264,11 +1263,13 @@ fn create_debt(app: AppHandle, payload: DebtPayload) -> Result<DebtRow, String> 
     if customer_name.is_empty() { return Err("Nama pelanggan wajib diisi".into()); }
     if payload.amount <= 0.0 { return Err("Nominal utang harus lebih dari 0".into()); }
     let now = Utc::now().to_rfc3339();
+    let phone = trim_optional(payload.phone);
+    let notes = trim_optional(payload.notes);
     conn.execute(
         "INSERT INTO debts (customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at) VALUES (?1, ?2, ?3, 0, 'open', ?4, ?5, ?5)",
-        params![customer_name, trim_optional(payload.phone), payload.amount, trim_optional(payload.notes), now],
+        params![customer_name, phone, payload.amount, notes, now],
     ).map_err(|e| e.to_string())?;
-    Ok(DebtRow { id: conn.last_insert_rowid(), customer_name, phone: None, amount: payload.amount, paid_amount: 0.0, outstanding: payload.amount, status: "open".into(), notes: None, created_at: now.clone(), updated_at: now })
+    Ok(DebtRow { id: conn.last_insert_rowid(), customer_name, phone, amount: payload.amount, paid_amount: 0.0, outstanding: payload.amount, status: "open".into(), notes, created_at: now.clone(), updated_at: now })
 }
 
 #[tauri::command]
