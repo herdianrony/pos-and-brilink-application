@@ -51,7 +51,7 @@ export function CashDialogs({
   const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Ambil Uang Owner" : "Potongan Bank/QRIS";
   return (
     <div className={tw("modal-backdrop")}>
-      <section className={tw("dialog-card product-dialog")}>
+      <section className={tw("dialog-card product-dialog")} role="dialog" aria-modal="true" aria-label="Dialog Kas dan Saldo">
         <CardHeader>
           <div><p className={tw("eyebrow")}>Kas & Saldo</p><h2>{title}</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>

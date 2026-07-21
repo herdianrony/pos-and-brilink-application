@@ -36,8 +36,8 @@ export function DashboardPage({
       />
 
       <section className={tw("electron-stat-grid dashboard-simple-stats")}>
-        <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet" value={formatRupiah(totalRevenue)} sub={`${transactions.length} transaksi`} />
-        <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Keuntungan" value={formatRupiah(totalProfit)} sub="POS + layanan" />
+        <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet Semua Waktu" value={formatRupiah(totalRevenue)} sub={`${transactions.length} transaksi tercatat`} />
+        <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Keuntungan Semua Waktu" value={formatRupiah(totalProfit)} sub="POS + layanan tercatat" />
         <StatCard tone="blue" icon={<Landmark size={20} />} label="Saldo" value={formatRupiah(totalCash)} sub={`${accounts.length} akun aktif`} />
       </section>
 

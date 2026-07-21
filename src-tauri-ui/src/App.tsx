@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AccountRow, ProductRow } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AgentServicesPage } from "./pages/AgentServicesPage";
@@ -303,7 +304,9 @@ export default function App() {
       onRefresh={refreshApp}
       onLogout={logout}
     >
-      {renderActiveView()}
+      <ErrorBoundary onReset={refreshApp}>
+        {renderActiveView()}
+      </ErrorBoundary>
       <CashDialogs cashModal={cashModal} accounts={accounts} saving={saving} accountForm={accountForm} adjustForm={adjustForm} transferForm={transferForm} ownerDrawForm={ownerDrawForm} bankFeeForm={bankFeeForm} onClose={() => setCashModal(null)} onAccountFormChange={setAccountForm} onAdjustFormChange={setAdjustForm} onTransferFormChange={setTransferForm} onOwnerDrawFormChange={setOwnerDrawForm} onBankFeeFormChange={setBankFeeForm} onSubmitAccount={submitAccount} onSubmitAdjustment={submitAdjustment} onSubmitTransfer={submitTransfer} onSubmitOwnerDraw={submitOwnerDraw} onSubmitBankFee={submitBankFee} />
       <ProductDialogs
         showCategoryModal={showCategoryModal}

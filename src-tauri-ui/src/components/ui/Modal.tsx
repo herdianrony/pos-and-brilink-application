@@ -19,6 +19,9 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-900/55 p-6 backdrop-blur">
       <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className={cn(
           "max-h-[calc(100vh-48px)] w-full overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]",
           size === "sm" && "max-w-[440px]",

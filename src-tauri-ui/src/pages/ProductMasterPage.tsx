@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FolderOpen, Landmark, Package, Pencil, Power, Tag } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
-import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader } from "../components/ui";
+import { Badge, Button, Card, CardHeader, DataCell, DataCellText, DataRow, DataTable, EmptyState, Modal, PageHeader } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 import { tw } from "../lib/tw";
 
@@ -30,6 +30,7 @@ export function ProductMasterPage({
   onRemoveProduct: (product: ProductRow) => void;
 }) {
   const [activeTab, setActiveTab] = useState<MasterTab>("products");
+  const [pendingDeactivate, setPendingDeactivate] = useState<ProductRow | null>(null);
   const lowStockProducts = products.filter((product) => product.stock <= product.min_stock);
 
   return (
@@ -72,7 +73,7 @@ export function ProductMasterPage({
                     <div><Badge tone={product.stock <= product.min_stock ? "warning" : "success"}>Stok {product.stock}</Badge><small className={tw("mt-1 block text-slate-500")}>Min {product.min_stock}</small></div>
                     <div className={tw("flex flex-wrap gap-2 lg:justify-end")}>
                       <Button variant="secondary" className={tw("h-10 w-10 p-0")} title="Edit produk" aria-label={`Edit produk ${product.name}`} onClick={() => onEditProduct(product)}><Pencil size={16} /></Button>
-                      <Button variant="danger" className={tw("h-10 w-10 p-0")} title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => { if (window.confirm(`Nonaktifkan produk ${product.name}? Produk tidak akan tampil di kasir.`)) onRemoveProduct(product); }}><Power size={16} /></Button>
+                      <Button variant="danger" className={tw("h-10 w-10 p-0")} title="Nonaktifkan produk" aria-label={`Nonaktifkan produk ${product.name}`} onClick={() => setPendingDeactivate(product)}><Power size={16} /></Button>
                     </div>
                   </DataRow>
                 ))}
@@ -126,6 +127,18 @@ export function ProductMasterPage({
           <CardHeader><div><h2>Kategori Layanan</h2><p>Kategori layanan akan dipakai untuk mengelompokkan jasa agen seperti transfer, tunai, dan payment.</p></div></CardHeader>
           <EmptyState title="Kategori layanan belum tersedia" description="Fitur ini disiapkan untuk master layanan agen custom." />
         </Card>
+      )}
+
+      {pendingDeactivate && (
+        <Modal size="sm" eyebrow="Konfirmasi" title="Nonaktifkan Produk" onClose={() => setPendingDeactivate(null)}>
+          <div className={tw("grid gap-4")}>
+            <p className={tw("m-0 text-sm font-semibold text-slate-600")}>Produk <strong>{pendingDeactivate.name}</strong> tidak akan tampil lagi di kasir. Lanjutkan?</p>
+            <div className={tw("modal-actions")}>
+              <Button variant="secondary" onClick={() => setPendingDeactivate(null)}>Batal</Button>
+              <Button variant="danger" onClick={() => { onRemoveProduct(pendingDeactivate); setPendingDeactivate(null); }}>Nonaktifkan</Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

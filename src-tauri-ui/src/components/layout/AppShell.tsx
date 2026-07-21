@@ -1,10 +1,30 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import { Clock, Heart, Info, LogOut } from "lucide-react";
 import type { PublicUser } from "../../api";
 import type { ViewKey } from "../../types";
 import { Icon } from "../AppIcon";
 import { navItems } from "../../config/navigation";
 import { tw } from "../../lib/tw";
+
+
+const SidebarClock = memo(function SidebarClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className={tw("time-card-redesign")}>
+      <Clock size={18} />
+      <div>
+        <strong>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong>
+        <small>{now.toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}</small>
+      </div>
+    </div>
+  );
+});
 
 export function AppShell({
   user,
@@ -32,13 +52,6 @@ export function AppShell({
     .map((part) => part[0])
     .join("")
     .toUpperCase() || "U";
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   function showAbout() {
     window.alert("CatatAgen Local\nAplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.");
   }
@@ -60,7 +73,7 @@ export function AppShell({
 
         <nav className={tw("nav-redesign")}>
           {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-            <button key={item.id} className={tw(activeView === item.id ? "nav-item active" : "nav-item")} onClick={() => onNavigate(item.id)}>
+            <button key={item.id} className={tw(activeView === item.id ? "nav-item active" : "nav-item")} onClick={() => onNavigate(item.id)} aria-current={activeView === item.id ? "page" : undefined} title={item.label}>
               <span className={tw("nav-icon")}><Icon name={item.icon} /></span>{item.label}
             </button>
           ))}
@@ -79,13 +92,7 @@ export function AppShell({
             </div>
             <button className={tw("logout-icon-button")} onClick={onLogout} title="Keluar"><LogOut size={18} /></button>
           </div>
-          <div className={tw("time-card-redesign")}>
-            <Clock size={18} />
-            <div>
-              <strong>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong>
-              <small>{now.toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}</small>
-            </div>
-          </div>
+          <SidebarClock />
         </div>
       </aside>
 

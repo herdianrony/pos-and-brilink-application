@@ -91,7 +91,7 @@ export function PaymentModal({
 
   return (
     <div className={tw("modal-backdrop")}>
-      <section className={tw("payment-modal")}> 
+      <section className={tw("payment-modal")} role="dialog" aria-modal="true" aria-label="Konfirmasi Pembayaran"> 
         <CardHeader>
           <div><p className={tw("eyebrow")}>Pembayaran POS</p><h2>Konfirmasi Pembayaran</h2></div>
           <Button variant="secondary" className={tw("h-10 w-10 p-0")} onClick={onClose} title="Tutup" aria-label="Tutup modal pembayaran"><X size={18} /></Button>

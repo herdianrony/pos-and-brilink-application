@@ -13,7 +13,7 @@ export function ReceiptModal({
   if (!receipt) return null;
   return (
     <div className={tw("modal-backdrop")}>
-      <section className={tw("receipt-modal")}>
+      <section className={tw("receipt-modal")} role="dialog" aria-modal="true" aria-label="Struk Penjualan">
         <CardHeader>
           <div><p className={tw("eyebrow")}>Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
