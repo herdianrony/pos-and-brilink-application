@@ -1,7 +1,7 @@
 import type { FormEvent } from "react";
 import type { AccountRow } from "../api";
 import { CurrencyInput } from "./CurrencyInput";
-import { Button } from "./ui";
+import { Button, CardHeader } from "./ui";
 
 export type CashModalType = null | "account" | "adjust" | "transfer" | "ownerDraw" | "bankFee";
 
@@ -51,10 +51,10 @@ export function CashDialogs({
   return (
     <div className="modal-backdrop">
       <section className="dialog-card product-dialog">
-        <div className="card-header">
+        <CardHeader>
           <div><p className="eyebrow">Kas & Saldo</p><h2>{title}</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
-        </div>
+        </CardHeader>
         {cashModal === "account" && (
           <form onSubmit={onSubmitAccount} className="dialog-form product-form no-box">
             <label>Kode<input value={accountForm.code} onChange={(e) => onAccountFormChange({ ...accountForm, code: e.target.value })} placeholder="bri / bca / qris" /></label>

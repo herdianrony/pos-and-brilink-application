@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Search, ScanLine, Pause, Trash2 } from "lucide-react";
-import { Button, PageHeader } from "../components/ui";
+import { Button, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import type { AccountRow, CategoryRow, ProductRow } from "../api";
 import type { CartItem } from "../types";
 import { formatRupiah } from "../lib/format";
@@ -59,8 +59,7 @@ export function POSPage({
         actions={<><Button variant="secondary" onClick={onHoldCart} disabled={!cart.length}><Pause size={16} /> Hold</Button><Button variant="danger" onClick={onClearCart} disabled={!cart.length}><Trash2 size={16} /> Kosongkan</Button></>}
       />
       <div className="pos-shell electron-pos-shell">
-        <section className="pos-catalog card electron-pos-catalog">
-          <div className="card-header"><div><h2>Pilih Produk</h2><p>Cari produk, pilih kategori, lalu tekan Tambah.</p></div></div>
+        <SectionCard className="pos-catalog electron-pos-catalog" title="Pilih Produk" description="Cari produk, pilih kategori, lalu tekan Tambah.">
           <div className="pos-search-row">
             <label className="pos-search-input"><Search size={18} /><input ref={searchRef} value={localSearch} onChange={(event) => setLocalSearch(event.target.value)} placeholder="Cari nama produk atau barcode..." /></label>
             <Button variant="secondary" onClick={() => searchRef.current?.focus()}><ScanLine size={16} /> Scan</Button>
@@ -72,7 +71,7 @@ export function POSPage({
             ))}
           </div>
           <div className="pos-product-grid electron-product-grid">
-            {visibleProducts.length === 0 ? <div className="empty-state"><strong>Produk tidak ditemukan</strong><span>Tambahkan produk baru atau ubah kata kunci pencarian.</span></div> : visibleProducts.map((product) => (
+            {visibleProducts.length === 0 ? <EmptyState title="Produk tidak ditemukan" description="Tambahkan produk baru atau ubah kata kunci pencarian." /> : visibleProducts.map((product) => (
               <button key={product.id} className="pos-product-card electron-product-card" onClick={() => onAddToCart(product)} disabled={product.stock <= 0}>
                 <div className="product-main">
                   <strong>{product.name}</strong>
@@ -85,11 +84,10 @@ export function POSPage({
               </button>
             ))}
           </div>
-        </section>
-        <aside className="pos-cart-panel card electron-cart-panel">
-          <div className="card-header"><div><h2>Keranjang</h2><p>{cart.length} item dipilih.</p></div></div>
+        </SectionCard>
+        <SectionCard className="pos-cart-panel electron-cart-panel" title="Keranjang" description={`${cart.length} item dipilih.`}>
           <div className="cart-list-scroll">
-            {cart.length === 0 ? <div className="empty-state"><strong>Keranjang kosong</strong><span>Pilih produk dari katalog.</span></div> : cart.map((item) => (
+            {cart.length === 0 ? <EmptyState title="Keranjang kosong" description="Pilih produk dari katalog." /> : cart.map((item) => (
               <div key={item.product.id} className="cart-row electron-cart-row">
                 <div><strong>{item.product.name}</strong><small>{formatRupiah(item.product.sell_price)} / {item.product.unit}</small></div>
                 <input type="number" min="0" max={item.product.stock} value={item.quantity} onChange={(event) => onUpdateQty(item.product.id, Number(event.target.value))} />
@@ -113,7 +111,7 @@ export function POSPage({
           )}
           <button className="checkout" onClick={onSubmitCheckout} disabled={saving || !canPay}>{saving ? "Memproses..." : `Bayar ${paymentMethod === "cash" ? "Tunai" : paymentMethod.toUpperCase()}`}</button>
           <p className="hint">Shortcut kasir: pilih produk → cek total → bayar. Struk muncul setelah checkout.</p>
-        </aside>
+        </SectionCard>
       </div>
     </>
   );

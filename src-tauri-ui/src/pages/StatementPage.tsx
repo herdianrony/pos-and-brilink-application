@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Printer, Scale, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
-import { Button, DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -53,7 +53,7 @@ export function StatementPage({
         actions={<><Button variant="secondary" onClick={onExportCsv} disabled={filteredMutations.length === 0}><Download size={16} /> Unduh CSV</Button><Button variant="secondary" onClick={() => window.print()} disabled={filteredMutations.length === 0}><Printer size={16} /> Print</Button></>}
       />
 
-      <section className="statement-filter-card card">
+      <Card className="statement-filter-card">
         <label>Rekening
           <select value={selectedAccountId} onChange={(event) => setSelectedAccountId(event.target.value)}>
             <option value="all">Semua rekening</option>
@@ -73,7 +73,7 @@ export function StatementPage({
             ))}
           </div>
         </div>
-      </section>
+      </Card>
 
       <section className="electron-stat-grid statement-stat-grid">
         <StatCard tone="blue" icon={<Scale size={20} />} label="Saldo Awal" value={formatRupiah(openingBalance)} sub="awal periode" />
@@ -83,9 +83,8 @@ export function StatementPage({
       </section>
 
       <section className="statement-layout">
-        <div className="card statement-table-card">
-          <div className="card-header"><div><h2>Mutasi Rekening</h2><p>{filteredMutations.length} mutasi sesuai filter.</p></div></div>
-          {filteredMutations.length === 0 ? <div className="empty-state"><strong>Belum ada mutasi</strong><span>Mutasi muncul setelah transaksi atau aksi saldo.</span></div> : (
+        <SectionCard className="statement-table-card" title="Mutasi Rekening" description={`${filteredMutations.length} mutasi sesuai filter.`}>
+          {filteredMutations.length === 0 ? <EmptyState title="Belum ada mutasi" description="Mutasi muncul setelah transaksi atau aksi saldo." /> : (
             <DataTable columns={["Tanggal", "Akun", "Tipe", "Masuk/Keluar", "Saldo"]} template="minmax(0,1.1fr) 140px 160px 130px 130px" minWidth={900}>
               {filteredMutations.map((mutation) => (
                 <DataRow key={mutation.id} template="minmax(0,1.1fr) 140px 160px 130px 130px">
@@ -98,16 +97,15 @@ export function StatementPage({
               ))}
             </DataTable>
           )}
-        </div>
-        <aside className="card statement-side-card">
-          <div className="card-header"><div><h2>Saldo Rekening</h2><p>Ringkasan semua akun aktif.</p></div></div>
+        </SectionCard>
+        <SectionCard className="statement-side-card" title="Saldo Rekening" description="Ringkasan semua akun aktif.">
           {accounts.map((account) => (
             <div key={account.id} className="row rich-row">
               <div><strong>{account.name}</strong><small>{account.code}</small></div>
               <strong>{formatRupiah(account.balance)}</strong>
             </div>
           ))}
-        </aside>
+        </SectionCard>
       </section>
     </div>
   );

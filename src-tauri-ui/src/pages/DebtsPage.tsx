@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { CheckCircle, MessageCircle, Plus, ReceiptText, WalletCards } from "lucide-react";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { Button, DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type DebtFilter = "open" | "paid" | "all";
@@ -51,18 +51,17 @@ export function DebtsPage({
         <StatCard tone="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
       </section>
 
-      <section className="history-filter-panel card debt-filter-panel">
+      <Card className="history-filter-panel debt-filter-panel">
         <div className="electron-tabs">
           <button className={filter === "open" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("open")}>Belum Lunas</button>
           <button className={filter === "paid" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("paid")}>Lunas</button>
           <button className={filter === "all" ? "electron-tab active" : "electron-tab"} onClick={() => setFilter("all")}>Semua</button>
         </div>
-      </section>
+      </Card>
 
       <section className="debt-layout">
-        <div className="card debt-list-card">
-          <div className="card-header"><div><h2>Daftar Utang</h2><p>{visibleDebts.length} catatan sesuai filter.</p></div></div>
-          {visibleDebts.length === 0 ? <div className="empty-state"><strong>Belum ada data utang</strong><span>Catat utang pelanggan dari panel kanan.</span></div> : (
+        <SectionCard className="debt-list-card" title="Daftar Utang" description={`${visibleDebts.length} catatan sesuai filter.`}>
+          {visibleDebts.length === 0 ? <EmptyState title="Belum ada data utang" description="Catat utang pelanggan dari panel kanan." /> : (
             <DataTable columns={["Pelanggan", "Status", "Sisa", "Aksi"]} template="minmax(0,1.2fr) 110px 130px 190px" minWidth={780}>
               {visibleDebts.map((debt) => (
                 <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 190px">
@@ -77,22 +76,20 @@ export function DebtsPage({
               ))}
             </DataTable>
           )}
-        </div>
+        </SectionCard>
 
         <aside className="debt-form-stack">
-          <div className="card">
-            <div className="card-header"><div><h2>Tambah Utang</h2><p>Gunakan saat pelanggan belum membayar.</p></div></div>
+          <SectionCard title="Tambah Utang" description="Gunakan saat pelanggan belum membayar.">
             <form onSubmit={onSubmitDebt} className="product-form no-box">
               <label>Nama Pelanggan<input value={debtForm.customer_name} onChange={(e) => onDebtFormChange({ ...debtForm, customer_name: e.target.value })} /></label>
               <label>No WhatsApp<input value={debtForm.phone} onChange={(e) => onDebtFormChange({ ...debtForm, phone: e.target.value })} placeholder="628xxxx" /></label>
               <label>Nominal Utang<CurrencyInput value={debtForm.amount} onChange={(value) => onDebtFormChange({ ...debtForm, amount: value })} /></label>
               <label>Catatan<input value={debtForm.notes} onChange={(e) => onDebtFormChange({ ...debtForm, notes: e.target.value })} /></label>
-              <button type="submit" disabled={saving}>Simpan Utang</button>
+              <Button type="submit" disabled={saving}>Simpan Utang</Button>
             </form>
-          </div>
+          </SectionCard>
 
-          <div className="card">
-            <div className="card-header"><div><h2>Catat Pembayaran</h2><p>Catat cicilan atau pelunasan utang.</p></div></div>
+          <SectionCard title="Catat Pembayaran" description="Catat cicilan atau pelunasan utang.">
             <form onSubmit={onSubmitDebtPayment} className="product-form no-box">
               <label>Pelanggan<select value={debtPaymentForm.debt_id} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: e.target.value })}>
                 <option value="">Pilih utang</option>
@@ -100,9 +97,9 @@ export function DebtsPage({
               </select></label>
               <label>Nominal Bayar<CurrencyInput value={debtPaymentForm.amount} onChange={(value) => onDebtPaymentFormChange({ ...debtPaymentForm, amount: value })} /></label>
               <label className="span-2">Catatan<input value={debtPaymentForm.notes} onChange={(e) => onDebtPaymentFormChange({ ...debtPaymentForm, notes: e.target.value })} /></label>
-              <button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</button>
+              <Button type="submit" disabled={saving || !debtPaymentForm.debt_id}>Simpan Pembayaran</Button>
             </form>
-          </div>
+          </SectionCard>
         </aside>
       </section>
     </div>

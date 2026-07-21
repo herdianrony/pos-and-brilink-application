@@ -1,7 +1,6 @@
 import { ArrowRightLeft, HandCoins, Plus, ReceiptText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
-import { Button, PageHeader } from "../components/ui";
-import { DataCell, DataCellText, DataRow, DataTable } from "../components/ui";
+import { Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
 
 function accountTone(index: number, code: string) {
@@ -82,9 +81,8 @@ export function CashBalancePage({
       </section>
 
       <section className="cash-layout-grid">
-        <div className="card cash-mutation-card">
-          <div className="card-header"><div><h2>Mutasi Saldo Terakhir</h2><p>Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.</p></div></div>
-          {mutations.length === 0 ? <div className="empty-state compact"><strong>Belum ada mutasi saldo</strong><span>Mutasi muncul setelah POS, transaksi agen, atau aksi saldo.</span></div> : (
+        <SectionCard className="cash-mutation-card" title="Mutasi Saldo Terakhir" description="Riwayat perubahan kas, rekening, QRIS, biaya, dan transaksi agen.">
+          {mutations.length === 0 ? <EmptyState compact title="Belum ada mutasi saldo" description="Mutasi muncul setelah POS, transaksi agen, atau aksi saldo." /> : (
             <DataTable columns={["Akun", "Tipe", "Nominal", "Saldo"]} template="minmax(0,1fr) 160px 130px 130px" minWidth={760}>
               {mutations.map((mutation) => (
                 <DataRow key={mutation.id} template="minmax(0,1fr) 160px 130px 130px">
@@ -96,16 +94,15 @@ export function CashBalancePage({
               ))}
             </DataTable>
           )}
-        </div>
-        <aside className="card cash-side-panel">
-          <div className="card-header"><div><h2>Rekening Non-Tunai</h2><p>Bank, QRIS, dan saldo provider.</p></div></div>
-          {nonCashAccounts.length === 0 ? <div className="empty-state compact"><strong>Belum ada rekening</strong><span>Tambahkan rekening bank atau QRIS.</span></div> : nonCashAccounts.map((account) => (
+        </SectionCard>
+        <SectionCard className="cash-side-panel" title="Rekening Non-Tunai" description="Bank, QRIS, dan saldo provider.">
+          {nonCashAccounts.length === 0 ? <EmptyState compact title="Belum ada rekening" description="Tambahkan rekening bank atau QRIS." /> : nonCashAccounts.map((account) => (
             <div key={account.id} className="row rich-row">
               <div><strong>{account.name}</strong><small>{account.code}</small></div>
               <strong>{formatRupiah(account.balance)}</strong>
             </div>
           ))}
-        </aside>
+        </SectionCard>
       </section>
     </>
   );

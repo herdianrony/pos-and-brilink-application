@@ -3,7 +3,7 @@ import { Landmark, Star } from "lucide-react";
 import type { AccountRow, TransactionRow } from "../api";
 import type { AgentForm } from "../types";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { Button, PageHeader } from "../components/ui";
+import { Button, Card, CardHeader, EmptyState, PageHeader, SectionCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 const servicePresets: Array<{
@@ -56,13 +56,7 @@ export function AgentServicesPage({
       />
 
       <section className="electron-service-layout">
-        <aside className="card service-catalog-panel">
-          <div className="card-header">
-            <div>
-              <h2>Katalog Layanan</h2>
-              <p>Pilih layanan yang paling sesuai dengan transaksi pelanggan.</p>
-            </div>
-          </div>
+        <SectionCard className="service-catalog-panel" title="Katalog Layanan" description="Pilih layanan yang paling sesuai dengan transaksi pelanggan.">
           <div className="service-filter-row">
             <button className="filter-chip active">Semua</button>
             <button className="filter-chip">Favorit</button>
@@ -82,9 +76,9 @@ export function AgentServicesPage({
               </button>
             ))}
           </div>
-        </aside>
+        </SectionCard>
 
-        <main className="card service-form-panel">
+        <Card className="service-form-panel">
           <div className="service-progress-header">
             <div>
               <h2>{selectedPreset?.name || agentForm.service_name || "Pilih layanan"}</h2>
@@ -110,7 +104,7 @@ export function AgentServicesPage({
 
           {agentStep === 2 && (
             <div className="workflow-content">
-              <div className="card-header"><div><h2>Isi Nominal</h2><p>Pisahkan nominal transaksi dan admin toko agar keuntungan jasa jelas.</p></div></div>
+              <CardHeader><div><h2>Isi Nominal</h2><p>Pisahkan nominal transaksi dan admin toko agar keuntungan jasa jelas.</p></div></CardHeader>
               <div className="product-form no-box">
                 <label>Nama Pelanggan<input value={agentForm.customer_name} onChange={(event) => onAgentFormChange({ ...agentForm, customer_name: event.target.value })} /></label>
                 <label>Nominal Transaksi<span className="field-note">Nilai uang transfer/pulsa/token.</span><CurrencyInput value={agentForm.amount} onChange={(value) => onAgentFormChange({ ...agentForm, amount: value })} /></label>
@@ -128,7 +122,7 @@ export function AgentServicesPage({
 
           {agentStep === 3 && (
             <div className="workflow-content">
-              <div className="card-header"><div><h2>Atur Perubahan Saldo</h2><p>Isi hanya saldo yang benar-benar berubah. Positif menambah, negatif mengurangi.</p></div></div>
+              <CardHeader><div><h2>Atur Perubahan Saldo</h2><p>Isi hanya saldo yang benar-benar berubah. Positif menambah, negatif mengurangi.</p></div></CardHeader>
               <div className="product-form no-box">
                 <label>Rekening Layanan<select value={agentForm.account_id} onChange={(event) => onAgentFormChange({ ...agentForm, account_id: event.target.value })}>
                   <option value="">Tidak ada perubahan rekening</option>
@@ -143,7 +137,7 @@ export function AgentServicesPage({
 
           {agentStep === 4 && (
             <div className="workflow-content">
-              <div className="card-header"><div><h2>Review Transaksi</h2><p>Pastikan ringkasan sudah benar sebelum disimpan.</p></div></div>
+              <CardHeader><div><h2>Review Transaksi</h2><p>Pastikan ringkasan sudah benar sebelum disimpan.</p></div></CardHeader>
               <div className="review-box electron-review-box">
                 <div><span>Layanan</span><strong>{agentForm.service_name || "-"}</strong></div>
                 <div><span>Nominal</span><strong>{formatRupiah(Number(agentForm.amount || 0))}</strong></div>
@@ -157,17 +151,16 @@ export function AgentServicesPage({
               <div className="wizard-actions"><Button variant="secondary" onClick={() => onAgentStepChange(3)}>Kembali</Button><Button onClick={(event) => onSubmitAgentTransaction(event as unknown as FormEvent)} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Transaksi Agen"}</Button></div>
             </div>
           )}
-        </main>
+        </Card>
 
-        <aside className="card service-history-panel">
-          <div className="card-header"><div><h2>Riwayat Layanan</h2><p>Transaksi layanan terbaru.</p></div></div>
-          {agentTransactions.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi agen</strong><span>Pilih layanan untuk mulai mencatat transaksi.</span></div> : agentTransactions.slice(0, 8).map((transaction) => (
+        <SectionCard className="service-history-panel" title="Riwayat Layanan" description="Transaksi layanan terbaru.">
+          {agentTransactions.length === 0 ? <EmptyState title="Belum ada transaksi agen" description="Pilih layanan untuk mulai mencatat transaksi." /> : agentTransactions.slice(0, 8).map((transaction) => (
             <div key={transaction.id} className="row rich-row">
               <div><strong>{transaction.notes || transaction.invoice_no}</strong><small>{transaction.invoice_no} • Untung {formatRupiah(transaction.profit)}</small></div>
               <strong>{formatRupiah(transaction.total_amount)}</strong>
             </div>
           ))}
-        </aside>
+        </SectionCard>
       </section>
     </>
   );

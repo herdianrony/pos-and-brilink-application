@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
-import { Button, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Card, Button, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -63,7 +63,7 @@ export function LogsPage({
         <StatCard tone="purple" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
       </section>
 
-      <section className="logs-filter-card card">
+      <Card className="logs-filter-card">
         <div className="electron-tabs">
           {levelFilters.map((level) => (
             <button key={level} className={levelFilter === level ? "electron-tab active" : "electron-tab"} onClick={() => setLevelFilter(level)}>
@@ -77,12 +77,11 @@ export function LogsPage({
             <button key={source} className={sourceFilter === source ? "filter-chip active" : "filter-chip"} onClick={() => setSourceFilter(source)}>{sourceLabel(source)}</button>
           ))}
         </div>
-      </section>
+      </Card>
 
       <section className="logs-layout">
-        <div className="card logs-table-card">
-          <div className="card-header"><div><h2>Daftar Aktivitas</h2><p>{visibleLogs.length} catatan sesuai filter.</p></div></div>
-          {visibleLogs.length === 0 ? <div className="empty-state"><strong>Belum ada aktivitas</strong><span>Aktivitas penting akan muncul setelah aplikasi digunakan.</span></div> : (
+        <SectionCard className="logs-table-card" title="Daftar Aktivitas" description={`${visibleLogs.length} catatan sesuai filter.`}>
+          {visibleLogs.length === 0 ? <EmptyState title="Belum ada aktivitas" description="Aktivitas penting akan muncul setelah aplikasi digunakan." /> : (
             <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={860}>
               {visibleLogs.map((log) => (
                 <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
@@ -94,15 +93,14 @@ export function LogsPage({
               ))}
             </DataTable>
           )}
-        </div>
-        <aside className="card logs-side-card">
-          <div className="card-header"><div><h2>Panduan Membaca</h2><p>Gunakan halaman ini saat butuh pemeriksaan aktivitas.</p></div></div>
+        </SectionCard>
+        <SectionCard className="logs-side-card" title="Panduan Membaca" description="Gunakan halaman ini saat butuh pemeriksaan aktivitas.">
           <div className="settings-info-grid">
             <div><CheckCircle size={18} /><span>Info berarti aktivitas normal seperti checkout atau user dibuat.</span></div>
             <div><AlertTriangle size={18} /><span>Peringatan berarti aktivitas penting seperti pemulihan data.</span></div>
             <div><Database size={18} /><span>Cadangan data dan pemulihan juga dicatat di sini.</span></div>
           </div>
-        </aside>
+        </SectionCard>
       </section>
     </div>
   );

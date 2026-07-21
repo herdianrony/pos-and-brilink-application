@@ -1,6 +1,6 @@
 import type { ReceiptState } from "../types";
 import { formatRupiah, paymentLabel } from "../lib/format";
-import { Button } from "./ui";
+import { Button, CardHeader } from "./ui";
 
 export function ReceiptModal({
   receipt,
@@ -13,10 +13,10 @@ export function ReceiptModal({
   return (
     <div className="modal-backdrop">
       <section className="receipt-modal">
-        <div className="card-header">
+        <CardHeader>
           <div><p className="eyebrow">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
-        </div>
+        </CardHeader>
         <div className="receipt-paper printable-receipt">
           <div className="receipt-center">
             <strong>CatatAgen Local</strong>

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Ban, CheckCircle, ClipboardList, Landmark, RotateCcw, ShoppingCart } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
-import { DataCell, DataCellText, DataRow, DataTable, PageHeader, StatCard } from "../components/ui";
+import { Card, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 
 const typeTabs = [
   { id: "all", label: "Semua", icon: ClipboardList },
@@ -65,7 +65,7 @@ export function HistoryPage({
         <StatCard tone="purple" icon={<Ban size={20} />} label="Pending" value={pendingCount} sub="perlu diproses" />
       </section>
 
-      <section className="history-filter-panel card">
+      <Card className="history-filter-panel">
         <div className="electron-tabs">
           {typeTabs.map((tab) => {
             const TabIcon = tab.icon;
@@ -81,12 +81,11 @@ export function HistoryPage({
             <button key={tab.id} className={statusFilter === tab.id ? "filter-chip active" : "filter-chip"} onClick={() => setStatusFilter(tab.id)}>{tab.label}</button>
           ))}
         </div>
-      </section>
+      </Card>
 
       <section className="history-layout">
-        <div className="card history-table-card">
-          <div className="card-header"><div><h2>Daftar Transaksi</h2><p>Klik salah satu transaksi untuk melihat detail.</p></div></div>
-          {filtered.length === 0 ? <div className="empty-state"><strong>Belum ada transaksi</strong><span>Transaksi akan muncul setelah kasir atau layanan agen digunakan.</span></div> : (
+        <SectionCard className="history-table-card" title="Daftar Transaksi" description="Klik salah satu transaksi untuk melihat detail.">
+          {filtered.length === 0 ? <EmptyState title="Belum ada transaksi" description="Transaksi akan muncul setelah kasir atau layanan agen digunakan." /> : (
             <DataTable columns={["Invoice", "Tipe", "Status", "Total"]} template="minmax(0,1.4fr) 120px 110px 130px">
               {filtered.map((transaction) => (
                 <DataRow key={transaction.id} template="minmax(0,1.4fr) 120px 110px 130px" active={selectedTransaction?.id === transaction.id} onClick={() => onOpenDetail(transaction)}>
@@ -98,11 +97,10 @@ export function HistoryPage({
               ))}
             </DataTable>
           )}
-        </div>
+        </SectionCard>
 
-        <aside className="card transaction-detail-card">
-          <div className="card-header"><div><h2>Detail Transaksi</h2><p>Ringkasan dan item transaksi.</p></div></div>
-          {!selectedTransaction ? <div className="empty-state compact"><strong>Pilih transaksi</strong><span>Detail akan tampil di sini.</span></div> : (
+        <SectionCard className="transaction-detail-card" title="Detail Transaksi" description="Ringkasan dan item transaksi.">
+          {!selectedTransaction ? <EmptyState compact title="Pilih transaksi" description="Detail akan tampil di sini." /> : (
             <div className="detail-panel">
               <div className="db-box"><strong>{selectedTransaction.invoice_no}</strong><span>{selectedTransaction.created_at}</span></div>
               <div className="row"><span>Tipe</span><strong>{selectedTransaction.transaction_type === "pos" ? "POS" : "Layanan Agen"}</strong></div>
@@ -119,7 +117,7 @@ export function HistoryPage({
               ))}
             </div>
           )}
-        </aside>
+        </SectionCard>
       </section>
     </div>
   );
