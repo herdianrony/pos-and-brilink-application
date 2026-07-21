@@ -106,6 +106,25 @@ export interface TransactionItemRow {
   subtotal: number;
 }
 
+
+export interface AgentServiceRow {
+  id: number;
+  name: string;
+  category?: string | null;
+  default_fee: number;
+  provider_cost: number;
+  is_active: boolean;
+}
+
+export interface FeeTierRow {
+  id: number;
+  service_id: number;
+  min_amount: number;
+  max_amount?: number | null;
+  fee: number;
+  provider_cost: number;
+}
+
 export interface DebtRow {
   id: number;
   customer_name: string;
@@ -309,4 +328,34 @@ export function checkoutPosCash(payload: {
   }>;
 }) {
   return invokeCommand<PosCheckoutResponse>("checkout_pos_cash", { payload });
+}
+
+export function listAgentServices() {
+  return invokeCommand<AgentServiceRow[]>("list_agent_services");
+}
+
+export function createAgentService(payload: { name: string; category?: string; default_fee: number; provider_cost?: number }) {
+  return invokeCommand<AgentServiceRow>("create_agent_service", { payload });
+}
+
+export function listFeeTiers(service_id: number) {
+  return invokeCommand<FeeTierRow[]>("list_fee_tiers", { serviceId: service_id, service_id });
+}
+
+export function createFeeTier(payload: { service_id: number; min_amount: number; max_amount?: number | null; fee: number; provider_cost?: number }) {
+  return invokeCommand<FeeTierRow>("create_fee_tier", { payload });
+}
+
+export function printThermalReceipt(payload: {
+  host: string;
+  port?: number;
+  store_name?: string;
+  invoice_no: string;
+  payment_method: string;
+  total_amount: number;
+  cash_received?: number;
+  change_amount?: number;
+  items: Array<{ name: string; quantity: number; unit_price: number; subtotal: number }>;
+}) {
+  return invokeCommand<boolean>("print_thermal_receipt", { payload });
 }

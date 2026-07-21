@@ -3,7 +3,10 @@ use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
+use std::net::TcpStream;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
@@ -152,6 +155,64 @@ struct CategoryPayload {
     name: String,
     icon: Option<String>,
     color: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct AgentServiceRow {
+    id: i64,
+    name: String,
+    category: Option<String>,
+    default_fee: f64,
+    provider_cost: f64,
+    is_active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct AgentServicePayload {
+    name: String,
+    category: Option<String>,
+    default_fee: f64,
+    provider_cost: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+struct FeeTierRow {
+    id: i64,
+    service_id: i64,
+    min_amount: f64,
+    max_amount: Option<f64>,
+    fee: f64,
+    provider_cost: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct FeeTierPayload {
+    service_id: i64,
+    min_amount: f64,
+    max_amount: Option<f64>,
+    fee: f64,
+    provider_cost: Option<f64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PrintReceiptItemPayload {
+    name: String,
+    quantity: i64,
+    unit_price: f64,
+    subtotal: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct PrintReceiptPayload {
+    host: String,
+    port: Option<u16>,
+    store_name: Option<String>,
+    invoice_no: String,
+    payment_method: String,
+    total_amount: f64,
+    cash_received: Option<f64>,
+    change_amount: Option<f64>,
+    items: Vec<PrintReceiptItemPayload>,
 }
 
 #[derive(Debug, Serialize)]
@@ -444,6 +505,28 @@ fn migrate(conn: &Connection) -> Result<(), String> {
           FOREIGN KEY(account_id) REFERENCES accounts(id)
         );
 
+        CREATE TABLE IF NOT EXISTS agent_service_templates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          category TEXT,
+          default_fee REAL NOT NULL DEFAULT 0,
+          provider_cost REAL NOT NULL DEFAULT 0,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS agent_fee_tiers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          service_id INTEGER NOT NULL,
+          min_amount REAL NOT NULL DEFAULT 0,
+          max_amount REAL,
+          fee REAL NOT NULL DEFAULT 0,
+          provider_cost REAL NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(service_id) REFERENCES agent_service_templates(id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS transactions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           invoice_no TEXT NOT NULL UNIQUE,
@@ -515,6 +598,12 @@ fn seed_defaults(conn: &Connection) -> Result<(), String> {
         params!["cash", "Kas Tunai", "banknote", "#22c55e", Utc::now().to_rfc3339()],
     )
     .map_err(|e| e.to_string())?;
+    for (name, category, fee) in [("Tarik Tunai", "Tunai", 5000.0), ("Setor Tunai", "Tunai", 5000.0), ("Transfer", "Transfer", 5000.0), ("Payment/Topup", "Payment", 2500.0)] {
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_service_templates (name, category, default_fee, provider_cost, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 0, 1, ?4, ?4)",
+            params![name, category, fee, Utc::now().to_rfc3339()],
+        ).map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 
@@ -1511,6 +1600,95 @@ fn checkout_pos_cash(app: AppHandle, session: State<'_, SessionState>, payload: 
     Ok(PosCheckoutResponse { ok: true, transaction_id, invoice_no, total_amount, profit: total_profit, settlement_account_id: settlement_account.0, settlement_balance })
 }
 
+#[tauri::command]
+fn list_agent_services(app: AppHandle, session: State<'_, SessionState>) -> Result<Vec<AgentServiceRow>, String> {
+    let _user = require_auth(&session)?;
+    let conn = init_schema(&app)?;
+    let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |row| Ok(AgentServiceRow { id: row.get(0)?, name: row.get(1)?, category: row.get(2)?, default_fee: row.get(3)?, provider_cost: row.get(4)?, is_active: row.get::<_, i64>(5)? == 1 })).map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_agent_service(app: AppHandle, session: State<'_, SessionState>, payload: AgentServicePayload) -> Result<AgentServiceRow, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+    let name = payload.name.trim().to_string();
+    if name.is_empty() { return Err("Nama layanan wajib diisi".into()); }
+    if payload.default_fee < 0.0 || payload.provider_cost.unwrap_or(0.0) < 0.0 { return Err("Fee dan biaya provider tidak boleh minus".into()); }
+    let now = Utc::now().to_rfc3339();
+    let category = trim_optional(payload.category);
+    let provider_cost = payload.provider_cost.unwrap_or(0.0);
+    conn.execute("INSERT INTO agent_service_templates (name, category, default_fee, provider_cost, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)", params![name, category, payload.default_fee, provider_cost, now]).map_err(|e| format!("Gagal membuat layanan: {e}"))?;
+    Ok(AgentServiceRow { id: conn.last_insert_rowid(), name, category, default_fee: payload.default_fee, provider_cost, is_active: true })
+}
+
+#[tauri::command]
+fn list_fee_tiers(app: AppHandle, session: State<'_, SessionState>, service_id: i64) -> Result<Vec<FeeTierRow>, String> {
+    let _user = require_auth(&session)?;
+    let conn = init_schema(&app)?;
+    let mut stmt = conn.prepare("SELECT id, service_id, min_amount, max_amount, fee, provider_cost FROM agent_fee_tiers WHERE service_id = ?1 ORDER BY min_amount ASC").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map(params![service_id], |row| Ok(FeeTierRow { id: row.get(0)?, service_id: row.get(1)?, min_amount: row.get(2)?, max_amount: row.get(3)?, fee: row.get(4)?, provider_cost: row.get(5)? })).map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows { out.push(row.map_err(|e| e.to_string())?); }
+    Ok(out)
+}
+
+#[tauri::command]
+fn create_fee_tier(app: AppHandle, session: State<'_, SessionState>, payload: FeeTierPayload) -> Result<FeeTierRow, String> {
+    let _user = require_admin(&session)?;
+    if payload.min_amount < 0.0 || payload.fee < 0.0 || payload.provider_cost.unwrap_or(0.0) < 0.0 { return Err("Nominal, fee, dan biaya provider tidak boleh minus".into()); }
+    if let Some(max_amount) = payload.max_amount { if max_amount < payload.min_amount { return Err("Nominal maksimal harus lebih besar dari nominal minimal".into()); } }
+    let conn = init_schema(&app)?;
+    let exists: i64 = conn.query_row("SELECT COUNT(*) FROM agent_service_templates WHERE id = ?1 AND is_active = 1", params![payload.service_id], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if exists == 0 { return Err("Layanan tidak ditemukan".into()); }
+    let provider_cost = payload.provider_cost.unwrap_or(0.0);
+    let now = Utc::now().to_rfc3339();
+    conn.execute("INSERT INTO agent_fee_tiers (service_id, min_amount, max_amount, fee, provider_cost, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", params![payload.service_id, payload.min_amount, payload.max_amount, payload.fee, provider_cost, now]).map_err(|e| e.to_string())?;
+    Ok(FeeTierRow { id: conn.last_insert_rowid(), service_id: payload.service_id, min_amount: payload.min_amount, max_amount: payload.max_amount, fee: payload.fee, provider_cost })
+}
+
+fn escpos_line(out: &mut Vec<u8>, text: &str) {
+    out.extend_from_slice(text.as_bytes());
+    out.push(b'\n');
+}
+
+#[tauri::command]
+fn print_thermal_receipt(session: State<'_, SessionState>, payload: PrintReceiptPayload) -> Result<bool, String> {
+    let _user = require_auth(&session)?;
+    let host = payload.host.trim();
+    if host.is_empty() { return Err("IP/host printer wajib diisi".into()); }
+    let port = payload.port.unwrap_or(9100);
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&[0x1b, 0x40]);
+    bytes.extend_from_slice(&[0x1b, 0x61, 0x01]);
+    bytes.extend_from_slice(&[0x1d, 0x21, 0x11]);
+    escpos_line(&mut bytes, payload.store_name.as_deref().unwrap_or("CatatAgen Local"));
+    bytes.extend_from_slice(&[0x1d, 0x21, 0x00]);
+    escpos_line(&mut bytes, &payload.invoice_no);
+    escpos_line(&mut bytes, "------------------------------");
+    bytes.extend_from_slice(&[0x1b, 0x61, 0x00]);
+    for item in payload.items {
+        escpos_line(&mut bytes, &item.name.chars().take(30).collect::<String>());
+        escpos_line(&mut bytes, &format!("{} x Rp{:.0} = Rp{:.0}", item.quantity, item.unit_price, item.subtotal));
+    }
+    escpos_line(&mut bytes, "------------------------------");
+    escpos_line(&mut bytes, &format!("Bayar: {}", payload.payment_method));
+    escpos_line(&mut bytes, &format!("TOTAL: Rp{:.0}", payload.total_amount));
+    if let Some(cash_received) = payload.cash_received { escpos_line(&mut bytes, &format!("Tunai: Rp{:.0}", cash_received)); }
+    if let Some(change_amount) = payload.change_amount { escpos_line(&mut bytes, &format!("Kembali: Rp{:.0}", change_amount)); }
+    bytes.extend_from_slice(&[0x1b, 0x61, 0x01]);
+    escpos_line(&mut bytes, "Terima kasih");
+    bytes.extend_from_slice(b"\n\n\n");
+    bytes.extend_from_slice(&[0x1d, 0x56, 0x42, 0x00]);
+    let mut stream = TcpStream::connect((host, port)).map_err(|e| format!("Gagal konek printer {host}:{port}: {e}"))?;
+    stream.set_write_timeout(Some(Duration::from_secs(5))).ok();
+    stream.write_all(&bytes).map_err(|e| format!("Gagal kirim struk ke printer: {e}"))?;
+    Ok(true)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
@@ -1558,6 +1736,11 @@ pub fn run() {
             build_debt_reminder,
             create_agent_transaction,
             checkout_pos_cash,
+            list_agent_services,
+            create_agent_service,
+            list_fee_tiers,
+            create_fee_tier,
+            print_thermal_receipt,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

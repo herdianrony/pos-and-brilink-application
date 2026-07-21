@@ -39,6 +39,13 @@ const mutations: AccountMutationRow[] = [];
 const debts: DebtRow[] = [];
 const backups: BackupRow[] = [];
 const logs: AppLogRow[] = [];
+const agentServices = [
+  { id: 1, name: "Tarik Tunai", category: "Tunai", default_fee: 5000, provider_cost: 0, is_active: true },
+  { id: 2, name: "Transfer", category: "Transfer", default_fee: 5000, provider_cost: 0, is_active: true },
+];
+const feeTiers: Array<{ id: number; service_id: number; min_amount: number; max_amount?: number | null; fee: number; provider_cost: number }> = [];
+let agentServiceId = 3;
+let feeTierId = 1;
 
 function log(source: string, message: string, level = "INFO") {
   logs.unshift({ id: logId++, level, source, message, created_at: now() });
@@ -206,6 +213,22 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       log("pos", `Checkout POS berhasil: ${invoice}`);
       return { ok: true, transaction_id: trxId, invoice_no: invoice, total_amount: total, profit, settlement_account_id: settlement.id, settlement_balance: settlement.balance } as T;
     }
+    case "list_agent_services":
+      return [...agentServices] as T;
+    case "create_agent_service": {
+      const row = { id: agentServiceId++, name: payload.name, category: payload.category || null, default_fee: Number(payload.default_fee || 0), provider_cost: Number(payload.provider_cost || 0), is_active: true };
+      agentServices.push(row);
+      return row as T;
+    }
+    case "list_fee_tiers":
+      return feeTiers.filter((row) => row.service_id === (payload.service_id || args?.service_id || args?.serviceId)) as T;
+    case "create_fee_tier": {
+      const row = { id: feeTierId++, service_id: Number(payload.service_id), min_amount: Number(payload.min_amount || 0), max_amount: payload.max_amount ?? null, fee: Number(payload.fee || 0), provider_cost: Number(payload.provider_cost || 0) };
+      feeTiers.push(row);
+      return row as T;
+    }
+    case "print_thermal_receipt":
+      return true as T;
     case "list_transactions":
       return [...transactions] as T;
     case "list_transaction_items":
