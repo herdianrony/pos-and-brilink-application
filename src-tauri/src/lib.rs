@@ -1385,10 +1385,11 @@ fn checkout_pos_cash(app: AppHandle, payload: PosCheckoutPayload) -> Result<PosC
         let profit = service.fee - provider_cost;
         total_amount += subtotal;
         total_profit += profit;
-        let label = if let Some(customer) = trim_optional(service.customer_name.clone()) {
-            format!("Layanan: {service_name} ({customer})")
-        } else {
-            format!("Layanan: {service_name}")
+        let label = match (trim_optional(service.customer_name.clone()), trim_optional(service.notes.clone())) {
+            (Some(customer), Some(notes)) => format!("Layanan: {service_name} ({customer}) - {notes}"),
+            (Some(customer), None) => format!("Layanan: {service_name} ({customer})"),
+            (None, Some(notes)) => format!("Layanan: {service_name} - {notes}"),
+            (None, None) => format!("Layanan: {service_name}"),
         };
         prepared_items.push((None, label, 1, subtotal, subtotal, false));
         prepared_agent_effects.push((service_name, service.account_id, cash_effect, bank_effect));
