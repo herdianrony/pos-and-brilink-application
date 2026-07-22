@@ -246,7 +246,7 @@ fn enforce_discount_policy(
                 max_disc
             ));
         }
-        let pin_val = reason
+        let _pin_val = reason
             .as_ref()
             .filter(|r| !r.is_empty())
             .ok_or("Alasan diskon wajib diisi jika melebihi batas")?;
