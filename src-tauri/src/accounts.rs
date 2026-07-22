@@ -79,6 +79,8 @@ pub struct AccountMutationSummary {
     pub total_out: f64,
     pub net: f64,
     pub count: i64,
+    pub opening_balance: f64,
+    pub closing_balance: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -421,13 +423,43 @@ pub fn get_mutation_summary(
 
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
+
+    // Compute opening balance: sum of all mutations BEFORE the filtered period
+    let mut opening_sql = String::from(
+        "SELECT COALESCE(SUM(amount), 0) FROM account_mutations WHERE 1=1",
+    );
+    let mut opening_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    if let Some(ref p) = payload {
+        if let Some(aid) = p.account_id {
+            opening_sql.push_str(" AND account_id = ?");
+            opening_params.push(Box::new(aid));
+        }
+        if let Some(ref start) = p.start_date {
+            if !start.is_empty() {
+                opening_sql.push_str(" AND created_at < ?");
+                opening_params.push(Box::new(format!("{}T00:00:00", start.trim())));
+            }
+        }
+        // No end_date filter for opening — we want everything BEFORE start_date
+    }
+    let opening_refs: Vec<&dyn rusqlite::types::ToSql> =
+        opening_params.iter().map(|b| b.as_ref()).collect();
+    let opening_balance: f64 = conn
+        .query_row(&opening_sql, opening_refs.as_slice(), |row| row.get(0))
+        .unwrap_or(0.0);
+
     let summary = conn
         .query_row(&sql, param_refs.as_slice(), |row| {
+            let total_in: f64 = row.get(0)?;
+            let total_out: f64 = row.get(1)?;
+            let count: i64 = row.get(2)?;
             Ok(AccountMutationSummary {
-                total_in: row.get(0)?,
-                total_out: row.get(1)?,
-                net: row.get::<_, f64>(0)? - row.get::<_, f64>(1)?,
-                count: row.get(2)?,
+                total_in,
+                total_out,
+                net: total_in - total_out,
+                count,
+                closing_balance: opening_balance + total_in - total_out,
+                opening_balance,
             })
         })
         .map_err(|e| e.to_string())?;

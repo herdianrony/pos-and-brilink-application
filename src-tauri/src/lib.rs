@@ -6,6 +6,7 @@ pub mod debts;
 pub mod pos;
 pub mod printer;
 pub mod products;
+pub mod seed;
 pub mod session;
 pub mod settings;
 pub mod transactions;
@@ -33,6 +34,7 @@ use crate::products::{
     list_categories, list_products, update_category, update_product,
 };
 use crate::session::SessionState;
+use crate::seed::{clear_demo, seed_demo, seed_system, setup_templates};
 use crate::settings::{get_settings, update_settings};
 use crate::transactions::{
     create_database_backup, list_app_logs, list_database_backups, list_transaction_items,
@@ -123,6 +125,11 @@ pub fn run() {
             list_database_backups,
             restore_database_backup,
             list_app_logs,
+            // Seed & Demo
+            seed_system,
+            setup_templates,
+            seed_demo,
+            clear_demo,
             // Printer
             print_thermal_receipt,
             // WhatsApp
