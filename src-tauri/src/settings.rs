@@ -1,5 +1,5 @@
-use rusqlite::{params, Connection};
-use serde::{Deserialize, Serialize};
+use rusqlite::params;
+use serde::Deserialize;
 use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
