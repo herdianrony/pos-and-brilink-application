@@ -324,7 +324,11 @@ pub fn list_account_mutations(
     payload: Option<ListMutationsPayload>,
 ) -> Result<Vec<AccountMutationRow>, String> {
     let _user = require_admin(&session)?;
-    let limit = payload.as_ref().and_then(|p| p.limit).unwrap_or(80).clamp(1, 500);
+    let limit = payload
+        .as_ref()
+        .and_then(|p| p.limit)
+        .unwrap_or(80)
+        .clamp(1, 500);
     let conn = init_schema(&app)?;
 
     let mut sql = String::from(
@@ -358,7 +362,8 @@ pub fn list_account_mutations(
     params_vec.push(Box::new(limit));
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
             Ok(AccountMutationRow {
@@ -414,15 +419,18 @@ pub fn get_mutation_summary(
         }
     }
 
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-    let summary = conn.query_row(&sql, param_refs.as_slice(), |row| {
-        Ok(AccountMutationSummary {
-            total_in: row.get(0)?,
-            total_out: row.get(1)?,
-            net: row.get::<_, f64>(0)? - row.get::<_, f64>(1)?,
-            count: row.get(2)?,
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
+    let summary = conn
+        .query_row(&sql, param_refs.as_slice(), |row| {
+            Ok(AccountMutationSummary {
+                total_in: row.get(0)?,
+                total_out: row.get(1)?,
+                net: row.get::<_, f64>(0)? - row.get::<_, f64>(1)?,
+                count: row.get(2)?,
+            })
         })
-    }).map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?;
     Ok(summary)
 }
 
@@ -504,20 +512,39 @@ pub fn update_account(
     let now = chrono::Utc::now().to_rfc3339();
     if let Some(ref n) = payload.name {
         let n = n.trim();
-        if n.is_empty() { return Err("Nama akun wajib diisi".into()); }
-        sets.push("name = ?"); params_vec.push(Box::new(n.to_string()));
+        if n.is_empty() {
+            return Err("Nama akun wajib diisi".into());
+        }
+        sets.push("name = ?");
+        params_vec.push(Box::new(n.to_string()));
     }
-    if let Some(ref i) = payload.icon { sets.push("icon = ?"); params_vec.push(Box::new(i.clone())); }
-    if let Some(ref c) = payload.color { sets.push("color = ?"); params_vec.push(Box::new(c.clone())); }
-    if let Some(m) = payload.min_balance { sets.push("min_balance = ?"); params_vec.push(Box::new(m)); }
-    if let Some(a) = payload.is_active { sets.push("is_active = ?"); params_vec.push(Box::new(if a { 1i64 } else { 0i64 })); }
-    if sets.is_empty() { return Err("Tidak ada field yang diubah".into()); }
+    if let Some(ref i) = payload.icon {
+        sets.push("icon = ?");
+        params_vec.push(Box::new(i.clone()));
+    }
+    if let Some(ref c) = payload.color {
+        sets.push("color = ?");
+        params_vec.push(Box::new(c.clone()));
+    }
+    if let Some(m) = payload.min_balance {
+        sets.push("min_balance = ?");
+        params_vec.push(Box::new(m));
+    }
+    if let Some(a) = payload.is_active {
+        sets.push("is_active = ?");
+        params_vec.push(Box::new(if a { 1i64 } else { 0i64 }));
+    }
+    if sets.is_empty() {
+        return Err("Tidak ada field yang diubah".into());
+    }
     sets.push("updated_at = ?");
     params_vec.push(Box::new(now));
     params_vec.push(Box::new(payload.id));
     let sql = format!("UPDATE accounts SET {} WHERE id = ?", sets.join(", "));
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice())
+        .map_err(|e| e.to_string())?;
     Ok(true)
 }
 
@@ -529,11 +556,31 @@ pub fn deactivate_account(
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
-    let code: String = conn.query_row("SELECT code FROM accounts WHERE id = ?1", params![account_id], |r| r.get(0)).unwrap_or_default();
-    if code == "cash" { return Err("Akun Kas tidak bisa dinonaktifkan".into()); }
-    let balance: f64 = conn.query_row("SELECT balance FROM accounts WHERE id = ?1", params![account_id], |r| r.get(0)).unwrap_or(0.0);
-    if balance.abs() > 0.01 { return Err("Akun dengan saldo tidak bisa dinonaktifkan".into()); }
+    let code: String = conn
+        .query_row(
+            "SELECT code FROM accounts WHERE id = ?1",
+            params![account_id],
+            |r| r.get(0),
+        )
+        .unwrap_or_default();
+    if code == "cash" {
+        return Err("Akun Kas tidak bisa dinonaktifkan".into());
+    }
+    let balance: f64 = conn
+        .query_row(
+            "SELECT balance FROM accounts WHERE id = ?1",
+            params![account_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0.0);
+    if balance.abs() > 0.01 {
+        return Err("Akun dengan saldo tidak bisa dinonaktifkan".into());
+    }
     let now = chrono::Utc::now().to_rfc3339();
-    conn.execute("UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, account_id]).map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2",
+        params![now, account_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(true)
 }

@@ -245,7 +245,10 @@ pub fn login(
     // ── Rate limiting check ──
     let now_ts = Utc::now().timestamp();
     {
-        let mut map = rate_limiter.0.lock().map_err(|_| "Rate limiter error".to_string())?;
+        let mut map = rate_limiter
+            .0
+            .lock()
+            .map_err(|_| "Rate limiter error".to_string())?;
         if let Some((attempts, first_ts)) = map.get(&username) {
             if *attempts >= MAX_LOGIN_ATTEMPTS {
                 let elapsed = now_ts - first_ts;
@@ -295,7 +298,10 @@ pub fn login(
 
     // Login success — clear rate limit
     {
-        let mut map = rate_limiter.0.lock().map_err(|_| "Rate limiter error".to_string())?;
+        let mut map = rate_limiter
+            .0
+            .lock()
+            .map_err(|_| "Rate limiter error".to_string())?;
         map.remove(&username);
     }
 
@@ -400,16 +406,30 @@ pub fn update_user(
     params_vec.push(Box::new(now));
     params_vec.push(Box::new(payload.id));
     let sql = format!("UPDATE users SET {} WHERE id = ?", sets.join(", "));
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice())
+        .map_err(|e| e.to_string())?;
     let user = conn
         .query_row(
             "SELECT id, name, username, role FROM users WHERE id = ?1",
             params![payload.id],
-            |row| Ok(PublicUser { id: row.get(0)?, name: row.get(1)?, username: row.get(2)?, role: row.get(3)? }),
+            |row| {
+                Ok(PublicUser {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    username: row.get(2)?,
+                    role: row.get(3)?,
+                })
+            },
         )
         .map_err(|_| "User tidak ditemukan".to_string())?;
-    record_app_log(&conn, "INFO", "users", &format!("User diubah: {}", user.username));
+    record_app_log(
+        &conn,
+        "INFO",
+        "users",
+        &format!("User diubah: {}", user.username),
+    );
     Ok(user)
 }
 
@@ -425,8 +445,11 @@ pub fn deactivate_user(
     }
     let conn = init_schema(&app)?;
     let now = Utc::now().to_rfc3339();
-    conn.execute("UPDATE users SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, user_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE users SET is_active = 0, updated_at = ?1 WHERE id = ?2",
+        params![now, user_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(true)
 }
 
@@ -437,14 +460,18 @@ pub fn get_me(session: State<'_, SessionState>) -> Result<PublicUser, String> {
 
 fn validate_password(password: &str) -> Result<(), String> {
     if password.len() < 8 || password.len() > 128 {
-        return Err("Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into());
+        return Err(
+            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
+        );
     }
     let categories = password.chars().filter(|c| c.is_ascii_uppercase()).count() as u8
         + password.chars().filter(|c| c.is_ascii_lowercase()).count() as u8
         + password.chars().filter(|c| c.is_ascii_digit()).count() as u8
         + password.chars().filter(|c| !c.is_alphanumeric()).count() as u8;
     if categories < 2 {
-        return Err("Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into());
+        return Err(
+            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
+        );
     }
     Ok(())
 }

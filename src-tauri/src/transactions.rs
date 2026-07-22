@@ -87,7 +87,11 @@ pub fn list_transactions(
     payload: Option<ListTransactionsPayload>,
 ) -> Result<Vec<TransactionRow>, String> {
     let user = require_auth(&session)?;
-    let limit = payload.as_ref().and_then(|p| p.limit).unwrap_or(50).clamp(1, 500);
+    let limit = payload
+        .as_ref()
+        .and_then(|p| p.limit)
+        .unwrap_or(50)
+        .clamp(1, 500);
     let is_admin = user.role == "admin";
     let conn = init_schema(&app)?;
 
@@ -124,7 +128,8 @@ pub fn list_transactions(
     params_vec.push(Box::new(limit));
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
             let profit = row.get::<_, f64>(5)?;

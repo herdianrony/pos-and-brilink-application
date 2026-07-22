@@ -4,8 +4,10 @@ use std::io::Write;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
+use crate::{
+    auth::require_admin, common::init_schema, common::record_app_log, session::SessionState,
+};
 use rusqlite::params;
-use crate::{auth::require_admin, common::init_schema, common::record_app_log, session::SessionState};
 
 #[derive(Debug, Serialize)]
 pub struct WhatsAppSidecarStatus {
@@ -49,7 +51,9 @@ fn get_whatsapp_settings(conn: &rusqlite::Connection) -> (bool, bool, String) {
     let mut auto_notify = false;
     let mut owner_number = String::new();
     if let Some(ref mut s) = stmt {
-        let rows = s.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)));
+        let rows = s.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        });
         if let Ok(rows) = rows {
             for row in rows.flatten() {
                 match row.0.as_str() {
@@ -82,8 +86,13 @@ fn send_sidecar_command(
     payload: &serde_json::Value,
 ) -> Result<(), String> {
     let mut child_guard = sc.child.lock().map_err(|_| "lock error".to_string())?;
-    let child = child_guard.as_mut().ok_or("Sidecar tidak berjalan".to_string())?;
-    let stdin = child.stdin.as_mut().ok_or("Stdin sidecar tidak tersedia".to_string())?;
+    let child = child_guard
+        .as_mut()
+        .ok_or("Sidecar tidak berjalan".to_string())?;
+    let stdin = child
+        .stdin
+        .as_mut()
+        .ok_or("Stdin sidecar tidak tersedia".to_string())?;
 
     let mut msg = serde_json::Map::new();
     msg.insert("cmd".into(), serde_json::Value::String(command.into()));
@@ -94,7 +103,9 @@ fn send_sidecar_command(
     }
     let line = serde_json::to_string(&msg).map_err(|e| format!("Gagal serialisasi: {e}"))?;
     writeln!(stdin, "{}", line).map_err(|e| format!("Gagal kirim ke sidecar: {e}"))?;
-    stdin.flush().map_err(|e| format!("Gagal flush sidecar: {e}"))?;
+    stdin
+        .flush()
+        .map_err(|e| format!("Gagal flush sidecar: {e}"))?;
     Ok(())
 }
 
@@ -118,7 +129,11 @@ pub fn whatsapp_status(
         has_client,
         enabled,
         auto_notify_owner: auto_notify,
-        owner_number: if owner_number.is_empty() { None } else { Some(owner_number) },
+        owner_number: if owner_number.is_empty() {
+            None
+        } else {
+            Some(owner_number)
+        },
     })
 }
 
@@ -133,7 +148,9 @@ pub fn whatsapp_start(
     // Kill existing sidecar if any
     kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "initializing".into();
-    *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
+    *sc.qr_data_url
+        .lock()
+        .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
 
     // Determine wa-service path: try bundled sidecar first, then local dev
@@ -200,7 +217,9 @@ pub fn whatsapp_restart(
     let sc = app.state::<WaSidecarState>();
     kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "idle".into();
-    *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
+    *sc.qr_data_url
+        .lock()
+        .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
     record_app_log(
         &init_schema(&app)?,
@@ -212,23 +231,18 @@ pub fn whatsapp_restart(
 }
 
 #[tauri::command]
-pub fn whatsapp_logout(
-    app: AppHandle,
-    session: State<'_, SessionState>,
-) -> Result<bool, String> {
+pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>) -> Result<bool, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
 
     // Send logout command before killing
-    let _ = send_sidecar_command(
-        &sc,
-        "logout",
-        &serde_json::json!({}),
-    );
+    let _ = send_sidecar_command(&sc, "logout", &serde_json::json!({}));
 
     kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "disconnected".into();
-    *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
+    *sc.qr_data_url
+        .lock()
+        .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
     record_app_log(&init_schema(&app)?, "INFO", "whatsapp", "WhatsApp logout");
     Ok(true)
@@ -278,14 +292,7 @@ pub fn whatsapp_notify(
         )
         .map_err(|_| "Transaksi tidak ditemukan".to_string())?;
 
-    let message = build_notification_message(
-        &trx.1,
-        &trx.0,
-        trx.2,
-        &trx.3,
-        &trx.4,
-        &trx.5,
-    );
+    let message = build_notification_message(&trx.1, &trx.0, trx.2, &trx.3, &trx.4, &trx.5);
     let to = format!("{}@s.whatsapp.net", owner_number);
 
     // Check if sidecar is running and connected
@@ -297,7 +304,11 @@ pub fn whatsapp_notify(
             sent: false,
             reason: Some(format!(
                 "sidecar_{}",
-                if !has_child { "not_running" } else { "not_connected" }
+                if !has_child {
+                    "not_running"
+                } else {
+                    "not_connected"
+                }
             )),
             id: None,
         });

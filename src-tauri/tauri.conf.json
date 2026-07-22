@@ -28,7 +28,6 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
-    "externalBin": ["wa-service"],
     "category": "Business",
     "shortDescription": "POS dan layanan agen ringan berbasis Tauri",
     "longDescription": "Eksperimen CatatAgen Local berbasis Tauri full tanpa Next.js server lokal.",

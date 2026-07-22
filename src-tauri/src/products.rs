@@ -158,14 +158,34 @@ pub fn update_category(
     let conn = init_schema(&app)?;
     let mut sets = Vec::new();
     let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    if let Some(ref n) = payload.name { let n = n.trim(); if n.is_empty() { return Err("Nama kategori wajib diisi".into()); } sets.push("name = ?"); params_vec.push(Box::new(n.to_string())); }
-    if let Some(ref i) = payload.icon { sets.push("icon = ?"); params_vec.push(Box::new(i.clone())); }
-    if let Some(ref c) = payload.color { sets.push("color = ?"); params_vec.push(Box::new(c.clone())); }
-    if sets.is_empty() { return Err("Tidak ada field yang diubah".into()); }
+    if let Some(ref n) = payload.name {
+        let n = n.trim();
+        if n.is_empty() {
+            return Err("Nama kategori wajib diisi".into());
+        }
+        sets.push("name = ?");
+        params_vec.push(Box::new(n.to_string()));
+    }
+    if let Some(ref i) = payload.icon {
+        sets.push("icon = ?");
+        params_vec.push(Box::new(i.clone()));
+    }
+    if let Some(ref c) = payload.color {
+        sets.push("color = ?");
+        params_vec.push(Box::new(c.clone()));
+    }
+    if sets.is_empty() {
+        return Err("Tidak ada field yang diubah".into());
+    }
     params_vec.push(Box::new(payload.id));
-    let sql = format!("UPDATE product_categories SET {} WHERE id = ?", sets.join(", "));
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    let sql = format!(
+        "UPDATE product_categories SET {} WHERE id = ?",
+        sets.join(", ")
+    );
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice())
+        .map_err(|e| e.to_string())?;
     Ok(true)
 }
 
@@ -177,7 +197,11 @@ pub fn deactivate_category(
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
-    conn.execute("UPDATE product_categories SET is_active = 0 WHERE id = ?1", params![payload.category_id]).map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE product_categories SET is_active = 0 WHERE id = ?1",
+        params![payload.category_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(true)
 }
 
@@ -189,13 +213,17 @@ pub fn list_products(
 ) -> Result<Vec<ProductRow>, String> {
     let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
-    let search = payload.as_ref().and_then(|p| p.search.as_ref()).map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty());
+    let search = payload
+        .as_ref()
+        .and_then(|p| p.search.as_ref())
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty());
     let mut sql = String::from(
         r#"SELECT p.id, p.name, p.barcode, p.category_id, c.name, p.buy_price, p.sell_price,
                p.stock, p.min_stock, COALESCE(p.unit, 'pcs'), p.image_path, p.is_active
         FROM products p
         LEFT JOIN product_categories c ON c.id = p.category_id
-        WHERE p.is_active = 1"#
+        WHERE p.is_active = 1"#,
     );
     let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     if let Some(ref s) = search {
@@ -210,7 +238,8 @@ pub fn list_products(
     }
     sql.push_str(" ORDER BY p.name ASC");
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
             Ok(ProductRow {
