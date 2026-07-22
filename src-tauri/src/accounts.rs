@@ -98,13 +98,6 @@ pub struct MutationSummaryPayload {
     pub end_date: Option<String>,
 }
 
-fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i64 {
-    payload
-        .copied()
-        .unwrap_or(default_limit)
-        .clamp(1, max_limit)
-}
-
 #[tauri::command]
 pub fn list_accounts(
     app: AppHandle,
