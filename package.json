@@ -11,6 +11,7 @@
   "engines": {
     "node": ">=22.12.0"
   },
+  "workspaces": ["src-tauri-ui"],
   "scripts": {
     "dev:tauri-ui": "cd src-tauri-ui && vite --host 127.0.0.1",
     "build:tauri-ui": "cd src-tauri-ui && vite build",
