@@ -54,7 +54,7 @@ export function ReportsPage({
           className="rounded-[28px]"
           title="Performa Penjualan"
           description="Perbandingan omzet dan keuntungan berdasarkan data transaksi."
-          actions={<BarChart3 className="text-emerald-600" size={22} />}
+          actions={<BarChart3 className="text-success" size={22} />}
         >
           <ReportPerformanceChart data={chartRows} />
         </SectionCard>

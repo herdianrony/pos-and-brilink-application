@@ -46,7 +46,7 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
                 current === num
                   ? "gradient-primary text-white shadow-glow-primary scale-110"
                   : current > num
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-success-light/30 text-success"
                     : "bg-slate-100 text-slate-400"
               }`}
             >
@@ -115,6 +115,9 @@ export function AgentServicesPage({
   const agentProfit = Number(agentForm.fee || 0) - Number(agentForm.provider_cost || 0);
   const selectedAccount = accounts.find((a) => String(a.id) === agentForm.account_id);
 
+  /* validation */
+  const isFormInvalid = !agentForm.customer_name || !Number(agentForm.amount) || !Number(agentForm.fee);
+
   /* ---------------------------------------------------------------- */
   /*  STEP 1 — Input                                                   */
   /* ---------------------------------------------------------------- */
@@ -157,13 +160,13 @@ export function AgentServicesPage({
                     }}
                     className={`relative grid min-h-[120px] content-center justify-items-center gap-1.5 rounded-2xl border-2 p-4 text-center transition-all duration-200 ${
                       isSelected
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-800 shadow-[0_8px_22px_rgba(4,120,87,.12)]"
+                        ? "border-primary bg-primary-light/10 text-primary-dark shadow-[0_8px_22px_rgba(4,120,87,.12)]"
                         : "border-transparent bg-white text-slate-900 shadow-[0_4px_14px_rgba(15,23,42,.04)] hover:border-teal-300 hover:bg-teal-50"
                     }`}
                   >
                     <span
                       className={`inline-grid h-10 w-10 place-items-center rounded-xl text-white ${
-                        isSelected ? "bg-gradient-to-br from-emerald-700 to-teal-500" : "bg-slate-200"
+                        isSelected ? "gradient-primary" : "bg-slate-200"
                       }`}
                     >
                       <Landmark size={20} />
@@ -185,7 +188,7 @@ export function AgentServicesPage({
                   placeholder="Nama nasabah"
                   value={agentForm.customer_name}
                   onChange={(e) => onAgentFormChange({ ...agentForm, customer_name: e.target.value })}
-                  className="wizard-input"
+                  className={`wizard-input${!agentForm.customer_name ? " !border-red-400 focus:!ring-red-100" : ""}`}
                 />
               </Field>
 
@@ -194,6 +197,7 @@ export function AgentServicesPage({
                   value={agentForm.amount}
                   onChange={(v) => onAgentFormChange({ ...agentForm, amount: v })}
                   placeholder="Rp0"
+                  className={!Number(agentForm.amount) ? "!border-red-400 focus:!ring-red-100" : ""}
                 />
               </Field>
 
@@ -202,6 +206,7 @@ export function AgentServicesPage({
                   value={agentForm.fee}
                   onChange={(v) => onAgentFormChange({ ...agentForm, fee: v })}
                   placeholder="Rp0"
+                  className={!Number(agentForm.fee) ? "!border-red-400 focus:!ring-red-100" : ""}
                 />
               </Field>
 
@@ -265,14 +270,14 @@ export function AgentServicesPage({
                 <span className="block text-xs font-black uppercase tracking-wide text-slate-400">Total Bayar Pelanggan</span>
                 <strong className="text-lg font-black text-slate-950">{formatRupiah(totalCustomerPay)}</strong>
               </div>
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <span className="block text-xs font-black uppercase tracking-wide text-emerald-500">Estimasi Keuntungan</span>
+              <div className="rounded-2xl border border-success-light/50 bg-success-light/10 p-4">
+                <span className="block text-xs font-black uppercase tracking-wide text-primary">Estimasi Keuntungan</span>
                 <strong className="text-lg font-black text-emerald-700">{formatRupiah(agentProfit)}</strong>
               </div>
             </div>
 
             <div className="flex justify-end">
-              <Button size="lg" onClick={() => onAgentStepChange(2)}>
+              <Button size="lg" onClick={() => onAgentStepChange(2)} disabled={isFormInvalid}>
                 Lanjut ke Review
               </Button>
             </div>
@@ -302,7 +307,7 @@ export function AgentServicesPage({
           <Card className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="inline-grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-emerald-700 to-teal-500 text-white">
+                <span className="inline-grid h-11 w-11 place-items-center rounded-xl gradient-primary text-white">
                   <Landmark size={22} />
                 </span>
                 <div>
@@ -318,7 +323,7 @@ export function AgentServicesPage({
               <ReviewRow label="Nominal Transaksi" value={formatRupiah(Number(agentForm.amount || 0))} />
               <ReviewRow label="Admin Toko" value={formatRupiah(Number(agentForm.fee || 0))} />
               <ReviewRow label="Potongan Bank/Provider" value={formatRupiah(Number(agentForm.provider_cost || 0))} />
-              <ReviewRow label="Keuntungan Jasa" value={formatRupiah(agentProfit)} valueClass="text-emerald-600" />
+              <ReviewRow label="Keuntungan Jasa" value={formatRupiah(agentProfit)} valueClass="text-success" />
               <ReviewRow label="Total Bayar Pelanggan" value={formatRupiah(totalCustomerPay)} valueClass="text-slate-900" />
               {selectedAccount && (
                 <ReviewRow label="Rekening" value={selectedAccount.name} />
@@ -327,14 +332,14 @@ export function AgentServicesPage({
                 <ReviewRow
                   label="Perubahan Rekening"
                   value={formatRupiah(Number(agentForm.bank_effect))}
-                  valueClass={Number(agentForm.bank_effect) >= 0 ? "text-emerald-600" : "text-red-600"}
+                  valueClass={Number(agentForm.bank_effect) >= 0 ? "text-success" : "text-red-600"}
                 />
               )}
               {agentForm.cash_effect && agentForm.cash_effect !== "0" && (
                 <ReviewRow
                   label="Perubahan Kas"
                   value={formatRupiah(Number(agentForm.cash_effect))}
-                  valueClass={Number(agentForm.cash_effect) >= 0 ? "text-emerald-600" : "text-red-600"}
+                  valueClass={Number(agentForm.cash_effect) >= 0 ? "text-success" : "text-red-600"}
                 />
               )}
               {agentForm.notes && <ReviewRow label="Catatan" value={agentForm.notes} />}
@@ -343,9 +348,9 @@ export function AgentServicesPage({
 
           {/* Profit highlight */}
           {agentProfit > 0 && (
-            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center justify-between">
+            <div className="rounded-2xl bg-success-light/10 border border-success-light/50 p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <TrendingUp size={18} className="text-emerald-600" />
+                <TrendingUp size={18} className="text-success" />
                 <span className="text-sm font-bold text-emerald-700">Estimasi keuntungan agen</span>
               </div>
               <span className="text-xl font-extrabold text-emerald-700">+{formatRupiah(agentProfit)}</span>
@@ -395,7 +400,7 @@ export function AgentServicesPage({
           <>
             <Card className="p-8 text-center space-y-4">
               <div className="mx-auto h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                <TrendingUp size={28} className="text-emerald-600" />
+                <TrendingUp size={28} className="text-success" />
               </div>
               <div>
                 <h3 className="text-lg font-extrabold text-slate-800">Konfirmasi Transaksi</h3>
@@ -422,8 +427,8 @@ export function AgentServicesPage({
                 </div>
                 {agentProfit > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-emerald-600">Keuntungan</span>
-                    <span className="font-bold text-emerald-600">+{formatRupiah(agentProfit)}</span>
+                    <span className="text-success">Keuntungan</span>
+                    <span className="font-bold text-success">+{formatRupiah(agentProfit)}</span>
                   </div>
                 )}
               </div>

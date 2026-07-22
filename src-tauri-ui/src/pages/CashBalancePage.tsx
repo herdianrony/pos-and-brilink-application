@@ -93,7 +93,7 @@ export function CashBalancePage({
 
       {/* ── Tab: Kas & Saldo ── */}
       {activeTab === "balance" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Kas dan Saldo">
           {/* Total Balance Hero Card */}
           <Card className="p-5 bg-linear-to-r from-emerald-500 to-teal-500 text-white hover:shadow-pop">
             <p className="text-emerald-100 text-sm font-bold">Total Saldo Aktif</p>
@@ -157,26 +157,26 @@ export function CashBalancePage({
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
                     onClick={() => onAdjust(account)}
-                    className="rounded-xl bg-white/15 px-2 py-2 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
+                    className="rounded-xl bg-white/15 px-3 py-2.5 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
                   >
                     Sesuaikan
                   </button>
                   <button
                     onClick={() => onTransfer(account)}
-                    className="rounded-xl bg-white/15 px-2 py-2 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
+                    className="rounded-xl bg-white/15 px-3 py-2.5 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
                   >
                     Transfer
                   </button>
                   <button
                     onClick={() => onOwnerDraw(account)}
-                    className="rounded-xl bg-white/15 px-2 py-2 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors flex items-center justify-center gap-1"
+                    className="rounded-xl bg-white/15 px-3 py-2.5 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors flex items-center justify-center gap-1"
                   >
                     <HandCoins size={13} /> Owner
                   </button>
                   {account.code !== "cash" && (
                     <button
                       onClick={() => onBankFee(account)}
-                      className="rounded-xl bg-white/15 px-2 py-2 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
+                      className="rounded-xl bg-white/15 px-3 py-2.5 text-xs font-bold text-white shadow-none hover:translate-y-0 hover:bg-white/25 hover:shadow-none transition-colors"
                     >
                       Biaya
                     </button>
@@ -190,7 +190,7 @@ export function CashBalancePage({
 
       {/* ── Tab: Mutasi ── */}
       {activeTab === "mutations" && (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden" role="tabpanel" aria-label="Mutasi">
           <div className="p-4 border-b border-slate-50 flex items-center gap-2">
             <Clock size={16} className="text-slate-400" />
             <h3 className="font-extrabold text-slate-700">Riwayat Mutasi</h3>
@@ -200,6 +200,7 @@ export function CashBalancePage({
           ) : (
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-sm">
+                <caption className="sr-only">Riwayat Mutasi Rekening</caption>
                 <thead className="sticky top-0 bg-white">
                   <tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
                     <th className="text-left p-3 font-medium">Waktu</th>
@@ -214,7 +215,7 @@ export function CashBalancePage({
                   {mutations.map((m) => {
                     const isPositive = m.amount >= 0;
                     return (
-                      <tr key={m.id} className="border-t border-slate-50 hover:bg-emerald-50/30">
+                      <tr key={m.id} className="border-t border-slate-50 hover:bg-success-light/10">
                         <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{m.created_at}</td>
                         <td className="p-3 text-slate-600 text-xs truncate max-w-[100px]">{m.account_name}</td>
                         <td className="p-3">
@@ -222,7 +223,7 @@ export function CashBalancePage({
                             {mutationLabel(m.mutation_type)}
                           </Badge>
                         </td>
-                        <td className={`p-3 text-right font-semibold ${isPositive ? "text-emerald-600" : "text-red-500"}`}>
+                        <td className={`p-3 text-right font-semibold ${isPositive ? "text-success" : "text-red-500"}`}>
                           {isPositive ? "+" : ""}{formatRupiah(m.amount)}
                         </td>
                         <td className="p-3 text-right font-bold text-slate-700">{formatRupiah(m.balance_after)}</td>
@@ -239,7 +240,7 @@ export function CashBalancePage({
 
       {/* ── Tab: Tarik Owner ── */}
       {activeTab === "owner_draw" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" aria-label="Tarik Owner">
           <Card className="p-5">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 mb-4">
               <p className="font-bold">Prive / penarikan laba</p>
@@ -272,7 +273,7 @@ export function CashBalancePage({
 
       {/* ── Tab: Biaya Bank ── */}
       {activeTab === "bank_fee" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" aria-label="Biaya Bank">
           <Card className="p-5">
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 mb-4">
               <p className="font-bold">Catat potongan rekening</p>

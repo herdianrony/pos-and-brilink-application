@@ -9,7 +9,7 @@ type LevelFilter = (typeof levelFilters)[number];
 
 
 function logLevelClass(level: string) {
-  const tone = level === "WARN" ? "bg-amber-50 text-amber-700" : level === "ERROR" ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700";
+  const tone = level === "WARN" ? "bg-amber-50 text-amber-700" : level === "ERROR" ? "bg-red-50 text-red-600" : "bg-success-light/20 text-success";
   return `inline-flex min-w-14 justify-center rounded-full px-2.5 py-1.5 text-[11px] font-black ${tone}`;
 }
 
@@ -101,7 +101,7 @@ export function LogsPage({
           )}
         </SectionCard>
         <SectionCard className="rounded-[28px]" title="Panduan Membaca" description="Gunakan halaman ini saat butuh pemeriksaan aktivitas.">
-          <div className="grid gap-2.5 [&_div]:flex [&_div]:items-center [&_div]:gap-3 [&_div]:rounded-2xl [&_div]:border [&_div]:border-slate-200 [&_div]:bg-slate-50 [&_div]:p-4 [&_div]:text-sm [&_div]:font-semibold [&_div]:text-slate-600 [&_svg]:flex-none [&_svg]:text-emerald-600">
+          <div className="grid gap-2.5 [&_div]:flex [&_div]:items-center [&_div]:gap-3 [&_div]:rounded-2xl [&_div]:border [&_div]:border-slate-200 [&_div]:bg-slate-50 [&_div]:p-4 [&_div]:text-sm [&_div]:font-semibold [&_div]:text-slate-600 [&_svg]:flex-none [&_svg]:text-success">
             <div><CheckCircle size={18} /><span>Info berarti aktivitas normal seperti checkout atau user dibuat.</span></div>
             <div><AlertTriangle size={18} /><span>Peringatan berarti aktivitas penting seperti pemulihan data.</span></div>
             <div><Database size={18} /><span>Cadangan data dan pemulihan juga dicatat di sini.</span></div>

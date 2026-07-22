@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Clock,
   Heart,
@@ -60,7 +60,7 @@ const SidebarClock = memo(function SidebarClock() {
               minute: "2-digit",
             })}
           </p>
-          <p className="text-slate-400 text-[11px]">
+          <p className="text-slate-400 text-xs">
             {now.toLocaleDateString("id-ID", {
               weekday: "long",
               day: "numeric",
@@ -88,27 +88,27 @@ const toastConfig: Record<
   { border: string; bg: string; text: string; icon: string }
 > = {
   success: {
-    border: "border-emerald-200",
-    bg: "bg-emerald-50",
-    text: "text-emerald-600",
+    border: "border-success-light/50",
+    bg: "bg-success-light/20",
+    text: "text-success",
     icon: "\u2713",
   },
   error: {
-    border: "border-red-200",
-    bg: "bg-red-50",
-    text: "text-red-600",
+    border: "border-danger-light/50",
+    bg: "bg-danger-light/20",
+    text: "text-danger",
     icon: "\u2715",
   },
   warning: {
-    border: "border-amber-200",
-    bg: "bg-amber-50",
-    text: "text-amber-600",
+    border: "border-warning-light/50",
+    bg: "bg-warning-light/20",
+    text: "text-warning",
     icon: "!",
   },
   info: {
-    border: "border-blue-200",
-    bg: "bg-blue-50",
-    text: "text-blue-600",
+    border: "border-info/20",
+    bg: "bg-info/10",
+    text: "text-info",
     icon: "i",
   },
 };
@@ -205,6 +205,33 @@ function MobileSidebar({
   onAbout: () => void;
   onSupport: () => void;
 }) {
+  const asideRef = useRef<HTMLElement>(null);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const aside = asideRef.current;
+      if (!aside) return;
+      const focusable = aside.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [],
+  );
+
   const isAdmin = user.role === "admin";
   const initials =
     user.name
@@ -219,10 +246,14 @@ function MobileSidebar({
   return (
     <>
       <div
+        role="dialog"
+        aria-modal="true"
         className="fixed inset-0 bg-slate-950/50 z-55 animate-fadeIn no-print"
         onClick={onClose}
       />
       <aside
+        ref={asideRef}
+        onKeyDown={handleKeyDown}
         className="fixed top-0 left-0 h-screen w-72 z-56 flex flex-col animate-slideUp no-print"
         style={{ backgroundColor: "#0F172A" }}
       >
@@ -247,7 +278,6 @@ function MobileSidebar({
           <div className="flex items-center gap-3">
             <div
               className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-glow-primary"
-              style={{ backgroundColor: "#00875A" }}
             >
               <Landmark size={22} className="text-white" />
             </div>
@@ -255,7 +285,7 @@ function MobileSidebar({
               <h1 className="text-white font-extrabold text-base tracking-tight truncate">
                 CatatAgen
               </h1>
-              <p className="text-slate-400 text-[11px] font-medium">
+              <p className="text-slate-400 text-xs font-medium">
                 Agen Bisnis
               </p>
             </div>
@@ -313,7 +343,7 @@ function MobileSidebar({
                 onAbout();
                 onClose();
               }}
-              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-bold transition-all active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all active:scale-95"
             >
               <Info size={14} />
               <span>Tentang</span>
@@ -324,8 +354,7 @@ function MobileSidebar({
                 onSupport();
                 onClose();
               }}
-              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-bold transition-all active:scale-95"
-              style={{ backgroundColor: "rgba(124, 58, 237, 0.2)" }}
+              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-accent/20 hover:bg-accent/30 text-accent-light hover:text-white text-xs font-bold transition-all active:scale-95"
             >
               <Heart size={13} className="fill-current" />
               <span>Support</span>
@@ -334,7 +363,6 @@ function MobileSidebar({
           <div className="rounded-2xl bg-white/5 p-3 flex items-center gap-3 border border-white/5">
             <div
               className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center text-sm font-extrabold text-white shrink-0 shadow-glow-primary"
-              style={{ backgroundColor: "#00875A" }}
             >
               {initials}
             </div>
@@ -342,7 +370,7 @@ function MobileSidebar({
               <p className="text-white text-sm font-bold truncate">
                 {user.name}
               </p>
-              <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+              <div className="flex items-center gap-1.5 text-slate-400 text-xs">
                 {user.role === "admin" ? (
                   <>
                     <Shield size={11} className="text-emerald-400" />
@@ -430,6 +458,14 @@ export function AppShell({
 
   return (
     <div className="min-h-screen flex">
+      {/* Skip-to-content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[200] focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-glow-primary"
+      >
+        Langsung ke konten utama
+      </a>
+
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
@@ -456,7 +492,6 @@ export function AppShell({
         <div className="relative pt-4 pb-3">
           <div
             className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary"
-            style={{ backgroundColor: "#00875A" }}
           >
             <Landmark size={18} className="text-white" />
           </div>
@@ -520,7 +555,6 @@ export function AppShell({
           <div className="relative group">
             <div
               className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-xs font-extrabold text-white shadow-glow-primary cursor-default"
-              style={{ backgroundColor: "#00875A" }}
             >
               {initials}
             </div>
@@ -564,7 +598,7 @@ export function AppShell({
           <div className="relative bg-white rounded-3xl shadow-float w-full max-w-md animate-bounceIn border border-slate-200/50 p-7">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-600">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
                   CatatAgen Local
                 </p>
                 <h2 className="text-lg font-extrabold text-slate-900 mb-1">
@@ -586,7 +620,11 @@ export function AppShell({
       )}
 
       {/* Main content area */}
-      <main className="flex-1 p-4 lg:p-6 overflow-auto min-w-0">
+      <main
+        id="main-content"
+        className="flex-1 p-4 lg:p-6 overflow-auto min-w-0"
+        aria-hidden={mobileOpen}
+      >
         <div className="lg:hidden h-12" /> {/* spacer for mobile hamburger */}
         {children}
       </main>

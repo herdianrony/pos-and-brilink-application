@@ -720,6 +720,7 @@ export function DashboardPage({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">Transaksi Terbaru</caption>
               <thead>
                 <tr className="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100">
                   <th className="text-left p-3 font-medium">Invoice</th>

@@ -147,7 +147,7 @@ export function SettingsPage({
           TAB: Pengguna
       ════════════════════════════════════════════ */}
       {activeTab === "pengguna" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Pengguna">
           {/* Form */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2 mb-1">
@@ -228,6 +228,7 @@ export function SettingsPage({
             ) : (
               <div className="overflow-x-auto -mx-5 px-5">
                 <table className="w-full text-sm text-left">
+                  <caption className="sr-only">Daftar Pengguna</caption>
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                       <th className="py-3 pr-4">Nama</th>
@@ -275,7 +276,7 @@ export function SettingsPage({
           TAB: Produk
       ════════════════════════════════════════════ */}
       {activeTab === "produk" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Produk">
           <Card className="p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -335,6 +336,7 @@ export function SettingsPage({
             ) : (
               <div className="overflow-x-auto -mx-5 px-5">
                 <table className="w-full text-sm text-left">
+                  <caption className="sr-only">Daftar Produk</caption>
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                       <th className="py-3 pr-4">Nama</th>
@@ -383,7 +385,7 @@ export function SettingsPage({
           TAB: Transaksi
       ════════════════════════════════════════════ */}
       {activeTab === "transaksi" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Transaksi">
           <Card className="p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -450,6 +452,7 @@ export function SettingsPage({
             ) : (
               <div className="overflow-x-auto -mx-5 px-5">
                 <table className="w-full text-sm text-left">
+                  <caption className="sr-only">Daftar Transaksi</caption>
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                       <th className="py-3 pr-4">Invoice</th>
@@ -490,7 +493,7 @@ export function SettingsPage({
           TAB: Utang
       ════════════════════════════════════════════ */}
       {activeTab === "utang" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Utang">
           <Card className="p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -553,6 +556,7 @@ export function SettingsPage({
             ) : (
               <div className="overflow-x-auto -mx-5 px-5">
                 <table className="w-full text-sm text-left">
+                  <caption className="sr-only">Daftar Utang</caption>
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                       <th className="py-3 pr-4">Pelanggan</th>
@@ -591,7 +595,7 @@ export function SettingsPage({
           TAB: Backup
       ════════════════════════════════════════════ */}
       {activeTab === "backup" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Backup">
           {/* Create backup */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -741,7 +745,7 @@ export function SettingsPage({
           TAB: Tentang
       ════════════════════════════════════════════ */}
       {activeTab === "tentang" && (
-        <div className="space-y-5">
+        <div className="space-y-5" role="tabpanel" aria-label="Tentang">
           {/* App info */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2 mb-1">
@@ -792,6 +796,7 @@ export function SettingsPage({
             ) : (
               <div className="overflow-x-auto -mx-5 px-5">
                 <table className="w-full text-sm text-left">
+                  <caption className="sr-only">Riwayat Aktivitas</caption>
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                       <th className="py-3 pr-4">Level</th>

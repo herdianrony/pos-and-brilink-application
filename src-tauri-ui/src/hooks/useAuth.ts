@@ -19,9 +19,9 @@ export function useAuth({
 }) {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
-  const [setupForm, setSetupForm] = useState({ name: "Admin", username: "admin", password: "Admin123" });
-  const [loginForm, setLoginForm] = useState({ username: "admin", password: "Admin123" });
-  const [userForm, setUserForm] = useState({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" as "admin" | "kasir" });
+  const [setupForm, setSetupForm] = useState({ name: "", username: "", password: "" });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [userForm, setUserForm] = useState({ name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
 
   async function submitSetup(event: FormEvent) {
     event.preventDefault();
@@ -63,7 +63,7 @@ export function useAuth({
     setSaving(true);
     try {
       await createUser(userForm);
-      setUserForm({ name: "Kasir", username: "kasir", password: "Kasir123", role: "kasir" });
+      setUserForm({ name: "", username: "", password: "", role: "kasir" });
       await onRefresh();
       onMessage("User berhasil dibuat");
     } catch (error) {

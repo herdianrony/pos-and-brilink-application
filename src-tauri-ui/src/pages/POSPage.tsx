@@ -214,7 +214,7 @@ export function POSPage({
                       <div className="flex items-center justify-between mt-1.5">
                         <span
                           className={cn(
-                            "text-[11px] font-medium px-2 py-0.5 rounded-full",
+                            "text-xs font-medium px-2 py-0.5 rounded-full",
                             product.stock <= (product.min_stock ?? 5)
                               ? "bg-red-100 text-red-600"
                               : "bg-slate-100 text-slate-500",
@@ -251,7 +251,7 @@ export function POSPage({
           </div>
 
           {/* Cart items */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0 max-h-[35vh] lg:max-h-none">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0 max-h-[45vh] lg:max-h-none">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-300">
                 <ShoppingBag size={48} strokeWidth={1} />
@@ -292,7 +292,7 @@ export function POSPage({
                           onClick={() =>
                             onUpdateQty(item.product.id, item.quantity - 1)
                           }
-                          className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
+                          className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
                         >
                           <Minus size={13} />
                         </button>
@@ -303,7 +303,7 @@ export function POSPage({
                           onClick={() =>
                             onUpdateQty(item.product.id, item.quantity + 1)
                           }
-                          className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-colors"
+                          className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-success-light/30 hover:border-success-light hover:text-success transition-colors"
                         >
                           <Plus size={13} />
                         </button>
@@ -323,7 +323,7 @@ export function POSPage({
                     {item.type === "product" && (
                       <button
                         onClick={() => onUpdateQty(item.product.id, 0)}
-                        className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                        className="p-2.5 text-gray-300 hover:text-red-500 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -454,6 +454,7 @@ export function POSPage({
                 size="md"
                 onClick={onHoldCart}
                 disabled={!cart.length}
+                title="Fitur hold akan segera tersedia"
               >
                 <Pause size={16} /> Hold
               </Button>

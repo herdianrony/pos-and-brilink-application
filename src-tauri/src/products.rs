@@ -574,7 +574,7 @@ pub fn restock_product(
             name: row.get(1)?,
             barcode: row.get(2)?,
             category_id: row.get(3)?,
-            category_name: row.get(12)?,
+            category_name: row.get(11)?,
             buy_price: row.get(4)?,
             sell_price: row.get(5)?,
             stock: row.get(6)?,

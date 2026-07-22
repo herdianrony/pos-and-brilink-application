@@ -66,7 +66,7 @@ export function DebtsPage({
               {visibleDebts.map((debt) => (
                 <DataRow key={debt.id} template="minmax(0,1.2fr) 110px 130px 104px">
                   <DataCell><strong>{debt.customer_name}</strong><DataCellText>{debt.phone || "Tanpa nomor"}</DataCellText><DataCellText>{debt.notes || "-"}</DataCellText></DataCell>
-                  <span className={debt.status === "paid" ? "inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-black bg-emerald-50 text-emerald-700" : "inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-black bg-amber-50 text-amber-700"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
+                  <span className={debt.status === "paid" ? "inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-black bg-success-light/20 text-success" : "inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-black bg-amber-50 text-amber-700"}>{debt.status === "paid" ? "Lunas" : "Belum lunas"}</span>
                   <div className="grid justify-items-end gap-1 text-right"><strong>{formatRupiah(debt.outstanding)}</strong><small>Total {formatRupiah(debt.amount)}</small></div>
                   <div className="flex flex-wrap gap-2 lg:justify-end [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs">
                     <Button variant="secondary" className="h-10 w-10 p-0" title="Catat pembayaran" aria-label={`Catat pembayaran utang ${debt.customer_name}`} onClick={() => onDebtPaymentFormChange({ ...debtPaymentForm, debt_id: String(debt.id) })} disabled={debt.status === "paid"}><HandCoins size={16} /></Button>
