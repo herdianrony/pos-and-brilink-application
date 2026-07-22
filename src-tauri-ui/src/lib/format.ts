@@ -31,6 +31,33 @@ export function mutationLabel(type: string) {
   return labels[type] || type;
 }
 
+export function formatDate(
+  date: Date | string | number | null | undefined,
+): string {
+  if (date == null || date === "") return "—";
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+export function formatDateShort(
+  date: Date | string | number | null | undefined,
+): string {
+  if (date == null || date === "") return "—";
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+  }).format(d);
+}
+
 export function parseCurrencyInput(value: string, allowNegative = false) {
   const negative = allowNegative && value.trim().startsWith("-");
   const digits = value.replace(/\D/g, "");

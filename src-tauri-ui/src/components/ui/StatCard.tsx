@@ -1,33 +1,56 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
-const toneClass = {
-  green: "bg-emerald-50 text-emerald-600",
-  blue: "bg-cyan-50 text-cyan-700",
-  amber: "bg-amber-50 text-amber-600",
-  teal: "bg-teal-50 text-teal-700", 
-};
-
 export function StatCard({
   icon,
   label,
   value,
   sub,
-  tone = "green",
+  color,
+  trend,
 }: {
   icon: ReactNode;
   label: string;
   value: ReactNode;
   sub?: ReactNode;
-  tone?: keyof typeof toneClass;
+  color: string;
+  trend?: "up" | "down" | "neutral";
 }) {
+  const trendColor =
+    trend === "up"
+      ? "text-emerald-600"
+      : trend === "down"
+        ? "text-red-500"
+        : "text-slate-400";
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,.06)]">
-      <span className={cn("grid h-12 w-12 place-items-center rounded-2xl text-lg font-black", toneClass[tone])}>{icon}</span>
-      <div>
-        <small className="font-black uppercase tracking-wider text-slate-400">{label}</small>
-        <strong className="block text-xl font-black text-slate-950">{value}</strong>
-        {sub && <p className="m-0 text-xs font-semibold text-slate-400">{sub}</p>}
+    <div className="bg-white rounded-3xl border border-slate-200/60 shadow-card hover:shadow-pop hover:border-slate-300/60 transition-all duration-300 p-5 animate-fadeIn group">
+      <div className="flex items-start gap-4">
+        <div
+          className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300",
+            color,
+          )}
+        >
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            {label}
+          </p>
+          <p className="text-xl font-extrabold text-slate-900 mt-1 truncate">
+            {value}
+          </p>
+          {sub && (
+            <p
+              className={cn(
+                "text-xs mt-1 font-semibold",
+                trend ? trendColor : "text-slate-400",
+              )}
+            >
+              {sub}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

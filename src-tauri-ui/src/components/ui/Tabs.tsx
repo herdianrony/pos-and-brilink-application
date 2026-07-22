@@ -9,19 +9,18 @@ type TabItem<T extends string> = {
   disabled?: boolean;
 };
 
+/** Matches Electron Tabs: slate-100/80 pill, active=white+shadow-pop */
 export function Tabs<T extends string>({
   items,
   active,
   onChange,
   className,
-  buttonClassName,
   ariaLabel = "Navigasi tab",
 }: {
   items: Array<TabItem<T>>;
   active: T;
   onChange: (id: T) => void;
   className?: string;
-  buttonClassName?: string;
   ariaLabel?: string;
 }) {
   return (
@@ -29,7 +28,7 @@ export function Tabs<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "mb-4 flex flex-wrap gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_8px_22px_rgba(15,23,42,.05)]",
+        "flex gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl overflow-x-auto",
         className,
       )}
     >
@@ -44,9 +43,10 @@ export function Tabs<T extends string>({
             aria-selected={selected}
             disabled={item.disabled}
             className={cn(
-              "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none transition-colors hover:translate-y-0 hover:bg-slate-100 hover:shadow-none disabled:cursor-not-allowed disabled:opacity-50",
-              selected && "bg-emerald-500 text-white hover:bg-emerald-500",
-              buttonClassName,
+              "px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2",
+              selected
+                ? "bg-white text-primary shadow-pop"
+                : "text-slate-500 hover:text-slate-700",
             )}
             onClick={() => onChange(item.id)}
           >
@@ -59,6 +59,7 @@ export function Tabs<T extends string>({
   );
 }
 
+/** Chip-style tabs for compact filters */
 export function ChipTabs<T extends string>({
   items,
   active,
@@ -73,7 +74,11 @@ export function ChipTabs<T extends string>({
   ariaLabel?: string;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn("flex flex-wrap gap-2", className)}>
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className={cn("flex gap-2", className)}
+    >
       {items.map((item) => {
         const selected = active === item.id;
         return (
@@ -84,8 +89,10 @@ export function ChipTabs<T extends string>({
             aria-selected={selected}
             disabled={item.disabled}
             className={cn(
-              "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50",
-              selected && "border-transparent bg-gradient-to-br from-emerald-700 to-emerald-500 text-white hover:bg-emerald-600",
+              "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+              selected
+                ? "bg-primary text-white shadow-card shadow-primary/20"
+                : "bg-white text-slate-600 border border-slate-200 hover:border-primary/30",
             )}
             onClick={() => onChange(item.id)}
           >

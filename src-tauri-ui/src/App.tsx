@@ -8,7 +8,9 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
-import { FinancePage } from "./pages/FinancePage";
+import { HistoryPage } from "./pages/HistoryPage";
+import { CashBalancePage } from "./pages/CashBalancePage";
+import { StatementPage } from "./pages/StatementPage";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
 import { useProductMaster } from "./hooks/useProductMaster";
@@ -20,12 +22,17 @@ import { useAuth } from "./hooks/useAuth";
 import { useTransactionDetail } from "./hooks/useTransactionDetail";
 import { AppShell } from "./components/layout/AppShell";
 import { AuthShell } from "./components/AuthShell";
-import { CashDialogs, type CashModalType } from "./components/CashDialogs";
-import { CurrencyInput } from "./components/CurrencyInput";
+import { CashDialogs } from "./components/CashDialogs";
 import { formatRupiah } from "./lib/format";
 import { exportCsvFile } from "./lib/csv";
 import type { ViewKey } from "./types";
 
+const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["products", "statement", "cash", "settings"]);
+
+function canAccess(view: ViewKey, role: string) {
+  if (!ADMIN_ONLY_VIEWS.has(view)) return true;
+  return role === "admin";
+}
 
 export default function App() {
   const [saving, setSaving] = useState(false);
@@ -199,7 +206,6 @@ export default function App() {
 
   useEffect(() => {
     bootstrap();
-    // POC bootstrap cukup dijalankan sekali saat window Tauri dibuka.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -210,6 +216,12 @@ export default function App() {
     }
   }, [accounts, settlementAccountId, setSettlementAccountId]);
 
+  // Role guard: redirect if user can't access current view
+  useEffect(() => {
+    if (user && !canAccess(activeView, user.role)) {
+      setActiveView("dashboard");
+    }
+  }, [user, activeView]);
 
   async function refreshApp() {
     if (user) {
@@ -217,6 +229,14 @@ export default function App() {
     } else {
       await bootstrap();
     }
+  }
+
+  function navigate(view: ViewKey) {
+    if (user && !canAccess(view, user.role)) {
+      setActiveView("dashboard");
+      return;
+    }
+    setActiveView(view);
   }
 
   function exportCsv(filename: string, rows: Array<Record<string, string | number | null | undefined>>) {
@@ -227,7 +247,6 @@ export default function App() {
       setMessage(error instanceof Error ? error.message : String(error));
     }
   }
-
 
   function addToCart(product: ProductRow) {
     setActiveView("pos");
@@ -247,16 +266,6 @@ export default function App() {
 
   async function submitCheckout(cashReceived?: number) {
     await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1), cashReceived });
-  }
-
-
-  function renderActiveView() {
-    if (activeView === "pos") return <POSPage categories={categories} products={filteredProducts} cart={cart} cartTotal={cartTotal} paymentMethod={paymentMethod} settlementAccountId={settlementAccountId} settlementAccounts={settlementAccounts} saving={saving} posCategoryFilter={posCategoryFilter} onCategoryFilterChange={setPosCategoryFilter} onAddToCart={addToCart} onAddAgentService={posCart.addAgentService} onUpdateQty={updateCartQty} onPaymentMethodChange={setPaymentMethod} onSettlementAccountChange={setSettlementAccountId} onHoldCart={holdCart} onClearCart={clearCart} onSubmitCheckout={submitCheckout} />;
-    if (activeView === "brilink") return <AgentServicesPage accounts={accounts} transactions={transactions} agentForm={agentForm} agentStep={agentStep} saving={saving} onAgentFormChange={setAgentForm} onAgentStepChange={setAgentStep} onApplyPreset={applyAgentPreset} onSubmitAgentTransaction={submitAgentTransaction} />;
-    if (activeView === "products") return <ProductMasterPage categories={categories} products={filteredProducts} onAddCategory={() => setShowCategoryModal(true)} onAddProduct={openAddProduct} onEditProduct={startEditProduct} onRemoveProduct={removeProduct} />;
-    if (activeView === "finance") return <FinancePage accounts={accounts} mutations={accountMutations} debts={filteredDebts} debtForm={debtForm} debtPaymentForm={debtPaymentForm} saving={saving} transactions={filteredTransactions} selectedTransaction={selectedTransaction} selectedTransactionItems={selectedTransactionItems} onAddAccount={openAddAccount} onTransfer={openTransfer} onAdjust={openAdjust} onOwnerDraw={openOwnerDraw} onBankFee={openBankFee} onDebtFormChange={setDebtForm} onDebtPaymentFormChange={setDebtPaymentForm} onSubmitDebt={submitDebt} onSubmitDebtPayment={submitDebtPayment} onCopyReminder={copyDebtReminder} onOpenTransactionDetail={openTransactionDetail} onExportStatementCsv={() => exportCsv("rekening-koran-catatagen.csv", accountMutations.map((m) => ({ akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes, tanggal: m.created_at })))} onExportReportCsv={({ posRevenue, posProfit, agentProfit }) => exportCsv("laporan-catatagen.csv", [{ omzet_pos: posRevenue, profit_pos: posProfit, fee_agen: agentProfit, total_mutasi: accountMutations.length }])} />;
-    if (activeView === "settings") return <SettingsPage users={users} userForm={userForm} saving={saving} transactions={transactions} mutations={accountMutations} debts={debts} products={products} backups={backups} dbPath={dbPath} logs={appLogs} onRefreshLogs={refreshApp} onUserFormChange={setUserForm} onSubmitUser={submitUser} onExportCsv={exportCsv} onCreateBackup={handleCreateBackup} onRestoreBackup={handleRestoreBackup} />;
-    return <DashboardPage accounts={accounts} products={products} transactions={filteredTransactions} totalCash={totalCash} lowStockCount={lowStockCount} loading={loading} onRefresh={refreshApp} />;
   }
 
   if (setupNeeded) {
@@ -294,20 +303,197 @@ export default function App() {
     );
   }
 
+  // Access denied banner
+  if (!canAccess(activeView, user.role)) {
+    return (
+      <AppShell
+        user={user}
+        activeView={activeView}
+        message={message}
+        loading={loading}
+        onNavigate={navigate}
+        onRefresh={refreshApp}
+        onLogout={logout}
+      >
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+          <h2 className="text-xl font-extrabold text-amber-900">Akses Admin Diperlukan</h2>
+          <p className="mt-2 text-sm leading-relaxed text-amber-800">
+            Menu ini hanya untuk owner/admin. Akun kasir tetap bisa memakai Dashboard, Kasir POS, Layanan Agen, dan Riwayat Transaksi.
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveView("dashboard")}
+            className="mt-4 rounded-2xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-700"
+          >
+            Kembali ke Dashboard
+          </button>
+        </section>
+      </AppShell>
+    );
+  }
+
+  function renderActiveView() {
+    switch (activeView) {
+      case "pos":
+        return (
+          <POSPage
+            categories={categories}
+            products={filteredProducts}
+            cart={cart}
+            cartTotal={cartTotal}
+            paymentMethod={paymentMethod}
+            settlementAccountId={settlementAccountId}
+            settlementAccounts={settlementAccounts}
+            saving={saving}
+            posCategoryFilter={posCategoryFilter}
+            onCategoryFilterChange={setPosCategoryFilter}
+            onAddToCart={addToCart}
+            onAddAgentService={posCart.addAgentService}
+            onUpdateQty={updateCartQty}
+            onPaymentMethodChange={setPaymentMethod}
+            onSettlementAccountChange={setSettlementAccountId}
+            onHoldCart={holdCart}
+            onClearCart={clearCart}
+            onSubmitCheckout={submitCheckout}
+          />
+        );
+      case "brilink":
+        return (
+          <AgentServicesPage
+            accounts={accounts}
+            transactions={transactions}
+            agentForm={agentForm}
+            agentStep={agentStep}
+            saving={saving}
+            onAgentFormChange={setAgentForm}
+            onAgentStepChange={setAgentStep}
+            onApplyPreset={applyAgentPreset}
+            onSubmitAgentTransaction={submitAgentTransaction}
+          />
+        );
+      case "products":
+        return (
+          <ProductMasterPage
+            categories={categories}
+            products={filteredProducts}
+            onAddCategory={() => setShowCategoryModal(true)}
+            onAddProduct={openAddProduct}
+            onEditProduct={startEditProduct}
+            onRemoveProduct={removeProduct}
+          />
+        );
+      case "history":
+        return (
+          <HistoryPage
+            transactions={filteredTransactions}
+            selectedTransaction={selectedTransaction}
+            selectedTransactionItems={selectedTransactionItems}
+            onOpenDetail={openTransactionDetail}
+          />
+        );
+      case "statement":
+        return (
+          <StatementPage
+            accounts={accounts}
+            mutations={accountMutations}
+            onExportCsv={() =>
+              exportCsv(
+                "rekening-koran-catatagen.csv",
+                accountMutations.map((m) => ({
+                  akun: m.account_name,
+                  tipe: m.mutation_type,
+                  nominal: m.amount,
+                  saldo_akhir: m.balance_after,
+                  catatan: m.notes,
+                  tanggal: m.created_at,
+                })),
+              )
+            }
+          />
+        );
+      case "cash":
+        return (
+          <CashBalancePage
+            accounts={accounts}
+            mutations={accountMutations}
+            onAddAccount={openAddAccount}
+            onTransfer={openTransfer}
+            onAdjust={openAdjust}
+            onOwnerDraw={openOwnerDraw}
+            onBankFee={openBankFee}
+          />
+        );
+      case "settings":
+        return (
+          <SettingsPage
+            users={users}
+            userForm={userForm}
+            saving={saving}
+            transactions={transactions}
+            mutations={accountMutations}
+            debts={debts}
+            products={products}
+            backups={backups}
+            dbPath={dbPath}
+            logs={appLogs}
+            onRefreshLogs={refreshApp}
+            onUserFormChange={setUserForm}
+            onSubmitUser={submitUser}
+            onExportCsv={exportCsv}
+            onCreateBackup={handleCreateBackup}
+            onRestoreBackup={handleRestoreBackup}
+          />
+        );
+      case "dashboard":
+      default:
+        return (
+          <DashboardPage
+            accounts={accounts}
+            products={products}
+            transactions={filteredTransactions}
+            totalCash={totalCash}
+            lowStockCount={lowStockCount}
+            loading={loading}
+            onRefresh={refreshApp}
+          />
+        );
+    }
+  }
+
   return (
     <AppShell
       user={user}
       activeView={activeView}
       message={message}
       loading={loading}
-      onNavigate={setActiveView}
+      onNavigate={navigate}
       onRefresh={refreshApp}
       onLogout={logout}
     >
       <ErrorBoundary onReset={refreshApp}>
         {renderActiveView()}
       </ErrorBoundary>
-      <CashDialogs cashModal={cashModal} accounts={accounts} saving={saving} accountForm={accountForm} adjustForm={adjustForm} transferForm={transferForm} ownerDrawForm={ownerDrawForm} bankFeeForm={bankFeeForm} onClose={() => setCashModal(null)} onAccountFormChange={setAccountForm} onAdjustFormChange={setAdjustForm} onTransferFormChange={setTransferForm} onOwnerDrawFormChange={setOwnerDrawForm} onBankFeeFormChange={setBankFeeForm} onSubmitAccount={submitAccount} onSubmitAdjustment={submitAdjustment} onSubmitTransfer={submitTransfer} onSubmitOwnerDraw={submitOwnerDraw} onSubmitBankFee={submitBankFee} />
+      <CashDialogs
+        cashModal={cashModal}
+        accounts={accounts}
+        saving={saving}
+        accountForm={accountForm}
+        adjustForm={adjustForm}
+        transferForm={transferForm}
+        ownerDrawForm={ownerDrawForm}
+        bankFeeForm={bankFeeForm}
+        onClose={() => setCashModal(null)}
+        onAccountFormChange={setAccountForm}
+        onAdjustFormChange={setAdjustForm}
+        onTransferFormChange={setTransferForm}
+        onOwnerDrawFormChange={setOwnerDrawForm}
+        onBankFeeFormChange={setBankFeeForm}
+        onSubmitAccount={submitAccount}
+        onSubmitAdjustment={submitAdjustment}
+        onSubmitTransfer={submitTransfer}
+        onSubmitOwnerDraw={submitOwnerDraw}
+        onSubmitBankFee={submitBankFee}
+      />
       <ProductDialogs
         showCategoryModal={showCategoryModal}
         showProductModal={showProductModal}

@@ -1,22 +1,48 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import { Loader2 } from "lucide-react";
 
 export function EmptyState({
   title,
   description,
   compact = false,
   children,
+  icon,
 }: {
   title: string;
   description?: string;
   compact?: boolean;
   children?: ReactNode;
+  icon?: ReactNode;
 }) {
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+        <p className="font-bold text-slate-600 text-sm">{title}</p>
+        {description && <p className="text-xs mt-1 text-slate-400">{description}</p>}
+        {children}
+      </div>
+    );
+  }
   return (
-    <div role="status" className={cn("grid place-items-center gap-1.5 rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4.5 py-8 text-center text-slate-500", compact && "p-4.5")}>
-      <strong className="text-slate-900">{title}</strong>
-      {description && <span>{description}</span>}
+    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+      {icon && (
+        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4 animate-float">
+          {icon}
+        </div>
+      )}
+      <p className="font-bold text-slate-600 text-base">{title}</p>
+      {description && <p className="text-sm mt-1 text-slate-400">{description}</p>}
       {children}
+    </div>
+  );
+}
+
+export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const s = { sm: "w-5 h-5", md: "w-8 h-8", lg: "w-12 h-12" }[size];
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className={cn(s, "text-primary animate-spin")} />
     </div>
   );
 }

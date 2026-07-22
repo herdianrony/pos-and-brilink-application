@@ -1,43 +1,44 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
-import { Button } from "./Button";
-import { CardHeader } from "./Card";
 
 export function Modal({
-  eyebrow,
-  title,
-  size = "md",
+  open,
   onClose,
   children,
+  size = "md",
 }: {
-  eyebrow?: string;
-  title: string;
-  size?: "sm" | "md" | "lg";
+  open: boolean;
   onClose: () => void;
   children: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
+  if (!open) return null;
+  const w = {
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl",
+  }[size];
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-900/55 p-6">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="absolute inset-0 bg-slate-950/50 animate-fadeIn"
+        aria-hidden="true"
+      />
+      <div
         className={cn(
-          "max-h-[calc(100vh-48px)] w-full overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]",
-          size === "sm" && "max-w-[440px]",
-          size === "md" && "max-w-[720px]",
-          size === "lg" && "max-w-[780px]",
+          "relative bg-white rounded-3xl shadow-float w-full max-h-[92vh] overflow-y-auto animate-bounceIn border border-slate-200/50",
+          w,
         )}
+        onClick={(e) => e.stopPropagation()}
       >
-        <CardHeader>
-          <div>
-            {eyebrow && <p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">{eyebrow}</p>}
-            <h2>{title}</h2>
-          </div>
-          <Button variant="secondary" onClick={onClose}>Tutup</Button>
-        </CardHeader>
         {children}
-      </section>
+      </div>
     </div>
   );
 }

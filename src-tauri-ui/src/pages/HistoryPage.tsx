@@ -1,26 +1,51 @@
-import { useMemo, useState } from "react";
-import { Ban, CheckCircle, ClipboardList, Landmark, RotateCcw, ShoppingCart } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ClipboardList,
+  ShoppingCart,
+  Landmark,
+  TrendingUp,
+  Eye,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
 import { formatRupiah, paymentLabel } from "../lib/format";
-import { Card, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Tabs,
+  Spinner,
+  StatCard,
+  Modal,
+} from "../components/ui";
 
-const typeTabs = [
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const typeTabs: Array<{ id: string; label: string; icon?: LucideIcon }> = [
   { id: "all", label: "Semua", icon: ClipboardList },
   { id: "pos", label: "POS", icon: ShoppingCart },
-  { id: "agent", label: "Layanan", icon: Landmark },
-] as const;
+  { id: "agent", label: "Layanan Agen", icon: Landmark },
+];
 
-const statusTabs = [
+const statusOptions = [
   { id: "all", label: "Semua Status" },
   { id: "completed", label: "Selesai" },
   { id: "pending", label: "Pending" },
   { id: "void", label: "Batal" },
 ] as const;
 
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
-function statusClass(status: string) {
-  const tone = status === "completed" ? "bg-emerald-50 text-emerald-700" : status === "pending" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600";
-  return `inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-black ${tone}`;
+function statusVariant(status: string): "success" | "warning" | "danger" | "default" {
+  if (status === "completed") return "success";
+  if (status === "pending") return "warning";
+  if (status === "void" || status === "reversed") return "danger";
+  return "default";
 }
 
 function statusLabel(status: string) {
@@ -30,6 +55,10 @@ function statusLabel(status: string) {
   if (status === "reversed") return "Reverse";
   return status;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export function HistoryPage({
   transactions,
@@ -42,89 +71,305 @@ export function HistoryPage({
   selectedTransactionItems: TransactionItemRow[];
   onOpenDetail: (transaction: TransactionRow) => void;
 }) {
-  const [typeFilter, setTypeFilter] = useState<(typeof typeTabs)[number]["id"]>("all");
-  const [statusFilter, setStatusFilter] = useState<(typeof statusTabs)[number]["id"]>("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Open modal whenever selectedTransaction is set by parent
+  useEffect(() => {
+    setModalOpen(!!selectedTransaction);
+  }, [selectedTransaction]);
 
   const filtered = useMemo(() => {
-    return transactions.filter((transaction) => {
-      const typeMatches = typeFilter === "all" || transaction.transaction_type === typeFilter;
-      const statusMatches = statusFilter === "all" || transaction.status === statusFilter;
-      return typeMatches && statusMatches;
+    return transactions.filter((t) => {
+      const typeOk = typeFilter === "all" || t.transaction_type === typeFilter;
+      const statusOk = statusFilter === "all" || t.status === statusFilter;
+      return typeOk && statusOk;
     });
-  }, [statusFilter, transactions, typeFilter]);
+  }, [transactions, typeFilter, statusFilter]);
 
-  const revenue = filtered.reduce((sum, transaction) => sum + transaction.total_amount, 0);
-  const profit = filtered.reduce((sum, transaction) => sum + transaction.profit, 0);
-  const pendingCount = transactions.filter((transaction) => transaction.status === "pending").length;
+  const revenue = filtered.reduce((s, t) => s + t.total_amount, 0);
+  const profit = filtered.reduce((s, t) => s + t.profit, 0);
+  const pendingCount = transactions.filter((t) => t.status === "pending").length;
 
   return (
-    <div className="grid gap-4">
-      <PageHeader
-        title={<span className="flex items-center gap-2"><ClipboardList size={26} /> Riwayat Transaksi</span>}
-        description={`${filtered.length} transaksi ditemukan${pendingCount > 0 ? ` • ${pendingCount} pending` : ""}`}
+    <div className="space-y-5 animate-fadeIn">
+      {/* 1. Header */}
+      <div>
+        <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+          <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
+        </h2>
+        <p className="text-sm text-slate-400">
+          {filtered.length} transaksi ditemukan
+          {pendingCount > 0 && ` \u2022 ${pendingCount} pending`}
+        </p>
+      </div>
+
+      {/* 2. Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard
+          icon={<ShoppingCart size={18} />}
+          label="Total"
+          value={String(filtered.length)}
+          sub="transaksi"
+          color="bg-emerald-50 text-emerald-500"
+        />
+        <StatCard
+          icon={<TrendingUp size={18} />}
+          label="Pendapatan"
+          value={formatRupiah(revenue)}
+          color="bg-emerald-50 text-emerald-500"
+        />
+        <StatCard
+          icon={<Landmark size={18} />}
+          label="Keuntungan"
+          value={formatRupiah(profit)}
+          color="bg-amber-50 text-amber-500"
+        />
+      </div>
+
+      {/* 3. Type tabs */}
+      <Tabs
+        items={typeTabs}
+        active={typeFilter}
+        onChange={setTypeFilter}
+        ariaLabel="Filter tipe transaksi"
       />
 
-      <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
-        <StatCard tone="blue" icon={<ClipboardList size={20} />} label="Total Transaksi" value={filtered.length} sub="sesuai filter" />
-        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Total Omzet" value={formatRupiah(revenue)} sub="nilai transaksi" />
-        <StatCard tone="amber" icon={<RotateCcw size={20} />} label="Profit" value={formatRupiah(profit)} sub="estimasi keuntungan" />
-        <StatCard tone="teal" icon={<Ban size={20} />} label="Pending" value={pendingCount} sub="perlu diproses" />
-      </section>
+      {/* 4. Status filter chips */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {statusOptions.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setStatusFilter(s.id)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
+              statusFilter === s.id
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
-      <Card className="mb-4 grid gap-3 p-3">
-        <div className="flex flex-wrap gap-2">
-          {typeTabs.map((tab) => {
-            const TabIcon = tab.icon;
-            return (
-              <button key={tab.id} className={typeFilter === tab.id ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setTypeFilter(tab.id)}>
-                <TabIcon size={16} /> {tab.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-          {statusTabs.map((tab) => (
-            <button key={tab.id} className={statusFilter === tab.id ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100 border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100"} onClick={() => setStatusFilter(tab.id)}>{tab.label}</button>
-          ))}
-        </div>
+      {/* 5. Transaction table */}
+      <Card className="overflow-hidden">
+        {filtered.length === 0 ? (
+          <EmptyState
+            title="Belum ada transaksi"
+            description="Transaksi akan muncul setelah kasir atau layanan agen digunakan."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                  <th className="text-left p-3 font-medium">Invoice</th>
+                  <th className="text-left p-3 font-medium">Tipe</th>
+                  <th className="text-left p-3 font-medium">Pelanggan</th>
+                  <th className="text-left p-3 font-medium">Status</th>
+                  <th className="text-right p-3 font-medium">Total</th>
+                  <th className="text-right p-3 font-medium">Profit</th>
+                  <th className="text-left p-3 font-medium">Waktu</th>
+                  <th className="text-center p-3 font-medium">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((transaction) => (
+                  <tr
+                    key={transaction.id}
+                    className={`border-t transition-colors cursor-pointer ${
+                      transaction.status === "pending"
+                        ? "border-amber-100 bg-amber-50/30 hover:bg-amber-50/60"
+                        : transaction.status === "completed"
+                          ? "border-slate-50 hover:bg-emerald-50/30"
+                          : "border-red-100 bg-red-50/20 text-slate-500 hover:bg-red-50/40"
+                    }`}
+                    onClick={() => onOpenDetail(transaction)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") onOpenDetail(transaction);
+                    }}
+                    tabIndex={0}
+                  >
+                    <td className="p-3 font-mono text-xs text-slate-500">
+                      {transaction.invoice_no}
+                    </td>
+                    <td className="p-3">
+                      <Badge
+                        variant={
+                          transaction.transaction_type === "pos"
+                            ? "primary"
+                            : "purple"
+                        }
+                      >
+                        {transaction.transaction_type === "pos"
+                          ? "POS"
+                          : "Layanan Agen"}
+                      </Badge>
+                    </td>
+                    <td className="p-3 text-slate-500 text-xs">
+                      {transaction.customer_name || "-"}
+                    </td>
+                    <td className="p-3">
+                      <Badge variant={statusVariant(transaction.status)}>
+                        {transaction.status === "pending" ? "\u26a0 " : ""}
+                        {statusLabel(transaction.status)}
+                      </Badge>
+                    </td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatRupiah(transaction.total_amount)}
+                    </td>
+                    <td className="p-3 text-right font-semibold text-emerald-600">
+                      {formatRupiah(transaction.profit)}
+                    </td>
+                    <td className="p-3 text-slate-400 text-xs whitespace-nowrap">
+                      {transaction.created_at}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"
+                        title="Lihat detail"
+                      >
+                        <Eye size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
-      <section className="grid grid-cols-[minmax(0,1.25fr)_minmax(300px,.75fr)] items-start gap-4 max-[1080px]:grid-cols-1">
-        <SectionCard className="min-w-0 rounded-[28px]" title="Daftar Transaksi" description="Klik salah satu transaksi untuk melihat detail.">
-          {filtered.length === 0 ? <EmptyState title="Belum ada transaksi" description="Transaksi akan muncul setelah kasir atau layanan agen digunakan." /> : (
-            <DataTable columns={["Invoice", "Tipe", "Status", "Total"]} template="minmax(0,1.4fr) 120px 110px 130px">
-              {filtered.map((transaction) => (
-                <DataRow key={transaction.id} template="minmax(0,1.4fr) 120px 110px 130px" active={selectedTransaction?.id === transaction.id} onClick={() => onOpenDetail(transaction)}>
-                  <DataCell><strong>{transaction.invoice_no}</strong><DataCellText>{transaction.created_at}</DataCellText></DataCell>
-                  <DataCell>{transaction.transaction_type === "pos" ? "POS" : "Layanan"}<DataCellText>{paymentLabel(transaction.payment_method)}</DataCellText></DataCell>
-                  <span className={statusClass(transaction.status)}>{statusLabel(transaction.status)}</span>
-                  <strong>{formatRupiah(transaction.total_amount)}</strong>
-                </DataRow>
-              ))}
-            </DataTable>
-          )}
-        </SectionCard>
-
-        <SectionCard className="rounded-[28px]" title="Detail Transaksi" description="Ringkasan dan item transaksi.">
-          {!selectedTransaction ? <EmptyState compact title="Pilih transaksi" description="Detail akan tampil di sini." /> : (
-            <div className="grid gap-2.5">
-              <div className="grid gap-2 break-all rounded-[18px] border border-slate-200 bg-slate-50 p-4"><strong>{selectedTransaction.invoice_no}</strong><span>{selectedTransaction.created_at}</span></div>
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-3"><span>Tipe</span><strong>{selectedTransaction.transaction_type === "pos" ? "POS" : "Layanan Agen"}</strong></div>
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-3"><span>Metode</span><strong>{paymentLabel(selectedTransaction.payment_method)}</strong></div>
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-3"><span>Status</span><strong>{statusLabel(selectedTransaction.status)}</strong></div>
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-3"><span>Total</span><strong>{formatRupiah(selectedTransaction.total_amount)}</strong></div>
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-3"><span>Profit</span><strong>{formatRupiah(selectedTransaction.profit)}</strong></div>
-              <h2>Item</h2>
-              {selectedTransactionItems.length === 0 ? <p>Belum ada item detail.</p> : selectedTransactionItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 [&_small]:mt-1 [&_small]:block">
-                  <div><strong>{item.product_name}</strong><small>{item.quantity} x {formatRupiah(item.unit_price)}</small></div>
-                  <strong>{formatRupiah(item.subtotal)}</strong>
+      {/* 6. Transaction detail modal */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        size="md"
+      >
+        {selectedTransaction && (
+          <div className="p-5 space-y-4">
+            {/* Modal header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    selectedTransaction.transaction_type === "pos"
+                      ? "bg-emerald-100"
+                      : "bg-purple-100"
+                  }`}
+                >
+                  {selectedTransaction.transaction_type === "pos" ? (
+                    <ShoppingCart size={20} className="text-emerald-600" />
+                  ) : (
+                    <Landmark size={20} className="text-purple-600" />
+                  )}
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-800">
+                    Detail Transaksi
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    {selectedTransaction.invoice_no}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={statusVariant(selectedTransaction.status)}>
+                  {statusLabel(selectedTransaction.status)}
+                </Badge>
+              </div>
             </div>
-          )}
-        </SectionCard>
-      </section>
+
+            {/* Info grid */}
+            <div className="bg-slate-50 rounded-xl p-3 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 block">Tanggal</span>
+                <span className="font-medium text-slate-700">
+                  {selectedTransaction.created_at}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Tipe</span>
+                <span className="font-medium text-slate-700">
+                  {selectedTransaction.transaction_type === "pos"
+                    ? "POS"
+                    : "Layanan Agen"}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Pelanggan</span>
+                <span className="font-medium text-slate-700">
+                  {selectedTransaction.customer_name || "-"}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Pembayaran</span>
+                <span className="font-medium text-slate-700">
+                  {paymentLabel(selectedTransaction.payment_method)}
+                </span>
+              </div>
+            </div>
+
+            {/* Items */}
+            {selectedTransactionItems.length > 0 && (
+              <div className="border-t border-dashed pt-3 space-y-2">
+                <p className="text-sm font-bold text-slate-600">Item:</p>
+                {selectedTransactionItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between text-sm bg-slate-50 rounded-xl p-2.5"
+                  >
+                    <div>
+                      <span className="font-medium">{item.product_name}</span>
+                      <span className="text-slate-400 ml-1">
+                        \u00d7 {item.quantity}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        {formatRupiah(item.subtotal)}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {formatRupiah(item.unit_price)} / pcs
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Notes */}
+            {selectedTransaction.notes && (
+              <div className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
+                <span className="font-semibold">Catatan:</span>{" "}
+                {selectedTransaction.notes}
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="border-t border-dashed pt-3 space-y-1">
+              <div className="flex justify-between text-lg font-extrabold">
+                <span>Total</span>
+                <span className="text-emerald-700">
+                  {formatRupiah(selectedTransaction.total_amount)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Keuntungan</span>
+                <span className="text-emerald-600 font-bold">
+                  {formatRupiah(selectedTransaction.profit)}
+                </span>
+              </div>
+            </div>
+
+            <Button variant="ghost" className="w-full" onClick={() => setModalOpen(false)}>
+              Tutup
+            </Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

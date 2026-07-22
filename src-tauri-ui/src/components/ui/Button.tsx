@@ -1,30 +1,49 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
-type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "danger" | "success" | "accent" | "ghost" | "outline";
+type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "border-0 bg-gradient-to-br from-emerald-700 to-teal-500 text-white shadow-[0_10px_24px_rgba(4,120,87,.18)]",
+    "gradient-primary text-white shadow-glow-primary hover:shadow-pop",
   secondary:
-    "border border-slate-200 bg-slate-100 text-slate-900 shadow-none hover:bg-slate-200",
+    "bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-soft",
   danger:
-    "border-0 bg-gradient-to-br from-rose-700 to-red-500 text-white shadow-[0_10px_24px_rgba(190,18,60,.20)]",
+    "bg-red-500 text-white hover:bg-red-600 shadow-pop",
+  success:
+    "gradient-primary text-white shadow-glow-primary",
+  accent:
+    "gradient-accent text-white shadow-glow-accent",
   ghost:
-    "border-0 bg-transparent text-slate-500 shadow-none hover:bg-slate-100 hover:text-slate-700",
+    "text-slate-600 hover:bg-slate-100",
+  outline:
+    "bg-transparent text-primary border-2 border-primary hover:bg-primary/5",
+};
+
+const sizes: Record<ButtonSize, string> = {
+  sm: "px-4 py-2 text-xs rounded-xl",
+  md: "px-5 py-2.5 text-sm rounded-2xl",
+  lg: "px-6 py-3.5 text-base rounded-2xl",
+  xl: "px-8 py-4 text-lg rounded-2xl",
 };
 
 export function Button({
   variant = "primary",
+  size = "md",
   className,
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; children: ReactNode }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; children: ReactNode }) {
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none",
+        "font-bold transition-all duration-200 active:scale-[0.96] hover:scale-[1.02]",
+        "disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100 disabled:hover:scale-100",
+        "inline-flex items-center justify-center gap-2",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 focus-visible:ring-offset-2",
         variants[variant],
+        sizes[size],
         className,
       )}
       {...props}

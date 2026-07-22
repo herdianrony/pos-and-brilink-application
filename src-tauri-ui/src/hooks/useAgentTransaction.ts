@@ -13,7 +13,7 @@ export function useAgentTransaction({
   onRefresh: () => Promise<unknown>;
   onMessage: (message: string) => void;
 }) {
-  const [agentStep, setAgentStep] = useState<1 | 2 | 3 | 4>(1);
+  const [agentStep, setAgentStep] = useState<1 | 2 | 3>(1);
   const [agentForm, setAgentForm] = useState<AgentForm>({ service_name: "Tarik Tunai", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
 
   function applyAgentPreset(kind: "withdraw" | "deposit" | "transfer" | "payment") {
@@ -21,7 +21,7 @@ export function useAgentTransaction({
     if (kind === "deposit") setAgentForm({ ...agentForm, service_name: "Setor Tunai", cash_effect: "0", bank_effect: "0", fee: "5000", provider_cost: "0" });
     if (kind === "transfer") setAgentForm({ ...agentForm, service_name: "Transfer", cash_effect: "0", bank_effect: "0", fee: "5000", provider_cost: "0" });
     if (kind === "payment") setAgentForm({ ...agentForm, service_name: "Pembayaran / Topup", cash_effect: "0", bank_effect: "0", fee: "2500", provider_cost: "0" });
-    setAgentStep(2);
+    // Stay on step 1 — let user review before advancing
   }
 
   async function submitAgentTransaction(event: FormEvent) {

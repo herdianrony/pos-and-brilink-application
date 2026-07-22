@@ -1,38 +1,81 @@
 import { memo, useEffect, useState, type ReactNode } from "react";
-import { Clock, Heart, Info, LogOut, X } from "lucide-react";
+import {
+  Clock,
+  Heart,
+  Info,
+  Landmark,
+  LogOut,
+  Menu,
+  Shield,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 import type { PublicUser } from "../../api";
 import type { ViewKey } from "../../types";
 import { Icon } from "../AppIcon";
 import { navItems } from "../../config/navigation";
 import { cn } from "../../lib/cn";
 
+/* ------------------------------------------------------------------ */
+/*  Icon-only sidebar tooltip                                          */
+/* ------------------------------------------------------------------ */
+function NavTooltip({ label }: { label: string }) {
+  return (
+    <span
+      className={cn(
+        "absolute left-full ml-3 px-3 py-1.5 rounded-xl text-xs font-bold text-white whitespace-nowrap z-[70]",
+        "bg-slate-900 border border-slate-700 shadow-float",
+        "opacity-0 invisible group-hover:opacity-100 group-hover:visible",
+        "transition-all duration-150 pointer-events-none",
+        "translate-x-[-4px] group-hover:translate-x-0",
+      )}
+    >
+      {label}
+      <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-700" />
+    </span>
+  );
+}
 
+/* ------------------------------------------------------------------ */
+/*  Clock (mobile sidebar only)                                        */
+/* ------------------------------------------------------------------ */
 const SidebarClock = memo(function SidebarClock() {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 text-slate-300 [&_strong]:block [&_strong]:text-xl [&_strong]:font-black [&_small]:block [&_small]:text-[11px] [&_small]:text-slate-400">
-      <Clock size={18} />
-      <div>
-        <strong>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong>
-        <small>{now.toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}</small>
+    <div className="relative p-4 border-t border-white/5">
+      <div className="flex items-center gap-3 px-2">
+        <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+          <Clock size={18} className="text-slate-300" />
+        </div>
+        <div>
+          <p className="text-white text-sm font-bold">
+            {now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+          <p className="text-slate-400 text-[11px]">
+            {now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}
+          </p>
+        </div>
       </div>
     </div>
   );
 });
 
+/* ------------------------------------------------------------------ */
+/*  Toast system (same as before)                                      */
+/* ------------------------------------------------------------------ */
+type ToastItem = { id: number; message: string; tone: "success" | "error" | "info" | "warning" };
 
-type ToastItem = { id: number; message: string; tone: "success" | "error" | "info" };
-
-const toastToneClass: Record<ToastItem["tone"], string> = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  error: "border-red-200 bg-red-50 text-red-600",
-  info: "border-emerald-200 bg-emerald-50 text-emerald-700",
+const toastConfig: Record<ToastItem["tone"], { border: string; bg: string; text: string; icon: string }> = {
+  success: { border: "border-emerald-200", bg: "bg-emerald-50", text: "text-emerald-600", icon: "\u2713" },
+  error: { border: "border-red-200", bg: "bg-red-50", text: "text-red-600", icon: "\u2715" },
+  warning: { border: "border-amber-200", bg: "bg-amber-50", text: "text-amber-600", icon: "!" },
+  info: { border: "border-blue-200", bg: "bg-blue-50", text: "text-blue-600", icon: "i" },
 };
 
 function ToastViewport({ message }: { message: string }) {
@@ -41,27 +84,219 @@ function ToastViewport({ message }: { message: string }) {
   useEffect(() => {
     const text = message.trim();
     if (!text || text === "Siap") return;
-    const tone: ToastItem["tone"] = /gagal|error|salah|tidak|wajib/i.test(text) ? "error" : /berhasil|siap|selamat/i.test(text) ? "success" : "info";
+    const tone: ToastItem["tone"] = /gagal|error|salah|tidak|wajib/i.test(text)
+      ? "error"
+      : /berhasil|siap|selamat/i.test(text)
+        ? "success"
+        : /peringatan|warning|hati/i.test(text)
+          ? "warning"
+          : "info";
     const toast = { id: Date.now(), message: text, tone };
     setToasts((items) => [...items.slice(-2), toast]);
-    const timer = window.setTimeout(() => setToasts((items) => items.filter((item) => item.id !== toast.id)), 3600);
+    const timer = window.setTimeout(
+      () => setToasts((items) => items.filter((item) => item.id !== toast.id)),
+      4000,
+    );
     return () => window.clearTimeout(timer);
   }, [message]);
 
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[120] grid w-[min(380px,calc(100vw-32px))] gap-2 print:hidden" aria-live="polite" aria-atomic="false">
-      {toasts.map((toast) => (
-        <div key={toast.id} className={cn("flex items-start justify-between gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold shadow-[0_18px_48px_rgba(15,23,42,.18)] [&_button]:grid [&_button]:h-7 [&_button]:w-7 [&_button]:place-items-center [&_button]:rounded-xl [&_button]:bg-slate-100 [&_button]:p-0 [&_button]:text-slate-500 [&_button]:shadow-none", toastToneClass[toast.tone])}>
-          <span>{toast.message}</span>
-          <button type="button" onClick={() => setToasts((items) => items.filter((item) => item.id !== toast.id))} aria-label="Tutup notifikasi"><X size={14} /></button>
-        </div>
-      ))}
+    <div
+      className="fixed bottom-4 right-4 z-[120] space-y-3 max-w-sm w-full pointer-events-none print:hidden"
+      aria-live="polite"
+    >
+      {toasts.map((t) => {
+        const cfg = toastConfig[t.tone];
+        return (
+          <div
+            key={t.id}
+            className={cn(
+              "pointer-events-auto bg-white rounded-2xl shadow-float border-2 p-4 flex items-start gap-3 animate-slideInRight",
+              cfg.border,
+            )}
+          >
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cfg.bg)}>
+              <span className={cn("text-xs font-bold", cfg.text)}>{cfg.icon}</span>
+            </div>
+            <div className="flex-1 min-w-0 pt-0.5">
+              <p className="text-sm text-slate-600 leading-snug font-medium">{t.message}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToasts((items) => items.filter((item) => item.id !== t.id))}
+              className="text-slate-400 hover:text-slate-600 shrink-0"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Full-width mobile sidebar (overlay, with text labels)              */
+/* ------------------------------------------------------------------ */
+function MobileSidebar({
+  user,
+  activeView,
+  open,
+  onClose,
+  onNavigate,
+  onLogout,
+  onAbout,
+  onSupport,
+}: {
+  user: PublicUser;
+  activeView: ViewKey;
+  open: boolean;
+  onClose: () => void;
+  onNavigate: (view: ViewKey) => void;
+  onLogout: () => void;
+  onAbout: () => void;
+  onSupport: () => void;
+}) {
+  const isAdmin = user.role === "admin";
+  const initials = user.name
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase() || "U";
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-slate-950/50 z-[55] animate-fadeIn no-print"
+        onClick={onClose}
+      />
+      <aside
+        className="fixed top-0 left-0 h-screen w-72 z-[56] flex flex-col animate-slideUp no-print"
+        style={{ backgroundColor: "#0F172A" }}
+      >
+        {/* Decorative gradient glow */}
+        <div
+          className="absolute inset-0 opacity-40 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 0% 0%, rgba(0,179,126,0.3) 0%, transparent 50%)",
+          }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-48 h-48 opacity-20 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(124,58,237,0.4) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Header */}
+        <div className="relative p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-glow-primary"
+              style={{ backgroundColor: "#00875A" }}
+            >
+              <Landmark size={22} className="text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-white font-extrabold text-base tracking-tight truncate">CatatAgen</h1>
+              <p className="text-slate-400 text-[11px] font-medium">Agen Bisnis</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white active:scale-90 transition-all">
+            <X size={22} />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="relative flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+          {navItems
+            .filter((item) => !(item.adminOnly && !isAdmin))
+            .map((item) => {
+              const isActive = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { onNavigate(item.id); onClose(); }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group relative font-bold text-sm",
+                    isActive
+                      ? "gradient-primary text-white shadow-glow-primary active:scale-95"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95",
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className={cn(isActive ? "text-white" : "text-slate-400 group-hover:text-white")}>
+                    <Icon name={item.icon} />
+                  </span>
+                  <span className="flex-1">{item.label}</span>
+                </button>
+              );
+            })}
+        </nav>
+
+        {/* User + Actions */}
+        <div className="relative px-3 pb-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { onAbout(); onClose(); }}
+              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-bold transition-all active:scale-95"
+            >
+              <Info size={14} />
+              <span>Tentang</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onSupport(); onClose(); }}
+              className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-bold transition-all active:scale-95"
+              style={{ backgroundColor: "rgba(124, 58, 237, 0.2)" }}
+            >
+              <Heart size={13} className="fill-current" />
+              <span>Support</span>
+            </button>
+          </div>
+          <div className="rounded-2xl bg-white/5 p-3 flex items-center gap-3 border border-white/5">
+            <div
+              className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center text-sm font-extrabold text-white shrink-0 shadow-glow-primary"
+              style={{ backgroundColor: "#00875A" }}
+            >
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-bold truncate">{user.name}</p>
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                {user.role === "admin" ? (
+                  <><Shield size={11} className="text-emerald-400" /><span>Administrator</span></>
+                ) : (
+                  <><UserIcon size={11} /><span>Kasir</span></>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onLogout}
+              title="Keluar"
+              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-500/80 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-90"
+              aria-label="Keluar"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+
+        <SidebarClock />
+      </aside>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  AppShell — desktop: icon-only sidebar | mobile: full overlay       */
+/* ------------------------------------------------------------------ */
 export function AppShell({
   user,
   activeView,
@@ -82,76 +317,191 @@ export function AppShell({
   onLogout: () => void;
 }) {
   const [shellNotice, setShellNotice] = useState<null | { title: string; message: string }>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = user.role === "admin";
   const initials = user.name
     .split(" ")
     .slice(0, 2)
-    .map((part) => part[0])
+    .map((p) => p[0])
     .join("")
     .toUpperCase() || "U";
+
   function showAbout() {
-    setShellNotice({ title: "Tentang CatatAgen", message: "CatatAgen Local adalah aplikasi POS dan pencatatan layanan agen lokal berbasis Tauri." });
+    setShellNotice({
+      title: "Tentang CatatAgen",
+      message: "CatatAgen Local adalah aplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.",
+    });
+  }
+  function showSupport() {
+    setShellNotice({
+      title: "Support",
+      message: "Untuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek.",
+    });
   }
 
-  function showSupport() {
-    setShellNotice({ title: "Support", message: "Untuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek." });
-  }
+  const visibleNavItems = navItems.filter((item) => !(item.adminOnly && !isAdmin));
 
   return (
-    <div className="min-h-screen grid grid-cols-[292px_1fr] max-[860px]:block max-[1120px]:grid-cols-[96px_1fr] print:hidden min-h-screen bg-[#f8f9fb] max-[860px]:block">
-      <aside className="sticky top-0 flex h-screen flex-col gap-5 overflow-hidden px-4.5 py-5.5 text-white max-[860px]:static max-[860px]:h-auto relative h-screen gap-5 border-r border-white/10 bg-[#111827] p-4 max-[860px]:static max-[860px]:h-auto">
-        <div className="relative grid items-center gap-3 text-white grid-cols-[auto_1fr] [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_small]:mt-1 [&_small]:block [&_small]:text-xs [&_small]:font-semibold [&_small]:text-slate-400">
-          <div className="grid place-items-center rounded-[22px] bg-gradient-to-br from-emerald-700 to-emerald-500 text-white font-black tracking-tighter shadow-[0_16px_30px_rgba(4,120,87,.30)] h-16 w-16">CA</div>
-          <div>
-            <strong>CatatAgen</strong>
-            <small>Agen Bisnis</small>
+    <div className="min-h-screen flex">
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-float border border-slate-200/60 text-slate-700 active:scale-95 transition-transform no-print"
+      >
+        <Menu size={22} />
+      </button>
+
+      {/* ── Desktop: Icon-only sidebar (w-16 = 64px) ── */}
+      <aside
+        className="hidden lg:flex sticky top-0 left-0 h-screen w-16 z-[40] flex-col items-center no-print"
+        style={{ backgroundColor: "#0F172A" }}
+      >
+        {/* Subtle gradient glow */}
+        <div
+          className="absolute inset-0 opacity-40 pointer-events-none rounded-none"
+          style={{
+            background: "radial-gradient(ellipse at 0% 0%, rgba(0,179,126,0.25) 0%, transparent 60%)",
+          }}
+        />
+
+        {/* Logo icon */}
+        <div className="relative pt-4 pb-3">
+          <div
+            className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary"
+            style={{ backgroundColor: "#00875A" }}
+          >
+            <Landmark size={18} className="text-white" />
           </div>
         </div>
 
-        <nav className="relative grid gap-2 overflow-y-auto pr-1 max-[860px]:grid-cols-3">
-          {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-            <button key={item.id} className={activeView === item.id ? "flex w-full items-center justify-start gap-3 rounded-2xl border border-transparent bg-transparent px-3.5 py-3 text-[13px] font-black text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none max-[860px]:justify-center border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex w-full items-center justify-start gap-3 rounded-2xl border border-transparent bg-transparent px-3.5 py-3 text-[13px] font-black text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none max-[860px]:justify-center"} onClick={() => onNavigate(item.id)} aria-current={activeView === item.id ? "page" : undefined} title={item.label}>
-              <span className="inline-grid h-5.5 w-5.5 flex-none place-items-center [&_svg]:block"><Icon name={item.icon} /></span>{item.label}
-            </button>
-          ))}
+        {/* Divider */}
+        <div className="w-8 h-px bg-white/10 mb-2" />
+
+        {/* Nav icons — centered */}
+        <nav className="relative flex-1 flex flex-col items-center gap-1 py-1 overflow-y-auto w-full px-2">
+          {visibleNavItems.map((item) => {
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={cn(
+                  "group relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200",
+                  isActive
+                    ? "gradient-primary text-white shadow-glow-primary active:scale-90"
+                    : "text-slate-400 hover:bg-white/10 hover:text-white active:scale-90",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                title={item.label}
+              >
+                <Icon name={item.icon} />
+                <NavTooltip label={item.label} />
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="relative mt-auto grid gap-3">
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" className="flex items-center justify-center gap-1.5 rounded-2xl bg-white/5 px-2 py-2 text-xs font-black text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none" onClick={showAbout}><Info size={14} /> Tentang</button>
-            <button type="button" className="flex items-center justify-center gap-1.5 rounded-2xl bg-white/5 px-2 py-2 text-xs font-black text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none bg-teal-500/20 text-teal-200" onClick={showSupport}><Heart size={14} /> Support</button>
-          </div>
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-white [&_strong]:block [&_strong]:truncate [&_strong]:text-sm [&_strong]:font-black [&_small]:block [&_small]:text-[11px] [&_small]:font-semibold [&_small]:text-slate-400">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-500 text-sm font-black text-white">{initials}</div>
-            <div>
-              <strong>{user.name}</strong>
-              <small>{user.role === "admin" ? "Administrator" : "Kasir"}</small>
+        {/* Bottom actions */}
+        <div className="relative flex flex-col items-center gap-1 pb-2 px-2">
+          <div className="w-8 h-px bg-white/10 mb-1" />
+
+          {/* About */}
+          <button
+            onClick={showAbout}
+            className="group relative w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+            title="Tentang"
+          >
+            <Info size={18} />
+            <NavTooltip label="Tentang" />
+          </button>
+
+          {/* Support */}
+          <button
+            onClick={showSupport}
+            className="group relative w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+            title="Support"
+          >
+            <Heart size={16} className="fill-current" />
+            <NavTooltip label="Support" />
+          </button>
+
+          {/* Divider */}
+          <div className="w-8 h-px bg-white/10 my-1" />
+
+          {/* User avatar */}
+          <div className="relative group">
+            <div
+              className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-xs font-extrabold text-white shadow-glow-primary cursor-default"
+              style={{ backgroundColor: "#00875A" }}
+            >
+              {initials}
             </div>
-            <button className="grid h-9 w-9 place-items-center rounded-xl border-0 bg-white/5 p-0 text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none" onClick={onLogout} title="Keluar"><LogOut size={18} /></button>
+            <NavTooltip label={`${user.name} (${user.role === "admin" ? "Administrator" : "Kasir"})`} />
           </div>
-          <SidebarClock />
+
+          {/* Logout */}
+          <button
+            onClick={onLogout}
+            className="group relative w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:bg-red-500/80 hover:text-white transition-all active:scale-90 mb-3"
+            title="Keluar"
+            aria-label="Keluar"
+          >
+            <LogOut size={17} />
+            <NavTooltip label="Keluar" />
+          </button>
         </div>
       </aside>
 
+      {/* ── Mobile: Full overlay sidebar ── */}
+      <MobileSidebar
+        user={user}
+        activeView={activeView}
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        onNavigate={onNavigate}
+        onLogout={onLogout}
+        onAbout={showAbout}
+        onSupport={showSupport}
+      />
+
+      {/* About/Support modal */}
       {shellNotice && (
-        <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
-          <section className="max-h-[calc(100vh-48px)] w-[min(720px,100%)] overflow-auto rounded-[28px] bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]" role="dialog" aria-modal="true" aria-label={shellNotice.title}>
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          onClick={() => setShellNotice(null)}
+        >
+          <div className="absolute inset-0 bg-slate-950/50 animate-fadeIn" />
+          <div className="relative bg-white rounded-3xl shadow-float w-full max-w-md animate-bounceIn border border-slate-200/50 p-7">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">CatatAgen Local</p><h2>{shellNotice.title}</h2><p className="m-0 text-sm text-slate-600">{shellNotice.message}</p></div>
-              <button className="grid h-9 w-9 place-items-center rounded-xl border-0 bg-white/5 p-0 text-slate-300 shadow-none hover:translate-y-0 hover:bg-white/10 hover:shadow-none" onClick={() => setShellNotice(null)} title="Tutup"><X size={18} /></button>
+              <div>
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-600">
+                  CatatAgen Local
+                </p>
+                <h2 className="text-lg font-extrabold text-slate-900 mb-1">
+                  {shellNotice.title}
+                </h2>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {shellNotice.message}
+                </p>
+              </div>
+              <button
+                className="text-slate-400 hover:text-slate-600"
+                onClick={() => setShellNotice(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
-          </section>
+          </div>
         </div>
       )}
 
-      <section className="min-w-0 min-w-0 bg-[#f8f9fb]">
-        <div className="sticky top-0 z-10 flex items-center justify-end gap-3 border-b border-slate-100 bg-[#f8f9fb]/90 px-8 py-3 max-[860px]:static max-[860px]:justify-stretch [&_span]:rounded-full [&_span]:bg-emerald-50 [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_button]:rounded-xl [&_button]:bg-slate-900 [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs [&_button]:text-white">
-          <span>CatatAgen Local siap</span>
-          <button onClick={onRefresh} disabled={loading}>{loading ? "Memuat..." : "Refresh"}</button>
-        </div>
-        <main className="mx-auto max-w-[1320px] p-7 max-[860px]:p-[18px] relative mx-auto min-h-[calc(100vh-64px)] max-w-[1440px] p-7 max-[860px]:p-[18px]">{children}</main>
-        <ToastViewport message={message} />
-      </section>
+      {/* Main content area */}
+      <main className="flex-1 p-4 lg:p-6 overflow-auto min-w-0">
+        <div className="lg:hidden h-12" /> {/* spacer for mobile hamburger */}
+        {children}
+      </main>
+
+      <ToastViewport message={message} />
     </div>
   );
 }
