@@ -73,6 +73,29 @@ pub struct AccountMutationRow {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct AccountMutationSummary {
+    pub total_in: f64,
+    pub total_out: f64,
+    pub net: f64,
+    pub count: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListMutationsPayload {
+    pub account_id: Option<i64>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MutationSummaryPayload {
+    pub account_id: Option<i64>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+}
+
 fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i64 {
     payload
         .copied()
@@ -187,15 +210,16 @@ pub fn adjust_account_balance(
             )),
         )
         .map_err(|_| "Rekening tidak ditemukan".to_string())?;
-    let next_balance = account.5 + payload.amount;
-    if next_balance < 0.0 {
-        return Err("Saldo tidak cukup".into());
-    }
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![next_balance, now, account.0],
+    // Race-safe: use conditional WHERE to prevent TOCTOU
+    let affected = tx.execute(
+        "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND balance + ?1 >= 0 AND is_active = 1",
+        params![payload.amount, now, account.0],
     )
     .map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Saldo tidak cukup".into());
+    }
+    let next_balance = account.5 + payload.amount;
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'adjustment', ?2, ?3, ?4, NULL, ?5)",
         params![account.0, payload.amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| "Penyesuaian saldo".to_string()), now],
@@ -297,24 +321,46 @@ pub fn bank_fee(
 pub fn list_account_mutations(
     app: AppHandle,
     session: State<'_, SessionState>,
-    payload: Option<i64>,
+    payload: Option<ListMutationsPayload>,
 ) -> Result<Vec<AccountMutationRow>, String> {
     let _user = require_admin(&session)?;
-    let limit = bounded_limit(payload.as_ref(), 80, 500);
+    let limit = payload.as_ref().and_then(|p| p.limit).unwrap_or(80).clamp(1, 500);
     let conn = init_schema(&app)?;
-    let mut stmt = conn
-        .prepare(
-            r#"
-            SELECT m.id, m.account_id, a.name, m.type, m.amount, m.balance_after, m.notes, m.reference_id, m.created_at
-            FROM account_mutations m
-            JOIN accounts a ON a.id = m.account_id
-            ORDER BY m.id DESC
-            LIMIT ?1
-            "#,
-        )
-        .map_err(|e| e.to_string())?;
+
+    let mut sql = String::from(
+        r#"SELECT m.id, m.account_id, a.name, m.type, m.amount, m.balance_after, m.notes, m.reference_id, m.created_at
+        FROM account_mutations m
+        JOIN accounts a ON a.id = m.account_id
+        WHERE 1=1"#,
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(ref p) = payload {
+        if let Some(aid) = p.account_id {
+            sql.push_str(" AND m.account_id = ?");
+            params_vec.push(Box::new(aid));
+        }
+        if let Some(ref start) = p.start_date {
+            if !start.is_empty() {
+                sql.push_str(" AND m.created_at >= ?");
+                params_vec.push(Box::new(format!("{}T00:00:00", start.trim())));
+            }
+        }
+        if let Some(ref end) = p.end_date {
+            if !end.is_empty() {
+                sql.push_str(" AND m.created_at <= ?");
+                params_vec.push(Box::new(format!("{}T23:59:59", end.trim())));
+            }
+        }
+    }
+
+    sql.push_str(" ORDER BY m.id DESC LIMIT ?");
+    params_vec.push(Box::new(limit));
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
-        .query_map(params![limit], |row| {
+        .query_map(param_refs.as_slice(), |row| {
             Ok(AccountMutationRow {
                 id: row.get(0)?,
                 account_id: row.get(1)?,
@@ -333,6 +379,51 @@ pub fn list_account_mutations(
         out.push(row.map_err(|e| e.to_string())?);
     }
     Ok(out)
+}
+
+#[tauri::command]
+pub fn get_mutation_summary(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: Option<MutationSummaryPayload>,
+) -> Result<AccountMutationSummary, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+
+    let mut sql = String::from(
+        "SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END),0), COUNT(*) FROM account_mutations WHERE 1=1",
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(ref p) = payload {
+        if let Some(aid) = p.account_id {
+            sql.push_str(" AND account_id = ?");
+            params_vec.push(Box::new(aid));
+        }
+        if let Some(ref start) = p.start_date {
+            if !start.is_empty() {
+                sql.push_str(" AND created_at >= ?");
+                params_vec.push(Box::new(format!("{}T00:00:00", start.trim())));
+            }
+        }
+        if let Some(ref end) = p.end_date {
+            if !end.is_empty() {
+                sql.push_str(" AND created_at <= ?");
+                params_vec.push(Box::new(format!("{}T23:59:59", end.trim())));
+            }
+        }
+    }
+
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    let summary = conn.query_row(&sql, param_refs.as_slice(), |row| {
+        Ok(AccountMutationSummary {
+            total_in: row.get(0)?,
+            total_out: row.get(1)?,
+            net: row.get::<_, f64>(0)? - row.get::<_, f64>(1)?,
+            count: row.get(2)?,
+        })
+    }).map_err(|e| e.to_string())?;
+    Ok(summary)
 }
 
 fn account_expense(
@@ -356,15 +447,16 @@ fn account_expense(
             row.get::<_, f64>(6)?, row.get::<_, i64>(7)?,
         )),
     ).map_err(|_| "Rekening tidak ditemukan".to_string())?;
-    let next_balance = account.5 - payload.amount;
-    if next_balance < 0.0 {
-        return Err("Saldo tidak cukup".into());
-    }
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![next_balance, now, account.0],
+    // Race-safe: use conditional WHERE to prevent TOCTOU
+    let affected = tx.execute(
+        "UPDATE accounts SET balance = balance - ?1, updated_at = ?2 WHERE id = ?3 AND balance >= ?1 AND is_active = 1",
+        params![payload.amount, now, account.0],
     )
     .map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Saldo tidak cukup".into());
+    }
+    let next_balance = account.5 - payload.amount;
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)",
         params![account.0, mutation_type, -payload.amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| default_note.to_string()), now],

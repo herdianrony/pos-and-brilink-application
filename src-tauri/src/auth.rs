@@ -1,14 +1,27 @@
-use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
-use rusqlite::{params, Connection};
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::collections::HashMap;
+use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
 use crate::common::{init_schema, record_app_log};
 use crate::session::PublicUser;
 use crate::session::SessionState;
+
+/// In-memory rate limiter: username -> (attempt_count, first_attempt_timestamp)
+pub struct LoginRateLimiter(pub Mutex<HashMap<String, (u32, i64)>>);
+
+impl LoginRateLimiter {
+    pub fn new() -> Self {
+        Self(Mutex::new(HashMap::new()))
+    }
+}
+
+/// Max login attempts before lockout, and lockout duration in seconds
+const MAX_LOGIN_ATTEMPTS: u32 = 5;
+const LOCKOUT_SECONDS: i64 = 300; // 5 minutes
 
 #[derive(Debug, Serialize)]
 pub struct HealthCheck {
@@ -222,13 +235,39 @@ pub fn login(
     app: AppHandle,
     payload: LoginPayload,
     session: State<'_, SessionState>,
+    rate_limiter: State<'_, LoginRateLimiter>,
 ) -> Result<LoginResponse, String> {
+    let username = payload.username.trim().to_string();
+    if username.is_empty() || payload.password.is_empty() {
+        return Err("Username dan password wajib diisi".into());
+    }
+
+    // ── Rate limiting check ──
+    let now_ts = Utc::now().timestamp();
+    {
+        let mut map = rate_limiter.0.lock().map_err(|_| "Rate limiter error".to_string())?;
+        if let Some((attempts, first_ts)) = map.get(&username) {
+            if *attempts >= MAX_LOGIN_ATTEMPTS {
+                let elapsed = now_ts - first_ts;
+                if elapsed < LOCKOUT_SECONDS {
+                    let remaining = LOCKOUT_SECONDS - elapsed;
+                    return Err(format!(
+                        "Terlalu banyak percobaan login. Coba lagi dalam {} detik.",
+                        remaining
+                    ));
+                }
+                // Lockout expired — reset
+                map.remove(&username);
+            }
+        }
+    }
+
     let conn = init_schema(&app)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, password_hash, role FROM users WHERE username = ?1 AND is_active = 1 LIMIT 1")
         .map_err(|e| e.to_string())?;
     let user = stmt
-        .query_row(params![payload.username.trim()], |row| {
+        .query_row(params![&username], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
@@ -237,10 +276,27 @@ pub fn login(
                 row.get::<_, String>(4)?,
             ))
         })
-        .map_err(|_| "Username atau password salah".to_string())?;
+        .map_err(|_| {
+            // Record failed attempt
+            record_failed_attempt(&rate_limiter, &username, now_ts);
+            "Username atau password salah".to_string()
+        })?;
 
     if !verify(payload.password, &user.3).map_err(|e| e.to_string())? {
+        record_failed_attempt(&rate_limiter, &username, now_ts);
+        record_app_log(
+            &conn,
+            "WARN",
+            "auth",
+            &format!("Gagal login: {} (percobaan)", username),
+        );
         return Err("Username atau password salah".into());
+    }
+
+    // Login success — clear rate limit
+    {
+        let mut map = rate_limiter.0.lock().map_err(|_| "Rate limiter error".to_string())?;
+        map.remove(&username);
     }
 
     let public_user = PublicUser {
@@ -253,10 +309,27 @@ pub fn login(
         .0
         .lock()
         .map_err(|_| "Session tidak valid".to_string())? = Some(public_user.clone());
+    record_app_log(
+        &conn,
+        "INFO",
+        "auth",
+        &format!("Login berhasil: {} ({})", username, public_user.role),
+    );
     Ok(LoginResponse {
         ok: true,
         user: public_user,
     })
+}
+
+fn record_failed_attempt(rate_limiter: &State<'_, LoginRateLimiter>, username: &str, now_ts: i64) {
+    if let Ok(mut map) = rate_limiter.0.lock() {
+        let entry = map.entry(username.to_string()).or_insert((0, now_ts));
+        entry.0 += 1;
+        // Reset timestamp if first attempt was long ago (stale entry)
+        if now_ts - entry.1 > LOCKOUT_SECONDS {
+            *entry = (1, now_ts);
+        }
+    }
 }
 
 #[tauri::command]

@@ -12,11 +12,11 @@ pub mod transactions;
 pub mod whatsapp;
 
 use crate::accounts::{
-    adjust_account_balance, bank_fee, create_account, deactivate_account, list_account_mutations,
-    list_accounts, transfer_accounts, update_account,
+    adjust_account_balance, bank_fee, create_account, deactivate_account, get_mutation_summary,
+    list_account_mutations, list_accounts, transfer_accounts, update_account,
 };
 use crate::agent_services::{create_agent_service, create_fee_tier, list_agent_services, list_fee_tiers};
-use crate::auth::{create_admin, create_user, deactivate_user, db_init, get_me, health_check, list_users, login, logout, setup_status, update_user};
+use crate::auth::{create_admin, create_user, deactivate_user, db_init, get_me, health_check, list_users, login, logout, setup_status, update_user, LoginRateLimiter};
 use crate::debts::{add_debt_payment, build_debt_reminder, create_debt, list_debts};
 use crate::pos::{
     checkout_pos_cash, create_agent_transaction, get_dashboard, get_pos_report, get_transaction,
@@ -50,6 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(SessionState(std::sync::Mutex::new(None)))
         .manage(WaSidecarState::new())
+        .manage(LoginRateLimiter::new())
         .invoke_handler(tauri::generate_handler![
             // Health & Setup
             health_check,
@@ -75,6 +76,7 @@ pub fn run() {
             owner_draw,
             bank_fee,
             list_account_mutations,
+            get_mutation_summary,
             // Products & Categories
             list_categories,
             create_category,

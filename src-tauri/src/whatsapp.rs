@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
-use crate::{auth::require_admin, common::init_schema, session::SessionState};
+use rusqlite::params;
+use crate::{auth::require_admin, common::init_schema, common::record_app_log, session::SessionState};
 
 #[derive(Debug, Serialize)]
 pub struct WhatsAppSidecarStatus {
@@ -14,6 +16,13 @@ pub struct WhatsAppSidecarStatus {
     pub enabled: bool,
     pub auto_notify_owner: bool,
     pub owner_number: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WaNotifyResponse {
+    pub sent: bool,
+    pub reason: Option<String>,
+    pub id: Option<String>,
 }
 
 pub struct WaSidecarState {
@@ -55,6 +64,40 @@ fn get_whatsapp_settings(conn: &rusqlite::Connection) -> (bool, bool, String) {
     (enabled, auto_notify, owner_number)
 }
 
+/// Kill the existing sidecar process if running
+fn kill_sidecar(sc: &WaSidecarState) {
+    if let Ok(mut child) = sc.child.lock() {
+        if let Some(ref mut c) = *child {
+            let _ = c.kill();
+            let _ = c.wait();
+        }
+        *child = None;
+    }
+}
+
+/// Send a JSONL command to the sidecar's stdin
+fn send_sidecar_command(
+    sc: &WaSidecarState,
+    command: &str,
+    payload: &serde_json::Value,
+) -> Result<(), String> {
+    let mut child_guard = sc.child.lock().map_err(|_| "lock error".to_string())?;
+    let child = child_guard.as_mut().ok_or("Sidecar tidak berjalan".to_string())?;
+    let stdin = child.stdin.as_mut().ok_or("Stdin sidecar tidak tersedia".to_string())?;
+
+    let mut msg = serde_json::Map::new();
+    msg.insert("cmd".into(), serde_json::Value::String(command.into()));
+    if let Some(obj) = payload.as_object() {
+        for (k, v) in obj {
+            msg.insert(k.clone(), v.clone());
+        }
+    }
+    let line = serde_json::to_string(&msg).map_err(|e| format!("Gagal serialisasi: {e}"))?;
+    writeln!(stdin, "{}", line).map_err(|e| format!("Gagal kirim ke sidecar: {e}"))?;
+    stdin.flush().map_err(|e| format!("Gagal flush sidecar: {e}"))?;
+    Ok(())
+}
+
 #[tauri::command]
 pub fn whatsapp_status(
     app: AppHandle,
@@ -86,10 +129,65 @@ pub fn whatsapp_start(
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
-    // TODO: Spawn Baileys sidecar via tauri shell-sidecar
-    // Command::new_sidecar("wa-service").spawn()
+
+    // Kill existing sidecar if any
+    kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "initializing".into();
-    *sc.last_error.lock().map_err(|_| "lock error".to_string())? = Some("WhatsApp sidecar belum dikonfigurasi. Perlu build wa-service binary.".into());
+    *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
+    *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
+
+    // Determine wa-service path: try bundled sidecar first, then local dev
+    let child = match app
+        .path()
+        .resource_dir()
+        .ok()
+        .map(|dir| dir.join("wa-service"))
+        .filter(|p| p.exists())
+    {
+        Some(path) => {
+            // Bundled sidecar binary
+            std::process::Command::new(path)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .map_err(|e| format!("Gagal spawn sidecar: {e}"))?
+        }
+        None => {
+            // Fallback: run via node from local wa-service/ directory
+            let project_root = std::env::current_dir()
+                .ok()
+                .and_then(|d| d.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_default();
+            let wa_dir = project_root.join("wa-service");
+            let wa_entry = wa_dir.join("index.mjs");
+
+            if !wa_entry.exists() {
+                *sc.status.lock().map_err(|_| "lock error".to_string())? = "error".into();
+                *sc.last_error.lock().map_err(|_| "lock error".to_string())? = Some(
+                    "wa-service tidak ditemukan. Pastikan folder wa-service/index.mjs ada.".into(),
+                );
+                return whatsapp_status(app, session);
+            }
+
+            std::process::Command::new("node")
+                .arg(&wa_entry)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .map_err(|e| format!("Gagal spawn wa-service: {e}"))?
+        }
+    };
+
+    *sc.child.lock().map_err(|_| "lock error".to_string())? = Some(child);
+    record_app_log(
+        &init_schema(&app)?,
+        "INFO",
+        "whatsapp",
+        "WhatsApp sidecar dimulai",
+    );
+
     whatsapp_status(app, session)
 }
 
@@ -100,17 +198,16 @@ pub fn whatsapp_restart(
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
-    // Stop existing if any
-    if let Ok(mut child) = sc.child.lock() {
-        if let Some(ref mut c) = *child {
-            let _ = c.kill();
-        }
-        *child = None;
-    }
+    kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "idle".into();
     *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
-    // TODO: Re-spawn sidecar
+    record_app_log(
+        &init_schema(&app)?,
+        "INFO",
+        "whatsapp",
+        "WhatsApp sidecar di-restart",
+    );
     whatsapp_status(app, session)
 }
 
@@ -121,15 +218,19 @@ pub fn whatsapp_logout(
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
-    if let Ok(mut child) = sc.child.lock() {
-        if let Some(ref mut c) = *child {
-            let _ = c.kill();
-        }
-        *child = None;
-    }
+
+    // Send logout command before killing
+    let _ = send_sidecar_command(
+        &sc,
+        "logout",
+        &serde_json::json!({}),
+    );
+
+    kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "disconnected".into();
     *sc.qr_data_url.lock().map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
+    record_app_log(&init_schema(&app)?, "INFO", "whatsapp", "WhatsApp logout");
     Ok(true)
 }
 
@@ -138,36 +239,111 @@ pub fn whatsapp_notify(
     app: AppHandle,
     session: State<'_, SessionState>,
     transaction_id: i64,
-) -> Result<serde_json::Value, String> {
+) -> Result<WaNotifyResponse, String> {
     let _user = require_admin(&session)?;
+    let sc = app.state::<WaSidecarState>();
     let conn = init_schema(&app)?;
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
+
     if !enabled || !auto_notify {
-        return Ok(serde_json::json!({"sent": false, "reason": "disabled"}));
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("disabled".into()),
+            id: None,
+        });
     }
     if owner_number.is_empty() {
-        return Ok(serde_json::json!({"sent": false, "reason": "missing_owner_number"}));
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("missing_owner_number".into()),
+            id: None,
+        });
     }
-    // TODO: Send notification via sidecar IPC
-    // For now, build the message and return prepared
-    let trx = conn.query_row(
-        "SELECT invoice_no, type, total_amount, customer_name, status, created_at FROM transactions WHERE id = ?1",
-        params![transaction_id],
-        |row| Ok((
-            row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, f64>(2)?,
-            row.get::<_, Option<String>>(3)?, row.get::<_, String>(4)?, row.get::<_, String>(5)?,
-        )),
-    ).map_err(|_| "Transaksi tidak ditemukan".to_string())?;
 
-    let message = format!(
-        "[NOTIFIKASI TRANSAKSI]\n\nInvoice: {}\nTipe: {}\nNominal: Rp{:.0}\nPelanggan: {}\nStatus: {}\nTanggal: {}\n\nCatatan: aplikasi hanya mencatat transaksi.",
-        trx.0, trx.1, trx.2, trx.3.unwrap_or_else(|| "-".into()), trx.4, trx.5
+    // Build notification message based on transaction type
+    let trx = conn
+        .query_row(
+            "SELECT invoice_no, type, total_amount, customer_name, status, created_at FROM transactions WHERE id = ?1",
+            params![transaction_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, f64>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                ))
+            },
+        )
+        .map_err(|_| "Transaksi tidak ditemukan".to_string())?;
+
+    let message = build_notification_message(
+        &trx.1,
+        &trx.0,
+        trx.2,
+        &trx.3,
+        &trx.4,
+        &trx.5,
     );
+    let to = format!("{}@s.whatsapp.net", owner_number);
 
-    Ok(serde_json::json!({
-        "sent": false,
-        "reason": "sidecar_not_configured",
-        "prepared_message": message,
-        "to": format!("{}@s.whatsapp.net", owner_number)
-    }))
+    // Check if sidecar is running and connected
+    let has_child = sc.child.lock().ok().map(|c| c.is_some()).unwrap_or(false);
+    let status = sc.status.lock().map(|s| s.clone()).unwrap_or_default();
+
+    if !has_child || status != "connected" {
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some(format!(
+                "sidecar_{}",
+                if !has_child { "not_running" } else { "not_connected" }
+            )),
+            id: None,
+        });
+    }
+
+    // Send via sidecar IPC
+    let payload = serde_json::json!({
+        "to": to,
+        "message": message,
+    });
+    send_sidecar_command(&sc, "send", &payload)?;
+
+    record_app_log(
+        &conn,
+        "INFO",
+        "whatsapp",
+        &format!("WA notif dikirim untuk trx #{}", transaction_id),
+    );
+    Ok(WaNotifyResponse {
+        sent: true,
+        reason: None,
+        id: None,
+    })
+}
+
+fn build_notification_message(
+    trx_type: &str,
+    invoice_no: &str,
+    amount: f64,
+    customer: &Option<String>,
+    status: &str,
+    created_at: &str,
+) -> String {
+    let customer_str = customer.as_deref().unwrap_or("-");
+    match trx_type {
+        "pos" => format!(
+            "[NOTIFIKASI TRANSAKSI POS]\n\nInvoice: {}\nTipe: Penjualan POS\nNominal: Rp{:.0}\nPelanggan: {}\nStatus: {}\nTanggal: {}\n\nTercatat otomatis oleh CatatAgen Local",
+            invoice_no, amount, customer_str, status, created_at
+        ),
+        "brilink" => format!(
+            "[NOTIFIKASI TRANSAKSI BRILINK]\n\nInvoice: {}\nTipe: Layanan Agen\nNominal: Rp{:.0}\nPelanggan: {}\nStatus: {}\nTanggal: {}\n\nTercatat otomatis oleh CatatAgen Local",
+            invoice_no, amount, customer_str, status, created_at
+        ),
+        _ => format!(
+            "[NOTIFIKASI TRANSAKSI]\n\nInvoice: {}\nTipe: {}\nNominal: Rp{:.0}\nPelanggan: {}\nStatus: {}\nTanggal: {}\n\nTercatat otomatis oleh CatatAgen Local",
+            invoice_no, trx_type, amount, customer_str, status, created_at
+        ),
+    }
 }

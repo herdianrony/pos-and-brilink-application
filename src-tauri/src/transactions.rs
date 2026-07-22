@@ -43,6 +43,14 @@ pub struct ListLimitPayload {
     pub limit: Option<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ListTransactionsPayload {
+    pub limit: Option<i64>,
+    pub transaction_type: Option<String>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct BackupRow {
     pub name: String,
@@ -76,23 +84,49 @@ fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i
 pub fn list_transactions(
     app: AppHandle,
     session: State<'_, SessionState>,
-    payload: Option<i64>,
+    payload: Option<ListTransactionsPayload>,
 ) -> Result<Vec<TransactionRow>, String> {
     let user = require_auth(&session)?;
-    let limit = bounded_limit(payload.as_ref(), 50, 500);
+    let limit = payload.as_ref().and_then(|p| p.limit).unwrap_or(50).clamp(1, 500);
     let is_admin = user.role == "admin";
     let conn = init_schema(&app)?;
-    let mut stmt = conn.prepare(
-        r#"
-        SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
+
+    let mut sql = String::from(
+        r#"SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
         FROM transactions
-        WHERE status NOT IN ('void', 'reversed')
-        ORDER BY id DESC
-        LIMIT ?1
-        "#,
-    ).map_err(|e| e.to_string())?;
+        WHERE status NOT IN ('void', 'reversed')"#,
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(ref p) = payload {
+        if let Some(ref t) = p.transaction_type {
+            let t = t.trim().to_lowercase();
+            if !t.is_empty() {
+                sql.push_str(" AND type = ?");
+                params_vec.push(Box::new(t));
+            }
+        }
+        if let Some(ref start) = p.start_date {
+            if !start.is_empty() {
+                sql.push_str(" AND created_at >= ?");
+                params_vec.push(Box::new(format!("{}T00:00:00", start.trim())));
+            }
+        }
+        if let Some(ref end) = p.end_date {
+            if !end.is_empty() {
+                sql.push_str(" AND created_at <= ?");
+                params_vec.push(Box::new(format!("{}T23:59:59", end.trim())));
+            }
+        }
+    }
+
+    sql.push_str(" ORDER BY id DESC LIMIT ?");
+    params_vec.push(Box::new(limit));
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
-        .query_map(params![limit], |row| {
+        .query_map(param_refs.as_slice(), |row| {
             let profit = row.get::<_, f64>(5)?;
             Ok(TransactionRow {
                 id: row.get(0)?,
