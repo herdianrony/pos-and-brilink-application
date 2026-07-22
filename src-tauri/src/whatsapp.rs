@@ -1,5 +1,4 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde::Serialize;
 use std::io::Write;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
