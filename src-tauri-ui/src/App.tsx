@@ -11,6 +11,9 @@ import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { CashBalancePage } from "./pages/CashBalancePage";
 import { StatementPage } from "./pages/StatementPage";
+import { DebtsPage } from "./pages/DebtsPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { LogsPage } from "./pages/LogsPage";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
 import { useProductMaster } from "./hooks/useProductMaster";
@@ -27,7 +30,7 @@ import { formatRupiah } from "./lib/format";
 import { exportCsvFile } from "./lib/csv";
 import type { ViewKey } from "./types";
 
-const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["products", "statement", "cash", "settings"]);
+const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["products", "statement", "cash", "settings", "debts", "reports", "logs"]);
 
 function canAccess(view: ViewKey, role: string) {
   if (!ADMIN_ONLY_VIEWS.has(view)) return true;
@@ -443,6 +446,41 @@ export default function App() {
             onCreateBackup={handleCreateBackup}
             onRestoreBackup={handleRestoreBackup}
           />
+        );
+      case "debts":
+        return (
+          <DebtsPage
+            debts={debts}
+            debtForm={debtForm}
+            debtPaymentForm={debtPaymentForm}
+            saving={saving}
+            onDebtFormChange={setDebtForm}
+            onDebtPaymentFormChange={setDebtPaymentForm}
+            onSubmitDebt={submitDebt}
+            onSubmitDebtPayment={submitDebtPayment}
+            onCopyReminder={copyDebtReminder}
+          />
+        );
+      case "reports":
+        return (
+          <ReportsPage
+            transactions={filteredTransactions}
+            mutations={accountMutations}
+            onExportCsv={(summary) =>
+              exportCsv(
+                "ringkasan-laporan-catatagen.csv",
+                [
+                  { metrik: "Omzet POS", nominal: summary.posRevenue },
+                  { metrik: "Laba POS", nominal: summary.posProfit },
+                  { metrik: "Laba Agen", nominal: summary.agentProfit },
+                ],
+              )
+            }
+          />
+        );
+      case "logs":
+        return (
+          <LogsPage logs={appLogs} onRefresh={refreshApp} />
         );
       case "dashboard":
       default:

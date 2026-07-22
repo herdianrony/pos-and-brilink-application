@@ -582,29 +582,23 @@ pub fn deactivate_account(
     let conn = init_schema(&app)?;
     let code: String = conn
         .query_row(
-            "SELECT code FROM accounts WHERE id = ?1",
+            "SELECT code FROM accounts WHERE id = ?1 AND is_active = 1",
             params![account_id],
             |r| r.get(0),
         )
-        .map_err(|_| format!("Akun ID {} tidak ditemukan", account_id))?;
+        .map_err(|_| format!("Akun ID {} tidak ditemukan atau sudah nonaktif", account_id))?;
     if code == "cash" {
         return Err("Akun Kas tidak bisa dinonaktifkan".into());
     }
-    let balance: f64 = conn
-        .query_row(
-            "SELECT balance FROM accounts WHERE id = ?1",
-            params![account_id],
-            |r| r.get(0),
+    // Atomic check: only deactivate if balance is effectively zero
+    let affected = conn
+        .execute(
+            "UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2 AND is_active = 1 AND ABS(balance) <= 0.01",
+            params![chrono::Utc::now().to_rfc3339(), account_id],
         )
-        .map_err(|e| format!("Gagal membaca saldo akun: {}", e))?;
-    if balance.abs() > 0.01 {
-        return Err("Akun dengan saldo tidak bisa dinonaktifkan".into());
+        .map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Akun dengan saldo tidak bisa dinonaktifkan, atau sudah nonaktif".into());
     }
-    let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2",
-        params![now, account_id],
-    )
-    .map_err(|e| e.to_string())?;
     Ok(true)
 }

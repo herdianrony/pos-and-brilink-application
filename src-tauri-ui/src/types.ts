@@ -35,7 +35,10 @@ export type ViewKey =
   | "history"
   | "statement"
   | "cash"
-  | "settings";
+  | "settings"
+  | "debts"
+  | "reports"
+  | "logs";
 
 export type IconName =
   | "dashboard"
@@ -46,7 +49,10 @@ export type IconName =
   | "statement"
   | "cash"
   | "settings"
-  | "search";
+  | "search"
+  | "debts"
+  | "reports"
+  | "logs";
 
 export type AgentForm = {
   service_name: string;

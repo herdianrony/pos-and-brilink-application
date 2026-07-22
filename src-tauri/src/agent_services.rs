@@ -68,7 +68,7 @@ pub fn list_agent_services(
     let _user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 100, 500);
     let conn = init_schema(&app)?;
-    let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC LIMIT ?1").map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![limit], |row| {
             Ok(AgentServiceRow {

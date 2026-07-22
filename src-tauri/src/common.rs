@@ -194,6 +194,18 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     .map_err(|e| format!("Gagal migrasi database: {e}"))?;
     conn.execute("ALTER TABLE products ADD COLUMN image_path TEXT", [])
         .ok();
+    // Add foreign key for debt_payments.debt_id → debts(id)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id)", [])
+        .ok();
+    // Add secondary indexes for frequently queried columns
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)", [])
+        .ok();
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_account_mutations_account_created ON account_mutations(account_id, created_at)", [])
+        .ok();
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)", [])
+        .ok();
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_app_logs_created_at ON app_logs(created_at)", [])
+        .ok();
     Ok(())
 }
 

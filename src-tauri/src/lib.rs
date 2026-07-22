@@ -31,7 +31,7 @@ use crate::pos::{
 use crate::printer::print_thermal_receipt;
 use crate::products::{
     create_category, create_product, deactivate_category, deactivate_product, get_product_image,
-    list_categories, list_products, update_category, update_product,
+    list_categories, list_products, restock_product, update_category, update_product,
 };
 use crate::session::SessionState;
 use crate::seed::{clear_demo, seed_demo, seed_system, setup_templates};
@@ -97,6 +97,7 @@ pub fn run() {
             update_product,
             deactivate_product,
             get_product_image,
+            restock_product,
             // Transactions
             list_transactions,
             list_transaction_items,

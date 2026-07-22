@@ -8,6 +8,9 @@ import {
   Wallet,
   ClipboardList,
   ScrollText,
+  ReceiptText,
+  BarChart3,
+  Activity,
   type LucideIcon,
 } from "lucide-react";
 import type { IconName } from "../types";
@@ -22,6 +25,9 @@ const iconMap: Record<IconName, LucideIcon> = {
   cash: Wallet,
   settings: Settings,
   search: Search,
+  debts: ReceiptText,
+  reports: BarChart3,
+  logs: Activity,
 };
 
 export function Icon({ name }: { name: IconName }) {

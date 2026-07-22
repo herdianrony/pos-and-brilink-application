@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::{require_admin, require_auth};
-use crate::common::{init_schema, product_images_dir, trim_optional};
+use crate::common::{init_schema, product_images_dir, record_app_log, trim_optional};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -497,4 +497,91 @@ fn save_product_image(
     let path = product_images_dir(app)?.join(&file_name);
     std::fs::write(&path, bytes).map_err(|e| format!("Gagal menyimpan gambar produk: {e}"))?;
     Ok(Some(file_name))
+}
+
+// ── Restock Product ──────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct RestockPayload {
+    pub product_id: i64,
+    pub quantity: i64,
+    pub notes: Option<String>,
+    pub cost_price: Option<f64>,
+}
+
+#[tauri::command]
+pub fn restock_product(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: RestockPayload,
+) -> Result<ProductRow, String> {
+    let _user = require_admin(&session)?;
+    if payload.quantity <= 0 {
+        return Err("Jumlah restock harus lebih dari 0".into());
+    }
+    let conn = init_schema(&app)?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // Check product exists and is active
+    let product_name: String = conn
+        .query_row(
+            "SELECT name FROM products WHERE id = ?1 AND is_active = 1",
+            params![payload.product_id],
+            |r| r.get(0),
+        )
+        .map_err(|_| format!("Produk ID {} tidak ditemukan", payload.product_id))?;
+
+    // Optionally update buy_price if provided
+    if let Some(cost) = payload.cost_price {
+        if cost > 0.0 {
+            conn.execute(
+                "UPDATE products SET buy_price = ?1, updated_at = ?2 WHERE id = ?3",
+                params![cost, now, payload.product_id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+    }
+
+    // Atomically increment stock
+    let affected = conn
+        .execute(
+            "UPDATE products SET stock = stock + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+            params![payload.quantity, now, payload.product_id],
+        )
+        .map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Gagal menambah stok produk".into());
+    }
+
+    record_app_log(
+        &conn,
+        "INFO",
+        "products",
+        &format!(
+            "Restock {} +{} {}",
+            product_name,
+            payload.quantity,
+            payload.notes.as_deref().unwrap_or("")
+        ),
+    );
+
+    // Return updated product
+    conn.query_row(
+        "SELECT id, name, barcode, category_id, buy_price, sell_price, stock, min_stock, unit, image_path, is_active FROM products WHERE id = ?1",
+        params![payload.product_id],
+        |row| Ok(ProductRow {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            barcode: row.get(2)?,
+            category_id: row.get(3)?,
+            buy_price: row.get(4)?,
+            sell_price: row.get(5)?,
+            stock: row.get(6)?,
+            min_stock: row.get(7)?,
+            unit: row.get(8)?,
+            image_path: row.get(9)?,
+            is_active: row.get::<_, i64>(10)? == 1,
+        }),
+    )
+    .map_err(|e| e.to_string())
 }

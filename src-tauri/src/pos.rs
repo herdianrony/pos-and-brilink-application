@@ -46,6 +46,8 @@ pub struct PosCheckoutResponse {
     pub total_amount: f64,
     pub profit: f64,
     pub discount_amount: f64,
+    pub settlement_account_id: Option<i64>,
+    pub settlement_balance: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -351,7 +353,7 @@ pub fn checkout_pos_cash(
     let status = "completed";
     tx.execute(
         "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at) VALUES (?1, 'pos', NULL, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![invoice_no, total_amount, if is_admin { total_profit } else { 0.0 }, payment_method, status, trim_optional(payload.notes).unwrap_or_default(), now],
+        params![invoice_no, total_amount, total_profit, payment_method, status, trim_optional(payload.notes).unwrap_or_default(), now],
     )
     .map_err(|e| e.to_string())?;
     let trx_id = tx.last_insert_rowid();
@@ -379,38 +381,58 @@ pub fn checkout_pos_cash(
     }
 
     // ── Payment → account mutation ──
-    let cash_account: Option<(i64, f64)> = tx
-        .query_row(
-            "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
-            [],
-            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)),
-        )
-        .ok();
-
-    if let Some((cash_id, cash_bal)) = cash_account {
-        let new_bal = cash_bal + total_amount;
-        let mut_type = match payment_method.as_str() {
-            "transfer" => "pos_transfer_in",
-            "qris" => "pos_qris_in",
-            _ => "pos_in",
+    // Determine target account: for cash use cash account, for transfer/qris use settlement account
+    let (target_account_id, target_account_balance, mut_type) =
+        match payment_method.as_str() {
+            "transfer" | "qris" => {
+                // Use the settlement_account_id provided by frontend
+                let settlement_id = payload.settlement_account_id.ok_or_else(|| {
+                    "Akun settlement wajib dipilih untuk pembayaran transfer/QRIS".into()
+                })?;
+                let acc: (i64, f64) = tx
+                    .query_row(
+                        "SELECT id, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+                        params![settlement_id],
+                        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)),
+                    )
+                    .map_err(|_| format!("Akun settlement ID {} tidak ditemukan", settlement_id))?;
+                let mtype = if payment_method == "transfer" {
+                    "pos_transfer_in"
+                } else {
+                    "pos_qris_in"
+                };
+                (acc.0, acc.1, mtype.to_string())
+            }
+            _ => {
+                // Cash payment → use cash account
+                let cash_acc: (i64, f64) = tx
+                    .query_row(
+                        "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
+                        [],
+                        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)),
+                    )
+                    .map_err(|_| "Akun Kas tidak ditemukan".to_string())?;
+                (cash_acc.0, cash_acc.1, "pos_in".to_string())
+            }
         };
-        tx.execute(
-            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![cash_id, mut_type, total_amount, new_bal, format!("POS {}", invoice_no), trx_id, now],
-        ).map_err(|e| e.to_string())?;
-        tx.execute(
-            "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-            params![new_bal, now, cash_id],
-        )
-        .map_err(|e| e.to_string())?;
-    }
+
+    let new_bal = target_account_balance + total_amount;
+    tx.execute(
+        "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![target_account_id, mut_type, total_amount, new_bal, format!("POS {}", invoice_no), trx_id, now],
+    ).map_err(|e| e.to_string())?;
+    tx.execute(
+        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
+        params![new_bal, now, target_account_id],
+    )
+    .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
         &init_schema(&app)?,
         "INFO",
         "pos",
-        &format!("POS checkout {} Rp{:.0}", invoice_no, total_amount),
+        &format!("POS checkout {} Rp{:.0} ({})", invoice_no, total_amount, payment_method),
     );
 
     Ok(PosCheckoutResponse {
@@ -420,6 +442,8 @@ pub fn checkout_pos_cash(
         total_amount,
         profit: if is_admin { total_profit } else { 0.0 },
         discount_amount,
+        settlement_account_id: Some(target_account_id),
+        settlement_balance: Some(new_bal),
     })
 }
 
@@ -450,7 +474,7 @@ pub fn create_agent_transaction(
 
     tx.execute(
         "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at) VALUES (?1, 'brilink', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6)",
-        params![invoice_no, payload.customer_name, payload.fee, if is_admin { profit } else { 0.0 }, trim_optional(payload.notes), now],
+        params![invoice_no, payload.customer_name, payload.fee, profit, trim_optional(payload.notes), now],
     ).map_err(|e| e.to_string())?;
     let trx_id = tx.last_insert_rowid();
 

@@ -80,8 +80,9 @@ export interface PosCheckoutResponse {
   invoice_no: string;
   total_amount: number;
   profit: number;
-  settlement_account_id: number;
-  settlement_balance: number;
+  discount_amount: number;
+  settlement_account_id?: number | null;
+  settlement_balance?: number | null;
 }
 
 export interface TransactionRow {
@@ -365,4 +366,115 @@ export function printThermalReceipt(payload: {
   items: Array<{ name: string; quantity: number; unit_price: number; subtotal: number }>;
 }) {
   return invokeCommand<boolean>("print_thermal_receipt", { payload });
+}
+
+// ── Missing API wrappers (from evaluation report) ──────────────
+
+export function getMe() {
+  return invokeCommand<PublicUser>("get_me");
+}
+
+export function updateUser(payload: { id: number; name?: string; username?: string; password?: string; role?: string }) {
+  return invokeCommand<PublicUser>("update_user", { payload });
+}
+
+export function deactivateUser(payload: { id: number }) {
+  return invokeCommand<boolean>("deactivate_user", { payload });
+}
+
+export function setupComplete(payload: {
+  admin_name: string;
+  admin_username: string;
+  admin_password: string;
+  store_name?: string;
+  store_owner_name?: string;
+  cash_opening_balance?: number;
+  kas_only?: boolean;
+}) {
+  return invokeCommand<{ ok: boolean; user: PublicUser; cash_opening_balance: number; kas_only: boolean }>("setup_complete", { payload, session: {} });
+}
+
+export function getTransaction(id: number) {
+  return invokeCommand<TransactionRow>("get_transaction", { id });
+}
+
+export function transactionAction(payload: { id: number; action: "void" | "reverse" | "complete"; reason?: string; reference_no?: string }) {
+  return invokeCommand<TransactionRow>("transaction_action", { payload });
+}
+
+export function getSettings() {
+  return invokeCommand<Record<string, string>>("get_settings");
+}
+
+export function updateSettings(payload: Record<string, string>) {
+  return invokeCommand<boolean>("update_settings", { payload });
+}
+
+export function updateCategory(payload: { id: number; name?: string; icon?: string; color?: string }) {
+  return invokeCommand<CategoryRow>("update_category", { payload });
+}
+
+export function deactivateCategory(payload: { id: number }) {
+  return invokeCommand<boolean>("deactivate_category", { payload });
+}
+
+export function getDashboard() {
+  return invokeCommand<{ today_all: { count: number; revenue: number; profit: number }; today_pos: { count: number; revenue: number; profit: number }; today_brilink: { count: number; revenue: number; profit: number }; low_stock: Array<{ id: number; name: string; stock: number; min_stock: number }>; recent_transactions: TransactionRow[]; last_7_days: Array<{ date: string; revenue: number; profit: number }>; accounts: Array<{ id: number; name: string; balance: number }>; pending_count: number }>("get_dashboard", { payload: null });
+}
+
+export function getPosReport(payload?: { start?: string; end?: string }) {
+  return invokeCommand<{ summary: { count: number; revenue: number; profit: number; cogs: number; average: number }; by_payment: Array<{ payment_method: string; count: number; revenue: number; profit: number }>; products: Array<{ product_name: string; quantity: number; revenue: number; profit: number }>; daily: Array<{ date: string; revenue: number; profit: number }> }>("get_pos_report", { payload: payload || null });
+}
+
+export function getMutationSummary(payload?: { account_id?: number; start?: string; end?: string }) {
+  return invokeCommand<{ total_in: number; total_out: number; net: number }>("get_mutation_summary", { payload: payload || null });
+}
+
+export function updateAccount(payload: { id: number; name?: string; icon?: string; color?: string; min_balance?: number }) {
+  return invokeCommand<AccountRow>("update_account", { payload });
+}
+
+export function deactivateAccount(accountId: number) {
+  return invokeCommand<boolean>("deactivate_account", { account_id: accountId });
+}
+
+export function listAgentServicesWithLimit(limit?: number) {
+  return invokeCommand<AgentServiceRow[]>("list_agent_services", { payload: limit || null });
+}
+
+// ── WhatsApp API wrappers ──────────────────────────────────────────
+
+export interface WhatsAppStatus {
+  running: boolean;
+  pid?: number | null;
+  qr_code?: string | null;
+  phone_number?: string | null;
+  last_heartbeat?: string | null;
+  error?: string | null;
+}
+
+export function whatsappStatus() {
+  return invokeCommand<WhatsAppStatus>("whatsapp_status");
+}
+
+export function whatsappStart() {
+  return invokeCommand<boolean>("whatsapp_start");
+}
+
+export function whatsappRestart() {
+  return invokeCommand<boolean>("whatsapp_restart");
+}
+
+export function whatsappLogout() {
+  return invokeCommand<boolean>("whatsapp_logout");
+}
+
+export function whatsappNotify(payload: { phone: string; message: string }) {
+  return invokeCommand<boolean>("whatsapp_notify", { payload });
+}
+
+// ── Restock (stock receiving) ─────────────────────────────────────
+
+export function restockProduct(payload: { product_id: number; quantity: number; notes?: string; cost_price?: number }) {
+  return invokeCommand<ProductRow>("restock_product", { payload });
 }
