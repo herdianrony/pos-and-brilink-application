@@ -23,11 +23,11 @@ function NavTooltip({ label }: { label: string }) {
   return (
     <span
       className={cn(
-        "absolute left-full ml-3 px-3 py-1.5 rounded-xl text-xs font-bold text-white whitespace-nowrap z-[70]",
+        "absolute left-full ml-3 px-3 py-1.5 rounded-xl text-xs font-bold text-white whitespace-nowrap z-70",
         "bg-slate-900 border border-slate-700 shadow-float",
         "opacity-0 invisible group-hover:opacity-100 group-hover:visible",
         "transition-all duration-150 pointer-events-none",
-        "translate-x-[-4px] group-hover:translate-x-0",
+        "-translate-x-1 group-hover:translate-x-0",
       )}
     >
       {label}
@@ -139,7 +139,7 @@ function ToastViewport({ message }: { message: string }) {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[120] space-y-3 max-w-sm w-full pointer-events-none print:hidden"
+      className="fixed bottom-4 right-4 z-120 space-y-3 max-w-sm w-full pointer-events-none print:hidden"
       aria-live="polite"
     >
       {toasts.map((t) => {
@@ -219,11 +219,11 @@ function MobileSidebar({
   return (
     <>
       <div
-        className="fixed inset-0 bg-slate-950/50 z-[55] animate-fadeIn no-print"
+        className="fixed inset-0 bg-slate-950/50 z-55 animate-fadeIn no-print"
         onClick={onClose}
       />
       <aside
-        className="fixed top-0 left-0 h-screen w-72 z-[56] flex flex-col animate-slideUp no-print"
+        className="fixed top-0 left-0 h-screen w-72 z-56 flex flex-col animate-slideUp no-print"
         style={{ backgroundColor: "#0F172A" }}
       >
         {/* Decorative gradient glow */}
@@ -440,7 +440,7 @@ export function AppShell({
 
       {/* ── Desktop: Icon-only sidebar (w-16 = 64px) ── */}
       <aside
-        className="hidden lg:flex sticky top-0 left-0 h-screen w-16 z-[40] flex-col items-center no-print"
+        className="hidden lg:flex sticky top-0 left-0 h-screen w-16 z-40 flex-col items-center no-print"
         style={{ backgroundColor: "#0F172A" }}
       >
         {/* Subtle gradient glow */}
@@ -557,7 +557,7 @@ export function AppShell({
       {/* About/Support modal */}
       {shellNotice && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          className="fixed inset-0 z-80 flex items-center justify-center p-6"
           onClick={() => setShellNotice(null)}
         >
           <div className="absolute inset-0 bg-slate-950/50 animate-fadeIn" />
