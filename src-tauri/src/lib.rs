@@ -1772,6 +1772,597 @@ fn get_product_image(app: AppHandle, session: State<'_, SessionState>, payload: 
     product_image_data_url(&app, image_path)
 }
 
+// ── Settings Commands ──────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct SettingsUpdatePayload {
+    settings: std::collections::HashMap<String, String>,
+}
+
+#[tauri::command]
+fn get_settings(app: AppHandle, session: State<'_, SessionState>) -> Result<std::collections::HashMap<String, String>, String> {
+    let _user = require_auth(&session)?;
+    let conn = init_schema(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT key, value FROM settings")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+        .map_err(|e| e.to_string())?;
+    let mut map = std::collections::HashMap::new();
+    for row in rows {
+        let (key, value) = row.map_err(|e| e.to_string())?;
+        if key == "discount_admin_pin" {
+            map.insert("discount_admin_pin_set".to_string(), if value.is_empty() { "false".to_string() } else { "true".to_string() });
+        } else {
+            map.insert(key, value);
+        }
+    }
+    Ok(map)
+}
+
+#[tauri::command]
+fn update_settings(app: AppHandle, session: State<'_, SessionState>, payload: SettingsUpdatePayload) -> Result<bool, String> {
+    let _user = require_admin(&session)?;
+    let mut conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    for (key, value) in &payload.settings {
+        // Skip masked PIN values
+        if key == "discount_admin_pin" && (value == "****" || value.is_empty()) {
+            continue;
+        }
+        let processed_value = if key == "discount_admin_pin" {
+            hash(value, DEFAULT_COST).map_err(|e| e.to_string())?
+        } else {
+            value.clone()
+        };
+        let exists: i64 = tx
+            .query_row("SELECT COUNT(*) FROM settings WHERE key = ?1", params![key], |row| row.get(0))
+            .map_err(|e| e.to_string())?;
+        if exists > 0 {
+            tx.execute("UPDATE settings SET value = ?1, updated_at = ?2 WHERE key = ?3", params![processed_value, now, key])
+                .map_err(|e| e.to_string())?;
+        } else {
+            tx.execute("INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)", params![key, processed_value, now])
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+// ── Dashboard Command ─────────────────────────────
+
+#[derive(Debug, Serialize)]
+struct DashboardData {
+    today: DashboardToday,
+    low_stock: Vec<ProductRow>,
+    recent: Vec<TransactionRow>,
+    last7: Vec<DashboardDailyRow>,
+    accounts: Vec<AccountRow>,
+    pending_count: i64,
+}
+
+#[derive(Debug, Serialize)]
+struct DashboardToday {
+    count: i64,
+    revenue: String,
+    profit: String,
+    pos: DashboardTypeAggregate,
+    brilink: DashboardBrilinkAggregate,
+}
+
+#[derive(Debug, Serialize)]
+struct DashboardTypeAggregate {
+    count: i64,
+    total: String,
+    profit: String,
+}
+
+#[derive(Debug, Serialize)]
+struct DashboardBrilinkAggregate {
+    count: i64,
+    total: String,
+    fee: String,
+    profit: String,
+}
+
+#[derive(Debug, Serialize)]
+struct DashboardDailyRow {
+    date: String,
+    revenue: String,
+    profit: String,
+    count: i64,
+}
+
+#[tauri::command]
+fn get_dashboard(app: AppHandle, session: State<'_, SessionState>) -> Result<DashboardData, String> {
+    let user = require_auth(&session)?;
+    let conn = init_schema(&app)?;
+    let is_admin = user.role == "admin";
+
+    let now = chrono::Local::now();
+    let today_key = now.format("%Y-%m-%d").to_string();
+    let today_start_ms = now.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp_millis();
+
+    // Today all transactions
+    let (count, revenue, profit): (i64, f64, f64) = conn.query_row(
+        "SELECT COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN total_amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN profit ELSE 0 END), 0) FROM transactions WHERE created_at >= ?1",
+        params![today_start_ms],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    ).unwrap_or((0, 0.0, 0.0));
+
+    // Today POS
+    let (pos_count, pos_total, pos_profit): (i64, f64, f64) = conn.query_row(
+        "SELECT COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN total_amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN profit ELSE 0 END), 0) FROM transactions WHERE created_at >= ?1 AND type = 'pos'",
+        params![today_start_ms],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    ).unwrap_or((0, 0.0, 0.0));
+
+    // Today Brilink
+    let (brilink_count, brilink_total, brilink_fee, brilink_profit): (i64, f64, f64, f64) = conn.query_row(
+        "SELECT COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN total_amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN admin_fee ELSE 0 END), 0), COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN profit ELSE 0 END), 0) FROM transactions WHERE created_at >= ?1 AND type = 'brilink'",
+        params![today_start_ms],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+    ).unwrap_or((0, 0.0, 0.0, 0.0));
+
+    // Low stock
+    let mut stmt = conn
+        .prepare("SELECT id, name, barcode, category_id, category_name, buy_price, sell_price, stock, min_stock, unit, image_path, is_active FROM products WHERE stock <= min_stock AND is_active = 1 ORDER BY stock ASC LIMIT 10")
+        .map_err(|e| e.to_string())?;
+    let low_stock: Vec<ProductRow> = stmt
+        .query_map([], |row| {
+            Ok(ProductRow {
+                id: row.get(0)?, name: row.get(1)?, barcode: row.get(2)?, category_id: row.get(3)?,
+                category_name: row.get(4)?, buy_price: row.get(5)?, sell_price: row.get(6)?,
+                stock: row.get(7)?, min_stock: row.get(8)?, unit: row.get(9)?,
+                image_path: row.get(10)?, is_active: row.get::<_, i64>(11)? == 1,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Recent transactions
+    let mut stmt = conn
+        .prepare("SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions ORDER BY id DESC LIMIT 8")
+        .map_err(|e| e.to_string())?;
+    let recent: Vec<TransactionRow> = stmt
+        .query_map([], |row| {
+            Ok(TransactionRow {
+                id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
+                customer_name: row.get(3)?, total_amount: row.get(4)?, profit: row.get(5)?,
+                payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Last 7 days
+    let mut last7 = Vec::new();
+    let mut stmt_daily = conn.prepare(
+        "SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch', 'localtime') as day, COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN total_amount ELSE 0 END), 0) as revenue, COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN profit ELSE 0 END), 0) as profit, COALESCE(SUM(CASE WHEN status != 'void' AND status != 'reversed' THEN 1 ELSE 0 END), 0) as count FROM transactions WHERE created_at >= ?1 GROUP BY day ORDER BY day ASC"
+    ).map_err(|e| e.to_string())?;
+    let daily_rows: Vec<(String, f64, f64, i64)> = stmt_daily
+        .query_map(params![today_start_ms - 6 * 24 * 60 * 60 * 1000i64], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+    let daily_map: std::collections::HashMap<String, (f64, f64, i64)> = daily_rows.into_iter().collect();
+
+    for i in 0..7 {
+        let date = now - chrono::Duration::days(6 - i);
+        let key = date.format("%Y-%m-%d").to_string();
+        let (rev, prof, cnt) = daily_map.get(&key).copied().unwrap_or((0.0, 0.0, 0));
+        last7.push(DashboardDailyRow {
+            date: key,
+            revenue: rev.to_string(),
+            profit: if is_admin { prof.to_string() } else { "0".to_string() },
+            count: cnt,
+        });
+    }
+
+    // Active accounts
+    let mut stmt = conn
+        .prepare("SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE is_active = 1 ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+    let accounts: Vec<AccountRow> = stmt
+        .query_map([], |row| {
+            Ok(AccountRow { id: row.get(0)?, code: row.get(1)?, name: row.get(2)?, icon: row.get(3)?, color: row.get(4)?, balance: row.get(5)?, min_balance: row.get(6)?, is_active: row.get::<_, i64>(7)? == 1 })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Pending count
+    let pending_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM transactions WHERE status = 'pending'", [], |row| row.get(0))
+        .unwrap_or(0);
+
+    Ok(DashboardData {
+        today: DashboardToday {
+            count,
+            revenue: revenue.to_string(),
+            profit: if is_admin { profit.to_string() } else { "0".to_string() },
+            pos: DashboardTypeAggregate {
+                count: pos_count,
+                total: pos_total.to_string(),
+                profit: if is_admin { pos_profit.to_string() } else { "0".to_string() },
+            },
+            brilink: DashboardBrilinkAggregate {
+                count: brilink_count,
+                total: brilink_total.to_string(),
+                fee: if is_admin { brilink_fee.to_string() } else { "0".to_string() },
+                profit: if is_admin { brilink_profit.to_string() } else { "0".to_string() },
+            },
+        },
+        low_stock,
+        recent,
+        last7,
+        accounts,
+        pending_count,
+    })
+}
+
+// ── Reports Command ───────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct ReportFilterPayload {
+    start: Option<String>,
+    end: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct PosReportData {
+    start: String,
+    end: String,
+    summary: PosReportSummary,
+    by_payment: Vec<PosReportPaymentRow>,
+    products: Vec<PosReportProductRow>,
+    daily: Vec<PosReportDailyRow>,
+}
+
+#[derive(Debug, Serialize)]
+struct PosReportSummary {
+    count: i64,
+    revenue: f64,
+    profit: f64,
+    cogs: f64,
+    average: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct PosReportPaymentRow {
+    payment_method: String,
+    count: i64,
+    revenue: f64,
+    profit: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct PosReportProductRow {
+    product_id: Option<i64>,
+    product_name: String,
+    qty: i64,
+    gross_sales: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct PosReportDailyRow {
+    date: String,
+    count: i64,
+    revenue: f64,
+    profit: f64,
+}
+
+fn parse_date_to_ms(value: &str, end_of_day: bool) -> Option<i64> {
+    let parts: Vec<&str> = value.split('-').collect();
+    if parts.len() != 3 { return None; }
+    let y: i32 = parts[0].parse().ok()?;
+    let m: u32 = parts[1].parse().ok()?;
+    let d: u32 = parts[2].parse().ok()?;
+    let date = if end_of_day {
+        chrono::NaiveDate::from_ymd_opt(y, m, d)?.and_hms_opt(23, 59, 59, 999)?
+    } else {
+        chrono::NaiveDate::from_ymd_opt(y, m, d)?.and_hms_opt(0, 0, 0, 0)?
+    };
+    Some(date.and_utc().timestamp_millis())
+}
+
+#[tauri::command]
+fn get_pos_report(app: AppHandle, session: State<'_, SessionState>, payload: ReportFilterPayload) -> Result<PosReportData, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+
+    let now = chrono::Local::now();
+    let end_ms = payload.end.as_deref().and_then(|e| parse_date_to_ms(e, true))
+        .unwrap_or_else(|| now.timestamp_millis());
+    let start_ms = payload.start.as_deref().and_then(|s| parse_date_to_ms(s, false))
+        .unwrap_or_else(|| {
+            let month_start = now.date_naive().with_day(1).unwrap().and_hms_opt(0, 0, 0, 0).unwrap();
+            month_start.and_utc().timestamp_millis()
+        });
+
+    // Summary
+    let (count, revenue, profit, average): (i64, f64, f64, f64) = conn.query_row(
+        "SELECT CAST(COUNT(*) AS INTEGER), COALESCE(SUM(total_amount), 0), COALESCE(SUM(profit), 0), COALESCE(AVG(total_amount), 0) FROM transactions WHERE type = 'pos' AND status != 'void' AND status != 'reversed' AND created_at >= ?1 AND created_at <= ?2",
+        params![start_ms, end_ms],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+    ).unwrap_or((0, 0.0, 0.0, 0.0));
+
+    // By payment method
+    let mut stmt = conn
+        .prepare("SELECT payment_method, CAST(COUNT(*) AS INTEGER), COALESCE(SUM(total_amount), 0), COALESCE(SUM(profit), 0) FROM transactions WHERE type = 'pos' AND status != 'void' AND status != 'reversed' AND created_at >= ?1 AND created_at <= ?2 GROUP BY payment_method")
+        .map_err(|e| e.to_string())?;
+    let by_payment: Vec<PosReportPaymentRow> = stmt
+        .query_map(params![start_ms, end_ms], |row| {
+            Ok(PosReportPaymentRow { payment_method: row.get(0)?, count: row.get(1)?, revenue: row.get(2)?, profit: row.get(3)? })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // By product
+    let mut stmt = conn
+        .prepare("SELECT ti.product_id, ti.product_name, CAST(COALESCE(SUM(ti.quantity), 0) AS INTEGER), COALESCE(SUM(ti.subtotal), 0) FROM transaction_items ti INNER JOIN transactions t ON ti.transaction_id = t.id WHERE t.type = 'pos' AND t.status != 'void' AND t.status != 'reversed' AND t.created_at >= ?1 AND t.created_at <= ?2 GROUP BY ti.product_id, ti.product_name ORDER BY SUM(ti.subtotal) DESC LIMIT 50")
+        .map_err(|e| e.to_string())?;
+    let products: Vec<PosReportProductRow> = stmt
+        .query_map(params![start_ms, end_ms], |row| {
+            Ok(PosReportProductRow { product_id: row.get(0)?, product_name: row.get(1)?, qty: row.get(2)?, gross_sales: row.get(3)? })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    // Daily
+    let mut stmt = conn
+        .prepare("SELECT strftime('%Y-%m-%d', t.created_at / 1000, 'unixepoch', 'localtime') as day, CAST(COUNT(*) AS INTEGER), COALESCE(SUM(t.total_amount), 0), COALESCE(SUM(t.profit), 0) FROM transactions t WHERE t.type = 'pos' AND t.status != 'void' AND t.status != 'reversed' AND t.created_at >= ?1 AND t.created_at <= ?2 GROUP BY day ORDER BY day ASC")
+        .map_err(|e| e.to_string())?;
+    let daily: Vec<PosReportDailyRow> = stmt
+        .query_map(params![start_ms, end_ms], |row| {
+            Ok(PosReportDailyRow { date: row.get(0)?, count: row.get(1)?, revenue: row.get(2)?, profit: row.get(3)? })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    Ok(PosReportData {
+        start: chrono::DateTime::from_timestamp_millis(start_ms).unwrap_or_default().to_rfc3339(),
+        end: chrono::DateTime::from_timestamp_millis(end_ms).unwrap_or_default().to_rfc3339(),
+        summary: PosReportSummary { count, revenue, profit, cogs: revenue - profit, average },
+        by_payment,
+        products,
+        daily,
+    })
+}
+
+// ── Setup Complete Command ────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct SetupCompletePayload {
+    store: Option<SetupStoreInfo>,
+    admin: Option<SetupAdminInfo>,
+    cash_opening_balance: Option<f64>,
+    settlement_accounts: Option<Vec<SetupSettlementAccount>>,
+    kas_only: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetupStoreInfo {
+    name: Option<String>,
+    owner_name: Option<String>,
+    phone: Option<String>,
+    owner_whatsapp: Option<String>,
+    address: Option<String>,
+    agent_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetupAdminInfo {
+    name: Option<String>,
+    username: Option<String>,
+    password: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetupSettlementAccount {
+    code: Option<String>,
+    active: Option<bool>,
+    opening_balance: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+struct SetupCompleteResponse {
+    ok: bool,
+    user: PublicUser,
+    activated_accounts: i64,
+    cash_opening_balance: f64,
+    kas_only: bool,
+}
+
+#[tauri::command]
+fn setup_complete(app: AppHandle, payload: SetupCompletePayload, session: State<'_, SessionState>) -> Result<SetupCompleteResponse, String> {
+    let conn = init_schema(&app)?;
+
+    // Security: only if no users
+    let user_count: i64 = conn.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if user_count > 0 {
+        return Err("Setup sudah selesai. Silakan login.".into());
+    }
+
+    let admin_name = payload.admin.as_ref().and_then(|a| a.name.as_ref()).map(|s| s.trim().to_string()).unwrap_or_default();
+    let admin_username = payload.admin.as_ref().and_then(|a| a.username.as_ref()).map(|s| s.trim().to_string()).unwrap_or_default();
+    let admin_password = payload.admin.as_ref().and_then(|a| a.password.as_ref()).map(|s| s.clone()).unwrap_or_default();
+    let store_name = payload.store.as_ref().and_then(|s| s.name.as_ref()).map(|s| s.trim().to_string()).unwrap_or_default();
+    let owner_name = payload.store.as_ref().and_then(|s| s.owner_name.as_ref()).map(|s| s.trim().to_string()).unwrap_or_default();
+
+    if admin_name.is_empty() || admin_username.is_empty() || admin_password.is_empty() {
+        return Err("Nama, username, dan password admin wajib diisi".into());
+    }
+    if admin_username.len() < 3 {
+        return Err("Username minimal 3 karakter".into());
+    }
+    if admin_password.len() < 8 {
+        return Err("Password minimal 8 karakter".into());
+    }
+    if store_name.is_empty() {
+        return Err("Nama toko wajib diisi".into());
+    }
+
+    let cash_opening = payload.cash_opening_balance.unwrap_or(0.0).max(0.0);
+    let settlements = payload.settlement_accounts.as_deref().unwrap_or(&[]);
+    let active_settlements: Vec<_> = settlements.iter().filter(|s| s.active.unwrap_or(false)).collect();
+    let kas_only = payload.kas_only.unwrap_or(active_settlements.is_empty());
+
+    // Verify cash account exists (from seed)
+    let cash_exists: i64 = conn.query_row("SELECT COUNT(*) FROM accounts WHERE code = 'cash'", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if cash_exists == 0 {
+        return Err("Template seed belum tersedia. Jalankan inisialisasi database terlebih dahulu.".into());
+    }
+
+    let mut conn = conn;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let now = Utc::now().to_rfc3339();
+
+    // 1. Create admin
+    let password_hash = hash(&admin_password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 'admin', 1, ?4, ?4)",
+        params![admin_name, admin_username, password_hash, now]).map_err(|e| format!("Gagal membuat admin: {e}"))?;
+    let user_id = tx.last_insert_rowid();
+
+    // 2. Save settings
+    let owner_whatsapp = payload.store.as_ref().and_then(|s| s.owner_whatsapp.as_deref()).unwrap_or("");
+    let store_address = payload.store.as_ref().and_then(|s| s.address.as_deref()).unwrap_or("");
+    let agent_id = payload.store.as_ref().and_then(|s| s.agent_id.as_deref()).unwrap_or("");
+    let phone = payload.store.as_ref().and_then(|s| s.phone.as_deref()).unwrap_or("");
+
+    let default_settings: Vec<(&str, &str)> = vec![
+        ("app_mode", "recording_only"),
+        ("currency", "IDR"),
+        ("timezone", "Asia/Jakarta"),
+        ("max_discount_amount", "100000"),
+        ("max_discount_percent", "10"),
+        ("discount_admin_pin", ""),
+        ("require_transaction_reference", "false"),
+        ("require_cash_confirmation", "true"),
+        ("default_service_status", "recorded"),
+        ("whatsapp_enabled", "false"),
+        ("whatsapp_auto_notify_owner", "false"),
+        ("store_name", &store_name),
+        ("store_address", store_address),
+        ("agent_id", agent_id),
+        ("owner_name", &owner_name),
+        ("phone", phone),
+        ("whatsapp_owner_number", owner_whatsapp),
+        ("opening_balance", &cash_opening.to_string()),
+        ("app_name", "POS & Agen Bisnis"),
+        ("business_type", "Agen Bisnis"),
+        ("services_label", "Layanan Agen"),
+    ];
+
+    for (key, value) in &default_settings {
+        tx.execute("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)", params![key, value, now]).ok();
+    }
+    // Update store-specific settings
+    for (key, value) in &[("store_name", store_name.as_str()), ("store_address", store_address), ("agent_id", agent_id), ("owner_name", owner_name.as_str()), ("phone", phone), ("whatsapp_owner_number", owner_whatsapp), ("opening_balance", cash_opening.to_string().as_str())] {
+        tx.execute("UPDATE settings SET value = ?1, updated_at = ?2 WHERE key = ?3", params![value, now, key]).ok();
+    }
+
+    // 3. Set cash opening balance
+    let mut activated_count = 0i64;
+    if cash_opening > 0.0 {
+        tx.execute("UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE code = 'cash'", params![cash_opening, now]).ok();
+        tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) SELECT id, 'opening', ?1, ?1, 'Saldo awal kas dari Setup Wizard', ?2 FROM accounts WHERE code = 'cash'", params![cash_opening, now]).ok();
+    }
+
+    // 4. Activate settlement accounts
+    for settlement in &active_settlements {
+        let code = match &settlement.code {
+            Some(c) if !c.is_empty() => c.trim(),
+            _ => continue,
+        };
+        let opening = settlement.opening_balance.unwrap_or(0.0).max(0.0);
+        tx.execute("UPDATE accounts SET is_active = 1, balance = ?1, updated_at = ?2 WHERE code = ?3", params![opening, now, code]).ok();
+        if opening > 0.0 {
+            tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) SELECT id, 'opening', ?1, ?1, 'Saldo awal dari Setup Wizard', ?2 FROM accounts WHERE code = ?3", params![opening, now, code]).ok();
+        }
+        activated_count += 1;
+    }
+
+    tx.commit().map_err(|e| format!("Gagal menyelesaikan setup: {e}"))?;
+
+    let public_user = PublicUser { id: user_id, name: admin_name, username: admin_username, role: "admin".into() };
+    *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = Some(public_user.clone());
+
+    Ok(SetupCompleteResponse {
+        ok: true,
+        user: public_user,
+        activated_accounts: activated_count,
+        cash_opening_balance: cash_opening,
+        kas_only,
+    })
+}
+
+// ── WhatsApp Commands (stub — real WhatsApp needs separate process) ──
+
+#[derive(Debug, Serialize)]
+struct WhatsAppStatus {
+    enabled: bool,
+    connected: bool,
+    phone_number: Option<String>,
+    qr_code: Option<String>,
+    last_activity: Option<String>,
+    error: Option<String>,
+}
+
+#[tauri::command]
+fn whatsapp_status(_session: State<'_, SessionState>) -> Result<WhatsAppStatus, String> {
+    // WhatsApp Web scraping needs a separate process — return stub
+    Ok(WhatsAppStatus {
+        enabled: false,
+        connected: false,
+        phone_number: None,
+        qr_code: None,
+        last_activity: None,
+        error: Some("WhatsApp integration memerlukan konfigurasi tambahan".into()),
+    })
+}
+
+#[tauri::command]
+fn whatsapp_start(_session: State<'_, SessionState>) -> Result<WhatsAppStatus, String> {
+    Ok(WhatsAppStatus {
+        enabled: false,
+        connected: false,
+        phone_number: None,
+        qr_code: None,
+        last_activity: None,
+        error: Some("WhatsApp integration memerlukan konfigurasi tambahan".into()),
+    })
+}
+
+#[tauri::command]
+fn whatsapp_restart(_session: State<'_, SessionState>) -> Result<WhatsAppStatus, String> {
+    Ok(WhatsAppStatus {
+        enabled: false,
+        connected: false,
+        phone_number: None,
+        qr_code: None,
+        last_activity: None,
+        error: Some("WhatsApp integration memerlukan konfigurasi tambahan".into()),
+    })
+}
+
+#[tauri::command]
+fn whatsapp_logout(_session: State<'_, SessionState>) -> Result<bool, String> {
+    Ok(true)
+}
+
+// ── App Run ───────────────────────────────────────
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
@@ -1825,6 +2416,15 @@ pub fn run() {
             list_fee_tiers,
             create_fee_tier,
             print_thermal_receipt,
+            get_settings,
+            update_settings,
+            get_dashboard,
+            get_pos_report,
+            setup_complete,
+            whatsapp_status,
+            whatsapp_start,
+            whatsapp_restart,
+            whatsapp_logout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
