@@ -1,8 +1,6 @@
-use base64::engine::general_purpose;
 use base64::Engine;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rusqlite::{params, Connection};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
