@@ -55,10 +55,18 @@ const SidebarClock = memo(function SidebarClock() {
         </div>
         <div>
           <p className="text-white text-sm font-bold">
-            {now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+            {now.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </p>
           <p className="text-slate-400 text-[11px]">
-            {now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}
+            {now.toLocaleDateString("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
           </p>
         </div>
       </div>
@@ -69,13 +77,40 @@ const SidebarClock = memo(function SidebarClock() {
 /* ------------------------------------------------------------------ */
 /*  Toast system (same as before)                                      */
 /* ------------------------------------------------------------------ */
-type ToastItem = { id: number; message: string; tone: "success" | "error" | "info" | "warning" };
+type ToastItem = {
+  id: number;
+  message: string;
+  tone: "success" | "error" | "info" | "warning";
+};
 
-const toastConfig: Record<ToastItem["tone"], { border: string; bg: string; text: string; icon: string }> = {
-  success: { border: "border-emerald-200", bg: "bg-emerald-50", text: "text-emerald-600", icon: "\u2713" },
-  error: { border: "border-red-200", bg: "bg-red-50", text: "text-red-600", icon: "\u2715" },
-  warning: { border: "border-amber-200", bg: "bg-amber-50", text: "text-amber-600", icon: "!" },
-  info: { border: "border-blue-200", bg: "bg-blue-50", text: "text-blue-600", icon: "i" },
+const toastConfig: Record<
+  ToastItem["tone"],
+  { border: string; bg: string; text: string; icon: string }
+> = {
+  success: {
+    border: "border-emerald-200",
+    bg: "bg-emerald-50",
+    text: "text-emerald-600",
+    icon: "\u2713",
+  },
+  error: {
+    border: "border-red-200",
+    bg: "bg-red-50",
+    text: "text-red-600",
+    icon: "\u2715",
+  },
+  warning: {
+    border: "border-amber-200",
+    bg: "bg-amber-50",
+    text: "text-amber-600",
+    icon: "!",
+  },
+  info: {
+    border: "border-blue-200",
+    bg: "bg-blue-50",
+    text: "text-blue-600",
+    icon: "i",
+  },
 };
 
 function ToastViewport({ message }: { message: string }) {
@@ -117,15 +152,26 @@ function ToastViewport({ message }: { message: string }) {
               cfg.border,
             )}
           >
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cfg.bg)}>
-              <span className={cn("text-xs font-bold", cfg.text)}>{cfg.icon}</span>
+            <div
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                cfg.bg,
+              )}
+            >
+              <span className={cn("text-xs font-bold", cfg.text)}>
+                {cfg.icon}
+              </span>
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
-              <p className="text-sm text-slate-600 leading-snug font-medium">{t.message}</p>
+              <p className="text-sm text-slate-600 leading-snug font-medium">
+                {t.message}
+              </p>
             </div>
             <button
               type="button"
-              onClick={() => setToasts((items) => items.filter((item) => item.id !== t.id))}
+              onClick={() =>
+                setToasts((items) => items.filter((item) => item.id !== t.id))
+              }
               className="text-slate-400 hover:text-slate-600 shrink-0"
             >
               <X size={16} />
@@ -160,12 +206,13 @@ function MobileSidebar({
   onSupport: () => void;
 }) {
   const isAdmin = user.role === "admin";
-  const initials = user.name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase() || "U";
+  const initials =
+    user.name
+      .split(" ")
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "U";
 
   if (!open) return null;
 
@@ -183,13 +230,15 @@ function MobileSidebar({
         <div
           className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
-            background: "radial-gradient(circle at 0% 0%, rgba(0,179,126,0.3) 0%, transparent 50%)",
+            background:
+              "radial-gradient(circle at 0% 0%, rgba(0,179,126,0.3) 0%, transparent 50%)",
           }}
         />
         <div
           className="absolute bottom-0 right-0 w-48 h-48 opacity-20 pointer-events-none"
           style={{
-            background: "radial-gradient(circle, rgba(124,58,237,0.4) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(124,58,237,0.4) 0%, transparent 70%)",
           }}
         />
 
@@ -203,17 +252,24 @@ function MobileSidebar({
               <Landmark size={22} className="text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-white font-extrabold text-base tracking-tight truncate">CatatAgen</h1>
-              <p className="text-slate-400 text-[11px] font-medium">Agen Bisnis</p>
+              <h1 className="text-white font-extrabold text-base tracking-tight truncate">
+                CatatAgen
+              </h1>
+              <p className="text-slate-400 text-[11px] font-medium">
+                Agen Bisnis
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white active:scale-90 transition-all">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white active:scale-90 transition-all"
+          >
             <X size={22} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="relative flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+        <nav className="relative flex-1 px-3 py-2 space-y-1">
           {navItems
             .filter((item) => !(item.adminOnly && !isAdmin))
             .map((item) => {
@@ -221,7 +277,10 @@ function MobileSidebar({
               return (
                 <button
                   key={item.id}
-                  onClick={() => { onNavigate(item.id); onClose(); }}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    onClose();
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group relative font-bold text-sm",
                     isActive
@@ -230,7 +289,13 @@ function MobileSidebar({
                   )}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <span className={cn(isActive ? "text-white" : "text-slate-400 group-hover:text-white")}>
+                  <span
+                    className={cn(
+                      isActive
+                        ? "text-white"
+                        : "text-slate-400 group-hover:text-white",
+                    )}
+                  >
                     <Icon name={item.icon} />
                   </span>
                   <span className="flex-1">{item.label}</span>
@@ -244,7 +309,10 @@ function MobileSidebar({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => { onAbout(); onClose(); }}
+              onClick={() => {
+                onAbout();
+                onClose();
+              }}
               className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-bold transition-all active:scale-95"
             >
               <Info size={14} />
@@ -252,7 +320,10 @@ function MobileSidebar({
             </button>
             <button
               type="button"
-              onClick={() => { onSupport(); onClose(); }}
+              onClick={() => {
+                onSupport();
+                onClose();
+              }}
               className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl hover:bg-accent/30 text-accent-light hover:text-white text-[11px] font-bold transition-all active:scale-95"
               style={{ backgroundColor: "rgba(124, 58, 237, 0.2)" }}
             >
@@ -268,12 +339,20 @@ function MobileSidebar({
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-bold truncate">{user.name}</p>
+              <p className="text-white text-sm font-bold truncate">
+                {user.name}
+              </p>
               <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
                 {user.role === "admin" ? (
-                  <><Shield size={11} className="text-emerald-400" /><span>Administrator</span></>
+                  <>
+                    <Shield size={11} className="text-emerald-400" />
+                    <span>Administrator</span>
+                  </>
                 ) : (
-                  <><UserIcon size={11} /><span>Kasir</span></>
+                  <>
+                    <UserIcon size={11} />
+                    <span>Kasir</span>
+                  </>
                 )}
               </div>
             </div>
@@ -316,30 +395,38 @@ export function AppShell({
   onRefresh: () => void;
   onLogout: () => void;
 }) {
-  const [shellNotice, setShellNotice] = useState<null | { title: string; message: string }>(null);
+  const [shellNotice, setShellNotice] = useState<null | {
+    title: string;
+    message: string;
+  }>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = user.role === "admin";
-  const initials = user.name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase() || "U";
+  const initials =
+    user.name
+      .split(" ")
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "U";
 
   function showAbout() {
     setShellNotice({
       title: "Tentang CatatAgen",
-      message: "CatatAgen Local adalah aplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.",
+      message:
+        "CatatAgen Local adalah aplikasi POS dan pencatatan layanan agen lokal berbasis Tauri.",
     });
   }
   function showSupport() {
     setShellNotice({
       title: "Support",
-      message: "Untuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek.",
+      message:
+        "Untuk bantuan, hubungi owner/developer aplikasi atau buka dokumentasi proyek.",
     });
   }
 
-  const visibleNavItems = navItems.filter((item) => !(item.adminOnly && !isAdmin));
+  const visibleNavItems = navItems.filter(
+    (item) => !(item.adminOnly && !isAdmin),
+  );
 
   return (
     <div className="min-h-screen flex">
@@ -360,7 +447,8 @@ export function AppShell({
         <div
           className="absolute inset-0 opacity-40 pointer-events-none rounded-none"
           style={{
-            background: "radial-gradient(ellipse at 0% 0%, rgba(0,179,126,0.25) 0%, transparent 60%)",
+            background:
+              "radial-gradient(ellipse at 0% 0%, rgba(0,179,126,0.25) 0%, transparent 60%)",
           }}
         />
 
@@ -436,7 +524,9 @@ export function AppShell({
             >
               {initials}
             </div>
-            <NavTooltip label={`${user.name} (${user.role === "admin" ? "Administrator" : "Kasir"})`} />
+            <NavTooltip
+              label={`${user.name} (${user.role === "admin" ? "Administrator" : "Kasir"})`}
+            />
           </div>
 
           {/* Logout */}
