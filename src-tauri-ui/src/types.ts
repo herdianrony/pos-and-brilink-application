@@ -13,6 +13,7 @@ export type AgentCartItem = {
   cash_effect: number;
   bank_effect: number;
   notes?: string;
+  quantity: number;
 };
 export type CartItem = ProductCartItem | AgentCartItem;
 

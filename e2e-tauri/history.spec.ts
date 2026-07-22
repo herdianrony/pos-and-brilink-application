@@ -18,7 +18,7 @@ async function createProductAndCheckout(
   // Add category
   await page.getByRole("button", { name: "Produk" }).click();
   await expect(
-    page.getByRole("heading", { name: "Manajemen Data" })
+    page.getByRole("heading", { name: "Produk" })
   ).toBeVisible();
 
   const categoryExists = await page.getByText("Snack").isVisible();

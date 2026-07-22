@@ -13,7 +13,7 @@ test.describe("CatatAgen Tauri product and POS", () => {
     await login(page);
 
     await page.getByRole("button", { name: "Produk" }).click();
-    await expect(page.getByRole("heading", { name: "Manajemen Data" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Produk" })).toBeVisible();
 
     await page.getByRole("button", { name: "Tambah Kategori" }).click();
     await page.getByPlaceholder("Contoh: Rokok, Snack, Aksesoris").fill("Snack");

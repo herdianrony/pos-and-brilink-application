@@ -46,9 +46,9 @@ export function DebtsPage({
       <PageHeader eyebrow="Piutang Pelanggan" title="Buku Utang" description="Catat utang, cicilan, dan salin pengingat WhatsApp untuk pelanggan." />
 
       <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
-        <StatCard tone="amber" icon={<ReceiptText size={20} />} label="Belum Lunas" value={formatRupiah(totalOutstanding)} sub={`${openDebts.length} pelanggan`} />
-        <StatCard tone="blue" icon={<WalletCards size={20} />} label="Total Utang" value={formatRupiah(totalDebt)} sub="semua catatan" />
-        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
+        <StatCard color="amber" icon={<ReceiptText size={20} />} label="Belum Lunas" value={formatRupiah(totalOutstanding)} sub={`${openDebts.length} pelanggan`} />
+        <StatCard color="blue" icon={<WalletCards size={20} />} label="Total Utang" value={formatRupiah(totalDebt)} sub="semua catatan" />
+        <StatCard color="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
       </section>
 
       <Card className="mb-4 grid gap-3 p-3 p-3">

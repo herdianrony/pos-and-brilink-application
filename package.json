@@ -11,7 +11,9 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "workspaces": ["src-tauri-ui"],
+  "workspaces": [
+    "src-tauri-ui"
+  ],
   "scripts": {
     "dev:tauri-ui": "cd src-tauri-ui && vite --host 127.0.0.1",
     "build:tauri-ui": "cd src-tauri-ui && vite build",
@@ -29,6 +31,8 @@
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/cli": "^2.9.0",
     "eslint": "9.39.4",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "typescript": "5.9.3"
   }
 }

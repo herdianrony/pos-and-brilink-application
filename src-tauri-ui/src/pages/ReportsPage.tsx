@@ -43,10 +43,10 @@ export function ReportsPage({
       />
 
       <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
-        <StatCard tone="green" icon={<ReceiptText size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} transaksi POS`} />
-        <StatCard tone="blue" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} transaksi agen`} />
-        <StatCard tone="amber" icon={<TrendingUp size={20} />} label="Total Keuntungan" value={formatRupiah(totalProfit)} sub="POS + layanan" />
-        <StatCard tone="teal" icon={<WalletCards size={20} />} label="Mutasi Saldo" value={mutations.length} sub="catatan mutasi" />
+        <StatCard color="green" icon={<ReceiptText size={20} />} label="Omzet POS" value={formatRupiah(posRevenue)} sub={`${posTransactions.length} transaksi POS`} />
+        <StatCard color="blue" icon={<Landmark size={20} />} label="Volume Layanan" value={formatRupiah(agentRevenue)} sub={`${agentTransactions.length} transaksi agen`} />
+        <StatCard color="amber" icon={<TrendingUp size={20} />} label="Total Keuntungan" value={formatRupiah(totalProfit)} sub="POS + layanan" />
+        <StatCard color="teal" icon={<WalletCards size={20} />} label="Mutasi Saldo" value={mutations.length} sub="catatan mutasi" />
       </section>
 
       <section className="grid grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)] items-start gap-4 max-[1080px]:grid-cols-1">

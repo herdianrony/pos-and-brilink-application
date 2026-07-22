@@ -63,10 +63,10 @@ export function LogsPage({
       />
 
       <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
-        <StatCard tone="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
-        <StatCard tone="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
-        <StatCard tone="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
-        <StatCard tone="teal" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
+        <StatCard color="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
+        <StatCard color="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
+        <StatCard color="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
+        <StatCard color="teal" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
       </section>
 
       <Card className="grid gap-3 p-3">

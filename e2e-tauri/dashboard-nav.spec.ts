@@ -34,7 +34,7 @@ test.describe("Dashboard", () => {
     const pages = [
       { button: "Kasir POS", heading: "Kasir POS" },
       { button: "Layanan Agen", heading: "Layanan Agen" },
-      { button: "Produk", heading: "Manajemen Data" },
+      { button: "Produk", heading: "Produk" },
       { button: "Transaksi", heading: "Riwayat Transaksi" },
       { button: "Pengaturan", heading: "Pengaturan" },
     ];

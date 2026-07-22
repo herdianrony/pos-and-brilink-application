@@ -2,7 +2,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_auth, common::init_schema, session::SessionState};
+use crate::{auth::require_auth, common::bounded_limit, common::init_schema, session::SessionState};
 
 #[derive(Debug, Serialize)]
 pub struct DebtRow {
@@ -38,12 +38,7 @@ pub struct DebtIdPayload {
     pub debt_id: i64,
 }
 
-fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i64 {
-    payload
-        .copied()
-        .unwrap_or(default_limit)
-        .clamp(1, max_limit)
-}
+
 
 #[tauri::command]
 pub fn list_debts(

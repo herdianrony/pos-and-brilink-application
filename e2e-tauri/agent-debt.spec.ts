@@ -15,9 +15,9 @@ test.describe("CatatAgen Tauri agent and finance workflows", () => {
     await page.getByRole("button", { name: "Layanan Agen", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Layanan Agen", exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Transfer/ }).first().click();
-    await page.getByLabel("Nominal Transaksi").fill("100000");
-    await page.getByLabel("Admin Toko").fill("5000");
-    await page.getByLabel("Potongan Bank/Provider").fill("1000");
+    await page.getByPlaceholder("Rp0").nth(0).fill("100000");
+    await page.getByPlaceholder("Rp0").nth(1).fill("5000");
+    await page.getByPlaceholder("Rp0").nth(2).fill("1000");
     await expect(page.getByText("Estimasi Keuntungan")).toBeVisible();
     await page.getByRole("button", { name: "Lanjut Perubahan Saldo" }).click();
     await page.getByRole("button", { name: "Review & Simpan" }).click();
@@ -27,7 +27,7 @@ test.describe("CatatAgen Tauri agent and finance workflows", () => {
     await expect(page.getByText("Transaksi layanan agen berhasil dicatat")).toBeVisible();
 
     await page.getByRole("button", { name: "Keuangan" }).click();
-    await page.getByRole("button", { name: "Buku Utang" }).click();
+    await page.getByRole("tab", { name: "Buku Utang" }).click();
     await page.getByLabel("Nama Pelanggan").fill("Budi");
     await page.getByLabel("No WhatsApp").fill("628123456789");
     await page.getByLabel("Nominal Utang").fill("25000");

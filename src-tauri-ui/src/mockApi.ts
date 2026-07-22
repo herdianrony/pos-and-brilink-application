@@ -71,7 +71,7 @@ function publicUser(username: string) {
 }
 
 export async function mockInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
-  const payload = (args?.payload || {}) as any;
+  const payload = (args?.payload || {}) as Record<string, unknown>;
   switch (command) {
     case "health_check":
       return { ok: true, app: "CatatAgen Local", backend: "mock-tauri", timestamp: now() } as T;

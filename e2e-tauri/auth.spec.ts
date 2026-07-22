@@ -13,6 +13,6 @@ test.describe("CatatAgen Tauri auth", () => {
 
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Kasir POS", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Keuangan", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Layanan Agen", exact: true })).toBeVisible();
   });
 });

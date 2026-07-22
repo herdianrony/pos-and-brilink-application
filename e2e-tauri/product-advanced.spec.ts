@@ -16,7 +16,7 @@ test.describe("Product Management Advanced", () => {
     // Create product first
     await page.getByRole("button", { name: "Produk" }).click();
     await expect(
-      page.getByRole("heading", { name: "Manajemen Data" })
+      page.getByRole("heading", { name: "Produk" })
     ).toBeVisible();
 
     const catExists = await page.getByText("Snack").isVisible();
@@ -93,7 +93,7 @@ test.describe("Product Management Advanced", () => {
     await login(page);
     await page.getByRole("button", { name: "Produk" }).click();
     await expect(
-      page.getByRole("heading", { name: "Manajemen Data" })
+      page.getByRole("heading", { name: "Produk" })
     ).toBeVisible();
 
     // Search for non-existent product

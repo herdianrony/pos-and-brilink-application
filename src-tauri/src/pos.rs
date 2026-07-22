@@ -210,13 +210,16 @@ fn validate_password(password: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn get_setting(conn: &Connection, key: &str) -> String {
+fn get_setting(conn: &Connection, key: &str) -> Result<String, String> {
     conn.query_row(
         "SELECT value FROM settings WHERE key = ?1",
         params![key],
         |r| r.get::<_, String>(0),
     )
-    .unwrap_or_default()
+    .map_err(|e| {
+        record_app_log(conn, "error", "get_setting", &format!("Failed to query setting {}: {}", key, e));
+        format!("Gagal membaca pengaturan {}: {}", key, e)
+    })
 }
 
 fn enforce_discount_policy(
@@ -229,17 +232,17 @@ fn enforce_discount_policy(
     if discount <= 0.0 {
         return Ok(0.0);
     }
-    let max_pct: f64 = get_setting(conn, "max_discount_percent")
+    let max_pct: f64 = get_setting(conn, "max_discount_percent")?
         .parse()
         .unwrap_or(10.0);
-    let max_amt: f64 = get_setting(conn, "max_discount_amount")
+    let max_amt: f64 = get_setting(conn, "max_discount_amount")?
         .parse()
         .unwrap_or(100_000.0);
     let max_disc = (total_amount * max_pct / 100.0).min(max_amt);
 
     if discount > max_disc + 0.01 {
         // Exceeded cap — require admin PIN
-        let stored_pin = get_setting(conn, "discount_admin_pin");
+        let stored_pin = get_setting(conn, "discount_admin_pin")?;
         if stored_pin.is_empty() {
             return Err(format!(
                 "Diskon melebihi batas Rp{:.0}. Hubungi admin untuk mengatur PIN diskon.",
@@ -361,14 +364,14 @@ pub fn checkout_pos_cash(
                 params![item.product_id],
                 |r| r.get(0),
             )
-            .unwrap_or_default();
+            .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
         let unit_price: f64 = tx
             .query_row(
                 "SELECT sell_price FROM products WHERE id = ?1",
                 params![item.product_id],
                 |r| r.get(0),
             )
-            .unwrap_or(0.0);
+            .map_err(|_| format!("Harga produk ID {} tidak ditemukan", item.product_id))?;
         tx.execute(
             "INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![trx_id, item.product_id, product_name, item.quantity, unit_price, unit_price * item.quantity as f64],
@@ -722,12 +725,9 @@ pub fn get_dashboard(
 
     macro_rules! today_stats {
         ($type_filter:expr) => {{
-            let filter = if $type_filter.is_empty() { "".to_string() } else { format!(" AND type = '{}'", $type_filter) };
-            let sql = format!(
-                "SELECT COUNT(*), COALESCE(SUM(total_amount),0), COALESCE(SUM(profit),0) FROM transactions WHERE created_at >= ?1 AND status NOT IN ('void','reversed'){}",
-                filter
-            );
-            conn.query_row(&sql, params![today_str], |r| {
+            let sql = "SELECT COUNT(*), COALESCE(SUM(total_amount),0), COALESCE(SUM(profit),0) FROM transactions WHERE created_at >= ?1 AND status NOT IN ('void','reversed') AND (?2 = '' OR type = ?2)";
+            let filter_type: &str = $type_filter;
+            conn.query_row(sql, params![today_str, filter_type], |r| {
                 Ok(TodayStats {
                     count: r.get(0)?,
                     revenue: r.get(1)?,
@@ -996,9 +996,14 @@ pub fn setup_complete(
     // Cash opening balance
     let cash_opening = payload.cash_opening_balance.unwrap_or(0.0).max(0.0);
     if cash_opening > 0.0 {
+        let cash_account_id: i64 = conn.query_row(
+            "SELECT id FROM accounts WHERE code = 'cash' LIMIT 1",
+            [],
+            |r| r.get(0),
+        ).map_err(|e| format!("Cash account not found: {e}"))?;
         conn.execute(
-            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (1, 'opening', ?1, ?1, 'Saldo awal dari Setup Wizard', ?2)",
-            params![cash_opening, now],
+            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (?1, 'opening', ?2, ?2, 'Saldo awal dari Setup Wizard', ?3)",
+            params![cash_account_id, cash_opening, now],
         ).map_err(|e| e.to_string())?;
         conn.execute(
             "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE code = 'cash'",

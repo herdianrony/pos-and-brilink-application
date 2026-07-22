@@ -34,7 +34,7 @@ pub fn open_db(app: &AppHandle) -> Result<Connection, String> {
     let path = db_path(app)?;
     let conn = Connection::open(path).map_err(|e| format!("Gagal membuka database: {e}"))?;
     conn.pragma_update(None, "journal_mode", "WAL").ok();
-    conn.pragma_update(None, "foreign_keys", "ON").ok();
+    conn.pragma_update(None, "foreign_keys", "ON").map_err(|e| format!("Failed to enable foreign keys: {e}"))?;
     Ok(conn)
 }
 
@@ -285,4 +285,11 @@ pub fn product_image_data_url(
         "data:{mime};base64,{}",
         base64::engine::general_purpose::STANDARD.encode(bytes)
     )))
+}
+
+pub fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i64 {
+    payload
+        .copied()
+        .unwrap_or(default_limit)
+        .clamp(1, max_limit)
 }

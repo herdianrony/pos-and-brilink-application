@@ -6,11 +6,13 @@ export function Modal({
   onClose,
   children,
   size = "md",
+  eyebrow,
 }: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  eyebrow?: string;
 }) {
   if (!open) return null;
   const w = {

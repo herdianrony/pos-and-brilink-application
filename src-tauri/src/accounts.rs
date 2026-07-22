@@ -586,7 +586,7 @@ pub fn deactivate_account(
             params![account_id],
             |r| r.get(0),
         )
-        .unwrap_or_default();
+        .map_err(|_| format!("Akun ID {} tidak ditemukan", account_id))?;
     if code == "cash" {
         return Err("Akun Kas tidak bisa dinonaktifkan".into());
     }
@@ -596,7 +596,7 @@ pub fn deactivate_account(
             params![account_id],
             |r| r.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| format!("Gagal membaca saldo akun: {}", e))?;
     if balance.abs() > 0.01 {
         return Err("Akun dengan saldo tidak bisa dinonaktifkan".into());
     }
