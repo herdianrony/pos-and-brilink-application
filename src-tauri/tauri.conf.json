@@ -36,8 +36,7 @@
         "type": "downloadBootstrapper"
       },
       "nsis": {
-        "displayLanguageSelector": false,
-        "installerIcon": "../electron/build/icon.ico"
+        "displayLanguageSelector": false
       }
     },
     "icon": ["icons/icon.ico", "icons/icon.png"]
