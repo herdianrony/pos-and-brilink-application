@@ -50,6 +50,16 @@ pub struct AccountExpensePayload {
     pub notes: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UpdateAccountPayload {
+    pub id: i64,
+    pub name: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+    pub min_balance: Option<f64>,
+    pub is_active: Option<bool>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct AccountMutationRow {
     pub id: i64,
@@ -237,21 +247,23 @@ pub fn transfer_accounts(
             },
         )
         .map_err(|_| "Rekening tujuan tidak ditemukan".to_string())?;
-    let from_balance = from.2 - payload.amount;
-    if from_balance < 0.0 {
-        return Err("Saldo rekening asal tidak cukup".into());
+    // Race-safe: conditional WHERE ensures balance can't go negative
+    let from_affected = tx.execute(
+        "UPDATE accounts SET balance = balance - ?1, updated_at = ?2 WHERE id = ?3 AND balance >= ?1 AND is_active = 1",
+        params![payload.amount, now, from.0],
+    )
+    .map_err(|e| e.to_string())?;
+    if from_affected == 0 {
+        return Err("Saldo rekening asal tidak cukup atau akun tidak aktif".into());
     }
+    let to_affected = tx.execute(
+        "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+        params![payload.amount, now, to.0],
+    )
+    .map_err(|e| e.to_string())?;
+    // Recalculate balances for mutations
+    let from_balance = from.2 - payload.amount;
     let to_balance = to.2 + payload.amount;
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![from_balance, now, from.0],
-    )
-    .map_err(|e| e.to_string())?;
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![to_balance, now, to.0],
-    )
-    .map_err(|e| e.to_string())?;
     let note = crate::common::trim_optional(payload.notes)
         .unwrap_or_else(|| format!("Transfer {} ke {}", from.1, to.1));
     tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -payload.amount, from_balance, note, now]).map_err(|e| e.to_string())?;
@@ -385,4 +397,51 @@ fn account_row_from_tuple(
         min_balance: account.6,
         is_active: account.7 == 1,
     }
+}
+
+#[tauri::command]
+pub fn update_account(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: UpdateAccountPayload,
+) -> Result<bool, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+    let mut sets = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let now = chrono::Utc::now().to_rfc3339();
+    if let Some(ref n) = payload.name {
+        let n = n.trim();
+        if n.is_empty() { return Err("Nama akun wajib diisi".into()); }
+        sets.push("name = ?"); params_vec.push(Box::new(n.to_string()));
+    }
+    if let Some(ref i) = payload.icon { sets.push("icon = ?"); params_vec.push(Box::new(i.clone())); }
+    if let Some(ref c) = payload.color { sets.push("color = ?"); params_vec.push(Box::new(c.clone())); }
+    if let Some(m) = payload.min_balance { sets.push("min_balance = ?"); params_vec.push(Box::new(m)); }
+    if let Some(a) = payload.is_active { sets.push("is_active = ?"); params_vec.push(Box::new(if a { 1i64 } else { 0i64 })); }
+    if sets.is_empty() { return Err("Tidak ada field yang diubah".into()); }
+    sets.push("updated_at = ?");
+    params_vec.push(Box::new(now));
+    params_vec.push(Box::new(payload.id));
+    let sql = format!("UPDATE accounts SET {} WHERE id = ?", sets.join(", "));
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn deactivate_account(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    account_id: i64,
+) -> Result<bool, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+    let code: String = conn.query_row("SELECT code FROM accounts WHERE id = ?1", params![account_id], |r| r.get(0)).unwrap_or_default();
+    if code == "cash" { return Err("Akun Kas tidak bisa dinonaktifkan".into()); }
+    let balance: f64 = conn.query_row("SELECT balance FROM accounts WHERE id = ?1", params![account_id], |r| r.get(0)).unwrap_or(0.0);
+    if balance.abs() > 0.01 { return Err("Akun dengan saldo tidak bisa dinonaktifkan".into()); }
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute("UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, account_id]).map_err(|e| e.to_string())?;
+    Ok(true)
 }

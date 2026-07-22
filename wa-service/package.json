@@ -1,0 +1,16 @@
+{
+  "name": "wa-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs",
+    "build": "pkg index.mjs --target node18-win-x64 --output wa-service.exe"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "qrcode": "^1.5.4",
+    "pino": "^9.6.0"
+  }
+}

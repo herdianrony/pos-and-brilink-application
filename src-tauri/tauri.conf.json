@@ -27,9 +27,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
+    "externalBin": ["wa-service"],
     "category": "Business",
     "shortDescription": "POS dan layanan agen ringan berbasis Tauri",
     "longDescription": "Eksperimen CatatAgen Local berbasis Tauri full tanpa Next.js server lokal.",
@@ -42,9 +41,6 @@
         "installerIcon": "../electron/build/icon.ico"
       }
     },
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ]
+    "icon": ["icons/icon.ico", "icons/icon.png"]
   }
 }

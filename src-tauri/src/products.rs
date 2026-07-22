@@ -72,6 +72,25 @@ pub struct CategoryPayload {
     pub color: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CategoryIdPayload {
+    pub category_id: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCategoryPayload {
+    pub id: i64,
+    pub name: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListProductsPayload {
+    pub search: Option<String>,
+    pub category_id: Option<i64>,
+}
+
 #[tauri::command]
 pub fn list_categories(
     app: AppHandle,
@@ -130,26 +149,70 @@ pub fn create_category(
 }
 
 #[tauri::command]
+pub fn update_category(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: UpdateCategoryPayload,
+) -> Result<bool, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+    let mut sets = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    if let Some(ref n) = payload.name { let n = n.trim(); if n.is_empty() { return Err("Nama kategori wajib diisi".into()); } sets.push("name = ?"); params_vec.push(Box::new(n.to_string())); }
+    if let Some(ref i) = payload.icon { sets.push("icon = ?"); params_vec.push(Box::new(i.clone())); }
+    if let Some(ref c) = payload.color { sets.push("color = ?"); params_vec.push(Box::new(c.clone())); }
+    if sets.is_empty() { return Err("Tidak ada field yang diubah".into()); }
+    params_vec.push(Box::new(payload.id));
+    let sql = format!("UPDATE product_categories SET {} WHERE id = ?", sets.join(", "));
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn deactivate_category(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: CategoryIdPayload,
+) -> Result<bool, String> {
+    let _user = require_admin(&session)?;
+    let conn = init_schema(&app)?;
+    conn.execute("UPDATE product_categories SET is_active = 0 WHERE id = ?1", params![payload.category_id]).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
 pub fn list_products(
     app: AppHandle,
     session: State<'_, SessionState>,
+    payload: Option<ListProductsPayload>,
 ) -> Result<Vec<ProductRow>, String> {
     let _user = require_auth(&session)?;
     let conn = init_schema(&app)?;
-    let mut stmt = conn
-        .prepare(
-            r#"
-        SELECT p.id, p.name, p.barcode, p.category_id, c.name, p.buy_price, p.sell_price,
+    let search = payload.as_ref().and_then(|p| p.search.as_ref()).map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty());
+    let mut sql = String::from(
+        r#"SELECT p.id, p.name, p.barcode, p.category_id, c.name, p.buy_price, p.sell_price,
                p.stock, p.min_stock, COALESCE(p.unit, 'pcs'), p.image_path, p.is_active
         FROM products p
         LEFT JOIN product_categories c ON c.id = p.category_id
-        WHERE p.is_active = 1
-        ORDER BY p.name ASC
-        "#,
-        )
-        .map_err(|e| e.to_string())?;
+        WHERE p.is_active = 1"#
+    );
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    if let Some(ref s) = search {
+        sql.push_str(" AND (LOWER(p.name) LIKE ? OR p.barcode LIKE ?)");
+        let pattern = format!("%{}%", s);
+        params_vec.push(Box::new(pattern.clone()));
+        params_vec.push(Box::new(pattern));
+    }
+    if let Some(cid) = payload.as_ref().and_then(|p| p.category_id) {
+        sql.push_str(" AND p.category_id = ?");
+        params_vec.push(Box::new(cid));
+    }
+    sql.push_str(" ORDER BY p.name ASC");
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(param_refs.as_slice(), |row| {
             Ok(ProductRow {
                 id: row.get(0)?,
                 name: row.get(1)?,
@@ -186,11 +249,11 @@ pub fn create_product(
         return Err("Nama produk wajib diisi".into());
     }
     if payload.buy_price < 0.0
-        || payload.sell_price < 0.0
+        || payload.sell_price <= 0.0
         || payload.stock < 0
         || payload.min_stock < 0
     {
-        return Err("Harga dan stok tidak boleh minus".into());
+        return Err("Harga jual harus lebih dari 0, harga beli dan stok tidak boleh minus".into());
     }
     let barcode = trim_optional(payload.barcode);
     let unit = trim_optional(payload.unit).unwrap_or_else(|| "pcs".to_string());
@@ -261,11 +324,11 @@ pub fn update_product(
         return Err("Nama produk wajib diisi".into());
     }
     if payload.buy_price < 0.0
-        || payload.sell_price < 0.0
+        || payload.sell_price <= 0.0
         || payload.stock < 0
         || payload.min_stock < 0
     {
-        return Err("Harga dan stok tidak boleh minus".into());
+        return Err("Harga jual harus lebih dari 0, harga beli dan stok tidak boleh minus".into());
     }
     let barcode = trim_optional(payload.barcode);
     let unit = trim_optional(payload.unit).unwrap_or_else(|| "pcs".to_string());

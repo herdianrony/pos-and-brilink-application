@@ -267,3 +267,111 @@ pub fn logout(session: State<'_, SessionState>) -> Result<bool, String> {
         .map_err(|_| "Session tidak valid".to_string())? = None;
     Ok(true)
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateUserPayload {
+    pub id: i64,
+    pub name: Option<String>,
+    pub role: Option<String>,
+    pub is_active: Option<bool>,
+    pub password: Option<String>,
+}
+
+#[tauri::command]
+pub fn update_user(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    payload: UpdateUserPayload,
+) -> Result<PublicUser, String> {
+    let me = require_admin(&session)?;
+    if me.id == payload.id {
+        return Err("Tidak bisa mengubah data diri sendiri".into());
+    }
+    let conn = init_schema(&app)?;
+    if let Some(ref r) = payload.role {
+        if !matches!(r.as_str(), "admin" | "kasir") {
+            return Err("Role harus admin atau kasir".into());
+        }
+    }
+    let mut sets = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    if let Some(ref n) = payload.name {
+        let n = n.trim();
+        if n.is_empty() || n.len() > 100 {
+            return Err("Nama wajib diisi (maks 100 karakter)".into());
+        }
+        sets.push("name = ?");
+        params_vec.push(Box::new(n.to_string()));
+    }
+    if let Some(ref r) = payload.role {
+        sets.push("role = ?");
+        params_vec.push(Box::new(r.clone()));
+    }
+    if let Some(a) = payload.is_active {
+        sets.push("is_active = ?");
+        params_vec.push(Box::new(if a { 1i64 } else { 0i64 }));
+    }
+    if let Some(ref p) = payload.password {
+        if !p.is_empty() {
+            validate_password(p)?;
+            let h = hash(p, DEFAULT_COST).map_err(|e| e.to_string())?;
+            sets.push("password_hash = ?");
+            params_vec.push(Box::new(h));
+        }
+    }
+    if sets.is_empty() {
+        return Err("Tidak ada field yang diubah".into());
+    }
+    let now = Utc::now().to_rfc3339();
+    sets.push("updated_at = ?");
+    params_vec.push(Box::new(now));
+    params_vec.push(Box::new(payload.id));
+    let sql = format!("UPDATE users SET {} WHERE id = ?", sets.join(", "));
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, param_refs.as_slice()).map_err(|e| e.to_string())?;
+    let user = conn
+        .query_row(
+            "SELECT id, name, username, role FROM users WHERE id = ?1",
+            params![payload.id],
+            |row| Ok(PublicUser { id: row.get(0)?, name: row.get(1)?, username: row.get(2)?, role: row.get(3)? }),
+        )
+        .map_err(|_| "User tidak ditemukan".to_string())?;
+    record_app_log(&conn, "INFO", "users", &format!("User diubah: {}", user.username));
+    Ok(user)
+}
+
+#[tauri::command]
+pub fn deactivate_user(
+    app: AppHandle,
+    session: State<'_, SessionState>,
+    user_id: i64,
+) -> Result<bool, String> {
+    let me = require_admin(&session)?;
+    if me.id == user_id {
+        return Err("Tidak bisa menonaktifkan diri sendiri".into());
+    }
+    let conn = init_schema(&app)?;
+    let now = Utc::now().to_rfc3339();
+    conn.execute("UPDATE users SET is_active = 0, updated_at = ?1 WHERE id = ?2", params![now, user_id])
+        .map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn get_me(session: State<'_, SessionState>) -> Result<PublicUser, String> {
+    require_auth(&session)
+}
+
+fn validate_password(password: &str) -> Result<(), String> {
+    if password.len() < 8 || password.len() > 128 {
+        return Err("Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into());
+    }
+    let categories = password.chars().filter(|c| c.is_ascii_uppercase()).count() as u8
+        + password.chars().filter(|c| c.is_ascii_lowercase()).count() as u8
+        + password.chars().filter(|c| c.is_ascii_digit()).count() as u8
+        + password.chars().filter(|c| !c.is_alphanumeric()).count() as u8;
+    if categories < 2 {
+        return Err("Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into());
+    }
+    Ok(())
+}

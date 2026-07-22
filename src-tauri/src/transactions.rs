@@ -78,26 +78,29 @@ pub fn list_transactions(
     session: State<'_, SessionState>,
     payload: Option<i64>,
 ) -> Result<Vec<TransactionRow>, String> {
-    let _user = require_auth(&session)?;
+    let user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 50, 500);
+    let is_admin = user.role == "admin";
     let conn = init_schema(&app)?;
     let mut stmt = conn.prepare(
         r#"
         SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
         FROM transactions
+        WHERE status NOT IN ('void', 'reversed')
         ORDER BY id DESC
         LIMIT ?1
         "#,
     ).map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![limit], |row| {
+            let profit = row.get::<_, f64>(5)?;
             Ok(TransactionRow {
                 id: row.get(0)?,
                 invoice_no: row.get(1)?,
                 transaction_type: row.get(2)?,
                 customer_name: row.get(3)?,
                 total_amount: row.get(4)?,
-                profit: row.get(5)?,
+                profit: if is_admin { profit } else { 0.0 },
                 payment_method: row.get(6)?,
                 status: row.get(7)?,
                 notes: row.get(8)?,
