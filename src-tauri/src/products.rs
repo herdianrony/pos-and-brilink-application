@@ -1,5 +1,5 @@
 use base64::Engine;
-use rusqlite::{params, Connection};
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
