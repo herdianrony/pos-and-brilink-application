@@ -387,7 +387,7 @@ pub fn checkout_pos_cash(
             "transfer" | "qris" => {
                 // Use the settlement_account_id provided by frontend
                 let settlement_id = payload.settlement_account_id.ok_or_else(|| {
-                    "Akun settlement wajib dipilih untuk pembayaran transfer/QRIS".into()
+                    "Akun settlement wajib dipilih untuk pembayaran transfer/QRIS".to_string()
                 })?;
                 let acc: (i64, f64) = tx
                     .query_row(
@@ -456,7 +456,7 @@ pub fn create_agent_transaction(
     payload: AgentTransactionPayload,
 ) -> Result<TransactionDetailRow, String> {
     let user = require_auth(&session)?;
-    let is_admin = user.role == "admin";
+    let _is_admin = user.role == "admin";
     let service_name = payload.service_name.trim().to_string();
     if service_name.is_empty() {
         return Err("Nama layanan wajib diisi".into());

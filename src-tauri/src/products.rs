@@ -567,13 +567,14 @@ pub fn restock_product(
 
     // Return updated product
     conn.query_row(
-        "SELECT id, name, barcode, category_id, buy_price, sell_price, stock, min_stock, unit, image_path, is_active FROM products WHERE id = ?1",
+        "SELECT p.id, p.name, p.barcode, p.category_id, p.buy_price, p.sell_price, p.stock, p.min_stock, p.unit, p.image_path, p.is_active, pc.name FROM products p LEFT JOIN product_categories pc ON p.category_id = pc.id WHERE p.id = ?1",
         params![payload.product_id],
         |row| Ok(ProductRow {
             id: row.get(0)?,
             name: row.get(1)?,
             barcode: row.get(2)?,
             category_id: row.get(3)?,
+            category_name: row.get(12)?,
             buy_price: row.get(4)?,
             sell_price: row.get(5)?,
             stock: row.get(6)?,
