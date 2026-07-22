@@ -466,7 +466,7 @@ export function AppShell({
         <div className="w-8 h-px bg-white/10 mb-2" />
 
         {/* Nav icons — centered */}
-        <nav className="relative flex-1 flex flex-col items-center gap-1 py-1 overflow-y-auto w-full px-2">
+        <nav className="relative flex-1 flex flex-col items-center gap-1 py-1 w-full px-2">
           {visibleNavItems.map((item) => {
             const isActive = activeView === item.id;
             return (

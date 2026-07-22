@@ -40,10 +40,7 @@ pub struct DemoResult {
 // ── Seed System Templates ──────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_system(
-    app: AppHandle,
-    session: State<'_, SessionState>,
-) -> Result<SeedResult, String> {
+pub fn seed_system(app: AppHandle, session: State<'_, SessionState>) -> Result<SeedResult, String> {
     // Seed dapat dipanggil tanpa auth jika belum ada user (first-run)
     let conn = init_schema(&app)?;
     let user_count: i64 = conn
@@ -91,10 +88,10 @@ pub fn seed_system(
             ("business_type", "Agen Bisnis"),
             ("services_label", "Layanan Agen"),
         ];
-        for (key, value) in settings {
+        for (key, value) in &settings {
             conn.execute(
                 "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)",
-                params![key, value, now],
+                params![*key, *value, now],
             )
             .map_err(|e| e.to_string())?;
         }
@@ -113,14 +110,32 @@ pub fn seed_system(
         let accounts: Vec<(&str, &str, &str, &str, f64)> = vec![
             ("cash", "Kas Tunai (Laci)", "banknote", "#22c55e", 0.0),
             ("bank_bri", "M-Banking BRI", "bri", "#00529B", 0.0),
-            ("bank_mandiri", "M-Banking Mandiri", "mandiri", "#003A79", 0.0),
+            (
+                "bank_mandiri",
+                "M-Banking Mandiri",
+                "mandiri",
+                "#003A79",
+                0.0,
+            ),
             ("bank_bca", "M-Banking BCA", "bca", "#0060AF", 0.0),
             ("bank_bni", "M-Banking BNI", "bni", "#F37021", 0.0),
             ("bank_btn", "M-Banking BTN", "btn", "#005F6B", 0.0),
             ("bank_bsi", "M-Banking BSI", "landmark", "#00A04A", 0.0),
             ("bank_cimb", "M-Banking CIMB", "cimb-niaga", "#7B2D8E", 0.0),
-            ("bank_danamon", "M-Banking Danamon", "danamon", "#003D7C", 0.0),
-            ("bank_permata", "M-Banking Permata", "permata", "#003D7C", 0.0),
+            (
+                "bank_danamon",
+                "M-Banking Danamon",
+                "danamon",
+                "#003D7C",
+                0.0,
+            ),
+            (
+                "bank_permata",
+                "M-Banking Permata",
+                "permata",
+                "#003D7C",
+                0.0,
+            ),
             ("bank_jago", "Jago", "landmark", "#FF6B00", 0.0),
             ("ewallet_dana", "DANA", "dana", "#00A0DE", 0.0),
             ("ewallet_ovo", "OVO", "ovo", "#4C2A86", 0.0),
@@ -152,8 +167,9 @@ pub fn seed_system(
     Ok(SeedResult {
         message,
         stats,
-        note: "Seed berisi template sistem saja. Saldo, fee, dan data bisnis diisi via Setup Wizard."
-            .into(),
+        note:
+            "Seed berisi template sistem saja. Saldo, fee, dan data bisnis diisi via Setup Wizard."
+                .into(),
     })
 }
 
@@ -223,10 +239,7 @@ pub fn setup_templates(app: AppHandle) -> Result<SetupTemplatesResponse, String>
 // ── Seed Demo Data ─────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_demo(
-    app: AppHandle,
-    session: State<'_, SessionState>,
-) -> Result<DemoResult, String> {
+pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let now = chrono::Utc::now().to_rfc3339();
@@ -280,7 +293,9 @@ pub fn seed_demo(
     if existing_demo_products == 0 {
         // First get category IDs for demo categories
         let mut cat_stmt = conn
-            .prepare("SELECT id, name FROM product_categories WHERE name LIKE ? || '%' ORDER BY id ASC")
+            .prepare(
+                "SELECT id, name FROM product_categories WHERE name LIKE ? || '%' ORDER BY id ASC",
+            )
             .map_err(|e| e.to_string())?;
         let cat_rows: Vec<(i64, String)> = cat_stmt
             .query_map(params![DEMO], |row| Ok((row.get(0)?, row.get(1)?)))
@@ -290,56 +305,331 @@ pub fn seed_demo(
 
         // Helper: find cat id by name suffix
         let find_cat_id = |name_suffix: &str| -> Option<i64> {
-            cat_rows.iter().find(|(_, n)| n.ends_with(name_suffix)).map(|(id, _)| *id)
+            cat_rows
+                .iter()
+                .find(|(_, n)| n.ends_with(name_suffix))
+                .map(|(id, _)| *id)
         };
 
         // Demo products: (name, cat_suffix, buy, sell, stock, min_stock, unit)
         let products: Vec<(&str, &str, f64, f64, i64, i64, &str)> = vec![
             // Makanan
             ("Indomie Goreng", "Makanan", 3000.0, 5000.0, 48, 10, "pcs"),
-            ("Indomie Kuah Soto", "Makanan", 3000.0, 5000.0, 36, 10, "pcs"),
-            ("Indomie Kuah Ayam Spesial", "Makanan", 3000.0, 5000.0, 24, 10, "pcs"),
-            ("Indomie Kuah Kari Ayam", "Makanan", 3000.0, 5000.0, 12, 10, "pcs"),
-            ("Mie Sedaap Goreng", "Makanan", 3000.0, 5000.0, 30, 10, "pcs"),
-            ("Mie Sedaap Kuah Soto", "Makanan", 3000.0, 5000.0, 18, 10, "pcs"),
-            ("Beras 5kg Cap Pandan", "Makanan", 58000.0, 65000.0, 10, 3, "karung"),
-            ("Minyak Goreng Bimoli 1L", "Makanan", 18000.0, 22000.0, 8, 3, "botol"),
+            (
+                "Indomie Kuah Soto",
+                "Makanan",
+                3000.0,
+                5000.0,
+                36,
+                10,
+                "pcs",
+            ),
+            (
+                "Indomie Kuah Ayam Spesial",
+                "Makanan",
+                3000.0,
+                5000.0,
+                24,
+                10,
+                "pcs",
+            ),
+            (
+                "Indomie Kuah Kari Ayam",
+                "Makanan",
+                3000.0,
+                5000.0,
+                12,
+                10,
+                "pcs",
+            ),
+            (
+                "Mie Sedaap Goreng",
+                "Makanan",
+                3000.0,
+                5000.0,
+                30,
+                10,
+                "pcs",
+            ),
+            (
+                "Mie Sedaap Kuah Soto",
+                "Makanan",
+                3000.0,
+                5000.0,
+                18,
+                10,
+                "pcs",
+            ),
+            (
+                "Beras 5kg Cap Pandan",
+                "Makanan",
+                58000.0,
+                65000.0,
+                10,
+                3,
+                "karung",
+            ),
+            (
+                "Minyak Goreng Bimoli 1L",
+                "Makanan",
+                18000.0,
+                22000.0,
+                8,
+                3,
+                "botol",
+            ),
             ("Gula Pasir 1kg", "Makanan", 14000.0, 17000.0, 12, 3, "kg"),
             ("Telur Ayam 1kg", "Makanan", 28000.0, 32000.0, 5, 2, "kg"),
-            ("Kecap Manis ABC 275ml", "Makanan", 11000.0, 14000.0, 10, 3, "botol"),
-            ("Saus Sambal ABC 335ml", "Makanan", 10000.0, 13000.0, 8, 3, "botol"),
-            ("Tepung Terigu Segitiga 1kg", "Makanan", 12000.0, 15000.0, 6, 2, "pcs"),
-            ("Rinso Anti Noda 800g", "Makanan", 16000.0, 20000.0, 6, 2, "pcs"),
-            ("Sunlight Jeruk Nipis 800ml", "Makanan", 12000.0, 15000.0, 8, 3, "botol"),
-            ("Deterjen Daia 900g", "Makanan", 11000.0, 14000.0, 5, 2, "pcs"),
-            ("Sabun Mandi Lifebuoy 4pcs", "Makanan", 12000.0, 16000.0, 6, 2, "pak"),
-            ("Pasta Gigi Pepsodent 160g", "Makanan", 10000.0, 14000.0, 8, 3, "pcs"),
-            ("Sikat Gigi Pepsodent", "Makanan", 5000.0, 8000.0, 10, 3, "pcs"),
+            (
+                "Kecap Manis ABC 275ml",
+                "Makanan",
+                11000.0,
+                14000.0,
+                10,
+                3,
+                "botol",
+            ),
+            (
+                "Saus Sambal ABC 335ml",
+                "Makanan",
+                10000.0,
+                13000.0,
+                8,
+                3,
+                "botol",
+            ),
+            (
+                "Tepung Terigu Segitiga 1kg",
+                "Makanan",
+                12000.0,
+                15000.0,
+                6,
+                2,
+                "pcs",
+            ),
+            (
+                "Rinso Anti Noda 800g",
+                "Makanan",
+                16000.0,
+                20000.0,
+                6,
+                2,
+                "pcs",
+            ),
+            (
+                "Sunlight Jeruk Nipis 800ml",
+                "Makanan",
+                12000.0,
+                15000.0,
+                8,
+                3,
+                "botol",
+            ),
+            (
+                "Deterjen Daia 900g",
+                "Makanan",
+                11000.0,
+                14000.0,
+                5,
+                2,
+                "pcs",
+            ),
+            (
+                "Sabun Mandi Lifebuoy 4pcs",
+                "Makanan",
+                12000.0,
+                16000.0,
+                6,
+                2,
+                "pak",
+            ),
+            (
+                "Pasta Gigi Pepsodent 160g",
+                "Makanan",
+                10000.0,
+                14000.0,
+                8,
+                3,
+                "pcs",
+            ),
+            (
+                "Sikat Gigi Pepsodent",
+                "Makanan",
+                5000.0,
+                8000.0,
+                10,
+                3,
+                "pcs",
+            ),
             ("Garam Dapur 250g", "Makanan", 3000.0, 5000.0, 15, 5, "pcs"),
-            ("Kopi Kapal Api Special 165g", "Makanan", 10000.0, 13000.0, 8, 3, "pcs"),
-            ("Teh Pucuk Harum 450ml", "Makanan", 4000.0, 5000.0, 24, 10, "botol"),
+            (
+                "Kopi Kapal Api Special 165g",
+                "Makanan",
+                10000.0,
+                13000.0,
+                8,
+                3,
+                "pcs",
+            ),
+            (
+                "Teh Pucuk Harum 450ml",
+                "Makanan",
+                4000.0,
+                5000.0,
+                24,
+                10,
+                "botol",
+            ),
             ("Aqua 600ml", "Minuman", 3000.0, 5000.0, 48, 12, "botol"),
-            ("Pocari Sweat 500ml", "Minuman", 7000.0, 10000.0, 18, 6, "botol"),
-            ("Teh Botol Sosro 450ml", "Minuman", 4000.0, 6000.0, 24, 8, "botol"),
+            (
+                "Pocari Sweat 500ml",
+                "Minuman",
+                7000.0,
+                10000.0,
+                18,
+                6,
+                "botol",
+            ),
+            (
+                "Teh Botol Sosro 450ml",
+                "Minuman",
+                4000.0,
+                6000.0,
+                24,
+                8,
+                "botol",
+            ),
             ("Coca-Cola 390ml", "Minuman", 6000.0, 8000.0, 12, 4, "botol"),
             ("Sprite 390ml", "Minuman", 6000.0, 8000.0, 12, 4, "botol"),
-            ("Good Day Freeze 250ml", "Minuman", 5000.0, 7000.0, 18, 6, "botol"),
-            ("Es Teh Manis Gelas", "Minuman", 2000.0, 5000.0, 999, 50, "pcs"),
+            (
+                "Good Day Freeze 250ml",
+                "Minuman",
+                5000.0,
+                7000.0,
+                18,
+                6,
+                "botol",
+            ),
+            (
+                "Es Teh Manis Gelas",
+                "Minuman",
+                2000.0,
+                5000.0,
+                999,
+                50,
+                "pcs",
+            ),
             ("Es Jeruk Gelas", "Minuman", 2000.0, 5000.0, 999, 50, "pcs"),
             ("Gula Arek 1kg", "Makanan", 13000.0, 16000.0, 8, 3, "pcs"),
-            ("Kopi Torabika Cappuccino 250g", "Makanan", 11000.0, 15000.0, 6, 2, "pcs"),
-            ("Sarden ABC 425g", "Makanan", 14000.0, 18000.0, 6, 2, "kaleng"),
-            ("Kornet Sapi Pronas 340g", "Makanan", 16000.0, 20000.0, 4, 2, "kaleng"),
-            ("SKM Coklat Frisian Flag 370g", "Makanan", 11000.0, 14000.0, 8, 3, "kaleng"),
-            ("Roti Tawar Sari Roti", "Makanan", 13000.0, 16000.0, 4, 2, "pcs"),
-            ("Mie Sedaap Soto Goreng", "Makanan", 3000.0, 5000.0, 24, 10, "pcs"),
-            ("Rinso Cair 800ml", "Makanan", 17000.0, 21000.0, 6, 2, "botol"),
-            ("Sunlight Cair 800ml", "Makanan", 13000.0, 16000.0, 6, 2, "botol"),
-            ("Molto Pewangi 800ml", "Makanan", 13000.0, 16000.0, 6, 2, "botol"),
-            ("Baygon Aerosol 600ml", "Makanan", 25000.0, 30000.0, 4, 2, "pcs"),
+            (
+                "Kopi Torabika Cappuccino 250g",
+                "Makanan",
+                11000.0,
+                15000.0,
+                6,
+                2,
+                "pcs",
+            ),
+            (
+                "Sarden ABC 425g",
+                "Makanan",
+                14000.0,
+                18000.0,
+                6,
+                2,
+                "kaleng",
+            ),
+            (
+                "Kornet Sapi Pronas 340g",
+                "Makanan",
+                16000.0,
+                20000.0,
+                4,
+                2,
+                "kaleng",
+            ),
+            (
+                "SKM Coklat Frisian Flag 370g",
+                "Makanan",
+                11000.0,
+                14000.0,
+                8,
+                3,
+                "kaleng",
+            ),
+            (
+                "Roti Tawar Sari Roti",
+                "Makanan",
+                13000.0,
+                16000.0,
+                4,
+                2,
+                "pcs",
+            ),
+            (
+                "Mie Sedaap Soto Goreng",
+                "Makanan",
+                3000.0,
+                5000.0,
+                24,
+                10,
+                "pcs",
+            ),
+            (
+                "Rinso Cair 800ml",
+                "Makanan",
+                17000.0,
+                21000.0,
+                6,
+                2,
+                "botol",
+            ),
+            (
+                "Sunlight Cair 800ml",
+                "Makanan",
+                13000.0,
+                16000.0,
+                6,
+                2,
+                "botol",
+            ),
+            (
+                "Molto Pewangi 800ml",
+                "Makanan",
+                13000.0,
+                16000.0,
+                6,
+                2,
+                "botol",
+            ),
+            (
+                "Baygon Aerosol 600ml",
+                "Makanan",
+                25000.0,
+                30000.0,
+                4,
+                2,
+                "pcs",
+            ),
             ("Tisu Paseo 250s", "Makanan", 12000.0, 15000.0, 6, 2, "pcs"),
-            ("Rokok Gudang Garam Filter 12", "Rokok", 28000.0, 32000.0, 10, 3, "bungkus"),
-            ("Rokok Sampoerna Mild 16", "Rokok", 32000.0, 36000.0, 8, 3, "bungkus"),
+            (
+                "Rokok Gudang Garam Filter 12",
+                "Rokok",
+                28000.0,
+                32000.0,
+                10,
+                3,
+                "bungkus",
+            ),
+            (
+                "Rokok Sampoerna Mild 16",
+                "Rokok",
+                32000.0,
+                36000.0,
+                8,
+                3,
+                "bungkus",
+            ),
         ];
 
         for (name, cat_suffix, buy, sell, stock, min_stock, unit) in &products {
@@ -372,7 +662,9 @@ pub fn seed_demo(
     if existing_fee_tiers == 0 {
         // Get service IDs
         let mut svc_stmt = conn
-            .prepare("SELECT id, name FROM agent_service_templates WHERE is_active = 1 ORDER BY id ASC")
+            .prepare(
+                "SELECT id, name FROM agent_service_templates WHERE is_active = 1 ORDER BY id ASC",
+            )
             .map_err(|e| e.to_string())?;
         let services: Vec<(i64, String)> = svc_stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
@@ -410,12 +702,7 @@ pub fn seed_demo(
         stats.insert("fee_tiers".into(), 0);
     }
 
-    record_app_log(
-        &conn,
-        "INFO",
-        "seed",
-        "Demo data seeded",
-    );
+    record_app_log(&conn, "INFO", "seed", "Demo data seeded");
 
     Ok(DemoResult {
         message: "Demo data created".into(),
@@ -426,10 +713,7 @@ pub fn seed_demo(
 // ── Clear Demo Data ───────────────────────────────────────────────
 
 #[tauri::command]
-pub fn clear_demo(
-    app: AppHandle,
-    session: State<'_, SessionState>,
-) -> Result<DemoResult, String> {
+pub fn clear_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = init_schema(&app)?;
     let mut stats = HashMap::new();
@@ -444,11 +728,8 @@ pub fn clear_demo(
             |r| r.get(0),
         )
         .map_err(|e| e.to_string())?;
-    conn.execute(
-        "DELETE FROM products WHERE name LIKE ? || '%'",
-        [DEMO],
-    )
-    .map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM products WHERE name LIKE ? || '%'", [DEMO])
+        .map_err(|e| e.to_string())?;
     stats.insert("products_removed".into(), demo_product_count);
 
     // Delete categories with [DEMO] prefix
@@ -474,12 +755,7 @@ pub fn clear_demo(
         .map_err(|e| e.to_string())?;
     stats.insert("fee_tiers_removed".into(), fee_count);
 
-    record_app_log(
-        &conn,
-        "INFO",
-        "seed",
-        "Demo data cleared",
-    );
+    record_app_log(&conn, "INFO", "seed", "Demo data cleared");
 
     Ok(DemoResult {
         message: "Demo data removed".into(),

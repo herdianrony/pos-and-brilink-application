@@ -125,7 +125,7 @@ export default function Sidebar({
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-[55] lg:hidden animate-fadeIn no-print"
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-55 lg:hidden animate-fadeIn no-print"
           onClick={() => setOpen(false)}
         />
       )}
@@ -133,7 +133,7 @@ export default function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 h-screen w-72 z-[56] flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed lg:sticky top-0 left-0 h-screen w-72 z-56 flex flex-col transition-transform duration-300 lg:translate-x-0",
           "gradient-dark",
           "no-print",
           open ? "translate-x-0" : "-translate-x-full",

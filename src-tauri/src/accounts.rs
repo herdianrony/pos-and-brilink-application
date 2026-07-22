@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection};
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
@@ -282,7 +282,7 @@ pub fn transfer_accounts(
     if from_affected == 0 {
         return Err("Saldo rekening asal tidak cukup atau akun tidak aktif".into());
     }
-    let to_affected = tx.execute(
+    let _to_affected = tx.execute(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
         params![payload.amount, now, to.0],
     )
@@ -425,9 +425,8 @@ pub fn get_mutation_summary(
         params_vec.iter().map(|b| b.as_ref()).collect();
 
     // Compute opening balance: sum of all mutations BEFORE the filtered period
-    let mut opening_sql = String::from(
-        "SELECT COALESCE(SUM(amount), 0) FROM account_mutations WHERE 1=1",
-    );
+    let mut opening_sql =
+        String::from("SELECT COALESCE(SUM(amount), 0) FROM account_mutations WHERE 1=1");
     let mut opening_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     if let Some(ref p) = payload {
         if let Some(aid) = p.account_id {
