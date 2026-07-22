@@ -141,10 +141,10 @@ pub fn seed_system(
     }
 
     let total_seeded: i64 = stats.values().sum();
-    let message = if total_seeded == 0 {
-        "Already seeded (all templates populated)".into()
+    let message: String = if total_seeded == 0 {
+        "Already seeded (all templates populated)".to_string()
     } else {
-        "System templates created".into()
+        "System templates created".to_string()
     };
 
     record_app_log(&conn, "INFO", "seed", &message);
