@@ -1,9 +1,8 @@
 import { useState, type FormEvent } from "react";
-import type { AccountMutationRow, AppLogRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow } from "../api";
+import type { AppLogRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow, AccountMutationRow } from "../api";
 import { Tabs } from "../components/ui";
 import { UsersTab } from "./settings/UsersTab";
 import { ProductsTab } from "./settings/ProductsTab";
-import { TransactionsTab } from "./settings/TransactionsTab";
 import { DebtsTab } from "./settings/DebtsTab";
 import { BackupTab } from "./settings/BackupTab";
 import { AboutTab } from "./settings/AboutTab";
@@ -11,10 +10,9 @@ import { AboutTab } from "./settings/AboutTab";
 const TAB_ITEMS = [
   { id: "pengguna", label: "Pengguna" },
   { id: "produk", label: "Produk" },
-  { id: "transaksi", label: "Transaksi" },
   { id: "utang", label: "Utang" },
-  { id: "backup", label: "Backup" },
-  { id: "tentang", label: "Tentang" },
+  { id: "backup", label: "Backup & Export" },
+  { id: "tentang", label: "Tentang & Log" },
 ] as const;
 
 type TabId = (typeof TAB_ITEMS)[number]["id"];
@@ -46,14 +44,13 @@ export function SettingsPage({
     <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-extrabold text-slate-900">Pengaturan</h2>
-        <p className="text-sm text-slate-500 mt-1">Kelola pengguna, produk, transaksi, utang, cadangan data, dan info aplikasi</p>
+        <p className="text-sm text-slate-500 mt-1">Kelola pengguna, produk, utang, cadangan data, dan info aplikasi</p>
       </div>
 
       <Tabs items={[...TAB_ITEMS]} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} ariaLabel="Tab pengaturan" />
 
       {activeTab === "pengguna" && <UsersTab users={users} userForm={userForm} saving={saving} onUserFormChange={onUserFormChange} onSubmitUser={onSubmitUser} />}
       {activeTab === "produk" && <ProductsTab products={products} onExportCsv={onExportCsv} />}
-      {activeTab === "transaksi" && <TransactionsTab transactions={transactions} mutations={mutations} onExportCsv={onExportCsv} />}
       {activeTab === "utang" && <DebtsTab debts={debts} onExportCsv={onExportCsv} />}
       {activeTab === "backup" && <BackupTab transactions={transactions} mutations={mutations} debts={debts} products={products} backups={backups} saving={saving} onCreateBackup={onCreateBackup} onRestoreBackup={onRestoreBackup} onExportCsv={onExportCsv} />}
       {activeTab === "tentang" && <AboutTab dbPath={dbPath} logs={logs} onRefreshLogs={onRefreshLogs} />}

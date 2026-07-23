@@ -39,6 +39,7 @@ export function CashBalancePage({
   onAdjust,
   onOwnerDraw,
   onBankFee,
+  embedded = false,
 }: {
   accounts: AccountRow[];
   mutations: AccountMutationRow[];
@@ -47,6 +48,7 @@ export function CashBalancePage({
   onAdjust: (account: AccountRow) => void;
   onOwnerDraw: (account: AccountRow) => void;
   onBankFee: (account: AccountRow) => void;
+  embedded?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState("balance");
 
@@ -64,22 +66,24 @@ export function CashBalancePage({
   );
 
   return (
-    <div className="space-y-5 animate-fadeIn">
-      <PageHeader
-        eyebrow="Keuangan"
-        title="Kas & Saldo"
-        description="Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={onAddAccount}>
-              <Plus size={16} /> Tambah Rekening
-            </Button>
-            <Button onClick={() => onTransfer()}>
-              <ArrowRightLeft size={16} /> Transfer Saldo
-            </Button>
-          </div>
-        }
-      />
+    <div className={embedded ? "space-y-5" : "space-y-5 animate-fadeIn"}>
+      {!embedded && (
+        <PageHeader
+          eyebrow="Keuangan"
+          title="Kas & Saldo"
+          description="Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi."
+          actions={
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={onAddAccount}>
+                <Plus size={16} /> Tambah Rekening
+              </Button>
+              <Button onClick={() => onTransfer()}>
+                <ArrowRightLeft size={16} /> Transfer Saldo
+              </Button>
+            </div>
+          }
+        />
+      )}
 
       {/* ── Tabs ── */}
       <Tabs

@@ -29,10 +29,12 @@ export function StatementPage({
   accounts,
   mutations,
   onExportCsv,
+  embedded = false,
 }: {
   accounts: AccountRow[];
   mutations: AccountMutationRow[];
   onExportCsv: () => void;
+  embedded?: boolean;
 }) {
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [preset, setPreset] = useState<Preset>("all");
@@ -64,22 +66,24 @@ export function StatementPage({
       : 0;
 
   return (
-    <div className="grid gap-6 animate-fadeIn">
-      <PageHeader
-        eyebrow="Keuangan"
-        title="Rekening Koran"
-        description="Mutasi rekening instan — mirip rekening koran bank."
-        actions={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onExportCsv}
-            disabled={filteredMutations.length === 0}
-        >
-          <Download size={16} /> Unduh CSV
-        </Button>
-        }
-      />
+    <div className={embedded ? "grid gap-6" : "grid gap-6 animate-fadeIn"}>
+      {!embedded && (
+        <PageHeader
+          eyebrow="Keuangan"
+          title="Rekening Koran"
+          description="Mutasi rekening instan — mirip rekening koran bank."
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onExportCsv}
+              disabled={filteredMutations.length === 0}
+            >
+              <Download size={16} /> Unduh CSV
+            </Button>
+          }
+        />
+      )}
 
       {/* ── Filter row ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

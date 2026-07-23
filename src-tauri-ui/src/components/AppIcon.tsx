@@ -23,6 +23,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   history: ClipboardList,
   statement: ScrollText,
   cash: Wallet,
+  keuangan: Wallet,
   settings: Settings,
   search: Search,
   debts: ReceiptText,

@@ -9,10 +9,8 @@ import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { HistoryPage } from "./pages/HistoryPage";
-import { CashBalancePage } from "./pages/CashBalancePage";
-import { StatementPage } from "./pages/StatementPage";
+import { KeuanganPage } from "./pages/KeuanganPage";
 import { DebtsPage } from "./pages/DebtsPage";
-import { ReportsPage } from "./pages/ReportsPage";
 import { LogsPage } from "./pages/LogsPage";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
@@ -30,7 +28,7 @@ import { formatRupiah } from "./lib/format";
 import { exportCsvFile } from "./lib/csv";
 import type { ViewKey } from "./types";
 
-const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["products", "statement", "cash", "settings", "debts", "reports", "logs"]);
+const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["keuangan", "settings"]);
 
 function canAccess(view: ViewKey, role: string) {
   if (!ADMIN_ONLY_VIEWS.has(view)) return true;
@@ -398,36 +396,19 @@ export default function App() {
             onOpenDetail={openTransactionDetail}
           />
         );
-      case "statement":
+      case "keuangan":
         return (
-          <StatementPage
+          <KeuanganPage
             accounts={accounts}
             mutations={accountMutations}
-            onExportCsv={() =>
-              exportCsv(
-                "rekening-koran-catatagen.csv",
-                accountMutations.map((m) => ({
-                  akun: m.account_name,
-                  tipe: m.mutation_type,
-                  nominal: m.amount,
-                  saldo_akhir: m.balance_after,
-                  catatan: m.notes,
-                  tanggal: m.created_at,
-                })),
-              )
-            }
-          />
-        );
-      case "cash":
-        return (
-          <CashBalancePage
-            accounts={accounts}
-            mutations={accountMutations}
+            transactions={filteredTransactions}
+            saving={saving}
             onAddAccount={openAddAccount}
             onTransfer={openTransfer}
             onAdjust={openAdjust}
             onOwnerDraw={openOwnerDraw}
             onBankFee={openBankFee}
+            onExportCsv={exportCsv}
           />
         );
       case "settings":
@@ -450,41 +431,6 @@ export default function App() {
             onCreateBackup={handleCreateBackup}
             onRestoreBackup={handleRestoreBackup}
           />
-        );
-      case "debts":
-        return (
-          <DebtsPage
-            debts={debts}
-            debtForm={debtForm}
-            debtPaymentForm={debtPaymentForm}
-            saving={saving}
-            onDebtFormChange={setDebtForm}
-            onDebtPaymentFormChange={setDebtPaymentForm}
-            onSubmitDebt={submitDebt}
-            onSubmitDebtPayment={submitDebtPayment}
-            onCopyReminder={copyDebtReminder}
-          />
-        );
-      case "reports":
-        return (
-          <ReportsPage
-            transactions={filteredTransactions}
-            mutations={accountMutations}
-            onExportCsv={(summary) =>
-              exportCsv(
-                "ringkasan-laporan-catatagen.csv",
-                [
-                  { metrik: "Omzet POS", nominal: summary.posRevenue },
-                  { metrik: "Laba POS", nominal: summary.posProfit },
-                  { metrik: "Laba Agen", nominal: summary.agentProfit },
-                ],
-              )
-            }
-          />
-        );
-      case "logs":
-        return (
-          <LogsPage logs={appLogs} onRefresh={refreshApp} />
         );
       case "dashboard":
       default:

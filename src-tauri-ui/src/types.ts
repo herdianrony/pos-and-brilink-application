@@ -31,14 +31,9 @@ export type ViewKey =
   | "dashboard"
   | "pos"
   | "brilink"
-  | "products"
   | "history"
-  | "statement"
-  | "cash"
-  | "settings"
-  | "debts"
-  | "reports"
-  | "logs";
+  | "keuangan"
+  | "settings";
 
 export type IconName =
   | "dashboard"
@@ -52,7 +47,8 @@ export type IconName =
   | "search"
   | "debts"
   | "reports"
-  | "logs";
+  | "logs"
+  | "keuangan";
 
 export type AgentForm = {
   service_name: string;
