@@ -39,7 +39,6 @@
         "displayLanguageSelector": false
       }
     },
-    "icon": ["icons/icon.ico", "icons/icon.png"],
-    "externalBin": ["wa-service/wa-engine"]
+    "icon": ["icons/icon.ico", "icons/icon.png"]
   }
 }
