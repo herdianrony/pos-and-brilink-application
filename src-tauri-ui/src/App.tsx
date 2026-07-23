@@ -3,12 +3,7 @@ import type { AccountRow, ProductRow } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { DashboardPage } from "./pages/DashboardPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { AgentServicesPage } from "./pages/AgentServicesPage";
-import { POSPage } from "./pages/POSPage";
-import { HistoryPage } from "./pages/HistoryPage";
-import { KeuanganPage } from "./pages/KeuanganPage";
+import { AppRouter } from "./components/AppRouter";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
 import { useProductMaster } from "./hooks/useProductMaster";
@@ -334,112 +329,6 @@ export default function App() {
     );
   }
 
-  function renderActiveView() {
-    switch (activeView) {
-      case "pos":
-        return (
-          <POSPage
-            categories={categories}
-            products={filteredProducts}
-            cart={cart}
-            cartTotal={cartTotal}
-            paymentMethod={paymentMethod}
-            settlementAccountId={settlementAccountId}
-            settlementAccounts={settlementAccounts}
-            saving={saving}
-            posCategoryFilter={posCategoryFilter}
-            onCategoryFilterChange={setPosCategoryFilter}
-            onAddToCart={addToCart}
-            onAddAgentService={posCart.addAgentService}
-            onUpdateQty={updateCartQty}
-            onPaymentMethodChange={setPaymentMethod}
-            onSettlementAccountChange={setSettlementAccountId}
-            onHoldCart={holdCart}
-            onClearCart={clearCart}
-            onSubmitCheckout={submitCheckout}
-          />
-        );
-      case "brilink":
-        return (
-          <AgentServicesPage
-            accounts={accounts}
-            transactions={transactions}
-            agentForm={agentForm}
-            agentStep={agentStep}
-            saving={saving}
-            onAgentFormChange={setAgentForm}
-            onAgentStepChange={setAgentStep}
-            onApplyPreset={applyAgentPreset}
-            onSubmitAgentTransaction={submitAgentTransaction}
-          />
-        );
-      case "history":
-        return (
-          <HistoryPage
-            transactions={filteredTransactions}
-            selectedTransaction={selectedTransaction}
-            selectedTransactionItems={selectedTransactionItems}
-            onOpenDetail={openTransactionDetail}
-          />
-        );
-      case "keuangan":
-        return (
-          <KeuanganPage
-            accounts={accounts}
-            mutations={accountMutations}
-            transactions={filteredTransactions}
-            saving={saving}
-            onAddAccount={openAddAccount}
-            onTransfer={openTransfer}
-            onAdjust={openAdjust}
-            onOwnerDraw={openOwnerDraw}
-            onBankFee={openBankFee}
-            onExportCsv={exportCsv}
-          />
-        );
-      case "settings":
-        return (
-          <SettingsPage
-            users={users}
-            userForm={userForm}
-            saving={saving}
-            transactions={transactions}
-            mutations={accountMutations}
-            debts={debts}
-            products={products}
-            categories={categories}
-            backups={backups}
-            dbPath={dbPath}
-            logs={appLogs}
-            onRefreshLogs={refreshApp}
-            onUserFormChange={setUserForm}
-            onSubmitUser={submitUser}
-            onExportCsv={exportCsv}
-            onCreateBackup={handleCreateBackup}
-            onRestoreBackup={handleRestoreBackup}
-            onMessage={setMessage}
-            onAddCategory={() => setShowCategoryModal(true)}
-            onAddProduct={openAddProduct}
-            onEditProduct={startEditProduct}
-            onRemoveProduct={removeProduct}
-          />
-        );
-      case "dashboard":
-      default:
-        return (
-          <DashboardPage
-            accounts={accounts}
-            products={products}
-            transactions={filteredTransactions}
-            totalCash={totalCash}
-            lowStockCount={lowStockCount}
-            loading={loading}
-            onRefresh={refreshApp}
-          />
-        );
-    }
-  }
-
   return (
     <AppShell
       user={user}
@@ -451,7 +340,63 @@ export default function App() {
       onLogout={logout}
     >
       <ErrorBoundary onReset={refreshApp}>
-        {renderActiveView()}
+        <AppRouter
+          activeView={activeView}
+          user={user}
+          saving={saving}
+          accounts={accounts}
+          accountMutations={accountMutations}
+          categories={categories}
+          products={products}
+          filteredProducts={filteredProducts}
+          filteredTransactions={filteredTransactions}
+          debts={debts}
+          users={users}
+          backups={backups}
+          appLogs={appLogs}
+          transactions={transactions}
+          totalCash={totalCash}
+          lowStockCount={lowStockCount}
+          loading={loading}
+          dbPath={dbPath}
+          cart={cart}
+          cartTotal={cartTotal}
+          paymentMethod={paymentMethod}
+          settlementAccountId={settlementAccountId}
+          settlementAccounts={settlementAccounts}
+          posCategoryFilter={posCategoryFilter}
+          onCategoryFilterChange={setPosCategoryFilter}
+          onAddToCart={addToCart}
+          onAddAgentService={posCart.addAgentService}
+          onUpdateQty={updateCartQty}
+          onPaymentMethodChange={setPaymentMethod}
+          onSettlementAccountChange={setSettlementAccountId}
+          onHoldCart={holdCart}
+          onClearCart={clearCart}
+          onSubmitCheckout={submitCheckout}
+          agentForm={agentForm}
+          agentStep={agentStep}
+          onAgentFormChange={setAgentForm}
+          onAgentStepChange={setAgentStep}
+          onApplyPreset={applyAgentPreset}
+          onSubmitAgentTransaction={submitAgentTransaction}
+          selectedTransaction={selectedTransaction}
+          selectedTransactionItems={selectedTransactionItems}
+          onOpenDetail={openTransactionDetail}
+          userForm={userForm}
+          onUserFormChange={setUserForm}
+          onSubmitUser={submitUser}
+          onExportCsv={exportCsv}
+          onCreateBackup={handleCreateBackup}
+          onRestoreBackup={handleRestoreBackup}
+          onRefreshLogs={refreshApp}
+          onMessage={setMessage}
+          onRefreshApp={refreshApp}
+          onAddCategory={() => setShowCategoryModal(true)}
+          onAddProduct={openAddProduct}
+          onEditProduct={startEditProduct}
+          onRemoveProduct={removeProduct}
+        />
       </ErrorBoundary>
       <CashDialogs
         cashModal={cashModal}

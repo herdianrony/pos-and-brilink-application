@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   AccountMutationRow,
   AccountRow,
@@ -37,29 +37,49 @@ export function useAppData(onMessage: (message: string) => void) {
   const [backups, setBackups] = useState<BackupRow[]>([]);
   const [appLogs, setAppLogs] = useState<AppLogRow[]>([]);
 
+  // Debounce & concurrency guard
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshInFlight = useRef(false);
+
   const refreshData = useCallback(async () => {
-    const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups, nextLogs] = await Promise.all([
-      listAccounts(),
-      listAccountMutations({ limit: 80 }),
-      listCategories(),
-      listProducts(),
-      listTransactions({ limit: 50 }),
-      listDebts({ limit: 100 }),
-      listUsers(),
-      listDatabaseBackups(),
-      listAppLogs({ limit: 80 }),
-    ]);
-    setAccounts(nextAccounts);
-    setAccountMutations(nextMutations);
-    setCategories(nextCategories);
-    setProducts(nextProducts);
-    setTransactions(nextTransactions);
-    setDebts(nextDebts);
-    setUsers(nextUsers);
-    setBackups(nextBackups);
-    setAppLogs(nextLogs);
-    return { accounts: nextAccounts };
-  }, []);
+    // If already in-flight, skip
+    if (refreshInFlight.current) return;
+
+    // Debounce: wait 300ms before actually fetching
+    return new Promise<void>((resolve) => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(async () => {
+        refreshInFlight.current = true;
+        try {
+          const [nextAccounts, nextMutations, nextCategories, nextProducts, nextTransactions, nextDebts, nextUsers, nextBackups, nextLogs] = await Promise.all([
+            listAccounts(),
+            listAccountMutations({ limit: 80 }),
+            listCategories(),
+            listProducts(),
+            listTransactions({ limit: 50 }),
+            listDebts({ limit: 100 }),
+            listUsers(),
+            listDatabaseBackups(),
+            listAppLogs({ limit: 80 }),
+          ]);
+          setAccounts(nextAccounts);
+          setAccountMutations(nextMutations);
+          setCategories(nextCategories);
+          setProducts(nextProducts);
+          setTransactions(nextTransactions);
+          setDebts(nextDebts);
+          setUsers(nextUsers);
+          setBackups(nextBackups);
+          setAppLogs(nextLogs);
+        } catch (error) {
+          onMessage(error instanceof Error ? error.message : String(error));
+        } finally {
+          refreshInFlight.current = false;
+          resolve();
+        }
+      }, 300);
+    });
+  }, [onMessage]);
 
   const bootstrap = useCallback(async () => {
     setLoading(true);
