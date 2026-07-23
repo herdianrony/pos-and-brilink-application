@@ -452,6 +452,11 @@ export interface WhatsAppStatus {
   phone_number?: string | null;
   last_heartbeat?: string | null;
   error?: string | null;
+  sidecar_status?: string;
+  has_client?: boolean;
+  enabled?: boolean;
+  auto_notify_owner?: boolean;
+  owner_number?: string | null;
 }
 
 export function whatsappStatus() {

@@ -347,7 +347,12 @@ async function handleMessage(msg) {
   try {
     switch (type) {
       case 'ping':
-        reply(true, { status: connectionStatus });
+        reply(true, {
+          status: connectionStatus,
+          hasClient: Boolean(sock),
+          uptime: process.uptime(),
+          memoryMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        });
         break;
 
       case 'status':

@@ -61,6 +61,8 @@ pub fn run() {
         .setup(|app| {
             let db = crate::common::init_db(app.handle())?;
             app.manage(db);
+            // Set up WhatsApp sidecar lifecycle (kill on close, heartbeat)
+            crate::whatsapp::setup_whatsapp_lifecycle(app.handle());
             Ok(())
         })
         .manage(SessionState(std::sync::Mutex::new(None)))

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::io::Write;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::{
     auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
@@ -154,7 +154,12 @@ pub fn whatsapp_start(
         .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
 
-    // Determine wa-service path: try bundled sidecar first, then local dev
+    // Determine wa-service path: try Tauri sidecar first, then fallback to node
+    let session_dir = crate::common::app_data_dir(&app)?
+        .join("whatsapp-session")
+        .to_string_lossy()
+        .to_string();
+
     let child = match app
         .path()
         .resource_dir()
@@ -163,16 +168,17 @@ pub fn whatsapp_start(
         .filter(|p| p.exists())
     {
         Some(path) => {
-            // Bundled sidecar binary
+            // Bundled sidecar binary (production)
             std::process::Command::new(path)
                 .stdin(std::process::Stdio::piped())
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
+                .env("WHATSAPP_SESSION_DIR", &session_dir)
                 .spawn()
                 .map_err(|e| format!("Gagal spawn sidecar: {e}"))?
         }
         None => {
-            // Fallback: run via node from local wa-service/ directory
+            // Fallback: run via node from local wa-service/ directory (development)
             let project_root = std::env::current_dir()
                 .ok()
                 .and_then(|d| d.parent().map(|p| p.to_path_buf()))
@@ -193,6 +199,7 @@ pub fn whatsapp_start(
                 .stdin(std::process::Stdio::piped())
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
+                .env("WHATSAPP_SESSION_DIR", &session_dir)
                 .spawn()
                 .map_err(|e| format!("Gagal spawn wa-service: {e}"))?
         }
@@ -338,6 +345,35 @@ pub fn whatsapp_notify(
         reason: None,
         id: None,
     })
+}
+
+/// Set up WhatsApp sidecar lifecycle management.
+/// - Kills sidecar on window close (prevents zombie processes)
+/// - Sends periodic heartbeat to check sidecar health
+pub fn setup_whatsapp_lifecycle(app: &AppHandle) {
+    let app_handle = app.clone();
+
+    // Kill sidecar on window close
+    let app_for_close = app_handle.clone();
+    if let Some(window) = app_for_close.get_webview_window("main") {
+        let sc = app_for_close.state::<WaSidecarState>().inner().clone();
+        window.on_window_event(move |event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                kill_sidecar(&sc);
+            }
+        });
+    }
+
+    // Periodic heartbeat: ping sidecar every 30 seconds
+    let app_for_heartbeat = app_handle.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        let sc = app_for_heartbeat.state::<WaSidecarState>();
+        let has_child = sc.child.lock().ok().map(|c| c.is_some()).unwrap_or(false);
+        if has_child {
+            let _ = send_sidecar_command(&sc, "ping", &serde_json::json!({}));
+        }
+    });
 }
 
 fn build_notification_message(
