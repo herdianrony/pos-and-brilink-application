@@ -260,7 +260,7 @@ export function restoreDatabaseBackup(payload: { path: string }) {
 }
 
 export function listDebts(options: { limit?: number } = {}) {
-  return invokeCommand<DebtRow[]>("list_debts", { payload: options });
+  return invokeCommand<DebtRow[]>("list_debts", { payload: options.limit || null });
 }
 
 export function createDebt(payload: { customer_name: string; phone?: string; amount: number; notes?: string }) {

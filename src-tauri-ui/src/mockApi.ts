@@ -251,7 +251,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       return transactions[0] as T;
     }
     case "list_debts":
-      return debts.slice(0, Number(payload.limit || 100)) as T;
+      return debts.slice(0, Number(payload || 100)) as T;
     case "create_debt": {
       const row = { id: debtId++, customer_name: payload.customer_name, phone: payload.phone || null, amount: Number(payload.amount || 0), paid_amount: 0, outstanding: Number(payload.amount || 0), status: "open", notes: payload.notes || null, created_at: now(), updated_at: now() };
       debts.unshift(row);
