@@ -321,6 +321,31 @@ pub fn product_image_data_url(
     )))
 }
 
+/// Build a dynamic SQL query with optional filters.
+/// Returns (sql_string, boxed_params) ready for prepared statement.
+pub fn build_query<'a>(
+    base_sql: &str,
+    filters: &[(&str, Option<&str>)],
+    suffix: &str,
+    extra_params: &[&'a dyn rusqlite::types::ToSql],
+) -> (String, Vec<Box<dyn rusqlite::types::ToSql + 'a>>) {
+    let mut sql = String::from(base_sql);
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql + 'a>> = Vec::new();
+    for (col_op, value) in filters {
+        if let Some(v) = value {
+            if !v.is_empty() {
+                sql.push_str(&format!(" AND {} ?", col_op));
+                params.push(Box::new(v.to_string()));
+            }
+        }
+    }
+    sql.push_str(suffix);
+    for p in extra_params {
+        params.push(Box::new(p));
+    }
+    (sql, params)
+}
+
 pub fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) -> i64 {
     payload
         .copied()

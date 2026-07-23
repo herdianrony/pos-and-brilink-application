@@ -87,6 +87,7 @@ pub fn checkout_pos_cash(
     );
     let mut total_amount = 0.0;
     let mut total_profit = 0.0;
+    let mut product_subtotal = 0.0;
 
     // ── Product items ──
     for item in &payload.items {
@@ -99,6 +100,7 @@ pub fn checkout_pos_cash(
             .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
         let subtotal = round_money(product.2 * item.quantity as f64);
         let profit = round_money((product.2 - product.1) * item.quantity as f64);
+        product_subtotal += subtotal;
         total_amount += subtotal;
         total_profit += profit;
 
@@ -109,7 +111,22 @@ pub fn checkout_pos_cash(
         .map_err(|_| format!("Stok {} tidak cukup", product.0))?;
     }
 
-    // ── Agent items ──
+    // ── Discount (only on product subtotal, NOT agent fees) ──
+    let discount_amount = if payload.discount.unwrap_or(0.0) > 0.0 {
+        enforce_discount_policy(
+            &tx,
+            payload.discount.unwrap_or(0.0),
+            product_subtotal, // ← only product subtotal
+            &payload.discount_reason,
+            &payload.discount_admin_pin,
+        )?
+    } else {
+        0.0
+    };
+    product_subtotal = round_money(product_subtotal - discount_amount).max(0.0);
+    total_amount = product_subtotal;
+
+    // ── Agent items (added AFTER discount, not affected by discount) ──
     for agent in &payload.agent_items {
         let fee = round_money(agent.fee);
         let provider_cost = round_money(agent.provider_cost.unwrap_or(0.0));
@@ -117,19 +134,7 @@ pub fn checkout_pos_cash(
         total_profit += round_money(fee - provider_cost);
     }
 
-    // ── Discount ──
-    let discount_amount = if payload.discount.unwrap_or(0.0) > 0.0 {
-        enforce_discount_policy(
-            &tx,
-            payload.discount.unwrap_or(0.0),
-            total_amount,
-            &payload.discount_reason,
-            &payload.discount_admin_pin,
-        )?
-    } else {
-        0.0
-    };
-    total_amount = round_money(total_amount - discount_amount).max(0.0);
+    total_amount = round_money(total_amount);
     let total_profit = round_money(total_profit);
 
     // ── Create transaction ──
