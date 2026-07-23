@@ -2,7 +2,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, session::SessionState};
+use crate::{auth::require_auth, common::bounded_limit, common::get_db, common::round_money, common::DbConn, session::SessionState};
 
 #[derive(Debug, Serialize)]
 pub struct DebtRow {
@@ -89,7 +89,8 @@ pub fn create_debt(
     if customer_name.is_empty() {
         return Err("Nama pelanggan wajib diisi".into());
     }
-    if payload.amount <= 0.0 {
+    let amount = round_money(payload.amount);
+    if amount <= 0.0 {
         return Err("Nominal utang harus lebih dari 0".into());
     }
     let now = chrono::Utc::now().to_rfc3339();
@@ -97,15 +98,15 @@ pub fn create_debt(
     let notes = crate::common::trim_optional(payload.notes);
     conn.execute(
         "INSERT INTO debts (customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at) VALUES (?1, ?2, ?3, 0, 'open', ?4, ?5, ?5)",
-        params![customer_name, phone, payload.amount, notes, now],
+        params![customer_name, phone, amount, notes, now],
     ).map_err(|e| e.to_string())?;
     Ok(DebtRow {
         id: conn.last_insert_rowid(),
         customer_name,
         phone,
-        amount: payload.amount,
+        amount,
         paid_amount: 0.0,
-        outstanding: payload.amount,
+        outstanding: amount,
         status: "open".into(),
         notes,
         created_at: now.clone(),
@@ -121,7 +122,8 @@ pub fn add_debt_payment(
     payload: DebtPaymentPayload,
 ) -> Result<DebtRow, String> {
     let _user = require_auth(&session)?;
-    if payload.amount <= 0.0 {
+    let amount = round_money(payload.amount);
+    if amount <= 0.0 {
         return Err("Nominal pembayaran harus lebih dari 0".into());
     }
     let mut conn = get_db(&db)?;
@@ -135,7 +137,7 @@ pub fn add_debt_payment(
     if debt.5 == "paid" {
         return Err("Utang sudah lunas".into());
     }
-    let paid_amount = (debt.4 + payload.amount).min(debt.3);
+    let paid_amount = round_money((debt.4 + amount).min(debt.3));
     let status = if paid_amount >= debt.3 {
         "paid"
     } else {
@@ -150,7 +152,7 @@ pub fn add_debt_payment(
         "INSERT INTO debt_payments (debt_id, amount, notes, created_at) VALUES (?1, ?2, ?3, ?4)",
         params![
             debt.0,
-            payload.amount,
+            amount,
             crate::common::trim_optional(payload.notes),
             now
         ],

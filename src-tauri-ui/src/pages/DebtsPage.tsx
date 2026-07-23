@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { CheckCircle, HandCoins, MessageCircle, ReceiptText, WalletCards } from "lucide-react";
+import { cn } from "../lib/cn";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
@@ -53,9 +54,20 @@ export function DebtsPage({
 
       <Card className="mb-4 grid gap-3 p-3">
         <div className="flex flex-wrap gap-2">
-          <button className={filter === "open" ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setFilter("open")}>Belum Lunas</button>
-          <button className={filter === "paid" ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setFilter("paid")}>Lunas</button>
-          <button className={filter === "all" ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setFilter("all")}>Semua</button>
+          {(["open", "paid", "all"] as const).map((f) => (
+            <button
+              key={f}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition-all",
+                filter === f
+                  ? "gradient-primary text-white shadow-glow-primary"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100",
+              )}
+              onClick={() => setFilter(f)}
+            >
+              {f === "open" ? "Belum Lunas" : f === "paid" ? "Lunas" : "Semua"}
+            </button>
+          ))}
         </div>
       </Card>
 

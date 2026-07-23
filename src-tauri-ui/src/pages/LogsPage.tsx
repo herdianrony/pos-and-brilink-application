@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle, Database, RefreshCw, ShieldAlert } from "lucide-react";
 import type { AppLogRow } from "../api";
 import { Card, Button, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
+import { cn } from "../lib/cn";
 
 const levelFilters = ["all", "INFO", "WARN", "ERROR"] as const;
 
@@ -72,7 +73,16 @@ export function LogsPage({
       <Card className="grid gap-3 p-3">
         <div className="flex flex-wrap gap-2">
           {levelFilters.map((level) => (
-            <button key={level} className={levelFilter === level ? "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-600 shadow-none hover:translate-y-0 hover:bg-slate-100 hover:shadow-none"} onClick={() => setLevelFilter(level)}>
+            <button
+              key={level}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition-all",
+                levelFilter === level
+                  ? "gradient-primary text-white shadow-glow-primary"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100",
+              )}
+              onClick={() => setLevelFilter(level)}
+            >
               {level === "all" ? "Semua Level" : levelLabel(level)}
             </button>
           ))}
