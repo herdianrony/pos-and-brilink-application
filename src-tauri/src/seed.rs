@@ -40,7 +40,7 @@ pub struct DemoResult {
 // ── Seed System Templates ──────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_system(app: AppHandle, session: State<'_, SessionState>) -> Result<SeedResult, String> {
+pub fn seed_system(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<SeedResult, String> {
     // Seed dapat dipanggil tanpa auth jika belum ada user (first-run)
     let conn = get_db(&db)?;
     let user_count: i64 = conn
@@ -239,7 +239,7 @@ pub fn setup_templates(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupTem
 // ── Seed Demo Data ─────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
+pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
@@ -713,7 +713,7 @@ pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<Dem
 // ── Clear Demo Data ───────────────────────────────────────────────
 
 #[tauri::command]
-pub fn clear_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
+pub fn clear_demo(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let mut stats = HashMap::new();

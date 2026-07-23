@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use serde::Serialize;
-use tauri::AppHandle;
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicUser {
     pub id: i64,
     pub name: String,

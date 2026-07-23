@@ -60,7 +60,7 @@ pub fn init_db(app: &AppHandle) -> Result<DbConn, String> {
 
 /// Get the shared database connection from Tauri state.
 /// This is the preferred way for commands to access the DB.
-pub fn get_db(db: &State<'_, DbConn>) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
+pub fn get_db<'a>(db: &'a State<'a, DbConn>) -> Result<std::sync::MutexGuard<'a, Connection>, String> {
     db.lock()
 }
 

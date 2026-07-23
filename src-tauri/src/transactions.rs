@@ -251,7 +251,7 @@ pub fn create_database_backup(
 pub fn list_database_backups(
     app: AppHandle,
     session: State<'_, SessionState>,
-    db: State<'_, DbConn>,
+    _db: State<'_, DbConn>,
 ) -> Result<Vec<BackupRow>, String> {
     let _user = require_admin(&session)?;
     let dir = crate::common::backup_dir(&app)?;

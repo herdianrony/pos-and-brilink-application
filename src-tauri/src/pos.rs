@@ -468,6 +468,7 @@ pub fn create_agent_transaction(
         return Err("Nama layanan wajib diisi".into());
     }
     let mut conn = get_db(&db)?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
     let now = chrono::Utc::now().to_rfc3339();
     let invoice_no = format!(
         "BRK-{}-{}",
@@ -485,7 +486,6 @@ pub fn create_agent_transaction(
         (round_money(payload.fee), round_money(payload.provider_cost.unwrap_or(0.0)))
     };
     let profit = round_money(fee - provider_cost);
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
 
     tx.execute(
         "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id) VALUES (?1, 'brilink', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6, ?7)",
@@ -557,7 +557,7 @@ pub fn create_agent_transaction(
         |row| Ok(TransactionDetailRow {
             id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
             customer_name: row.get(3)?, total_amount: row.get(4)?, profit: row.get(5)?,
-            payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?,
+            payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?, user_id: row.get(10)?,
         }),
     ).map_err(|e| e.to_string())
 }
@@ -707,7 +707,7 @@ pub fn transaction_action(
         |row| Ok(TransactionDetailRow {
             id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
             customer_name: row.get(3)?, total_amount: row.get(4)?, profit: row.get(5)?,
-            payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?,
+            payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?, user_id: row.get(10)?,
         }),
     ).map_err(|_| "Transaksi tidak ditemukan".to_string())?;
     record_app_log(
@@ -740,7 +740,7 @@ pub fn get_transaction(
                 id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
                 customer_name: row.get(3)?, total_amount: row.get(4)?,
                 profit: if is_admin { profit } else { 0.0 },
-                payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?,
+                payment_method: row.get(6)?, status: row.get(7)?, notes: row.get(8)?, created_at: row.get(9)?, user_id: row.get(10)?,
             })
         },
     ).map_err(|_| "Transaksi tidak ditemukan".to_string())
@@ -816,6 +816,7 @@ pub fn get_dashboard(
                 status: row.get(7)?,
                 notes: row.get(8)?,
                 created_at: row.get(9)?,
+                user_id: row.get(10)?,
             })
         })
         .map_err(|e| e.to_string())?

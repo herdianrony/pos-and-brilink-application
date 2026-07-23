@@ -4,7 +4,7 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
-    auth::require_admin, common::init_schema, common::record_app_log, session::SessionState,
+    auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
 };
 use rusqlite::params;
 
@@ -112,10 +112,11 @@ fn send_sidecar_command(
 pub fn whatsapp_status(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
     let status = sc.status.lock().map(|s| s.clone()).unwrap_or_default();
     let qr = sc.qr_data_url.lock().ok().and_then(|q| q.clone());
@@ -140,6 +141,7 @@ pub fn whatsapp_status(
 pub fn whatsapp_start(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
@@ -198,7 +200,7 @@ pub fn whatsapp_start(
 
     *sc.child.lock().map_err(|_| "lock error".to_string())? = Some(child);
     record_app_log(
-        &init_schema(&app)?,
+        &get_db(&db)?,
         "INFO",
         "whatsapp",
         "WhatsApp sidecar dimulai",
@@ -211,6 +213,7 @@ pub fn whatsapp_start(
 pub fn whatsapp_restart(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
@@ -221,7 +224,7 @@ pub fn whatsapp_restart(
         .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
     record_app_log(
-        &init_schema(&app)?,
+        &get_db(&db)?,
         "INFO",
         "whatsapp",
         "WhatsApp sidecar di-restart",
@@ -230,7 +233,7 @@ pub fn whatsapp_restart(
 }
 
 #[tauri::command]
-pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>) -> Result<bool, String> {
+pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<bool, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
 
@@ -243,7 +246,7 @@ pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>) -> Resu
         .lock()
         .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
-    record_app_log(&init_schema(&app)?, "INFO", "whatsapp", "WhatsApp logout");
+    record_app_log(&get_db(&db)?, "INFO", "whatsapp", "WhatsApp logout");
     Ok(true)
 }
 
@@ -251,11 +254,12 @@ pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>) -> Resu
 pub fn whatsapp_notify(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     transaction_id: i64,
 ) -> Result<WaNotifyResponse, String> {
     let _user = require_admin(&session)?;
     let sc = app.state::<WaSidecarState>();
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
 
     if !enabled || !auto_notify {
