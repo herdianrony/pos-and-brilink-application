@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { AccountRow, ProductRow } from "./api";
+import { transactionAction } from "./api";
 import { ProductDialogs } from "./components/ProductDialogs";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -265,6 +266,20 @@ export default function App() {
     await submitPosCheckout({ saving, setSaving, cashReceived });
   }
 
+  const handleTransactionAction = useCallback(async (id: number, action: "void" | "reverse" | "complete", reason: string) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await transactionAction({ id, action, reason });
+      await refreshData();
+      setMessage(`Transaksi berhasil di-${action === "void" ? "batalkan" : action === "reverse" ? "reverse" : "selesaikan"}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, setSaving, refreshData, setMessage]);
+
   if (setupNeeded) {
     return (
       <AuthShell
@@ -383,6 +398,7 @@ export default function App() {
           selectedTransaction={selectedTransaction}
           selectedTransactionItems={selectedTransactionItems}
           onOpenDetail={openTransactionDetail}
+          onTransactionAction={handleTransactionAction}
           userForm={userForm}
           onUserFormChange={setUserForm}
           onSubmitUser={submitUser}
@@ -401,6 +417,13 @@ export default function App() {
           onAddProduct={openAddProduct}
           onEditProduct={startEditProduct}
           onRemoveProduct={removeProduct}
+          debtForm={debtForm}
+          debtPaymentForm={debtPaymentForm}
+          onDebtFormChange={setDebtForm}
+          onDebtPaymentFormChange={setDebtPaymentForm}
+          onSubmitDebt={submitDebt}
+          onSubmitDebtPayment={submitDebtPayment}
+          onCopyDebtReminder={copyDebtReminder}
         />
       </ErrorBoundary>
       <CashDialogs

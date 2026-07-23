@@ -55,11 +55,17 @@ export function AppRouter({
   selectedTransaction,
   selectedTransactionItems,
   onOpenDetail,
+  onTransactionAction,
   // Settings props
   userForm,
   onUserFormChange,
   onSubmitUser,
   onExportCsv,
+  onAddAccount,
+  onTransfer,
+  onAdjust,
+  onOwnerDraw,
+  onBankFee,
   onCreateBackup,
   onRestoreBackup,
   onRefreshLogs,
@@ -69,6 +75,14 @@ export function AppRouter({
   onAddProduct,
   onEditProduct,
   onRemoveProduct,
+  // Debt management props
+  debtForm,
+  debtPaymentForm,
+  onDebtFormChange,
+  onDebtPaymentFormChange,
+  onSubmitDebt,
+  onSubmitDebtPayment,
+  onCopyDebtReminder,
 }: {
   activeView: ViewKey;
   user: PublicUser;
@@ -114,7 +128,8 @@ export function AppRouter({
   // Transaction detail
   selectedTransaction: TransactionRow | null;
   selectedTransactionItems: TransactionItemRow[];
-  onOpenDetail: (id: number) => void;
+  onOpenDetail: (transaction: TransactionRow) => void;
+  onTransactionAction: (id: number, action: "void" | "reverse" | "complete", reason: string) => Promise<void>;
   // Settings
   userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
   onUserFormChange: (f: { name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
@@ -134,6 +149,14 @@ export function AppRouter({
   onAddProduct: () => void;
   onEditProduct: (p: ProductRow) => void;
   onRemoveProduct: (p: ProductRow) => void;
+  // Debt management
+  debtForm: { customer_name: string; phone: string; amount: string; notes: string };
+  debtPaymentForm: { debt_id: string; amount: string; notes: string };
+  onDebtFormChange: (f: { customer_name: string; phone: string; amount: string; notes: string }) => void;
+  onDebtPaymentFormChange: (f: { debt_id: string; amount: string; notes: string }) => void;
+  onSubmitDebt: (e: FormEvent) => void;
+  onSubmitDebtPayment: (e: FormEvent) => void;
+  onCopyDebtReminder: (debt: DebtRow) => void;
 }) {
   switch (activeView) {
     case "pos":
@@ -180,6 +203,8 @@ export function AppRouter({
           selectedTransaction={selectedTransaction}
           selectedTransactionItems={selectedTransactionItems}
           onOpenDetail={onOpenDetail}
+          onTransactionAction={onTransactionAction}
+          saving={saving}
         />
       );
     case "keuangan":
@@ -222,6 +247,13 @@ export function AppRouter({
           onAddProduct={onAddProduct}
           onEditProduct={onEditProduct}
           onRemoveProduct={onRemoveProduct}
+          debtForm={debtForm}
+          debtPaymentForm={debtPaymentForm}
+          onDebtFormChange={onDebtFormChange}
+          onDebtPaymentFormChange={onDebtPaymentFormChange}
+          onSubmitDebt={onSubmitDebt}
+          onSubmitDebtPayment={onSubmitDebtPayment}
+          onCopyDebtReminder={onCopyDebtReminder}
         />
       );
     case "dashboard":

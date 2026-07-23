@@ -408,5 +408,16 @@ export function whatsappLogout() {
 }
 
 
+// ── Transaction Lifecycle ──────────────────────────────────────────
+
+export function transactionAction(payload: {
+  id: number;
+  action: "void" | "reverse" | "complete";
+  reason?: string;
+  reference_no?: string;
+}) {
+  return invokeCommand<TransactionRow>("transaction_action", { payload });
+}
+
 // ── Restock (stock receiving) ─────────────────────────────────────
 
