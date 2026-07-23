@@ -12,7 +12,7 @@ export function ReportsPage({
 }: {
   transactions: TransactionRow[];
   mutations: AccountMutationRow[];
-  onExportCsv: (summary: { posRevenue: number; posProfit: number; agentProfit: number }) => void;
+  onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
 }) {
   const posTransactions = transactions.filter((transaction) => transaction.transaction_type === "pos");
   const agentTransactions = transactions.filter((transaction) => transaction.transaction_type === "agent");
@@ -39,7 +39,7 @@ export function ReportsPage({
         eyebrow="Analitik Bisnis"
         title="Laporan"
         description="Ringkasan omzet, keuntungan, dan aktivitas kasir."
-        actions={<Button variant="secondary" onClick={() => onExportCsv({ posRevenue, posProfit, agentProfit })}><Download size={16} /> Unduh CSV</Button>}
+        actions={<Button variant="secondary" onClick={() => onExportCsv("laporan-catatagen.csv", [{ tipe: "POS", omzet: posRevenue, profit: posProfit }, { tipe: "Layanan Agen", omzet: agentRevenue, profit: agentProfit }, { tipe: "Total", omzet: posRevenue + agentRevenue, profit: totalProfit }])}><Download size={16} /> Unduh CSV</Button>}
       />
 
       <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">

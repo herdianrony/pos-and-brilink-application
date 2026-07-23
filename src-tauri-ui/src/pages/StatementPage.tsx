@@ -33,7 +33,7 @@ export function StatementPage({
 }: {
   accounts: AccountRow[];
   mutations: AccountMutationRow[];
-  onExportCsv: () => void;
+  onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
   embedded?: boolean;
 }) {
   const [selectedAccountId, setSelectedAccountId] = useState("all");
@@ -76,7 +76,7 @@ export function StatementPage({
             <Button
               variant="secondary"
               size="sm"
-              onClick={onExportCsv}
+              onClick={() => onExportCsv("rekening-koran-catatagen.csv", filteredMutations.map((m) => ({ tanggal: m.created_at, akun: m.account_name, tipe: m.mutation_type, nominal: m.amount, saldo_akhir: m.balance_after, catatan: m.notes || "" })))}
               disabled={filteredMutations.length === 0}
             >
               <Download size={16} /> Unduh CSV

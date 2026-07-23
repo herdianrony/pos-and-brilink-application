@@ -5,6 +5,9 @@ import {
   Landmark,
   TrendingUp,
   Eye,
+  Ban,
+  RotateCcw,
+  CheckCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { TransactionItemRow, TransactionRow } from "../api";
@@ -19,6 +22,8 @@ import {
   Spinner,
   StatCard,
   Modal,
+  Input,
+  Field,
 } from "../components/ui";
 
 /* ------------------------------------------------------------------ */
@@ -66,15 +71,27 @@ export function HistoryPage({
   selectedTransaction,
   selectedTransactionItems,
   onOpenDetail,
+  onTransactionAction,
+  saving,
 }: {
   transactions: TransactionRow[];
   selectedTransaction: TransactionRow | null;
   selectedTransactionItems: TransactionItemRow[];
   onOpenDetail: (transaction: TransactionRow) => void;
+  onTransactionAction: (id: number, action: "void" | "reverse" | "complete", reason: string) => Promise<void>;
+  saving: boolean;
 }) {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Action dialog state
+  const [actionDialog, setActionDialog] = useState<{
+    open: boolean;
+    transaction: TransactionRow | null;
+    action: "void" | "reverse" | "complete" | null;
+    reason: string;
+  }>({ open: false, transaction: null, action: null, reason: "" });
 
   // Open modal whenever selectedTransaction is set by parent
   useEffect(() => {
@@ -92,6 +109,24 @@ export function HistoryPage({
   const revenue = filtered.reduce((s, t) => s + t.total_amount, 0);
   const profit = filtered.reduce((s, t) => s + t.profit, 0);
   const pendingCount = transactions.filter((t) => t.status === "pending").length;
+
+  function openActionDialog(transaction: TransactionRow, action: "void" | "reverse" | "complete") {
+    setActionDialog({ open: true, transaction, action, reason: "" });
+  }
+
+  function closeActionDialog() {
+    setActionDialog({ open: false, transaction: null, action: null, reason: "" });
+  }
+
+  async function handleActionSubmit() {
+    if (!actionDialog.transaction || !actionDialog.action || !actionDialog.reason.trim()) return;
+    try {
+      await onTransactionAction(actionDialog.transaction.id, actionDialog.action, actionDialog.reason.trim());
+      closeActionDialog();
+    } catch {
+      // Error handled by parent
+    }
+  }
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -224,12 +259,42 @@ export function HistoryPage({
                       {transaction.created_at}
                     </td>
                     <td className="p-3 text-center">
-                      <button
-                        className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
-                        title="Lihat detail"
-                      >
-                        <Eye size={14} />
-                      </button>
+                      <div className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                          title="Lihat detail"
+                          onClick={() => onOpenDetail(transaction)}
+                        >
+                          <Eye size={14} />
+                        </button>
+                        {transaction.status === "pending" && (
+                          <>
+                            <button
+                              className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              title="Batalkan (Void)"
+                              onClick={() => openActionDialog(transaction, "void")}
+                            >
+                              <Ban size={14} />
+                            </button>
+                            <button
+                              className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              title="Selesaikan"
+                              onClick={() => openActionDialog(transaction, "complete")}
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                          </>
+                        )}
+                        {transaction.status === "completed" && (
+                          <button
+                            className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            title="Reverse Transaksi"
+                            onClick={() => openActionDialog(transaction, "reverse")}
+                          >
+                            <RotateCcw size={14} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -361,11 +426,110 @@ export function HistoryPage({
               </div>
             </div>
 
+            {/* Action buttons in detail modal */}
+            <div className="flex gap-2 border-t border-dashed pt-3">
+              {selectedTransaction.status === "pending" && (
+                <>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setModalOpen(false);
+                      openActionDialog(selectedTransaction, "void");
+                    }}
+                  >
+                    <Ban size={14} /> Void
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setModalOpen(false);
+                      openActionDialog(selectedTransaction, "complete");
+                    }}
+                  >
+                    <CheckCircle size={14} /> Selesaikan
+                  </Button>
+                </>
+              )}
+              {selectedTransaction.status === "completed" && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setModalOpen(false);
+                    openActionDialog(selectedTransaction, "reverse");
+                  }}
+                >
+                  <RotateCcw size={14} /> Reverse
+                </Button>
+              )}
+            </div>
+
             <Button variant="ghost" className="w-full" onClick={() => setModalOpen(false)}>
               Tutup
             </Button>
           </div>
         )}
+      </Modal>
+
+      {/* 7. Transaction Action Dialog (Void / Reverse / Complete) */}
+      <Modal
+        open={actionDialog.open}
+        onClose={closeActionDialog}
+        size="sm"
+        eyebrow="Konfirmasi"
+      >
+        <div className="p-5 space-y-4">
+          <h3 className="text-lg font-extrabold text-slate-900">
+            {actionDialog.action === "void" && "Void Transaksi"}
+            {actionDialog.action === "reverse" && "Reverse Transaksi"}
+            {actionDialog.action === "complete" && "Selesaikan Transaksi"}
+          </h3>
+          <p className="text-sm text-slate-600">
+            {actionDialog.action === "void" && "Membatalkan transaksi pending. Stok akan dikembalikan dan mutasi saldo dibalik."}
+            {actionDialog.action === "reverse" && "Membalik transaksi yang sudah selesai. Stok akan dikembalikan dan mutasi saldo dibalik."}
+            {actionDialog.action === "complete" && "Menyelesaikan transaksi yang masih pending."}
+          </p>
+
+          {actionDialog.transaction && (
+            <div className="rounded-xl bg-slate-50 p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Invoice</span>
+                <span className="font-mono font-bold">{actionDialog.transaction.invoice_no}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total</span>
+                <span className="font-bold">{formatRupiah(actionDialog.transaction.total_amount)}</span>
+              </div>
+            </div>
+          )}
+
+          <Field label="Alasan">
+            <Input
+              placeholder="Alasan (minimal 3 karakter)"
+              value={actionDialog.reason}
+              onChange={(e) => setActionDialog((d) => ({ ...d, reason: e.target.value }))}
+              autoFocus
+            />
+          </Field>
+
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={closeActionDialog}>
+              Batal
+            </Button>
+            <Button
+              variant={actionDialog.action === "complete" ? "primary" : "danger"}
+              className="flex-1"
+              disabled={saving || actionDialog.reason.trim().length < 3}
+              onClick={handleActionSubmit}
+            >
+              {saving ? "Memproses..." : actionDialog.action === "void" ? "Void" : actionDialog.action === "reverse" ? "Reverse" : "Selesaikan"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

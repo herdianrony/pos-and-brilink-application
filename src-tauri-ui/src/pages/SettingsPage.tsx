@@ -23,6 +23,8 @@ export function SettingsPage({
   users, userForm, saving, transactions, mutations, debts, products, categories, backups, dbPath, logs,
   onRefreshLogs, onUserFormChange, onSubmitUser, onExportCsv, onCreateBackup, onRestoreBackup, onMessage,
   onAddCategory, onAddProduct, onEditProduct, onRemoveProduct,
+  // Debt management
+  debtForm, debtPaymentForm, onDebtFormChange, onDebtPaymentFormChange, onSubmitDebt, onSubmitDebtPayment, onCopyDebtReminder,
 }: {
   users: PublicUser[];
   userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
@@ -46,12 +48,30 @@ export function SettingsPage({
   onAddProduct: () => void;
   onEditProduct: (product: ProductRow) => void;
   onRemoveProduct: (product: ProductRow) => void;
+  // Debt management
+  debtForm: { customer_name: string; phone: string; amount: string; notes: string };
+  debtPaymentForm: { debt_id: string; amount: string; notes: string };
+  onDebtFormChange: (form: { customer_name: string; phone: string; amount: string; notes: string }) => void;
+  onDebtPaymentFormChange: (form: { debt_id: string; amount: string; notes: string }) => void;
+  onSubmitDebt: (event: FormEvent) => void;
+  onSubmitDebtPayment: (event: FormEvent) => void;
+  onCopyDebtReminder: (debt: DebtRow) => void;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("pengguna");
 
   function handleUserSubmit(form: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
     onUserFormChange(form);
     setTimeout(() => onSubmitUser(new Event("submit") as unknown as FormEvent), 0);
+  }
+
+  function handleAddDebt(form: { customer_name: string; phone: string; amount: string; notes: string }) {
+    onDebtFormChange(form);
+    setTimeout(() => onSubmitDebt(new Event("submit") as unknown as FormEvent), 0);
+  }
+
+  function handlePayDebt(form: { debt_id: string; amount: string; notes: string }) {
+    onDebtPaymentFormChange(form);
+    setTimeout(() => onSubmitDebtPayment(new Event("submit") as unknown as FormEvent), 0);
   }
 
   return (
@@ -74,7 +94,7 @@ export function SettingsPage({
           onRemoveProduct={onRemoveProduct}
         />
       )}
-      {activeTab === "utang" && <DebtsTab debts={debts} onExportCsv={onExportCsv} />}
+      {activeTab === "utang" && <DebtsTab debts={debts} saving={saving} onExportCsv={onExportCsv} onAddDebt={handleAddDebt} onPayDebt={handlePayDebt} onCopyReminder={onCopyDebtReminder} />}
       {activeTab === "whatsapp" && <WhatsAppPage saving={saving} onMessage={onMessage} />}
       {activeTab === "backup" && <BackupTab transactions={transactions} mutations={mutations} debts={debts} products={products} backups={backups} saving={saving} onCreateBackup={onCreateBackup} onRestoreBackup={onRestoreBackup} onExportCsv={onExportCsv} />}
       {activeTab === "tentang" && <AboutTab dbPath={dbPath} logs={logs} onRefreshLogs={onRefreshLogs} />}

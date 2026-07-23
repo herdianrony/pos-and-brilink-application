@@ -32,10 +32,10 @@ export function KeuanganPage({
   transactions: TransactionRow[];
   saving: boolean;
   onAddAccount: () => void;
-  onTransfer: () => void;
-  onAdjust: () => void;
-  onOwnerDraw: () => void;
-  onBankFee: () => void;
+  onTransfer: (account?: AccountRow) => void;
+  onAdjust: (account: AccountRow) => void;
+  onOwnerDraw: (account: AccountRow) => void;
+  onBankFee: (account: AccountRow) => void;
   onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
 }) {
   const [activeTab, setActiveTab] = useState<FinanceTabId>("cash");
