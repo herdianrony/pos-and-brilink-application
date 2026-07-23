@@ -113,6 +113,7 @@ export function AppRouter({
   onAddToCart: (p: ProductRow) => void;
   onAddAgentService: (s: Omit<AgentCartItem, "type" | "id">) => void;
   onUpdateQty: (id: number, qty: number) => void;
+  onRemoveCartItem: (itemKey: string | number) => void;
   onPaymentMethodChange: (m: "cash" | "transfer" | "qris") => void;
   onSettlementAccountChange: (v: string) => void;
   onHoldCart: () => void;
@@ -131,8 +132,8 @@ export function AppRouter({
   onOpenDetail: (transaction: TransactionRow) => void;
   onTransactionAction: (id: number, action: "void" | "reverse" | "complete", reason: string) => Promise<void>;
   // Settings
-  userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
-  onUserFormChange: (f: { name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
+  userForm: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" };
+  onUserFormChange: (f: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
   onSubmitUser: (e: FormEvent) => void;
   onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
   onAddAccount: () => void;
@@ -175,6 +176,7 @@ export function AppRouter({
           onAddToCart={onAddToCart}
           onAddAgentService={onAddAgentService}
           onUpdateQty={onUpdateQty}
+          onRemoveCartItem={onRemoveCartItem}
           onPaymentMethodChange={onPaymentMethodChange}
           onSettlementAccountChange={onSettlementAccountChange}
           onHoldCart={onHoldCart}

@@ -87,6 +87,7 @@ export default function App() {
     setSettlementAccountId,
     addToCart: addProductToCart,
     updateCartQty,
+    removeCartItem,
     clearCart: clearPosCart,
     holdCart: holdPosCart,
     submitCheckout: submitPosCheckout,
@@ -384,6 +385,7 @@ export default function App() {
           onAddToCart={addToCart}
           onAddAgentService={posCart.addAgentService}
           onUpdateQty={updateCartQty}
+          onRemoveCartItem={removeCartItem}
           onPaymentMethodChange={setPaymentMethod}
           onSettlementAccountChange={setSettlementAccountId}
           onHoldCart={holdCart}

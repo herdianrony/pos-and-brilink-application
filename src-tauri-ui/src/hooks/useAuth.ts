@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { createAdmin, createUser, login, logoutSession, getMe, type PublicUser } from "../api";
+import { createAdmin, createUser, updateUser, login, logoutSession, getMe, type PublicUser } from "../api";
 import type { ViewKey } from "../types";
 
 const SESSION_KEY = "catatagen.session.user";
@@ -23,7 +23,7 @@ export function useAuth({
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [setupForm, setSetupForm] = useState({ name: "", username: "", password: "" });
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
-  const [userForm, setUserForm] = useState({ name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
+  const [userForm, setUserForm] = useState({ id: 0, name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
 
   // Persist user to localStorage
   function persistUser(u: PublicUser | null) {
@@ -93,10 +93,22 @@ export function useAuth({
     if (saving) return;
     setSaving(true);
     try {
-      await createUser(userForm);
-      setUserForm({ name: "", username: "", password: "", role: "kasir" });
+      if (userForm.id > 0) {
+        const payload: { id: number; name: string; username: string; role: "admin" | "kasir"; password?: string } = {
+          id: userForm.id,
+          name: userForm.name,
+          username: userForm.username,
+          role: userForm.role,
+        };
+        if (userForm.password) payload.password = userForm.password;
+        await updateUser(payload);
+        onMessage("User berhasil diperbarui");
+      } else {
+        await createUser(userForm);
+        onMessage("User berhasil dibuat");
+      }
+      setUserForm({ id: 0, name: "", username: "", password: "", role: "kasir" });
       await onRefresh();
-      onMessage("User berhasil dibuat");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : String(error));
     } finally {

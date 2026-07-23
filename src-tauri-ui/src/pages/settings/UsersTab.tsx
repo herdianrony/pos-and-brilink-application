@@ -10,21 +10,21 @@ export function UsersTab({
 }: {
   users: PublicUser[];
   saving: boolean;
-  onSubmitUser: (form: { name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
+  onSubmitUser: (form: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
 }) {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
-  const [form, setForm] = useState({ name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
+  const [form, setForm] = useState({ id: 0, name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
 
   function openAdd() {
     setEditingUser(null);
-    setForm({ name: "", username: "", password: "", role: "kasir" });
+    setForm({ id: 0, name: "", username: "", password: "", role: "kasir" });
     setShowModal(true);
   }
 
   function openEdit(u: PublicUser) {
     setEditingUser(u);
-    setForm({ name: u.name, username: u.username, password: "", role: u.role as "admin" | "kasir" });
+    setForm({ id: u.id, name: u.name, username: u.username, password: "", role: u.role as "admin" | "kasir" });
     setShowModal(true);
   }
 

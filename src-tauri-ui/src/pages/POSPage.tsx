@@ -37,6 +37,7 @@ export function POSPage({
   onAddToCart,
   onAddAgentService,
   onUpdateQty,
+  onRemoveCartItem,
   onPaymentMethodChange,
   onSettlementAccountChange,
   onHoldCart,
@@ -67,6 +68,7 @@ export function POSPage({
     quantity: number;
   }) => void;
   onUpdateQty: (productId: number, quantity: number) => void;
+  onRemoveCartItem: (itemKey: string | number) => void;
   onPaymentMethodChange: (method: "cash" | "transfer" | "qris") => void;
   onSettlementAccountChange: (value: string) => void;
   onHoldCart: () => void;
@@ -326,11 +328,19 @@ export function POSPage({
                         : formatRupiah(item.amount + item.fee)}
                     </p>
 
-                    {item.type === "product" && (
+                    {item.type === "product" ? (
                       <button
-                        onClick={() => onUpdateQty(item.product.id, 0)}
+                        onClick={() => onRemoveCartItem(item.product.id)}
                         className="p-3 text-gray-300 hover:text-red-500 transition-colors"
                         aria-label={`Hapus ${item.product.name}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onRemoveCartItem(item.id)}
+                        className="p-3 text-gray-300 hover:text-red-500 transition-colors"
+                        aria-label={`Hapus ${item.service_name}`}
                       >
                         <Trash2 size={14} />
                       </button>

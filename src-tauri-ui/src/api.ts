@@ -180,6 +180,14 @@ export function createUser(payload: { name: string; username: string; password: 
   return invokeCommand<PublicUser>("create_user", { payload });
 }
 
+export function updateUser(payload: { id: number; name: string; username: string; password?: string; role: "admin" | "kasir" }) {
+  return invokeCommand<PublicUser>("update_user", { payload });
+}
+
+export function deactivateUser(payload: { id: number }) {
+  return invokeCommand<boolean>("deactivate_user", { payload });
+}
+
 export function login(payload: { username: string; password: string }) {
   return invokeCommand<{ ok: boolean; user: PublicUser }>("login", { payload });
 }
