@@ -185,7 +185,7 @@ pub fn whatsapp_start(
                 *sc.last_error.lock().map_err(|_| "lock error".to_string())? = Some(
                     "wa-service tidak ditemukan. Pastikan folder wa-service/index.mjs ada.".into(),
                 );
-                return whatsapp_status(app, session);
+                return whatsapp_status(app, session, db);
             }
 
             std::process::Command::new("node")
@@ -199,14 +199,15 @@ pub fn whatsapp_start(
     };
 
     *sc.child.lock().map_err(|_| "lock error".to_string())? = Some(child);
+    let conn = get_db(&db)?;
     record_app_log(
-        &get_db(&db)?,
+        &conn,
         "INFO",
         "whatsapp",
         "WhatsApp sidecar dimulai",
     );
 
-    whatsapp_status(app, session)
+    whatsapp_status(app, session, db)
 }
 
 #[tauri::command]
@@ -223,13 +224,14 @@ pub fn whatsapp_restart(
         .lock()
         .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
+    let conn = get_db(&db)?;
     record_app_log(
-        &get_db(&db)?,
+        &conn,
         "INFO",
         "whatsapp",
         "WhatsApp sidecar di-restart",
     );
-    whatsapp_status(app, session)
+    whatsapp_status(app, session, db)
 }
 
 #[tauri::command]
@@ -246,7 +248,8 @@ pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>, db: Sta
         .lock()
         .map_err(|_| "lock error".to_string())? = None;
     *sc.last_error.lock().map_err(|_| "lock error".to_string())? = None;
-    record_app_log(&get_db(&db)?, "INFO", "whatsapp", "WhatsApp logout");
+    let conn = get_db(&db)?;
+    record_app_log(&conn, "INFO", "whatsapp", "WhatsApp logout");
     Ok(true)
 }
 

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::require_admin;
-use crate::common::{get_db, round_money, validate_money, DbConn};
+use crate::common::{get_db, round_money, DbConn};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]

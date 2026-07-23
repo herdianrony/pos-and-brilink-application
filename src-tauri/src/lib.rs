@@ -33,7 +33,6 @@ use crate::products::{
     create_category, create_product, deactivate_category, deactivate_product, get_product_image,
     list_categories, list_products, restock_product, update_category, update_product,
 };
-use crate::common::DbConn;
 use crate::session::SessionState;
 use crate::seed::{clear_demo, seed_demo, seed_system, setup_templates};
 use crate::settings::{get_settings, update_settings};

@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 
 use crate::{
     auth::require_admin, auth::require_auth, common::get_db, common::round_money,
-    common::validate_money, common::DbConn, common::record_app_log,
+    common::DbConn, common::record_app_log,
     common::trim_optional, session::PublicUser, session::SessionState,
 };
 
@@ -434,7 +434,7 @@ pub fn checkout_pos_cash(
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
-        &get_db(&db)?,
+        &conn,
         "INFO",
         "pos",
         &format!("POS checkout {} Rp{:.0} ({})", invoice_no, total_amount, payment_method),
@@ -544,7 +544,7 @@ pub fn create_agent_transaction(
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
-        &get_db(&db)?,
+        &conn,
         "INFO",
         "brilink",
         &format!("Agent trx {} Rp{:.0}", invoice_no, fee),
