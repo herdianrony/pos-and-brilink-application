@@ -23,6 +23,7 @@
     "test:e2e:tauri": "playwright test -c playwright.tauri.config.ts"
   },
   "dependencies": {
+    "tailwind-merge": "^3.6.0",
     "whatsapp-web.js": "^1.34.7",
     "wwebjs-electron": "^1.34.7"
   },

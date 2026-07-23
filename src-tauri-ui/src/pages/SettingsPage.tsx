@@ -27,7 +27,7 @@ export function SettingsPage({
   debtForm, debtPaymentForm, onDebtFormChange, onDebtPaymentFormChange, onSubmitDebt, onSubmitDebtPayment, onCopyDebtReminder,
 }: {
   users: PublicUser[];
-  userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
+  userForm: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" };
   saving: boolean;
   transactions: TransactionRow[];
   mutations: AccountMutationRow[];
@@ -38,7 +38,7 @@ export function SettingsPage({
   dbPath: string;
   logs: AppLogRow[];
   onRefreshLogs: () => void;
-  onUserFormChange: (form: { name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
+  onUserFormChange: (form: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
   onSubmitUser: (event: FormEvent) => void;
   onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
   onCreateBackup: () => void;
@@ -59,7 +59,7 @@ export function SettingsPage({
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("pengguna");
 
-  function handleUserSubmit(form: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
+  function handleUserSubmit(form: { id: number; name: string; username: string; password: string; role: "admin" | "kasir" }) {
     onUserFormChange(form);
     setTimeout(() => onSubmitUser(new Event("submit") as unknown as FormEvent), 0);
   }
