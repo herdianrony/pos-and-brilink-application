@@ -27,3 +27,4 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 bcrypt = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.22"
+ureq = "3"
