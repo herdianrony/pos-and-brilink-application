@@ -159,6 +159,7 @@ export function StatementPage({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">Rekening Koran</caption>
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::require_admin;
-use crate::common::init_schema;
+use crate::common::{get_db, DbConn};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -102,9 +102,10 @@ pub struct MutationSummaryPayload {
 pub fn list_accounts(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<Vec<AccountRow>, String> {
     let _user = crate::auth::require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE is_active = 1 ORDER BY id ASC")
         .map_err(|e| e.to_string())?;
@@ -134,10 +135,11 @@ pub fn list_accounts(
 pub fn create_account(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AccountPayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let code = crate::common::normalize_code(&payload.code);
     let name = payload.name.trim().to_string();
     let initial_balance = payload.initial_balance.unwrap_or(0.0);
@@ -185,13 +187,14 @@ pub fn create_account(
 pub fn adjust_account_balance(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: BalanceAdjustmentPayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
     if payload.amount == 0.0 {
         return Err("Nominal penyesuaian tidak boleh 0".into());
     }
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let account = tx
@@ -228,6 +231,7 @@ pub fn adjust_account_balance(
 pub fn transfer_accounts(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AccountTransferPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
@@ -237,7 +241,7 @@ pub fn transfer_accounts(
     if payload.amount <= 0.0 {
         return Err("Nominal transfer harus lebih dari 0".into());
     }
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let from = tx
@@ -296,6 +300,7 @@ pub fn transfer_accounts(
 pub fn owner_draw(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AccountExpensePayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
@@ -306,6 +311,7 @@ pub fn owner_draw(
 pub fn bank_fee(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AccountExpensePayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
@@ -316,6 +322,7 @@ pub fn bank_fee(
 pub fn list_account_mutations(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<ListMutationsPayload>,
 ) -> Result<Vec<AccountMutationRow>, String> {
     let _user = require_admin(&session)?;
@@ -324,7 +331,7 @@ pub fn list_account_mutations(
         .and_then(|p| p.limit)
         .unwrap_or(80)
         .clamp(1, 500);
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
 
     let mut sql = String::from(
         r#"SELECT m.id, m.account_id, a.name, m.type, m.amount, m.balance_after, m.notes, m.reference_id, m.created_at
@@ -385,10 +392,11 @@ pub fn list_account_mutations(
 pub fn get_mutation_summary(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<MutationSummaryPayload>,
 ) -> Result<AccountMutationSummary, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
 
     let mut sql = String::from(
         "SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END),0), COUNT(*) FROM account_mutations WHERE 1=1",
@@ -467,7 +475,7 @@ fn account_expense(
     if payload.amount <= 0.0 {
         return Err("Nominal harus lebih dari 0".into());
     }
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let account = tx.query_row(
@@ -527,10 +535,11 @@ fn account_row_from_tuple(
 pub fn update_account(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: UpdateAccountPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut sets = Vec::new();
     let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     let now = chrono::Utc::now().to_rfc3339();
@@ -576,10 +585,11 @@ pub fn update_account(
 pub fn deactivate_account(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     account_id: i64,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let code: String = conn
         .query_row(
             "SELECT code FROM accounts WHERE id = ?1 AND is_active = 1",

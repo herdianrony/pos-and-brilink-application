@@ -129,7 +129,7 @@ export function AgentServicesPage({
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
             <Landmark size={24} className="text-purple-500" /> Layanan Agen
           </h2>
-          <p className="text-sm text-slate-400">Pilih layanan dan catat transaksi nasabah</p>
+          <p className="text-sm text-slate-500">Pilih layanan dan catat transaksi nasabah</p>
         </div>
 
         <StepIndicator current={1} />
@@ -298,7 +298,7 @@ export function AgentServicesPage({
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
             <Landmark size={24} className="text-purple-500" /> Layanan Agen
           </h2>
-          <p className="text-sm text-slate-400">Pilih layanan dan catat transaksi nasabah</p>
+          <p className="text-sm text-slate-500">Pilih layanan dan catat transaksi nasabah</p>
         </div>
 
         <StepIndicator current={2} />
@@ -381,7 +381,7 @@ export function AgentServicesPage({
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <Landmark size={24} className="text-purple-500" /> Layanan Agen
         </h2>
-        <p className="text-sm text-slate-400">Pilih layanan dan catat transaksi nasabah</p>
+        <p className="text-sm text-slate-500">Pilih layanan dan catat transaksi nasabah</p>
       </div>
 
       <StepIndicator current={3} />
@@ -393,7 +393,7 @@ export function AgentServicesPage({
             <Spinner size="lg" />
             <div>
               <h3 className="text-lg font-extrabold text-slate-800">Memproses transaksi...</h3>
-              <p className="text-sm text-slate-400 mt-1">Mohon tunggu, transaksi sedang dicatat.</p>
+              <p className="text-sm text-slate-500 mt-1">Mohon tunggu, transaksi sedang dicatat.</p>
             </div>
           </Card>
         ) : (

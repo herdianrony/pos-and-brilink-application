@@ -69,7 +69,7 @@ export function CashBalancePage({
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">Kas & Saldo</h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi.
           </p>
         </div>

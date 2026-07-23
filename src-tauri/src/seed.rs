@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, common::init_schema, common::record_app_log, session::SessionState,
+    auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
 };
 
 #[derive(Debug, Serialize)]
@@ -42,7 +42,7 @@ pub struct DemoResult {
 #[tauri::command]
 pub fn seed_system(app: AppHandle, session: State<'_, SessionState>) -> Result<SeedResult, String> {
     // Seed dapat dipanggil tanpa auth jika belum ada user (first-run)
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let user_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
         .map_err(|e| e.to_string())?;
@@ -176,8 +176,8 @@ pub fn seed_system(app: AppHandle, session: State<'_, SessionState>) -> Result<S
 // ── Setup Templates (first-run only) ──────────────────────────────
 
 #[tauri::command]
-pub fn setup_templates(app: AppHandle) -> Result<SetupTemplatesResponse, String> {
-    let conn = init_schema(&app)?;
+pub fn setup_templates(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupTemplatesResponse, String> {
+    let conn = get_db(&db)?;
 
     // Security: hanya accessible jika belum ada user
     let user_count: i64 = conn
@@ -241,7 +241,7 @@ pub fn setup_templates(app: AppHandle) -> Result<SetupTemplatesResponse, String>
 #[tauri::command]
 pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let mut stats = HashMap::new();
 
@@ -715,7 +715,7 @@ pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<Dem
 #[tauri::command]
 pub fn clear_demo(app: AppHandle, session: State<'_, SessionState>) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stats = HashMap::new();
 
     const DEMO: &str = "[DEMO]";

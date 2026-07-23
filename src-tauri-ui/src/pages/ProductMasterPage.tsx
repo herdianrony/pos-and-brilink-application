@@ -82,6 +82,7 @@ export function ProductMasterPage({
             />
           ) : (
             <table className="w-full text-sm text-left">
+              <caption className="sr-only">Daftar produk</caption>
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wide text-slate-500">
                   <th className="px-5 py-4">Nama</th>

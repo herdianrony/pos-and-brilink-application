@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use crate::common::{init_schema, record_app_log};
+use crate::common::{get_db, DbConn, record_app_log};
 use crate::session::PublicUser;
 use crate::session::SessionState;
 
@@ -110,8 +110,8 @@ pub fn db_init(app: AppHandle) -> Result<DbStatus, String> {
 }
 
 #[tauri::command]
-pub fn setup_status(app: AppHandle) -> Result<SetupStatus, String> {
-    let conn = init_schema(&app)?;
+pub fn setup_status(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupStatus, String> {
+    let conn = get_db(&db)?;
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
         .map_err(|e| e.to_string())?;
@@ -126,8 +126,9 @@ pub fn create_admin(
     app: AppHandle,
     payload: CreateAdminPayload,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<PublicUser, String> {
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
         .map_err(|e| e.to_string())?;
@@ -164,9 +165,10 @@ pub fn create_admin(
 pub fn list_users(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<Vec<PublicUser>, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, role FROM users WHERE is_active = 1 ORDER BY id ASC")
         .map_err(|e| e.to_string())?;
@@ -191,10 +193,11 @@ pub fn list_users(
 pub fn create_user(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: CreateUserPayload,
 ) -> Result<PublicUser, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
     let username = payload.username.trim().to_string();
     let role = payload.role.trim().to_lowercase();
@@ -235,6 +238,7 @@ pub fn login(
     app: AppHandle,
     payload: LoginPayload,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     rate_limiter: State<'_, LoginRateLimiter>,
 ) -> Result<LoginResponse, String> {
     let username = payload.username.trim().to_string();
@@ -265,7 +269,7 @@ pub fn login(
         }
     }
 
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, password_hash, role FROM users WHERE username = ?1 AND is_active = 1 LIMIT 1")
         .map_err(|e| e.to_string())?;
@@ -360,13 +364,14 @@ pub struct UpdateUserPayload {
 pub fn update_user(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: UpdateUserPayload,
 ) -> Result<PublicUser, String> {
     let me = require_admin(&session)?;
     if me.id == payload.id {
         return Err("Tidak bisa mengubah data diri sendiri".into());
     }
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     if let Some(ref r) = payload.role {
         if !matches!(r.as_str(), "admin" | "kasir") {
             return Err("Role harus admin atau kasir".into());
@@ -437,13 +442,14 @@ pub fn update_user(
 pub fn deactivate_user(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     user_id: i64,
 ) -> Result<bool, String> {
     let me = require_admin(&session)?;
     if me.id == user_id {
         return Err("Tidak bisa menonaktifkan diri sendiri".into());
     }
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let now = Utc::now().to_rfc3339();
     conn.execute(
         "UPDATE users SET is_active = 0, updated_at = ?1 WHERE id = ?2",

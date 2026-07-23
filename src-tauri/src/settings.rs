@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_admin, auth::require_auth, common::init_schema, session::SessionState};
+use crate::{auth::require_admin, auth::require_auth, common::get_db, common::DbConn, session::SessionState};
 
 #[derive(Debug, Deserialize)]
 pub struct SettingsUpdatePayload {
@@ -14,9 +14,10 @@ pub struct SettingsUpdatePayload {
 pub fn get_settings(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<HashMap<String, String>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT key, value FROM settings")
         .map_err(|e| e.to_string())?;
@@ -44,10 +45,11 @@ pub fn get_settings(
 pub fn update_settings(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: SettingsUpdatePayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     for (key, value) in &payload.settings {

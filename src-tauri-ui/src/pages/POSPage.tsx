@@ -125,7 +125,7 @@ export function POSPage({
               <h2 className="text-2xl font-extrabold text-slate-900">
                 Kasir POS
               </h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-500">
                 Pilih produk untuk ditambahkan
               </p>
             </div>
@@ -296,7 +296,7 @@ export function POSPage({
                           onClick={() =>
                             onUpdateQty(item.product.id, item.quantity - 1)
                           }
-                          className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
+                          className="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
                           aria-label={`Kurangi ${item.product.name}`}
                         >
                           <Minus size={13} />
@@ -308,7 +308,7 @@ export function POSPage({
                           onClick={() =>
                             onUpdateQty(item.product.id, item.quantity + 1)
                           }
-                          className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-success-light/30 hover:border-success-light hover:text-success transition-colors"
+                          className="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-success-light/30 hover:border-success-light hover:text-success transition-colors"
                           aria-label={`Tambah ${item.product.name}`}
                         >
                           <Plus size={13} />
@@ -329,7 +329,7 @@ export function POSPage({
                     {item.type === "product" && (
                       <button
                         onClick={() => onUpdateQty(item.product.id, 0)}
-                        className="p-2.5 text-gray-300 hover:text-red-500 transition-colors"
+                        className="p-3 text-gray-300 hover:text-red-500 transition-colors"
                         aria-label={`Hapus ${item.product.name}`}
                       >
                         <Trash2 size={14} />

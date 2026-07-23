@@ -99,7 +99,7 @@ export function HistoryPage({
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           {filtered.length} transaksi ditemukan
           {pendingCount > 0 && ` \u2022 ${pendingCount} pending`}
         </p>
@@ -163,6 +163,7 @@ export function HistoryPage({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">Riwayat Transaksi</caption>
               <thead>
                 <tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
                   <th className="text-left p-3 font-medium">Invoice</th>

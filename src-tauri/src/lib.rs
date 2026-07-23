@@ -33,6 +33,7 @@ use crate::products::{
     create_category, create_product, deactivate_category, deactivate_product, get_product_image,
     list_categories, list_products, restock_product, update_category, update_product,
 };
+use crate::common::DbConn;
 use crate::session::SessionState;
 use crate::seed::{clear_demo, seed_demo, seed_system, setup_templates};
 use crate::settings::{get_settings, update_settings};
@@ -58,6 +59,11 @@ pub fn run() {
             });
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .setup(|app| {
+            let db = crate::common::init_db(app.handle())?;
+            app.manage(db);
+            Ok(())
+        })
         .manage(SessionState(std::sync::Mutex::new(None)))
         .manage(WaSidecarState::new())
         .manage(LoginRateLimiter::new())

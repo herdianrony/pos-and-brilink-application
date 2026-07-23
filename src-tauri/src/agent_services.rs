@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::bounded_limit, common::init_schema, common::trim_optional,
+    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, common::trim_optional,
     session::SessionState,
 };
 
@@ -48,11 +48,12 @@ pub struct FeeTierPayload {
 pub fn list_agent_services(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<i64>,
 ) -> Result<Vec<AgentServiceRow>, String> {
     let _user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 100, 500);
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC LIMIT ?1").map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![limit], |row| {
@@ -77,10 +78,11 @@ pub fn list_agent_services(
 pub fn create_agent_service(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AgentServicePayload,
 ) -> Result<AgentServiceRow, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
         return Err("Nama layanan wajib diisi".into());
@@ -106,10 +108,11 @@ pub fn create_agent_service(
 pub fn list_fee_tiers(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     service_id: i64,
 ) -> Result<Vec<FeeTierRow>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn.prepare("SELECT id, service_id, min_amount, max_amount, fee, provider_cost FROM agent_fee_tiers WHERE service_id = ?1 ORDER BY min_amount ASC").map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![service_id], |row| {
@@ -134,6 +137,7 @@ pub fn list_fee_tiers(
 pub fn create_fee_tier(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: FeeTierPayload,
 ) -> Result<FeeTierRow, String> {
     let _user = require_admin(&session)?;
@@ -145,7 +149,7 @@ pub fn create_fee_tier(
             return Err("Nominal maksimal harus lebih besar dari nominal minimal".into());
         }
     }
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let exists: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM agent_service_templates WHERE id = ?1 AND is_active = 1",

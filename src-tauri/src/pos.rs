@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::init_schema, common::record_app_log,
+    auth::require_admin, auth::require_auth, common::get_db, common::DbConn, common::record_app_log,
     common::trim_optional, session::PublicUser, session::SessionState,
 };
 
@@ -273,6 +273,7 @@ fn enforce_discount_policy(
 pub fn checkout_pos_cash(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: PosCheckoutPayload,
 ) -> Result<PosCheckoutResponse, String> {
     let user = require_auth(&session)?;
@@ -291,7 +292,7 @@ pub fn checkout_pos_cash(
         return Err("Metode pembayaran tidak valid".into());
     }
 
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let now = chrono::Utc::now().to_rfc3339();
     let invoice_no = format!(
@@ -429,7 +430,7 @@ pub fn checkout_pos_cash(
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
-        &init_schema(&app)?,
+        &get_db(&db)?,
         "INFO",
         "pos",
         &format!("POS checkout {} Rp{:.0} ({})", invoice_no, total_amount, payment_method),
@@ -453,6 +454,7 @@ pub fn checkout_pos_cash(
 pub fn create_agent_transaction(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: AgentTransactionPayload,
 ) -> Result<TransactionDetailRow, String> {
     let user = require_auth(&session)?;
@@ -461,7 +463,7 @@ pub fn create_agent_transaction(
     if service_name.is_empty() {
         return Err("Nama layanan wajib diisi".into());
     }
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let invoice_no = format!(
         "BRK-{}-{}",
@@ -529,13 +531,13 @@ pub fn create_agent_transaction(
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
-        &init_schema(&app)?,
+        &get_db(&db)?,
         "INFO",
         "brilink",
         &format!("Agent trx {} Rp{:.0}", invoice_no, payload.fee),
     );
 
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     conn.query_row(
         "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
         params![trx_id],
@@ -553,6 +555,7 @@ pub fn create_agent_transaction(
 pub fn transaction_action(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: TransactionActionPayload,
 ) -> Result<TransactionDetailRow, String> {
     let _user = require_admin(&session)?;
@@ -565,7 +568,7 @@ pub fn transaction_action(
         return Err("Alasan minimal 3 karakter".into());
     }
 
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -684,7 +687,7 @@ pub fn transaction_action(
     }
 
     tx.commit().map_err(|e| e.to_string())?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let row = conn.query_row(
         "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
         params![payload.id],
@@ -709,10 +712,11 @@ pub fn transaction_action(
 pub fn get_transaction(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     id: i64,
 ) -> Result<TransactionDetailRow, String> {
     let user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let is_admin = user.role == "admin";
     conn.query_row(
         "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
@@ -735,11 +739,12 @@ pub fn get_transaction(
 pub fn get_dashboard(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     _payload: Option<DashboardPayload>,
 ) -> Result<DashboardResponse, String> {
     let user = require_auth(&session)?;
     let is_admin = user.role == "admin";
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let today = chrono::Local::now()
         .date_naive()
         .and_hms_opt(0, 0, 0)
@@ -879,10 +884,11 @@ pub fn get_dashboard(
 pub fn get_pos_report(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<PosReportPayload>,
 ) -> Result<PosReportResponse, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let now = chrono::Local::now();
     let start = payload
         .as_ref()
@@ -978,8 +984,9 @@ pub fn setup_complete(
     app: AppHandle,
     payload: SetupCompletePayload,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<SetupCompleteResponse, String> {
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
         .map_err(|e| e.to_string())?;

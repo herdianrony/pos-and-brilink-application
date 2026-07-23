@@ -240,7 +240,7 @@ export function DashboardPage({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">Dashboard</h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Ringkasan aktivitas bisnis Anda
           </p>
         </div>
@@ -480,7 +480,7 @@ export function DashboardPage({
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {accounts.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center py-8 text-sm text-slate-400">
+            <div className="flex-1 flex items-center justify-center py-8 text-sm text-slate-500">
               Belum ada rekening
             </div>
           ) : (
@@ -684,7 +684,7 @@ export function DashboardPage({
             Menipis
           </h3>
           {lowStockProducts.length === 0 ? (
-            <div className="text-center py-6 text-sm text-slate-400 flex flex-col items-center gap-2">
+            <div className="text-center py-6 text-sm text-slate-500 flex flex-col items-center gap-2">
               <CheckCircle2 size={28} className="text-emerald-500" />
               <span>Semua stok aman</span>
             </div>

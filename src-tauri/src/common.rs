@@ -2,7 +2,19 @@ use base64::Engine;
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager, State};
+
+/// Shared database connection, initialized once at startup.
+pub struct DbConn(pub Mutex<Connection>);
+
+impl DbConn {
+    /// Get a lock on the shared connection.
+    /// Returns a MutexGuard — drop it ASAP to avoid blocking other commands.
+    pub fn lock(&self) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
+        self.0.lock().map_err(|_| "Database lock poisoned".to_string())
+    }
+}
 
 pub fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
@@ -38,11 +50,18 @@ pub fn open_db(app: &AppHandle) -> Result<Connection, String> {
     Ok(conn)
 }
 
-pub fn init_schema(app: &AppHandle) -> Result<Connection, String> {
+/// Initialize database once at startup: open, migrate, seed.
+pub fn init_db(app: &AppHandle) -> Result<DbConn, String> {
     let conn = open_db(app)?;
     migrate(&conn)?;
     seed_defaults(&conn)?;
-    Ok(conn)
+    Ok(DbConn(Mutex::new(conn)))
+}
+
+/// Get the shared database connection from Tauri state.
+/// This is the preferred way for commands to access the DB.
+pub fn get_db(db: &State<'_, DbConn>) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
+    db.lock()
 }
 
 pub fn migrate(conn: &Connection) -> Result<(), String> {

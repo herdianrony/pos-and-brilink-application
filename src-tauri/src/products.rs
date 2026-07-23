@@ -95,9 +95,10 @@ pub struct ListProductsPayload {
 pub fn list_categories(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<Vec<CategoryRow>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, icon, color, is_active FROM product_categories WHERE is_active = 1 ORDER BY name ASC")
         .map_err(|e| e.to_string())?;
@@ -123,10 +124,11 @@ pub fn list_categories(
 pub fn create_category(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: CategoryPayload,
 ) -> Result<CategoryRow, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
         return Err("Nama kategori wajib diisi".into());
@@ -152,10 +154,11 @@ pub fn create_category(
 pub fn update_category(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: UpdateCategoryPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut sets = Vec::new();
     let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     if let Some(ref n) = payload.name {
@@ -193,10 +196,11 @@ pub fn update_category(
 pub fn deactivate_category(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: CategoryIdPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     conn.execute(
         "UPDATE product_categories SET is_active = 0 WHERE id = ?1",
         params![payload.category_id],
@@ -209,10 +213,11 @@ pub fn deactivate_category(
 pub fn list_products(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<ListProductsPayload>,
 ) -> Result<Vec<ProductRow>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let search = payload
         .as_ref()
         .and_then(|p| p.search.as_ref())
@@ -269,10 +274,11 @@ pub fn list_products(
 pub fn create_product(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: ProductPayload,
 ) -> Result<ProductRow, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
         return Err("Nama produk wajib diisi".into());
@@ -344,10 +350,11 @@ pub fn create_product(
 pub fn update_product(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: ProductUpdatePayload,
 ) -> Result<ProductRow, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
     if name.is_empty() {
         return Err("Nama produk wajib diisi".into());
@@ -430,10 +437,11 @@ pub fn update_product(
 pub fn deactivate_product(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: ProductIdPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
         "UPDATE products SET is_active = 0, updated_at = ?1 WHERE id = ?2",
@@ -447,10 +455,11 @@ pub fn deactivate_product(
 pub fn get_product_image(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: ProductIdPayload,
 ) -> Result<Option<String>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let image_path: Option<String> = conn
         .query_row(
             "SELECT image_path FROM products WHERE id = ?1 AND is_active = 1",
@@ -513,13 +522,14 @@ pub struct RestockPayload {
 pub fn restock_product(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: RestockPayload,
 ) -> Result<ProductRow, String> {
     let _user = require_admin(&session)?;
     if payload.quantity <= 0 {
         return Err("Jumlah restock harus lebih dari 0".into());
     }
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
 
     // Check product exists and is active

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::bounded_limit, common::init_schema, common::record_app_log,
+    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, common::record_app_log,
     session::SessionState,
 };
 
@@ -78,6 +78,7 @@ pub struct RestoreBackupPayload {
 pub fn list_transactions(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<ListTransactionsPayload>,
 ) -> Result<Vec<TransactionRow>, String> {
     let user = require_auth(&session)?;
@@ -87,7 +88,7 @@ pub fn list_transactions(
         .unwrap_or(50)
         .clamp(1, 500);
     let is_admin = user.role == "admin";
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
 
     let mut sql = String::from(
         r#"SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
@@ -152,10 +153,11 @@ pub fn list_transactions(
 pub fn list_transaction_items(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: TransactionIdPayload,
 ) -> Result<Vec<TransactionItemRow>, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn.prepare("SELECT id, transaction_id, product_id, product_name, quantity, unit_price, subtotal FROM transaction_items WHERE transaction_id = ?1 ORDER BY id ASC").map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![payload.transaction_id], |row| {
@@ -181,11 +183,12 @@ pub fn list_transaction_items(
 pub fn list_app_logs(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<i64>,
 ) -> Result<Vec<AppLogRow>, String> {
     let _user = require_admin(&session)?;
     let limit = bounded_limit(payload.as_ref(), 80, 500);
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare(
             "SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT ?1",
@@ -213,9 +216,10 @@ pub fn list_app_logs(
 pub fn create_database_backup(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<BackupRow, String> {
     let _user = require_admin(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);").ok();
     drop(conn);
 
@@ -231,7 +235,7 @@ pub fn create_database_backup(
     let target = dir.join(&name);
     std::fs::copy(&source, &target).map_err(|e| format!("Gagal membuat backup: {e}"))?;
     let metadata = std::fs::metadata(&target).map_err(|e| e.to_string())?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     record_app_log(&conn, "INFO", "backup", &format!("Backup dibuat: {name}"));
     Ok(BackupRow {
         name,
@@ -245,6 +249,7 @@ pub fn create_database_backup(
 pub fn list_database_backups(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
 ) -> Result<Vec<BackupRow>, String> {
     let _user = require_admin(&session)?;
     let dir = crate::common::backup_dir(&app)?;
@@ -276,6 +281,7 @@ pub fn list_database_backups(
 pub fn restore_database_backup(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: RestoreBackupPayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
@@ -306,7 +312,7 @@ pub fn restore_database_backup(
     let _ = std::fs::remove_file(&shm);
     std::fs::copy(&canonical_backup, &target)
         .map_err(|e| format!("Gagal restore database: {e}"))?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     record_app_log(
         &conn,
         "WARN",

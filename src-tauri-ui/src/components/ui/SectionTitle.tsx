@@ -26,7 +26,7 @@ export function SectionTitle({
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">{title}</h2>
           {desc && (
-            <p className="text-sm text-slate-400 font-semibold">{desc}</p>
+            <p className="text-sm text-slate-500 font-semibold">{desc}</p>
           )}
         </div>
       </div>

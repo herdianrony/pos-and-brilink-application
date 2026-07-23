@@ -2,7 +2,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_auth, common::bounded_limit, common::init_schema, session::SessionState};
+use crate::{auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, session::SessionState};
 
 #[derive(Debug, Serialize)]
 pub struct DebtRow {
@@ -44,11 +44,12 @@ pub struct DebtIdPayload {
 pub fn list_debts(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: Option<i64>,
 ) -> Result<Vec<DebtRow>, String> {
     let _user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 100, 500);
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let mut stmt = conn.prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT ?1").map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![limit], |row| {
@@ -79,10 +80,11 @@ pub fn list_debts(
 pub fn create_debt(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: DebtPayload,
 ) -> Result<DebtRow, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let customer_name = payload.customer_name.trim().to_string();
     if customer_name.is_empty() {
         return Err("Nama pelanggan wajib diisi".into());
@@ -115,13 +117,14 @@ pub fn create_debt(
 pub fn add_debt_payment(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: DebtPaymentPayload,
 ) -> Result<DebtRow, String> {
     let _user = require_auth(&session)?;
     if payload.amount <= 0.0 {
         return Err("Nominal pembayaran harus lebih dari 0".into());
     }
-    let mut conn = init_schema(&app)?;
+    let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let debt = tx.query_row(
@@ -172,10 +175,11 @@ pub fn add_debt_payment(
 pub fn build_debt_reminder(
     app: AppHandle,
     session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
     payload: DebtIdPayload,
 ) -> Result<String, String> {
     let _user = require_auth(&session)?;
-    let conn = init_schema(&app)?;
+    let conn = get_db(&db)?;
     let debt = conn
         .query_row(
             "SELECT customer_name, amount, paid_amount, notes FROM debts WHERE id = ?1 LIMIT 1",

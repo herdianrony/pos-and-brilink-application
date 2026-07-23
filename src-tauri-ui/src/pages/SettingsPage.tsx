@@ -130,7 +130,7 @@ export function SettingsPage({
         <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
           Pengaturan
         </h2>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Kelola pengguna, produk, transaksi, utang, cadangan data, dan info aplikasi
         </p>
       </div>
@@ -156,7 +156,7 @@ export function SettingsPage({
                 {editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
               </h3>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               {editingUser
                 ? `Mengedit: ${editingUser.name} — kosongkan password jika tidak ingin mengubah.`
                 : "Buat akun kasir agar staf tidak memakai akun owner."}
@@ -656,7 +656,7 @@ export function SettingsPage({
                 Unduh Data CSV
               </h3>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               Unduh CSV ringan untuk arsip manual atau olah data di spreadsheet.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -754,7 +754,7 @@ export function SettingsPage({
                 Info Aplikasi
               </h3>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               Informasi penyimpanan lokal dan status keamanan data.
             </p>
             <div className="space-y-2.5">
