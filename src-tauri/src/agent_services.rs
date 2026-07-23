@@ -172,3 +172,27 @@ pub fn create_fee_tier(
         provider_cost,
     })
 }
+
+/// Look up fee and provider_cost from fee tiers based on service name and amount.
+/// Returns (fee, provider_cost) or None if no matching tier found.
+pub fn lookup_fee(
+    conn: &rusqlite::Connection,
+    service_name: &str,
+    amount: f64,
+) -> Option<(f64, f64)> {
+    // Find the service template by name
+    let service_id: i64 = conn
+        .query_row(
+            "SELECT id FROM agent_service_templates WHERE name = ?1 AND is_active = 1",
+            params![service_name],
+            |row| row.get(0),
+        )
+        .ok()?;
+    // Find matching fee tier
+    conn.query_row(
+        "SELECT fee, provider_cost FROM agent_fee_tiers WHERE service_id = ?1 AND min_amount <= ?2 AND (max_amount IS NULL OR max_amount >= ?2) ORDER BY min_amount DESC LIMIT 1",
+        params![service_id, amount],
+        |row| Ok((row.get::<_, f64>(0)?, row.get::<_, f64>(1)?)),
+    )
+    .ok()
+}

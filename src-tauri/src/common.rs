@@ -213,6 +213,9 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     .map_err(|e| format!("Gagal migrasi database: {e}"))?;
     conn.execute("ALTER TABLE products ADD COLUMN image_path TEXT", [])
         .ok();
+    // Add user_id to transactions for audit trail (who created each transaction)
+    conn.execute("ALTER TABLE transactions ADD COLUMN user_id INTEGER REFERENCES users(id)", [])
+        .ok();
     // Add foreign key for debt_payments.debt_id → debts(id)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id)", [])
         .ok();

@@ -213,7 +213,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
         transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: null, product_name: `Layanan: ${service.service_name}`, quantity: 1, unit_price: subtotal, subtotal });
       }
       const invoice = `POS-MOCK-${trxId}`;
-      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "pos", customer_name: null, total_amount: total, profit, payment_method: method, status: "completed", notes: null, created_at: now() });
+      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "pos", customer_name: null, total_amount: total, profit, payment_method: method, status: "completed", notes: null, created_at: now(), user_id: 1 });
       addMutation(settlement, method === "transfer" ? "pos_transfer_in" : method === "qris" ? "pos_qris_in" : "pos_in", total, invoice, trxId);
       log("pos", `Checkout POS berhasil: ${invoice}`);
       return { ok: true, transaction_id: trxId, invoice_no: invoice, total_amount: total, profit, settlement_account_id: settlement.id, settlement_balance: settlement.balance } as T;
@@ -244,7 +244,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       const providerCost = Number(payload.provider_cost || 0);
       const total = Number(payload.amount || 0) + fee;
       const invoice = `AGN-MOCK-${trxId}`;
-      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "agent", customer_name: payload.customer_name || null, total_amount: total, profit: fee - providerCost, payment_method: "mixed", status: "completed", notes: payload.service_name, created_at: now() });
+      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "agent", customer_name: payload.customer_name || null, total_amount: total, profit: fee - providerCost, payment_method: "mixed", status: "completed", notes: payload.service_name, created_at: now(), user_id: 1 });
       if (payload.cash_effect) addMutation(accounts[0], "agent_cash_effect", Number(payload.cash_effect), payload.service_name, trxId);
       const account = accounts.find((item) => item.id === payload.account_id);
       if (account && payload.bank_effect) addMutation(account, "agent_bank_effect", Number(payload.bank_effect), payload.service_name, trxId);

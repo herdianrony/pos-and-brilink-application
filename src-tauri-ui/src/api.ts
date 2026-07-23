@@ -96,6 +96,7 @@ export interface TransactionRow {
   status: string;
   notes?: string | null;
   created_at: string;
+  user_id?: number | null;
 }
 
 export interface TransactionItemRow {

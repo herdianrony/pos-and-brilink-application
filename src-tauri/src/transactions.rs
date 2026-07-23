@@ -19,6 +19,7 @@ pub struct TransactionRow {
     pub status: String,
     pub notes: Option<String>,
     pub created_at: String,
+    pub user_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -91,7 +92,7 @@ pub fn list_transactions(
     let conn = get_db(&db)?;
 
     let mut sql = String::from(
-        r#"SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at
+        r#"SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id
         FROM transactions
         WHERE status NOT IN ('void', 'reversed')"#,
     );
@@ -139,6 +140,7 @@ pub fn list_transactions(
                 status: row.get(7)?,
                 notes: row.get(8)?,
                 created_at: row.get(9)?,
+                user_id: row.get(10)?,
             })
         })
         .map_err(|e| e.to_string())?;

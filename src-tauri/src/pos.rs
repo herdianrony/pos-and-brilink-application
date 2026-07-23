@@ -76,6 +76,7 @@ pub struct TransactionDetailRow {
     pub status: String,
     pub notes: Option<String>,
     pub created_at: String,
+    pub user_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -353,8 +354,8 @@ pub fn checkout_pos_cash(
     // ── Create transaction ──
     let status = "completed";
     tx.execute(
-        "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at) VALUES (?1, 'pos', NULL, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![invoice_no, total_amount, total_profit, payment_method, status, trim_optional(payload.notes).unwrap_or_default(), now],
+        "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id) VALUES (?1, 'pos', NULL, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![invoice_no, total_amount, total_profit, payment_method, status, trim_optional(payload.notes).unwrap_or_default(), now, user.id],
     )
     .map_err(|e| e.to_string())?;
     let trx_id = tx.last_insert_rowid();
@@ -470,13 +471,22 @@ pub fn create_agent_transaction(
         chrono::Utc::now().format("%Y%m%d%H%M%S"),
         chrono::Utc::now().timestamp_subsec_millis()
     );
-    let provider_cost = payload.provider_cost.unwrap_or(0.0);
-    let profit = payload.fee - provider_cost;
+    // Try to auto-calculate fee from tiers if frontend sends fee=0
+    let (fee, provider_cost) = if payload.fee == 0.0 {
+        if let Some((tier_fee, tier_pc)) = crate::agent_services::lookup_fee(&tx, &service_name, payload.amount) {
+            (tier_fee, tier_pc)
+        } else {
+            (payload.fee, payload.provider_cost.unwrap_or(0.0))
+        }
+    } else {
+        (payload.fee, payload.provider_cost.unwrap_or(0.0))
+    };
+    let profit = fee - provider_cost;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
     tx.execute(
-        "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at) VALUES (?1, 'brilink', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6)",
-        params![invoice_no, payload.customer_name, payload.fee, profit, trim_optional(payload.notes), now],
+        "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id) VALUES (?1, 'brilink', ?2, ?3, ?4, 'cash', 'completed', ?5, ?6, ?7)",
+        params![invoice_no, payload.customer_name, fee, profit, trim_optional(payload.notes), now, user.id],
     ).map_err(|e| e.to_string())?;
     let trx_id = tx.last_insert_rowid();
 
@@ -534,12 +544,12 @@ pub fn create_agent_transaction(
         &get_db(&db)?,
         "INFO",
         "brilink",
-        &format!("Agent trx {} Rp{:.0}", invoice_no, payload.fee),
+        &format!("Agent trx {} Rp{:.0}", invoice_no, fee),
     );
 
     let conn = get_db(&db)?;
     conn.query_row(
-        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
+        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id FROM transactions WHERE id = ?1",
         params![trx_id],
         |row| Ok(TransactionDetailRow {
             id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
@@ -689,7 +699,7 @@ pub fn transaction_action(
     tx.commit().map_err(|e| e.to_string())?;
     let conn = get_db(&db)?;
     let row = conn.query_row(
-        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
+        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id FROM transactions WHERE id = ?1",
         params![payload.id],
         |row| Ok(TransactionDetailRow {
             id: row.get(0)?, invoice_no: row.get(1)?, transaction_type: row.get(2)?,
@@ -719,7 +729,7 @@ pub fn get_transaction(
     let conn = get_db(&db)?;
     let is_admin = user.role == "admin";
     conn.query_row(
-        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE id = ?1",
+        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id FROM transactions WHERE id = ?1",
         params![id],
         |row| {
             let profit = row.get::<_, f64>(5)?;
@@ -787,7 +797,7 @@ pub fn get_dashboard(
 
     // Recent transactions
     let mut stmt = conn.prepare(
-        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at FROM transactions WHERE status NOT IN ('void','reversed') ORDER BY id DESC LIMIT 8"
+        "SELECT id, invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id FROM transactions WHERE status NOT IN ('void','reversed') ORDER BY id DESC LIMIT 8"
     ).map_err(|e| e.to_string())?;
     let recent: Vec<TransactionDetailRow> = stmt
         .query_map([], |row| {
