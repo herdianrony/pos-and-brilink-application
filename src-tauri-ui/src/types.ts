@@ -39,16 +39,11 @@ export type IconName =
   | "dashboard"
   | "pos"
   | "brilink"
-  | "products"
   | "history"
-  | "statement"
   | "cash"
+  | "keuangan"
   | "settings"
-  | "search"
-  | "debts"
-  | "reports"
-  | "logs"
-  | "keuangan";
+  | "search";
 
 export type AgentForm = {
   service_name: string;

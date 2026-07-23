@@ -1,13 +1,13 @@
-import type { AccountMutationRow, AccountRow, CategoryRow, DebtRow, ProductRow, TransactionRow } from "../api";
+import type { AccountMutationRow, AccountRow, BackupRow, CategoryRow, DebtRow, ProductRow, PublicUser, TransactionRow, AppLogRow } from "../api";
+import type { CartItem, AgentCartItem, AgentForm, ViewKey } from "../types";
+import type { TransactionItemRow } from "../api";
+import type { FormEvent } from "react";
 import { DashboardPage } from "../pages/DashboardPage";
 import { POSPage } from "../pages/POSPage";
 import { AgentServicesPage } from "../pages/AgentServicesPage";
 import { HistoryPage } from "../pages/HistoryPage";
 import { KeuanganPage } from "../pages/KeuanganPage";
 import { SettingsPage } from "../pages/SettingsPage";
-import type { ViewKey } from "../types";
-import type { PublicUser, AppLogRow, BackupRow } from "../api";
-import type { FormEvent } from "react";
 
 export function AppRouter({
   activeView,
@@ -89,7 +89,7 @@ export function AppRouter({
   loading: boolean;
   dbPath: string;
   // POS
-  cart: any[];
+  cart: CartItem[];
   cartTotal: number;
   paymentMethod: "cash" | "transfer" | "qris";
   settlementAccountId: string;
@@ -97,7 +97,7 @@ export function AppRouter({
   posCategoryFilter: string;
   onCategoryFilterChange: (v: string) => void;
   onAddToCart: (p: ProductRow) => void;
-  onAddAgentService: (s: any) => void;
+  onAddAgentService: (s: Omit<AgentCartItem, "type" | "id">) => void;
   onUpdateQty: (id: number, qty: number) => void;
   onPaymentMethodChange: (m: "cash" | "transfer" | "qris") => void;
   onSettlementAccountChange: (v: string) => void;
@@ -105,21 +105,26 @@ export function AppRouter({
   onClearCart: () => void;
   onSubmitCheckout: (cash?: number) => void;
   // Agent
-  agentForm: any;
+  agentForm: AgentForm;
   agentStep: 1 | 2 | 3;
-  onAgentFormChange: (f: any) => void;
+  onAgentFormChange: (f: AgentForm) => void;
   onAgentStepChange: (s: 1 | 2 | 3) => void;
-  onApplyPreset: (k: string) => void;
+  onApplyPreset: (k: "withdraw" | "deposit" | "transfer" | "payment") => void;
   onSubmitAgentTransaction: (e: FormEvent) => void;
   // Transaction detail
-  selectedTransaction: any;
-  selectedTransactionItems: any[];
+  selectedTransaction: TransactionRow | null;
+  selectedTransactionItems: TransactionItemRow[];
   onOpenDetail: (id: number) => void;
   // Settings
-  userForm: any;
-  onUserFormChange: (f: any) => void;
+  userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
+  onUserFormChange: (f: { name: string; username: string; password: string; role: "admin" | "kasir" }) => void;
   onSubmitUser: (e: FormEvent) => void;
-  onExportCsv: (filename: string, rows: any[]) => void;
+  onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
+  onAddAccount: () => void;
+  onTransfer: (account?: AccountRow) => void;
+  onAdjust: (account: AccountRow) => void;
+  onOwnerDraw: (account: AccountRow) => void;
+  onBankFee: (account: AccountRow) => void;
   onCreateBackup: () => void;
   onRestoreBackup: (b: BackupRow) => void;
   onRefreshLogs: () => void;
@@ -184,11 +189,11 @@ export function AppRouter({
           mutations={accountMutations}
           transactions={filteredTransactions}
           saving={saving}
-          onAddAccount={() => {}}
-          onTransfer={() => {}}
-          onAdjust={() => {}}
-          onOwnerDraw={() => {}}
-          onBankFee={() => {}}
+          onAddAccount={onAddAccount}
+          onTransfer={onTransfer}
+          onAdjust={onAdjust}
+          onOwnerDraw={onOwnerDraw}
+          onBankFee={onBankFee}
           onExportCsv={onExportCsv}
         />
       );

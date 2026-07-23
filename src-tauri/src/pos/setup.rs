@@ -60,7 +60,7 @@ pub fn setup_complete(
             .map_err(|e| format!("Cash account not found: {e}"))?;
         tx.execute("UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3", params![cash_opening, now, cash_account_id])
             .map_err(|e| e.to_string())?;
-        let new_bal: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cash_account_id], |r| r.get(0)).unwrap_or(0.0);
+        let new_bal: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cash_account_id], |r| r.get(0)).map_err(|e| e.to_string())?;
         tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (?1, 'opening', ?2, ?3, 'Saldo awal dari Setup Wizard', ?4)", params![cash_account_id, cash_opening, new_bal, now])
             .map_err(|e| e.to_string())?;
     }

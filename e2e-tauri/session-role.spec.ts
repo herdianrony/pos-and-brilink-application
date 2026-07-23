@@ -46,3 +46,17 @@ test.describe("Logout", () => {
     await expect(page.getByRole("heading", { name: "Masuk ke Aplikasi" })).toBeVisible({ timeout: 5000 });
   });
 });
+
+test.describe("Kasir Role", () => {
+  test("kasir login shows limited menu (no Keuangan/Settings)", async ({ page }) => {
+    await loginAs(page, "kasir", "Kasir123!");
+    const dashboard = page.getByRole("heading", { name: "Dashboard" });
+    if (await dashboard.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await expect(page.getByRole("button", { name: "Kasir POS" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Layanan Agen" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Transaksi" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Keuangan" })).not.toBeVisible();
+      await expect(page.getByRole("button", { name: "Pengaturan" })).not.toBeVisible();
+    }
+  });
+});

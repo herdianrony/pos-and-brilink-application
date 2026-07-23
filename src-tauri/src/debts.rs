@@ -167,7 +167,7 @@ pub fn add_debt_payment(
             if affected > 0 {
                 let new_bal: f64 = tx.query_row(
                     "SELECT balance FROM accounts WHERE id = ?1", params![cash_id], |r| r.get(0),
-                ).unwrap_or(0.0);
+                ).map_err(|e| e.to_string())?;
                 tx.execute(
                     "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'debt_payment', ?2, ?3, ?4, ?5, ?6)",
                     params![cash_id, payment_amount, new_bal, format!("Pembayaran hutang: {}", debt.1), debt.0, now],

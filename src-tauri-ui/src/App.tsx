@@ -387,6 +387,11 @@ export default function App() {
           onUserFormChange={setUserForm}
           onSubmitUser={submitUser}
           onExportCsv={exportCsv}
+          onAddAccount={openAddAccount}
+          onTransfer={openTransfer}
+          onAdjust={openAdjust}
+          onOwnerDraw={openOwnerDraw}
+          onBankFee={openBankFee}
           onCreateBackup={handleCreateBackup}
           onRestoreBackup={handleRestoreBackup}
           onRefreshLogs={refreshApp}
