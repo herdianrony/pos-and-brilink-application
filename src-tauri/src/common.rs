@@ -12,7 +12,9 @@ impl DbConn {
     /// Get a lock on the shared connection.
     /// Returns a MutexGuard — drop it ASAP to avoid blocking other commands.
     pub fn lock(&self) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
-        self.0.lock().map_err(|_| "Database lock poisoned".to_string())
+        self.0
+            .lock()
+            .map_err(|_| "Database lock poisoned".to_string())
     }
 }
 
@@ -46,7 +48,8 @@ pub fn open_db(app: &AppHandle) -> Result<Connection, String> {
     let path = db_path(app)?;
     let conn = Connection::open(path).map_err(|e| format!("Gagal membuka database: {e}"))?;
     conn.pragma_update(None, "journal_mode", "WAL").ok();
-    conn.pragma_update(None, "foreign_keys", "ON").map_err(|e| format!("Failed to enable foreign keys: {e}"))?;
+    conn.pragma_update(None, "foreign_keys", "ON")
+        .map_err(|e| format!("Failed to enable foreign keys: {e}"))?;
     Ok(conn)
 }
 
@@ -60,7 +63,9 @@ pub fn init_db(app: &AppHandle) -> Result<DbConn, String> {
 
 /// Get the shared database connection from Tauri state.
 /// This is the preferred way for commands to access the DB.
-pub fn get_db<'a>(db: &'a State<'a, DbConn>) -> Result<std::sync::MutexGuard<'a, Connection>, String> {
+pub fn get_db<'a>(
+    db: &'a State<'a, DbConn>,
+) -> Result<std::sync::MutexGuard<'a, Connection>, String> {
     db.lock()
 }
 
@@ -214,20 +219,32 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     conn.execute("ALTER TABLE products ADD COLUMN image_path TEXT", [])
         .ok();
     // Add user_id to transactions for audit trail (who created each transaction)
-    conn.execute("ALTER TABLE transactions ADD COLUMN user_id INTEGER REFERENCES users(id)", [])
-        .ok();
+    conn.execute(
+        "ALTER TABLE transactions ADD COLUMN user_id INTEGER REFERENCES users(id)",
+        [],
+    )
+    .ok();
     // Add foreign key for debt_payments.debt_id → debts(id)
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id)", [])
-        .ok();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id)",
+        [],
+    )
+    .ok();
     // Add secondary indexes for frequently queried columns
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)", [])
-        .ok();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)",
+        [],
+    )
+    .ok();
     conn.execute("CREATE INDEX IF NOT EXISTS idx_account_mutations_account_created ON account_mutations(account_id, created_at)", [])
         .ok();
     conn.execute("CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)", [])
         .ok();
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_app_logs_created_at ON app_logs(created_at)", [])
-        .ok();
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_app_logs_created_at ON app_logs(created_at)",
+        [],
+    )
+    .ok();
     Ok(())
 }
 
@@ -323,12 +340,12 @@ pub fn product_image_data_url(
 
 /// Build a dynamic SQL query with optional filters.
 /// Returns (sql_string, boxed_params) ready for prepared statement.
-pub fn build_query(
-    base_sql: &str,
-    filters: &[(&str, Option<&str>)],
-    suffix: &str,
-    extra_params: &[&dyn rusqlite::types::ToSql],
-) -> (String, Vec<Box<dyn rusqlite::types::ToSql + '_>>) {
+pub fn build_query<'a>(
+    base_sql: &'a str,
+    filters: &'a [(&'a str, Option<&'a str>)],
+    suffix: &'a str,
+    extra_params: &'a [&'a dyn rusqlite::types::ToSql],
+) -> (String, Vec<Box<dyn rusqlite::types::ToSql + 'a>>) {
     let mut sql = String::from(base_sql);
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     for (col_op, value) in filters {
