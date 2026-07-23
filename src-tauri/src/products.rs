@@ -132,7 +132,7 @@ pub fn create_category(
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
-    if name.is_empty() {
+    if name.is_empty() || name.len() > 200 {
         return Err("Nama kategori wajib diisi".into());
     }
     let icon = trim_optional(payload.icon);
@@ -282,7 +282,7 @@ pub fn create_product(
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
-    if name.is_empty() {
+    if name.is_empty() || name.len() > 200 {
         return Err("Nama produk wajib diisi".into());
     }
     let buy_price = round_money(payload.buy_price);
@@ -356,7 +356,7 @@ pub fn update_product(
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let name = payload.name.trim().to_string();
-    if name.is_empty() {
+    if name.is_empty() || name.len() > 200 {
         return Err("Nama produk wajib diisi".into());
     }
     let buy_price = round_money(payload.buy_price);

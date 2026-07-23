@@ -34,7 +34,7 @@ export function ReportsPage({
   }).filter((row) => row.value > 0);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4" role="tabpanel" aria-label="Laporan">
       <PageHeader
         eyebrow="Analitik Bisnis"
         title="Laporan"

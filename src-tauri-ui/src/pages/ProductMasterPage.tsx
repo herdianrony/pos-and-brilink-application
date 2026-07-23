@@ -125,7 +125,7 @@ export function ProductMasterPage({
                             title="Edit produk"
                             aria-label={`Edit ${product.name}`}
                             onClick={() => onEditProduct(product)}
-                            className="inline-flex items-center justify-center h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors duration-150"
+                            className="inline-flex items-center justify-center h-11 w-11 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors duration-150"
                           >
                             <Pencil size={16} />
                           </button>
@@ -134,7 +134,7 @@ export function ProductMasterPage({
                             title="Hapus produk"
                             aria-label={`Hapus ${product.name}`}
                             onClick={() => onRemoveProduct(product)}
-                            className="inline-flex items-center justify-center h-9 w-9 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
+                            className="inline-flex items-center justify-center h-11 w-11 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
                           >
                             <Trash2 size={16} />
                           </button>

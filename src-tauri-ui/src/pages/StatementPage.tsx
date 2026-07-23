@@ -66,7 +66,7 @@ export function StatementPage({
       : 0;
 
   return (
-    <div className={embedded ? "grid gap-6" : "grid gap-6 animate-fadeIn"}>
+    <div className={embedded ? "grid gap-6" : "grid gap-6 animate-fadeIn"} role="tabpanel" aria-label="Rekening Koran">
       {!embedded && (
         <PageHeader
           eyebrow="Keuangan"

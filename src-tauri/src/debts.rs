@@ -87,7 +87,7 @@ pub fn create_debt(
     let _user = require_auth(&session)?;
     let conn = get_db(&db)?;
     let customer_name = payload.customer_name.trim().to_string();
-    if customer_name.is_empty() {
+    if customer_name.is_empty() || customer_name.len() > 200 {
         return Err("Nama pelanggan wajib diisi".into());
     }
     let amount = round_money(payload.amount);

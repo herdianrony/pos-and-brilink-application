@@ -142,8 +142,8 @@ pub fn create_account(
     let mut conn = get_db(&db)?;
     let code = crate::common::normalize_code(&payload.code);
     let name = payload.name.trim().to_string();
-    let initial_balance = payload.initial_balance.unwrap_or(0.0);
-    let min_balance = payload.min_balance.unwrap_or(0.0);
+    let initial_balance = payload.initial_balance.map_err(|e| format!("Query error: {e}"))?;
+    let min_balance = payload.min_balance.map_err(|e| format!("Query error: {e}"))?;
     if code.is_empty() || name.is_empty() {
         return Err("Kode dan nama rekening wajib diisi".into());
     }
@@ -448,7 +448,7 @@ pub fn get_mutation_summary(
         opening_params.iter().map(|b| b.as_ref()).collect();
     let opening_balance: f64 = conn
         .query_row(&opening_sql, opening_refs.as_slice(), |row| row.get(0))
-        .unwrap_or(0.0);
+        .map_err(|e| format!("Query error: {e}"))?;
 
     let summary = conn
         .query_row(&sql, param_refs.as_slice(), |row| {

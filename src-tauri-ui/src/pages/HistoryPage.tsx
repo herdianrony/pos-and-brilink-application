@@ -225,7 +225,7 @@ export function HistoryPage({
                     </td>
                     <td className="p-3 text-center">
                       <button
-                        className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-xl"
+                        className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Lihat detail"
                       >
                         <Eye size={14} />
