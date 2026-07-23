@@ -428,6 +428,7 @@ export default function App() {
             onExportCsv={exportCsv}
             onCreateBackup={handleCreateBackup}
             onRestoreBackup={handleRestoreBackup}
+            onMessage={setMessage}
           />
         );
       case "dashboard":

@@ -6,11 +6,13 @@ import { ProductsTab } from "./settings/ProductsTab";
 import { DebtsTab } from "./settings/DebtsTab";
 import { BackupTab } from "./settings/BackupTab";
 import { AboutTab } from "./settings/AboutTab";
+import { WhatsAppPage } from "./settings/WhatsAppTab";
 
 const TAB_ITEMS = [
   { id: "pengguna", label: "Pengguna" },
   { id: "produk", label: "Produk" },
   { id: "utang", label: "Utang" },
+  { id: "whatsapp", label: "WhatsApp" },
   { id: "backup", label: "Backup & Export" },
   { id: "tentang", label: "Tentang & Log" },
 ] as const;
@@ -19,7 +21,7 @@ type TabId = (typeof TAB_ITEMS)[number]["id"];
 
 export function SettingsPage({
   users, userForm, saving, transactions, mutations, debts, products, backups, dbPath, logs,
-  onRefreshLogs, onUserFormChange, onSubmitUser, onExportCsv, onCreateBackup, onRestoreBackup,
+  onRefreshLogs, onUserFormChange, onSubmitUser, onExportCsv, onCreateBackup, onRestoreBackup, onMessage,
 }: {
   users: PublicUser[];
   userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
@@ -37,6 +39,7 @@ export function SettingsPage({
   onExportCsv: (filename: string, rows: Array<Record<string, string | number | null | undefined>>) => void;
   onCreateBackup: () => void;
   onRestoreBackup: (backup: BackupRow) => void;
+  onMessage: (msg: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("pengguna");
 
@@ -58,6 +61,7 @@ export function SettingsPage({
       {activeTab === "pengguna" && <UsersTab users={users} saving={saving} onSubmitUser={handleUserSubmit} />}
       {activeTab === "produk" && <ProductsTab products={products} onExportCsv={onExportCsv} />}
       {activeTab === "utang" && <DebtsTab debts={debts} onExportCsv={onExportCsv} />}
+      {activeTab === "whatsapp" && <WhatsAppPage saving={saving} onMessage={onMessage} />}
       {activeTab === "backup" && <BackupTab transactions={transactions} mutations={mutations} debts={debts} products={products} backups={backups} saving={saving} onCreateBackup={onCreateBackup} onRestoreBackup={onRestoreBackup} onExportCsv={onExportCsv} />}
       {activeTab === "tentang" && <AboutTab dbPath={dbPath} logs={logs} onRefreshLogs={onRefreshLogs} />}
     </div>
