@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::{require_admin, require_auth};
-use crate::common::{get_db, round_money, DbConn, product_images_dir, record_app_log, trim_optional};
+use crate::common::{
+    get_db, product_images_dir, record_app_log, round_money, trim_optional, DbConn,
+};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -93,7 +95,7 @@ pub struct ListProductsPayload {
 
 #[tauri::command]
 pub fn list_categories(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
 ) -> Result<Vec<CategoryRow>, String> {
@@ -122,7 +124,7 @@ pub fn list_categories(
 
 #[tauri::command]
 pub fn create_category(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: CategoryPayload,
@@ -152,7 +154,7 @@ pub fn create_category(
 
 #[tauri::command]
 pub fn update_category(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: UpdateCategoryPayload,
@@ -194,7 +196,7 @@ pub fn update_category(
 
 #[tauri::command]
 pub fn deactivate_category(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: CategoryIdPayload,
@@ -211,7 +213,7 @@ pub fn deactivate_category(
 
 #[tauri::command]
 pub fn list_products(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<ListProductsPayload>,
@@ -285,11 +287,7 @@ pub fn create_product(
     }
     let buy_price = round_money(payload.buy_price);
     let sell_price = round_money(payload.sell_price);
-    if buy_price < 0.0
-        || sell_price <= 0.0
-        || payload.stock < 0
-        || payload.min_stock < 0
-    {
+    if buy_price < 0.0 || sell_price <= 0.0 || payload.stock < 0 || payload.min_stock < 0 {
         return Err("Harga jual harus lebih dari 0, harga beli dan stok tidak boleh minus".into());
     }
     let barcode = trim_optional(payload.barcode);
@@ -363,11 +361,7 @@ pub fn update_product(
     }
     let buy_price = round_money(payload.buy_price);
     let sell_price = round_money(payload.sell_price);
-    if buy_price < 0.0
-        || sell_price <= 0.0
-        || payload.stock < 0
-        || payload.min_stock < 0
-    {
+    if buy_price < 0.0 || sell_price <= 0.0 || payload.stock < 0 || payload.min_stock < 0 {
         return Err("Harga jual harus lebih dari 0, harga beli dan stok tidak boleh minus".into());
     }
     let barcode = trim_optional(payload.barcode);
@@ -439,7 +433,7 @@ pub fn update_product(
 
 #[tauri::command]
 pub fn deactivate_product(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: ProductIdPayload,
@@ -524,7 +518,7 @@ pub struct RestockPayload {
 
 #[tauri::command]
 pub fn restock_product(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: RestockPayload,

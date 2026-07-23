@@ -6,9 +6,9 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use crate::common::{get_db, validate_password, DbConn, record_app_log};
+use crate::common::{get_db, record_app_log, validate_password, DbConn};
 use crate::session::PublicUser;
-use crate::session::{SessionState, persist_session, load_persisted_session};
+use crate::session::{load_persisted_session, persist_session, SessionState};
 
 /// In-memory rate limiter: username -> (attempt_count, first_attempt_timestamp)
 pub struct LoginRateLimiter(pub Mutex<HashMap<String, (u32, i64)>>);
@@ -110,7 +110,7 @@ pub fn db_init(app: AppHandle) -> Result<DbStatus, String> {
 }
 
 #[tauri::command]
-pub fn setup_status(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupStatus, String> {
+pub fn setup_status(_app: AppHandle, db: State<'_, DbConn>) -> Result<SetupStatus, String> {
     let conn = get_db(&db)?;
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
@@ -164,7 +164,7 @@ pub fn create_admin(
 
 #[tauri::command]
 pub fn list_users(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
 ) -> Result<Vec<PublicUser>, String> {
@@ -192,7 +192,7 @@ pub fn list_users(
 
 #[tauri::command]
 pub fn create_user(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: CreateUserPayload,
@@ -365,7 +365,7 @@ pub struct UpdateUserPayload {
 
 #[tauri::command]
 pub fn update_user(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: UpdateUserPayload,
@@ -443,7 +443,7 @@ pub fn update_user(
 
 #[tauri::command]
 pub fn deactivate_user(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     user_id: i64,
@@ -465,14 +465,21 @@ pub fn deactivate_user(
 #[tauri::command]
 pub fn get_me(app: AppHandle, session: State<'_, SessionState>) -> Result<PublicUser, String> {
     // Try in-memory first
-    let in_memory = session.0.lock().map_err(|_| "Session tidak valid".to_string())?.clone();
+    let in_memory = session
+        .0
+        .lock()
+        .map_err(|_| "Session tidak valid".to_string())?
+        .clone();
     if let Some(user) = in_memory {
         return Ok(user);
     }
     // Try loading from persisted file (survives app restart)
     if let Some(user) = load_persisted_session(&app) {
         // Restore to in-memory
-        *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
+        *session
+            .0
+            .lock()
+            .map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
         return Ok(user);
     }
     Err("Sesi login tidak aktif. Silakan login ulang.".to_string())

@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, common::trim_optional,
-    session::SessionState,
+    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db,
+    common::trim_optional, common::DbConn, session::SessionState,
 };
 
 #[derive(Debug, Serialize)]
@@ -46,7 +46,7 @@ pub struct FeeTierPayload {
 
 #[tauri::command]
 pub fn list_agent_services(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<i64>,
@@ -76,7 +76,7 @@ pub fn list_agent_services(
 
 #[tauri::command]
 pub fn create_agent_service(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: AgentServicePayload,
@@ -106,7 +106,7 @@ pub fn create_agent_service(
 
 #[tauri::command]
 pub fn list_fee_tiers(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     service_id: i64,
@@ -135,7 +135,7 @@ pub fn list_fee_tiers(
 
 #[tauri::command]
 pub fn create_fee_tier(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: FeeTierPayload,

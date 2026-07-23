@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db, common::DbConn, common::record_app_log,
-    session::SessionState,
+    auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db,
+    common::record_app_log, common::DbConn, session::SessionState,
 };
 
 #[derive(Debug, Serialize)]
@@ -73,11 +73,9 @@ pub struct RestoreBackupPayload {
     pub path: String,
 }
 
-
-
 #[tauri::command]
 pub fn list_transactions(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<ListTransactionsPayload>,
@@ -153,7 +151,7 @@ pub fn list_transactions(
 
 #[tauri::command]
 pub fn list_transaction_items(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: TransactionIdPayload,
@@ -183,7 +181,7 @@ pub fn list_transaction_items(
 
 #[tauri::command]
 pub fn list_app_logs(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<i64>,

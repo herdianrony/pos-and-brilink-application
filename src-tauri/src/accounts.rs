@@ -100,7 +100,7 @@ pub struct MutationSummaryPayload {
 
 #[tauri::command]
 pub fn list_accounts(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
 ) -> Result<Vec<AccountRow>, String> {
@@ -133,7 +133,7 @@ pub fn list_accounts(
 
 #[tauri::command]
 pub fn create_account(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: AccountPayload,
@@ -185,7 +185,7 @@ pub fn create_account(
 
 #[tauri::command]
 pub fn adjust_account_balance(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: BalanceAdjustmentPayload,
@@ -230,7 +230,7 @@ pub fn adjust_account_balance(
 
 #[tauri::command]
 pub fn transfer_accounts(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: AccountTransferPayload,
@@ -322,7 +322,7 @@ pub fn bank_fee(
 
 #[tauri::command]
 pub fn list_account_mutations(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<ListMutationsPayload>,
@@ -392,7 +392,7 @@ pub fn list_account_mutations(
 
 #[tauri::command]
 pub fn get_mutation_summary(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<MutationSummaryPayload>,
@@ -469,7 +469,7 @@ pub fn get_mutation_summary(
 }
 
 fn account_expense(
-    app: AppHandle,
+    _app: AppHandle,
     db: &State<'_, DbConn>,
     payload: AccountExpensePayload,
     mutation_type: &str,
@@ -537,7 +537,7 @@ fn account_row_from_tuple(
 
 #[tauri::command]
 pub fn update_account(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: UpdateAccountPayload,
@@ -587,7 +587,7 @@ pub fn update_account(
 
 #[tauri::command]
 pub fn deactivate_account(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     account_id: i64,

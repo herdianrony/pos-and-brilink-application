@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
+    auth::require_admin, common::get_db, common::record_app_log, common::DbConn,
+    session::SessionState,
 };
 
 #[derive(Debug, Serialize)]
@@ -40,7 +41,11 @@ pub struct DemoResult {
 // ── Seed System Templates ──────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_system(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<SeedResult, String> {
+pub fn seed_system(
+    _app: AppHandle,
+    session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
+) -> Result<SeedResult, String> {
     // Seed dapat dipanggil tanpa auth jika belum ada user (first-run)
     let conn = get_db(&db)?;
     let user_count: i64 = conn
@@ -176,7 +181,10 @@ pub fn seed_system(app: AppHandle, session: State<'_, SessionState>, db: State<'
 // ── Setup Templates (first-run only) ──────────────────────────────
 
 #[tauri::command]
-pub fn setup_templates(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupTemplatesResponse, String> {
+pub fn setup_templates(
+    _app: AppHandle,
+    db: State<'_, DbConn>,
+) -> Result<SetupTemplatesResponse, String> {
     let conn = get_db(&db)?;
 
     // Security: hanya accessible jika belum ada user
@@ -239,7 +247,11 @@ pub fn setup_templates(app: AppHandle, db: State<'_, DbConn>) -> Result<SetupTem
 // ── Seed Demo Data ─────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<DemoResult, String> {
+pub fn seed_demo(
+    _app: AppHandle,
+    session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
+) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
@@ -713,7 +725,11 @@ pub fn seed_demo(app: AppHandle, session: State<'_, SessionState>, db: State<'_,
 // ── Clear Demo Data ───────────────────────────────────────────────
 
 #[tauri::command]
-pub fn clear_demo(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<DemoResult, String> {
+pub fn clear_demo(
+    _app: AppHandle,
+    session: State<'_, SessionState>,
+    db: State<'_, DbConn>,
+) -> Result<DemoResult, String> {
     let _user = require_admin(&session)?;
     let conn = get_db(&db)?;
     let mut stats = HashMap::new();

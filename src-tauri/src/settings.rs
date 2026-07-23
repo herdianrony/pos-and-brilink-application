@@ -3,7 +3,9 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_admin, auth::require_auth, common::get_db, common::DbConn, session::SessionState};
+use crate::{
+    auth::require_admin, auth::require_auth, common::get_db, common::DbConn, session::SessionState,
+};
 
 /// Whitelist of allowed settings keys that can be updated via the API.
 const ALLOWED_KEYS: &[&str] = &[
@@ -31,7 +33,7 @@ pub struct SettingsUpdatePayload {
 
 #[tauri::command]
 pub fn get_settings(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
 ) -> Result<HashMap<String, String>, String> {
@@ -62,7 +64,7 @@ pub fn get_settings(
 
 #[tauri::command]
 pub fn update_settings(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: SettingsUpdatePayload,

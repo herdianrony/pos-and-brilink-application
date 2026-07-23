@@ -2,7 +2,10 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::{auth::require_auth, common::bounded_limit, common::get_db, common::round_money, common::DbConn, session::SessionState};
+use crate::{
+    auth::require_auth, common::bounded_limit, common::get_db, common::round_money, common::DbConn,
+    session::SessionState,
+};
 
 #[derive(Debug, Serialize)]
 pub struct DebtRow {
@@ -38,11 +41,9 @@ pub struct DebtIdPayload {
     pub debt_id: i64,
 }
 
-
-
 #[tauri::command]
 pub fn list_debts(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: Option<i64>,
@@ -78,7 +79,7 @@ pub fn list_debts(
 
 #[tauri::command]
 pub fn create_debt(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: DebtPayload,
@@ -116,7 +117,7 @@ pub fn create_debt(
 
 #[tauri::command]
 pub fn add_debt_payment(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: DebtPaymentPayload,
@@ -175,7 +176,7 @@ pub fn add_debt_payment(
 
 #[tauri::command]
 pub fn build_debt_reminder(
-    app: AppHandle,
+    _app: AppHandle,
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
     payload: DebtIdPayload,
