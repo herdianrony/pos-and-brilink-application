@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
 import { getDashboard } from "../api";
 import { Card, StatCard, Badge, Spinner, EmptyState } from "../components/ui";
@@ -13,17 +13,158 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import {
-  Area,
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
+  Chart,
+  BarController,
+  LineController,
+  BarElement,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
   Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  Legend,
+  Filler,
+} from "chart.js";
+
+// Register Chart.js components
+Chart.register(
+  BarController,
+  LineController,
+  BarElement,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+  Filler,
+);
+
+/* ------------------------------------------------------------------ */
+/*  Chart.js Chart Component                                           */
+/* ------------------------------------------------------------------ */
+
+function DashboardChart({ data, showProfit }: { data: Array<{ label: string; revenue: number; profit: number; count: number }>; showProfit: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<Chart | null>(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    if (chartRef.current) chartRef.current.destroy();
+
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+
+    chartRef.current = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: data.map((d) => d.label),
+        datasets: [
+          {
+            type: "line" as const,
+            label: "Omzet",
+            data: data.map((d) => d.revenue),
+            borderColor: "#00875A",
+            backgroundColor: "rgba(0,135,90,0.08)",
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: "#00875A",
+            yAxisID: "y",
+            order: 1,
+          },
+          ...(showProfit
+            ? [
+                {
+                  type: "bar" as const,
+                  label: "Profit",
+                  data: data.map((d) => d.profit),
+                  backgroundColor: "#10b981",
+                  borderRadius: 8,
+                  borderSkipped: false,
+                  yAxisID: "y",
+                  order: 2,
+                },
+              ]
+            : []),
+          {
+            type: "line" as const,
+            label: "Transaksi",
+            data: data.map((d) => d.count),
+            borderColor: "#f59e0b",
+            borderWidth: 2,
+            borderDash: [5, 3],
+            pointRadius: 3,
+            pointBackgroundColor: "#f59e0b",
+            fill: false,
+            tension: 0.3,
+            yAxisID: "y1",
+            order: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: {
+            position: "top",
+            labels: { font: { size: 11, weight: "bold" }, padding: 12 },
+          },
+          tooltip: {
+            backgroundColor: "white",
+            titleColor: "#1e293b",
+            bodyColor: "#475569",
+            borderColor: "#e2e8f0",
+            borderWidth: 1,
+            cornerRadius: 12,
+            padding: 12,
+            titleFont: { weight: "bold" as const, size: 12 },
+            callbacks: {
+              label: (ctx: any) => {
+                if (ctx.dataset.label === "Transaksi") return `${ctx.dataset.label}: ${ctx.parsed.y}`;
+                return `${ctx.dataset.label}: ${formatRupiah(ctx.parsed.y)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11, weight: "bold" as const }, color: "#64748b" },
+          },
+          y: {
+            position: "left",
+            grid: { color: "#f1f5f9" },
+            ticks: {
+              font: { size: 10 },
+              color: "#94a3b8",
+              callback: (value: any) => compactRupiah(Number(value)),
+            },
+          },
+          y1: {
+            position: "right",
+            grid: { display: false },
+            ticks: {
+              font: { size: 10 },
+              color: "#94a3b8",
+              stepSize: 1,
+              callback: (value: any) => Number(value),
+            },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (chartRef.current) chartRef.current.destroy();
+    };
+  }, [data, showProfit]);
+
+  return <canvas ref={canvasRef} />;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -48,57 +189,6 @@ function isToday(dateText: string) {
     d.getFullYear() === today.getFullYear() &&
     d.getMonth() === today.getMonth() &&
     d.getDate() === today.getDate()
-  );
-}
-
-interface ChartTooltipPayloadItem {
-  dataKey?: string | number;
-  name?: string;
-  value?: number | string;
-  color?: string;
-}
-
-function DashboardChartTooltip({
-  active,
-  payload,
-  label,
-  showProfit,
-}: {
-  active?: boolean;
-  payload?: ChartTooltipPayloadItem[];
-  label?: string;
-  showProfit?: boolean;
-}) {
-  if (!active || !payload?.length) return null;
-  const values = Object.fromEntries(
-    payload.map((item) => [item.dataKey, item.value]),
-  );
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl">
-      <p className="mb-2 text-xs font-extrabold text-slate-700">{label}</p>
-      <div className="space-y-1.5 text-xs">
-        <div className="flex items-center justify-between gap-5">
-          <span className="font-semibold text-slate-500">Omzet</span>
-          <span className="font-extrabold text-emerald-700">
-            {formatRupiah(Number(values.revenue || 0))}
-          </span>
-        </div>
-        {showProfit && (
-          <div className="flex items-center justify-between gap-5">
-            <span className="font-semibold text-slate-500">Profit</span>
-            <span className="font-extrabold text-emerald-600">
-              {formatRupiah(Number(values.profit || 0))}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-5">
-          <span className="font-semibold text-slate-500">Transaksi</span>
-          <span className="font-extrabold text-amber-600">
-            {Number(values.count || 0)}
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -560,111 +650,7 @@ export function DashboardPage({
             </div>
           ) : (
             <div className="h-[300px] w-full rounded-2xl border border-slate-100 bg-gradient-to-b from-slate-50/70 to-white p-3">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 12, right: 12, bottom: 4, left: 0 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="dashboardRevenueGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="#00875A"
-                        stopOpacity={0.22}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#00875A"
-                        stopOpacity={0.02}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#e2e8f0"
-                  />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{
-                      fill: "#64748b",
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                    minTickGap={8}
-                  />
-                  <YAxis
-                    yAxisId="money"
-                    axisLine={false}
-                    tickLine={false}
-                    width={72}
-                    tick={{ fill: "#94a3b8", fontSize: 10 }}
-                    tickFormatter={(value) =>
-                      compactRupiah(Number(value))
-                    }
-                  />
-                  <YAxis
-                    yAxisId="count"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    width={34}
-                    allowDecimals={false}
-                    tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  />
-                  <Tooltip
-                    content={
-                      <DashboardChartTooltip showProfit={showProfit} />
-                    }
-                    cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
-                  />
-                  <Legend
-                    wrapperStyle={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      paddingTop: 8,
-                    }}
-                  />
-                  <Area
-                    yAxisId="money"
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Omzet"
-                    stroke="#00875A"
-                    strokeWidth={2}
-                    fill="url(#dashboardRevenueGradient)"
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
-                  {showProfit && (
-                    <Bar
-                      yAxisId="money"
-                      dataKey="profit"
-                      name="Profit"
-                      fill="#10b981"
-                      radius={[8, 8, 0, 0]}
-                      maxBarSize={36}
-                    />
-                  )}
-                  <Line
-                    yAxisId="count"
-                    type="monotone"
-                    dataKey="count"
-                    name="Transaksi"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 2 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+              <DashboardChart data={chartData} showProfit={showProfit} />
             </div>
           )}
         </Card>
