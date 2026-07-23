@@ -40,6 +40,12 @@ export function SettingsPage({
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("pengguna");
 
+  function handleUserSubmit(form: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
+    onUserFormChange(form);
+    // Trigger the parent's submit via a synthetic event
+    setTimeout(() => onSubmitUser(new Event("submit") as unknown as FormEvent), 0);
+  }
+
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
@@ -49,7 +55,7 @@ export function SettingsPage({
 
       <Tabs items={[...TAB_ITEMS]} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} ariaLabel="Tab pengaturan" />
 
-      {activeTab === "pengguna" && <UsersTab users={users} userForm={userForm} saving={saving} onUserFormChange={onUserFormChange} onSubmitUser={onSubmitUser} />}
+      {activeTab === "pengguna" && <UsersTab users={users} saving={saving} onSubmitUser={handleUserSubmit} />}
       {activeTab === "produk" && <ProductsTab products={products} onExportCsv={onExportCsv} />}
       {activeTab === "utang" && <DebtsTab debts={debts} onExportCsv={onExportCsv} />}
       {activeTab === "backup" && <BackupTab transactions={transactions} mutations={mutations} debts={debts} products={products} backups={backups} saving={saving} onCreateBackup={onCreateBackup} onRestoreBackup={onRestoreBackup} onExportCsv={onExportCsv} />}

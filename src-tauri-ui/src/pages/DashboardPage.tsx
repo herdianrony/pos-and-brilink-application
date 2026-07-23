@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
 import { getDashboard } from "../api";
-import { Card, StatCard, Badge, Spinner, EmptyState } from "../components/ui";
-import { formatRupiah, paymentLabel, formatDate, formatDateShort } from "../lib/format";
-import { TrendingUp, ShoppingCart, Landmark, Wallet, AlertTriangle, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { Card, Badge, Spinner, EmptyState } from "../components/ui";
+import { formatRupiah, formatDateShort } from "../lib/format";
+import { TrendingUp, Wallet, AlertTriangle, Landmark, CheckCircle2 } from "lucide-react";
 import { DashboardChart } from "./dashboard/DashboardChart";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboard>>;
@@ -219,49 +219,7 @@ export function DashboardPage({
         </div>
       </Card>
 
-      {/* ── 3. Stat Cards (4-col grid) ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={<ShoppingCart size={20} />}
-          label="Total Transaksi"
-          value={todayTransactions.length.toString()}
-          sub="hari ini"
-          color="bg-emerald-50 text-emerald-600"
-        />
-        <StatCard
-          icon={<ArrowUpRight size={20} />}
-          label="Omzet POS"
-          value={formatRupiah(posRevenue)}
-          sub={`${posToday.length} trx`}
-          color="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          icon={<Landmark size={20} />}
-          label={`Volume ${servicesLabel}`}
-          value={formatRupiah(agentRevenue)}
-          sub={`${agentToday.length} trx`}
-          color="bg-violet-50 text-violet-600"
-        />
-        {showProfit ? (
-          <StatCard
-            icon={<TrendingUp size={20} />}
-            label={`Fee ${servicesLabel}`}
-            value={formatRupiah(agentProfit)}
-            sub="profit layanan"
-            color="bg-amber-50 text-amber-600"
-          />
-        ) : (
-          <StatCard
-            icon={<TrendingUp size={20} />}
-            label="Transaksi Selesai"
-            value={(posToday.length + agentToday.length).toString()}
-            sub="hari ini"
-            color="bg-amber-50 text-amber-600"
-          />
-        )}
-      </div>
-
-      {/* ── 4. Action Required ── */}
+      {/* ── 3. Action Required ── */}
       {(() => {
         const actions: Array<{
           icon: typeof AlertTriangle;
@@ -386,53 +344,18 @@ export function DashboardPage({
         );
       })()}
 
-      {/* ── 5. Account Balances — horizontal scroll ── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-            Saldo Rekening
-          </h3>
-          <span className="text-xs text-slate-500">
-            {accounts.length} akun
-          </span>
+      {/* ── 4. Quick Saldo Link ── */}
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200/60 bg-white p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <Wallet size={18} className="text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900">Total Saldo: {formatRupiah(totalCash)}</p>
+            <p className="text-xs text-slate-500">{accounts.length} rekening aktif</p>
+          </div>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {accounts.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center py-8 text-sm text-slate-500">
-              Belum ada rekening
-            </div>
-          ) : (
-            accounts.map((acc) => (
-              <div
-                key={acc.id}
-                className="shrink-0 w-[200px] rounded-2xl border border-slate-200/60 bg-white p-4 shadow-card hover:shadow-pop transition-all"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-white"
-                    style={{
-                      backgroundColor:
-                        acc.color || acc.code === "cash"
-                          ? "#00875A"
-                          : "#3b82f6",
-                    }}
-                  >
-                    {(acc.icon || acc.name).slice(0, 2).toUpperCase()}
-                  </div>
-                  <span className="text-xs font-bold text-slate-500 truncate">
-                    {acc.name}
-                  </span>
-                </div>
-                <p className="text-base font-extrabold text-slate-900">
-                  {formatRupiah(acc.balance)}
-                </p>
-                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                  {acc.code === "cash" ? "Kas Tunai" : "Rekening"}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
+        <span className="text-xs font-bold text-primary">Lihat di Keuangan →</span>
       </div>
 
       {/* ── 6. Chart + Low Stock (2:1 grid) ── */}
@@ -522,76 +445,6 @@ export function DashboardPage({
         </Card>
       </div>
 
-      {/* ── 7. Recent Transactions table ── */}
-      <Card className="overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h3 className="font-extrabold text-slate-700">
-            Transaksi Terakhir
-          </h3>
-        </div>
-        {transactions.length === 0 ? (
-          <EmptyState title="Belum ada transaksi" />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <caption className="sr-only">Transaksi Terbaru</caption>
-              <thead>
-                <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                  <th className="text-left p-3 font-medium">Invoice</th>
-                  <th className="text-left p-3 font-medium">Tipe</th>
-                  <th className="text-left p-3 font-medium">Pelanggan</th>
-                  <th className="text-right p-3 font-medium">Total</th>
-                  {showProfit && (
-                    <th className="text-right p-3 font-medium">
-                      Profit
-                    </th>
-                  )}
-                  <th className="text-left p-3 font-medium">Waktu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.slice(0, 20).map((t) => (
-                  <tr
-                    key={t.id}
-                    className="border-b border-slate-50/50 hover:bg-emerald-50/30 transition-colors"
-                  >
-                    <td className="p-3 font-mono text-xs text-slate-500">
-                      {t.invoice_no}
-                    </td>
-                    <td className="p-3">
-                      <Badge
-                        variant={
-                          t.transaction_type === "pos"
-                            ? "primary"
-                            : "purple"
-                        }
-                      >
-                        {t.transaction_type === "pos"
-                          ? "POS"
-                          : servicesLabel}
-                      </Badge>
-                    </td>
-                    <td className="p-3 text-slate-600">
-                      {t.customer_name || "—"}
-                    </td>
-                    <td className="p-3 text-right font-semibold">
-                      {formatRupiah(t.total_amount)}
-                    </td>
-                    {showProfit && (
-                      <td className="p-3 text-right font-bold text-emerald-600">
-                        {formatRupiah(t.profit)}
-                      </td>
-                    )}
-                    <td className="p-3 text-slate-500 text-xs">
-                      {formatDate(t.created_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
     </div>
   );
 }
