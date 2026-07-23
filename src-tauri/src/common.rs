@@ -328,7 +328,7 @@ pub fn build_query(
     filters: &[(&str, Option<&str>)],
     suffix: &str,
     extra_params: &[&dyn rusqlite::types::ToSql],
-) -> (String, Vec<Box<dyn rusqlite::types::ToSql>>) {
+) -> (String, Vec<Box<dyn rusqlite::types::ToSql + '_>>) {
     let mut sql = String::from(base_sql);
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     for (col_op, value) in filters {
