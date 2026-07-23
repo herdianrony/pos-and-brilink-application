@@ -9,67 +9,64 @@ async function login(page: import("@playwright/test").Page) {
 }
 
 test.describe("Dashboard", () => {
-  test("view dashboard with stats and sections", async ({ page }) => {
+  test("view dashboard with hero card and sections", async ({ page }) => {
     await login(page);
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await expect(
-      page.getByText("Ringkasan aktivitas bisnis Anda")
-    ).toBeVisible();
+    await expect(page.getByText("Ringkasan aktivitas bisnis Anda")).toBeVisible();
 
-    // Verify stat cards
-    await expect(page.getByText("Total Transaksi")).toBeVisible();
-    await expect(page.getByText("Omzet POS")).toBeVisible();
+    // Verify hero card
+    await expect(page.getByText("Keuntungan Hari Ini")).toBeVisible();
 
-    // Verify sections
-    await expect(page.getByText("Saldo Rekening")).toBeVisible();
-    await expect(page.getByText("Transaksi Terakhir")).toBeVisible();
+    // Verify quick saldo link
+    await expect(page.getByText("Total Saldo")).toBeVisible();
+
+    // Verify chart section
+    await expect(page.getByText("Pendapatan 7 Hari")).toBeVisible();
+
+    // Verify low stock section
+    await expect(page.getByText("Stok Menipis")).toBeVisible();
   });
 
-  test("navigate all pages from dashboard and verify heading", async ({
-    page,
-  }) => {
+  test("navigate all pages from dashboard", async ({ page }) => {
     await login(page);
 
-    // Navigate using sidebar buttons
-    const pages = [
-      { button: "Kasir POS", heading: "Kasir POS" },
-      { button: "Layanan Agen", heading: "Layanan Agen" },
-      { button: "Produk", heading: "Produk" },
-      { button: "Transaksi", heading: "Riwayat Transaksi" },
-      { button: "Pengaturan", heading: "Pengaturan" },
-    ];
+    // Navigate to Kasir POS
+    await page.getByRole("button", { name: "Kasir POS", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Kasir POS" })).toBeVisible();
 
-    for (const { button, heading } of pages) {
-      await page.getByRole("button", { name: button, exact: true }).click();
-      await expect(
-        page.getByRole("heading", { name: heading }).first()
-      ).toBeVisible({ timeout: 5000 });
-    }
+    // Navigate to Layanan Agen
+    await page.getByRole("button", { name: "Layanan Agen", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Layanan Agen" }).first()).toBeVisible({ timeout: 5000 });
+
+    // Navigate to Transaksi
+    await page.getByRole("button", { name: "Transaksi", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Riwayat Transaksi" })).toBeVisible();
+
+    // Navigate to Keuangan
+    await page.getByRole("button", { name: "Keuangan", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Keuangan" })).toBeVisible();
+
+    // Navigate to Pengaturan
+    await page.getByRole("button", { name: "Pengaturan", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Pengaturan" })).toBeVisible();
   });
 });
 
-test.describe("Debt Payment Recording", () => {
-  test("record partial debt payment", async ({ page }) => {
+test.describe("KeuanganPage Tabs", () => {
+  test("switch between Kas & Saldo, Rekening Koran, and Laporan tabs", async ({ page }) => {
     await login(page);
-    await page.getByRole("button", { name: "Keuangan" }).click();
-    await page.getByRole("tab", { name: "Buku Utang" }).click();
+    await page.getByRole("button", { name: "Keuangan", exact: true }).click();
 
-    // Add a new debt
-    const debtorName = `Pelanggan ${Date.now()}`;
-    await page.getByLabel("Nama Pelanggan").fill(debtorName);
-    await page.getByLabel("No WhatsApp").fill("628123456789");
-    await page.getByLabel("Nominal Utang").fill("100000");
-    await page.getByRole("button", { name: "Simpan Utang" }).click();
-    await expect(page.getByText(debtorName)).toBeVisible();
+    // Kas & Saldo tab (default)
+    await page.getByRole("tab", { name: "Kas & Saldo" }).click();
+    await expect(page.getByText("Kas Tunai")).toBeVisible({ timeout: 5000 });
 
-    // Record a partial payment
-    await page.getByRole("button", { name: "Catat Pembayaran" }).click();
-    await page.getByLabel("Pelanggan").selectOption({ label: debtorName });
-    await page.getByLabel("Nominal Bayar").fill("40000");
-    await page.getByLabel("Catatan").fill("Bayar cicilan pertama");
-    await page.getByRole("button", { name: "Simpan Pembayaran" }).click();
+    // Rekening Koran tab
+    await page.getByRole("tab", { name: "Rekening Koran" }).click();
+    await expect(page.getByText("Rekening")).toBeVisible({ timeout: 5000 });
 
-    // Verify debt still exists with reduced amount
-    await expect(page.getByText(debtorName)).toBeVisible();
+    // Laporan tab
+    await page.getByRole("tab", { name: "Laporan" }).click();
+    await expect(page.getByText("Ringkasan")).toBeVisible({ timeout: 5000 });
   });
 });
