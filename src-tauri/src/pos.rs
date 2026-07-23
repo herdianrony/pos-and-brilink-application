@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::{
-    auth::require_admin, auth::require_auth, common::get_db, common::DbConn, common::record_app_log,
+    auth::require_admin, auth::require_auth, common::get_db, common::round_money,
+    common::validate_money, common::DbConn, common::record_app_log,
     common::trim_optional, session::PublicUser, session::SessionState,
 };
 
@@ -313,8 +314,8 @@ pub fn checkout_pos_cash(
                 |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?, row.get::<_, i64>(3)?)),
             )
             .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
-        let subtotal = product.2 * item.quantity as f64;
-        let profit = (product.2 - product.1) * item.quantity as f64;
+        let subtotal = round_money(product.2 * item.quantity as f64);
+        let profit = round_money((product.2 - product.1) * item.quantity as f64);
         total_amount += subtotal;
         total_profit += profit;
 
@@ -327,10 +328,10 @@ pub fn checkout_pos_cash(
 
     // ── Agent items ──
     for agent in &payload.agent_items {
-        let fee = agent.fee;
-        let provider_cost = agent.provider_cost.unwrap_or(0.0);
+        let fee = round_money(agent.fee);
+        let provider_cost = round_money(agent.provider_cost.unwrap_or(0.0));
         total_amount += fee;
-        total_profit += fee - provider_cost;
+        total_profit += round_money(fee - provider_cost);
     }
 
     // ── Discount ──
@@ -353,6 +354,8 @@ pub fn checkout_pos_cash(
 
     // ── Create transaction ──
     let status = "completed";
+    let total_amount = round_money(total_amount);
+    let total_profit = round_money(total_profit);
     tx.execute(
         "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id) VALUES (?1, 'pos', NULL, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![invoice_no, total_amount, total_profit, payment_method, status, trim_optional(payload.notes).unwrap_or_default(), now, user.id],
@@ -474,14 +477,14 @@ pub fn create_agent_transaction(
     // Try to auto-calculate fee from tiers if frontend sends fee=0
     let (fee, provider_cost) = if payload.fee == 0.0 {
         if let Some((tier_fee, tier_pc)) = crate::agent_services::lookup_fee(&tx, &service_name, payload.amount) {
-            (tier_fee, tier_pc)
+            (round_money(tier_fee), round_money(tier_pc))
         } else {
-            (payload.fee, payload.provider_cost.unwrap_or(0.0))
+            (round_money(payload.fee), round_money(payload.provider_cost.unwrap_or(0.0)))
         }
     } else {
-        (payload.fee, payload.provider_cost.unwrap_or(0.0))
+        (round_money(payload.fee), round_money(payload.provider_cost.unwrap_or(0.0)))
     };
-    let profit = fee - provider_cost;
+    let profit = round_money(fee - provider_cost);
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
     tx.execute(

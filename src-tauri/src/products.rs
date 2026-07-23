@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::{require_admin, require_auth};
-use crate::common::{init_schema, product_images_dir, record_app_log, trim_optional};
+use crate::common::{get_db, round_money, validate_money, DbConn, product_images_dir, record_app_log, trim_optional};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -283,8 +283,10 @@ pub fn create_product(
     if name.is_empty() {
         return Err("Nama produk wajib diisi".into());
     }
-    if payload.buy_price < 0.0
-        || payload.sell_price <= 0.0
+    let buy_price = round_money(payload.buy_price);
+    let sell_price = round_money(payload.sell_price);
+    if buy_price < 0.0
+        || sell_price <= 0.0
         || payload.stock < 0
         || payload.min_stock < 0
     {
@@ -302,8 +304,8 @@ pub fn create_product(
             name,
             barcode,
             payload.category_id,
-            payload.buy_price,
-            payload.sell_price,
+            buy_price,
+            sell_price,
             payload.stock,
             payload.min_stock,
             unit,
@@ -336,8 +338,8 @@ pub fn create_product(
         barcode,
         category_id: payload.category_id,
         category_name,
-        buy_price: payload.buy_price,
-        sell_price: payload.sell_price,
+        buy_price,
+        sell_price,
         stock: payload.stock,
         min_stock: payload.min_stock,
         unit,
@@ -359,8 +361,10 @@ pub fn update_product(
     if name.is_empty() {
         return Err("Nama produk wajib diisi".into());
     }
-    if payload.buy_price < 0.0
-        || payload.sell_price <= 0.0
+    let buy_price = round_money(payload.buy_price);
+    let sell_price = round_money(payload.sell_price);
+    if buy_price < 0.0
+        || sell_price <= 0.0
         || payload.stock < 0
         || payload.min_stock < 0
     {
@@ -393,8 +397,8 @@ pub fn update_product(
             name,
             barcode,
             payload.category_id,
-            payload.buy_price,
-            payload.sell_price,
+            buy_price,
+            sell_price,
             payload.stock,
             payload.min_stock,
             unit,
@@ -423,8 +427,8 @@ pub fn update_product(
         barcode,
         category_id: payload.category_id,
         category_name,
-        buy_price: payload.buy_price,
-        sell_price: payload.sell_price,
+        buy_price,
+        sell_price,
         stock: payload.stock,
         min_stock: payload.min_stock,
         unit,

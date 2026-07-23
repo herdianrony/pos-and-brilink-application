@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::require_admin;
-use crate::common::{get_db, DbConn};
+use crate::common::{get_db, round_money, validate_money, DbConn};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -191,7 +191,8 @@ pub fn adjust_account_balance(
     payload: BalanceAdjustmentPayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
-    if payload.amount == 0.0 {
+    let amount = round_money(payload.amount);
+    if amount == 0.0 {
         return Err("Nominal penyesuaian tidak boleh 0".into());
     }
     let mut conn = get_db(&db)?;
@@ -211,16 +212,16 @@ pub fn adjust_account_balance(
     // Race-safe: use conditional WHERE to prevent TOCTOU
     let affected = tx.execute(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND balance + ?1 >= 0 AND is_active = 1",
-        params![payload.amount, now, account.0],
+        params![amount, now, account.0],
     )
     .map_err(|e| e.to_string())?;
     if affected == 0 {
         return Err("Saldo tidak cukup".into());
     }
-    let next_balance = account.5 + payload.amount;
+    let next_balance = round_money(account.5 + amount);
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'adjustment', ?2, ?3, ?4, NULL, ?5)",
-        params![account.0, payload.amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| "Penyesuaian saldo".to_string()), now],
+        params![account.0, amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| "Penyesuaian saldo".to_string()), now],
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
@@ -238,7 +239,8 @@ pub fn transfer_accounts(
     if payload.from_account_id == payload.to_account_id {
         return Err("Rekening asal dan tujuan tidak boleh sama".into());
     }
-    if payload.amount <= 0.0 {
+    let amount = round_money(payload.amount);
+    if amount <= 0.0 {
         return Err("Nominal transfer harus lebih dari 0".into());
     }
     let mut conn = get_db(&db)?;
@@ -273,7 +275,7 @@ pub fn transfer_accounts(
     // Race-safe: conditional WHERE ensures balance can't go negative
     let from_affected = tx.execute(
         "UPDATE accounts SET balance = balance - ?1, updated_at = ?2 WHERE id = ?3 AND balance >= ?1 AND is_active = 1",
-        params![payload.amount, now, from.0],
+        params![amount, now, from.0],
     )
     .map_err(|e| e.to_string())?;
     if from_affected == 0 {
@@ -281,17 +283,17 @@ pub fn transfer_accounts(
     }
     let _to_affected = tx.execute(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
-        params![payload.amount, now, to.0],
+        params![amount, now, to.0],
     )
     .map_err(|e| e.to_string())?;
     // Recalculate balances for mutations
-    let from_balance = from.2 - payload.amount;
-    let to_balance = to.2 + payload.amount;
+    let from_balance = round_money(from.2 - amount);
+    let to_balance = round_money(to.2 + amount);
     let note = crate::common::trim_optional(payload.notes)
         .unwrap_or_else(|| format!("Transfer {} ke {}", from.1, to.1));
-    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -payload.amount, from_balance, note, now]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -amount, from_balance, note, now]).map_err(|e| e.to_string())?;
     let note_in = format!("Transfer dari {}", from.1);
-    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_in', ?2, ?3, ?4, NULL, ?5)", params![to.0, payload.amount, to_balance, note_in, now]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_in', ?2, ?3, ?4, NULL, ?5)", params![to.0, amount, to_balance, note_in, now]).map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(true)
 }
@@ -304,7 +306,7 @@ pub fn owner_draw(
     payload: AccountExpensePayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
-    account_expense(app, payload, "owner_draw", "Prive Owner")
+    account_expense(app, &db, payload, "owner_draw", "Prive Owner")
 }
 
 #[tauri::command]
@@ -315,7 +317,7 @@ pub fn bank_fee(
     payload: AccountExpensePayload,
 ) -> Result<AccountRow, String> {
     let _user = require_admin(&session)?;
-    account_expense(app, payload, "bank_fee", "Biaya Bank / MDR")
+    account_expense(app, &db, payload, "bank_fee", "Biaya Bank / MDR")
 }
 
 #[tauri::command]
@@ -468,14 +470,16 @@ pub fn get_mutation_summary(
 
 fn account_expense(
     app: AppHandle,
+    db: &State<'_, DbConn>,
     payload: AccountExpensePayload,
     mutation_type: &str,
     default_note: &str,
 ) -> Result<AccountRow, String> {
-    if payload.amount <= 0.0 {
+    let amount = round_money(payload.amount);
+    if amount <= 0.0 {
         return Err("Nominal harus lebih dari 0".into());
     }
-    let mut conn = get_db(&db)?;
+    let mut conn = get_db(db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let account = tx.query_row(
@@ -490,16 +494,16 @@ fn account_expense(
     // Race-safe: use conditional WHERE to prevent TOCTOU
     let affected = tx.execute(
         "UPDATE accounts SET balance = balance - ?1, updated_at = ?2 WHERE id = ?3 AND balance >= ?1 AND is_active = 1",
-        params![payload.amount, now, account.0],
+        params![amount, now, account.0],
     )
     .map_err(|e| e.to_string())?;
     if affected == 0 {
         return Err("Saldo tidak cukup".into());
     }
-    let next_balance = account.5 - payload.amount;
+    let next_balance = round_money(account.5 - amount);
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)",
-        params![account.0, mutation_type, -payload.amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| default_note.to_string()), now],
+        params![account.0, mutation_type, -amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| default_note.to_string()), now],
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;

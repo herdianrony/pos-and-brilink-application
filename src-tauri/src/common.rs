@@ -327,3 +327,35 @@ pub fn bounded_limit(payload: Option<&i64>, default_limit: i64, max_limit: i64) 
         .unwrap_or(default_limit)
         .clamp(1, max_limit)
 }
+
+/// Round a monetary value to the nearest Rupiah (integer).
+/// This prevents floating-point drift in financial calculations.
+/// All money values should be rounded through this function before
+/// being stored in the database.
+pub fn round_money(value: f64) -> f64 {
+    if !value.is_finite() {
+        return 0.0;
+    }
+    value.round()
+}
+
+/// Safely parse a monetary value from user input.
+/// Returns 0.0 for invalid/negative values, rounds to nearest Rupiah.
+pub fn parse_money(value: &str) -> f64 {
+    let parsed: f64 = value.trim().parse().unwrap_or(0.0);
+    if !parsed.is_finite() || parsed < 0.0 {
+        return 0.0;
+    }
+    round_money(parsed)
+}
+
+/// Validate that a money value is finite and non-negative.
+pub fn validate_money(value: f64, field_name: &str) -> Result<f64, String> {
+    if !value.is_finite() {
+        return Err(format!("{} tidak valid", field_name));
+    }
+    if value < 0.0 {
+        return Err(format!("{} tidak boleh minus", field_name));
+    }
+    Ok(round_money(value))
+}
