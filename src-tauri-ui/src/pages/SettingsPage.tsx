@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
-import type { AppLogRow, BackupRow, DebtRow, ProductRow, PublicUser, TransactionRow, AccountMutationRow } from "../api";
+import type { AppLogRow, BackupRow, CategoryRow, DebtRow, ProductRow, PublicUser, TransactionRow, AccountMutationRow } from "../api";
 import { Tabs } from "../components/ui";
 import { UsersTab } from "./settings/UsersTab";
-import { ProductsTab } from "./settings/ProductsTab";
+import { ProductMasterPage } from "./ProductMasterPage";
 import { DebtsTab } from "./settings/DebtsTab";
 import { BackupTab } from "./settings/BackupTab";
 import { AboutTab } from "./settings/AboutTab";
@@ -20,8 +20,9 @@ const TAB_ITEMS = [
 type TabId = (typeof TAB_ITEMS)[number]["id"];
 
 export function SettingsPage({
-  users, userForm, saving, transactions, mutations, debts, products, backups, dbPath, logs,
+  users, userForm, saving, transactions, mutations, debts, products, categories, backups, dbPath, logs,
   onRefreshLogs, onUserFormChange, onSubmitUser, onExportCsv, onCreateBackup, onRestoreBackup, onMessage,
+  onAddCategory, onAddProduct, onEditProduct, onRemoveProduct,
 }: {
   users: PublicUser[];
   userForm: { name: string; username: string; password: string; role: "admin" | "kasir" };
@@ -30,6 +31,7 @@ export function SettingsPage({
   mutations: AccountMutationRow[];
   debts: DebtRow[];
   products: ProductRow[];
+  categories: CategoryRow[];
   backups: BackupRow[];
   dbPath: string;
   logs: AppLogRow[];
@@ -40,12 +42,15 @@ export function SettingsPage({
   onCreateBackup: () => void;
   onRestoreBackup: (backup: BackupRow) => void;
   onMessage: (msg: string) => void;
+  onAddCategory: () => void;
+  onAddProduct: () => void;
+  onEditProduct: (product: ProductRow) => void;
+  onRemoveProduct: (product: ProductRow) => void;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("pengguna");
 
   function handleUserSubmit(form: { name: string; username: string; password: string; role: "admin" | "kasir" }) {
     onUserFormChange(form);
-    // Trigger the parent's submit via a synthetic event
     setTimeout(() => onSubmitUser(new Event("submit") as unknown as FormEvent), 0);
   }
 
@@ -53,13 +58,22 @@ export function SettingsPage({
     <div className="space-y-5 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-extrabold text-slate-900">Pengaturan</h2>
-        <p className="text-sm text-slate-500 mt-1">Kelola pengguna, produk, utang, cadangan data, dan info aplikasi</p>
+        <p className="text-sm text-slate-500 mt-1">Kelola pengguna, produk, utang, WhatsApp, cadangan data, dan info aplikasi</p>
       </div>
 
       <Tabs items={[...TAB_ITEMS]} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} ariaLabel="Tab pengaturan" />
 
       {activeTab === "pengguna" && <UsersTab users={users} saving={saving} onSubmitUser={handleUserSubmit} />}
-      {activeTab === "produk" && <ProductsTab products={products} onExportCsv={onExportCsv} />}
+      {activeTab === "produk" && (
+        <ProductMasterPage
+          categories={categories}
+          products={products}
+          onAddCategory={onAddCategory}
+          onAddProduct={onAddProduct}
+          onEditProduct={onEditProduct}
+          onRemoveProduct={onRemoveProduct}
+        />
+      )}
       {activeTab === "utang" && <DebtsTab debts={debts} onExportCsv={onExportCsv} />}
       {activeTab === "whatsapp" && <WhatsAppPage saving={saving} onMessage={onMessage} />}
       {activeTab === "backup" && <BackupTab transactions={transactions} mutations={mutations} debts={debts} products={products} backups={backups} saving={saving} onCreateBackup={onCreateBackup} onRestoreBackup={onRestoreBackup} onExportCsv={onExportCsv} />}

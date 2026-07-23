@@ -419,6 +419,7 @@ export default function App() {
             mutations={accountMutations}
             debts={debts}
             products={products}
+            categories={categories}
             backups={backups}
             dbPath={dbPath}
             logs={appLogs}
@@ -429,6 +430,10 @@ export default function App() {
             onCreateBackup={handleCreateBackup}
             onRestoreBackup={handleRestoreBackup}
             onMessage={setMessage}
+            onAddCategory={() => setShowCategoryModal(true)}
+            onAddProduct={openAddProduct}
+            onEditProduct={startEditProduct}
+            onRemoveProduct={removeProduct}
           />
         );
       case "dashboard":
