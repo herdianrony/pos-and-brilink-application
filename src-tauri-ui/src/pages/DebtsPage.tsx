@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { CheckCircle, HandCoins, MessageCircle, ReceiptText, WalletCards } from "lucide-react";
-import { cn } from "../lib/cn";
 import type { DebtRow } from "../api";
 import { CurrencyInput } from "../components/CurrencyInput";
-import { Card, Button, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
+import { Card, Button, ChipTabs, DataCell, DataCellText, DataRow, DataTable, EmptyState, PageHeader, SectionCard, StatCard } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 type DebtFilter = "open" | "paid" | "all";
@@ -52,23 +51,17 @@ export function DebtsPage({
         <StatCard color="green" icon={<CheckCircle size={20} />} label="Terbayar" value={formatRupiah(totalPaid)} sub={`${paidDebts.length} lunas`} />
       </section>
 
-      <Card className="mb-4 grid gap-3 p-3">
-        <div className="flex flex-wrap gap-2">
-          {(["open", "paid", "all"] as const).map((f) => (
-            <button
-              key={f}
-              className={cn(
-                "flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition-all",
-                filter === f
-                  ? "gradient-primary text-white shadow-glow-primary"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100",
-              )}
-              onClick={() => setFilter(f)}
-            >
-              {f === "open" ? "Belum Lunas" : f === "paid" ? "Lunas" : "Semua"}
-            </button>
-          ))}
-        </div>
+      <Card className="mb-4 p-3">
+        <ChipTabs
+          ariaLabel="Filter utang"
+          items={[
+            { id: "open", label: "Belum Lunas" },
+            { id: "paid", label: "Lunas" },
+            { id: "all", label: "Semua" },
+          ]}
+          active={filter}
+          onChange={setFilter}
+        />
       </Card>
 
       <section className="grid grid-cols-[minmax(0,1.35fr)_minmax(360px,.8fr)] items-start gap-[18px] max-[1080px]:grid-cols-1">

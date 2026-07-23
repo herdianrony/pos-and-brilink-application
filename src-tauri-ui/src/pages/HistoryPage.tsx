@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   EmptyState,
+  PageHeader,
   Tabs,
   Spinner,
   StatCard,
@@ -94,16 +95,11 @@ export function HistoryPage({
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* 1. Header */}
-      <div>
-        <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <ClipboardList size={24} className="text-blue-500" /> Riwayat Transaksi
-        </h2>
-        <p className="text-sm text-slate-500">
-          {filtered.length} transaksi ditemukan
-          {pendingCount > 0 && ` \u2022 ${pendingCount} pending`}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Riwayat"
+        title="Riwayat Transaksi"
+        description={`${filtered.length} transaksi ditemukan${pendingCount > 0 ? ` • ${pendingCount} pending` : ""}`}
+      />
 
       {/* 2. Stats */}
       <div className="grid grid-cols-3 gap-3">

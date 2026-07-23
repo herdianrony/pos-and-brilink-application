@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRightLeft, Clock, HandCoins, Plus, ReceiptText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
-import { Badge, Button, Card, EmptyState, Tabs } from "../components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader, Tabs } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
 
 const tabItems = [
@@ -65,23 +65,21 @@ export function CashBalancePage({
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Kas & Saldo</h2>
-          <p className="text-sm text-slate-500">
-            Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={onAddAccount}>
-            <Plus size={16} /> Tambah Rekening
-          </Button>
-          <Button onClick={() => onTransfer()}>
-            <ArrowRightLeft size={16} /> Transfer Saldo
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Keuangan"
+        title="Kas & Saldo"
+        description="Pantau kas tunai, rekening bank, QRIS, dan riwayat mutasi."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={onAddAccount}>
+              <Plus size={16} /> Tambah Rekening
+            </Button>
+            <Button onClick={() => onTransfer()}>
+              <ArrowRightLeft size={16} /> Transfer Saldo
+            </Button>
+          </div>
+        }
+      />
 
       {/* ── Tabs ── */}
       <Tabs

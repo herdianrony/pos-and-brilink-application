@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Scale, ScrollText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
-import { Badge, Button, Card, ChipTabs, EmptyState, StatCard } from "../components/ui";
+import { Badge, Button, Card, ChipTabs, EmptyState, PageHeader, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
 
@@ -65,25 +65,21 @@ export function StatementPage({
 
   return (
     <div className="grid gap-6 animate-fadeIn">
-      {/* ── Header ── */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-            <ScrollText size={24} className="text-blue-500" /> Rekening Koran
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Mutasi rekening instan — mirip rekening koran bank.
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onExportCsv}
-          disabled={filteredMutations.length === 0}
+      <PageHeader
+        eyebrow="Keuangan"
+        title="Rekening Koran"
+        description="Mutasi rekening instan — mirip rekening koran bank."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onExportCsv}
+            disabled={filteredMutations.length === 0}
         >
           <Download size={16} /> Unduh CSV
         </Button>
-      </div>
+        }
+      />
 
       {/* ── Filter row ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

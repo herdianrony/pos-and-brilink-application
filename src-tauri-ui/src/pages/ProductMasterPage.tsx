@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Package, Pencil, Trash2, Search } from "lucide-react";
 import type { CategoryRow, ProductRow } from "../api";
-import { Button, Card, EmptyState, Badge, Spinner } from "../components/ui";
+import { Button, Card, EmptyState, Badge, PageHeader, Spinner } from "../components/ui";
 import { formatRupiah } from "../lib/format";
 
 export function ProductMasterPage({
@@ -32,25 +32,17 @@ export function ProductMasterPage({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* ── Header ── */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-            <Package size={24} className="text-emerald-500" /> Produk
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Kelola daftar produk, kategori, dan harga jual.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 mt-3 sm:mt-0">
-          <Button variant="secondary" size="sm" onClick={onAddCategory}>
-            Tambah Kategori
-          </Button>
-          <Button size="sm" onClick={onAddProduct}>
-            Tambah Produk
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Inventaris"
+        title="Produk"
+        description="Kelola daftar produk, kategori, dan harga jual."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={onAddCategory}>Tambah Kategori</Button>
+            <Button size="sm" onClick={onAddProduct}>Tambah Produk</Button>
+          </div>
+        }
+      />
 
       {/* ── Search ── */}
       <div className="relative">
