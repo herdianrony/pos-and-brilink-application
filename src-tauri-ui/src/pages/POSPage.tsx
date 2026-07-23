@@ -8,7 +8,7 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { Badge, Button, EmptyState } from "../components/ui";
+import { Badge, Button, EmptyState, Modal } from "../components/ui";
 import { PaymentModal } from "../components/PaymentModal";
 import { ProductImage } from "../components/ProductImage";
 import { formatRupiah } from "../lib/format";
@@ -357,24 +357,23 @@ export function POSPage({
               variant="secondary"
               size="md"
               className="w-full"
-              onClick={() => setShowServiceForm(!showServiceForm)}
+              onClick={() => {
+                setServiceForm({ service_name: "Transfer", customer_name: "", amount: "0", fee: "5000", provider_cost: "0", account_id: "", cash_effect: "0", bank_effect: "0", notes: "" });
+                setShowServiceForm(true);
+              }}
             >
               <Plus size={16} /> Tambah Layanan Agen
             </Button>
 
-            {showServiceForm && (
-              <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                <div className="col-span-2 flex flex-wrap gap-2">
+            {/* Agent service modal */}
+            <Modal open={showServiceForm} onClose={() => setShowServiceForm(false)} size="sm" eyebrow="Layanan Agen">
+              <div className="p-5">
+                <h3 className="text-base font-extrabold text-slate-900 mb-4">Tambah Layanan Agen</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
                   {posServicePresets.map((preset) => (
                     <button
                       key={preset.label}
-                      onClick={() =>
-                        setServiceForm({
-                          ...serviceForm,
-                          service_name: preset.label,
-                          fee: preset.fee,
-                        })
-                      }
+                      onClick={() => setServiceForm({ ...serviceForm, service_name: preset.label, fee: preset.fee })}
                       aria-pressed={serviceForm.service_name === preset.label}
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
@@ -387,74 +386,42 @@ export function POSPage({
                     </button>
                   ))}
                 </div>
-                <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-                  Layanan
-                  <input
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    value={serviceForm.service_name}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        service_name: e.target.value,
-                      })
-                    }
-                  />
-                </label>
-                <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-                  Nominal
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    value={serviceForm.amount}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        amount: e.target.value.replace(/\D/g, ""),
-                      })
-                    }
-                  />
-                </label>
-                <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-                  Admin
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    value={serviceForm.fee}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        fee: e.target.value.replace(/\D/g, ""),
-                      })
-                    }
-                  />
-                </label>
-                <div className="col-span-2">
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => {
-                      onAddAgentService({
-                        service_name: serviceForm.service_name,
-                        customer_name: serviceForm.customer_name,
-                        amount: Number(serviceForm.amount || 0),
-                        fee: Number(serviceForm.fee || 0),
-                        provider_cost: 0,
-                        account_id: null,
-                        cash_effect: 0,
-                        bank_effect: 0,
-                        notes: serviceForm.notes,
-                        quantity: 1,
-                      });
-                      setShowServiceForm(false);
-                    }}
-                  >
-                    <Plus size={16} /> Masukkan ke Keranjang
-                  </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="grid gap-1.5 text-xs font-bold text-slate-600">Layanan
+                    <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" value={serviceForm.service_name} onChange={(e) => setServiceForm({ ...serviceForm, service_name: e.target.value })} />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-bold text-slate-600">Nominal
+                    <input type="text" inputMode="numeric" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" value={serviceForm.amount} onChange={(e) => setServiceForm({ ...serviceForm, amount: e.target.value.replace(/\D/g, "") })} />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-bold text-slate-600">Admin
+                    <input type="text" inputMode="numeric" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" value={serviceForm.fee} onChange={(e) => setServiceForm({ ...serviceForm, fee: e.target.value.replace(/\D/g, "") })} />
+                  </label>
+                  <div className="flex items-end">
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={() => {
+                        onAddAgentService({
+                          service_name: serviceForm.service_name,
+                          customer_name: serviceForm.customer_name,
+                          amount: Number(serviceForm.amount || 0),
+                          fee: Number(serviceForm.fee || 0),
+                          provider_cost: 0,
+                          account_id: null,
+                          cash_effect: 0,
+                          bank_effect: 0,
+                          notes: serviceForm.notes,
+                          quantity: 1,
+                        });
+                        setShowServiceForm(false);
+                      }}
+                    >
+                      <Plus size={16} /> Masukkan ke Keranjang
+                    </Button>
+                  </div>
                 </div>
               </div>
-            )}
+            </Modal>
 
             {/* Action buttons row */}
             <div className="flex gap-2">

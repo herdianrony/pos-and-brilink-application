@@ -10,8 +10,6 @@ import { POSPage } from "./pages/POSPage";
 import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { KeuanganPage } from "./pages/KeuanganPage";
-import { DebtsPage } from "./pages/DebtsPage";
-import { LogsPage } from "./pages/LogsPage";
 import { useAppData } from "./hooks/useAppData";
 import { usePosCart } from "./hooks/usePosCart";
 import { useProductMaster } from "./hooks/useProductMaster";

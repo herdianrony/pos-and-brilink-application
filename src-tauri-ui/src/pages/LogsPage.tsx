@@ -63,14 +63,7 @@ export function LogsPage({
         actions={<Button variant="secondary" onClick={onRefresh}><RefreshCw size={16} /> Refresh</Button>}
       />
 
-      <section className="mb-4 grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-[720px]:grid-cols-1 mb-0">
-        <StatCard color="blue" icon={<Activity size={20} />} label="Total Aktivitas" value={logs.length} sub="catatan tersimpan" />
-        <StatCard color="green" icon={<CheckCircle size={20} />} label="Info" value={infoCount} sub="aktivitas normal" />
-        <StatCard color="amber" icon={<AlertTriangle size={20} />} label="Peringatan" value={warnCount} sub="perlu diperiksa" />
-        <StatCard color="teal" icon={<ShieldAlert size={20} />} label="Error" value={errorCount} sub="kendala teknis" />
-      </section>
-
-      <Card className="grid gap-3 p-3">
+      <Card className="p-3">
         <div className="flex flex-wrap gap-2">
           {levelFilters.map((level) => (
             <button
@@ -87,7 +80,7 @@ export function LogsPage({
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 mt-3">
           <button className={sourceFilter === "all" ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100 border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100"} onClick={() => setSourceFilter("all")}>Semua Sumber</button>
           {sources.map((source) => (
             <button key={source} className={sourceFilter === source ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100 border-white/15 bg-gradient-to-br from-emerald-700 to-emerald-500 text-white shadow-[0_14px_28px_rgba(4,120,87,.26)]" : "rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 shadow-none hover:bg-slate-100"} onClick={() => setSourceFilter(source)}>{sourceLabel(source)}</button>
@@ -95,29 +88,20 @@ export function LogsPage({
         </div>
       </Card>
 
-      <section className="grid grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)] items-start gap-4 max-[1080px]:grid-cols-1">
-        <SectionCard className="min-w-0 rounded-[28px]" title="Daftar Aktivitas" description={`${visibleLogs.length} catatan sesuai filter.`}>
-          {visibleLogs.length === 0 ? <EmptyState title="Belum ada aktivitas" description="Aktivitas penting akan muncul setelah aplikasi digunakan." /> : (
-            <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={640}>
-              {visibleLogs.map((log) => (
-                <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
-                  <span className={logLevelClass(log.level)}>{levelLabel(log.level)}</span>
-                  <span>{sourceLabel(log.source)}</span>
-                  <strong>{log.message}</strong>
-                  <small>{log.created_at}</small>
-                </DataRow>
-              ))}
-            </DataTable>
-          )}
-        </SectionCard>
-        <SectionCard className="rounded-[28px]" title="Panduan Membaca" description="Gunakan halaman ini saat butuh pemeriksaan aktivitas.">
-          <div className="grid gap-2.5 [&_div]:flex [&_div]:items-center [&_div]:gap-3 [&_div]:rounded-2xl [&_div]:border [&_div]:border-slate-200 [&_div]:bg-slate-50 [&_div]:p-4 [&_div]:text-sm [&_div]:font-semibold [&_div]:text-slate-600 [&_svg]:flex-none [&_svg]:text-success">
-            <div><CheckCircle size={18} /><span>Info berarti aktivitas normal seperti checkout atau user dibuat.</span></div>
-            <div><AlertTriangle size={18} /><span>Peringatan berarti aktivitas penting seperti pemulihan data.</span></div>
-            <div><Database size={18} /><span>Cadangan data dan pemulihan juga dicatat di sini.</span></div>
-          </div>
-        </SectionCard>
-      </section>
+      <Card className="p-5">
+        {visibleLogs.length === 0 ? <EmptyState title="Belum ada aktivitas" description="Aktivitas penting akan muncul setelah aplikasi digunakan." /> : (
+          <DataTable columns={["Level", "Sumber", "Pesan", "Waktu"]} template="110px 150px minmax(0,1fr) 190px" minWidth={640}>
+            {visibleLogs.map((log) => (
+              <DataRow key={log.id} template="110px 150px minmax(0,1fr) 190px">
+                <span className={logLevelClass(log.level)}>{levelLabel(log.level)}</span>
+                <span>{sourceLabel(log.source)}</span>
+                <strong>{log.message}</strong>
+                <small>{log.created_at}</small>
+              </DataRow>
+            ))}
+          </DataTable>
+        )}
+      </Card>
     </div>
   );
 }
