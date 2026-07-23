@@ -15,7 +15,7 @@ export function CurrencyInput({
 }) {
   const displayValue = value && value !== "-" ? formatRupiah(Number(value)) : value;
   return (
-    <input className={`w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15${className ? ` ${className}` : ""}`}
+    <input className={`w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-[15px] text-slate-900 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15${className ? ` ${className}` : ""}`}
       type="text"
       inputMode="numeric"
       placeholder={placeholder}

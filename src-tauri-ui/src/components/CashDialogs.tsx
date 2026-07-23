@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import type { AccountRow } from "../api";
 import { CurrencyInput } from "./CurrencyInput";
 import { Button, CardHeader } from "./ui";
+import { Modal } from "./ui/Modal";
 
 export type CashModalType = null | "account" | "adjust" | "transfer" | "ownerDraw" | "bankFee";
 
@@ -49,8 +50,7 @@ export function CashDialogs({
   if (!cashModal) return null;
   const title = cashModal === "account" ? "Tambah Rekening" : cashModal === "adjust" ? "Sesuaikan Saldo" : cashModal === "transfer" ? "Transfer Antar Rekening" : cashModal === "ownerDraw" ? "Ambil Uang Owner" : "Potongan Bank/QRIS";
   return (
-    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
-      <section className="max-h-[calc(100vh-48px)] w-[min(780px,100%)] overflow-auto rounded-3xl bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]" role="dialog" aria-modal="true" aria-label="Dialog Kas dan Saldo">
+    <Modal open={!!cashModal} onClose={onClose} size="lg" eyebrow="Kas dan Saldo">
         <CardHeader>
           <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-primary">Kas & Saldo</p><h2>{title}</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
@@ -97,7 +97,6 @@ export function CashDialogs({
             <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden col-span-full md:col-span-2"><Button variant="secondary" type="button" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving || !bankFeeForm.account_id}>Catat Potongan</Button></div>
           </form>
         )}
-      </section>
-    </div>
+    </Modal>
   );
 }

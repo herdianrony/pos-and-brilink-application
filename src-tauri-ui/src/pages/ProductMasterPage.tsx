@@ -63,7 +63,7 @@ export function ProductMasterPage({
           placeholder="Cari produk, kategori, atau barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+          className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
         />
       </div>
 

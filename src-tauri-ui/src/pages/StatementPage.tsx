@@ -92,7 +92,7 @@ export function StatementPage({
             Rekening
           </label>
           <select
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
             value={selectedAccountId}
             onChange={(e) => setSelectedAccountId(e.target.value)}
           >

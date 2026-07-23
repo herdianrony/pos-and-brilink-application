@@ -173,6 +173,7 @@ function ToastViewport({ message }: { message: string }) {
                 setToasts((items) => items.filter((item) => item.id !== t.id))
               }
               className="text-slate-400 hover:text-slate-600 shrink-0"
+              aria-label="Tutup notifikasi"
             >
               <X size={16} />
             </button>
@@ -208,6 +209,10 @@ function MobileSidebar({
   const asideRef = useRef<HTMLElement>(null);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
       if (e.key !== "Tab") return;
       const aside = asideRef.current;
       if (!aside) return;
@@ -293,6 +298,7 @@ function MobileSidebar({
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-white active:scale-90 transition-all"
+            aria-label="Tutup menu navigasi"
           >
             <X size={22} />
           </button>
@@ -470,6 +476,8 @@ export function AppShell({
       <button
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-float border border-slate-200/60 text-slate-700 active:scale-95 transition-transform no-print"
+        aria-label="Buka menu navigasi"
+        aria-expanded={mobileOpen}
       >
         <Menu size={22} />
       </button>

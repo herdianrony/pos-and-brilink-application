@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Banknote, CheckCircle2, CreditCard, Keyboard, QrCode, X } from "lucide-react";
 import type { AccountRow } from "../api";
 import { formatRupiah } from "../lib/format";
 import { Button, CardHeader } from "./ui";
+import { Modal } from "./ui/Modal";
 import { CurrencyInput } from "./CurrencyInput";
 
 type PaymentMethod = "cash" | "transfer" | "qris";
@@ -38,7 +39,6 @@ export function PaymentModal({
   onClose: () => void;
   onConfirm: (cashReceived?: number) => void;
 }) {
-  const modalRef = useRef<HTMLElement>(null);
   const [cashReceived, setCashReceived] = useState("");
   const cashReceivedNumber = Number(cashReceived || 0);
   const changeAmount = cashReceivedNumber - total;
@@ -62,10 +62,6 @@ export function PaymentModal({
   useEffect(() => {
     if (!open) return;
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
       if (event.key === "F2") {
         event.preventDefault();
         onPaymentMethodChange("cash");
@@ -83,15 +79,14 @@ export function PaymentModal({
         onConfirm(paymentMethod === "cash" ? cashReceivedNumber : undefined);
       }
     };
-    modalRef.current?.addEventListener("keydown", handler);
-    return () => modalRef.current?.removeEventListener("keydown", handler);
-  }, [canConfirm, cashReceivedNumber, onClose, onConfirm, onPaymentMethodChange, open, paymentMethod]);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [canConfirm, cashReceivedNumber, onConfirm, onPaymentMethodChange, open, paymentMethod]);
 
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
-      <section ref={modalRef} className="max-h-[calc(100vh-48px)] w-[min(620px,100%)] overflow-auto rounded-3xl bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)]" role="dialog" aria-modal="true" aria-label="Konfirmasi Pembayaran" tabIndex={-1}> 
+    <Modal open={open} onClose={onClose} size="lg" eyebrow="Konfirmasi Pembayaran">
         <CardHeader>
           <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-primary">Pembayaran POS</p><h2>Konfirmasi Pembayaran</h2></div>
           <Button variant="secondary" className="h-10 w-10 p-0" onClick={onClose} title="Tutup" aria-label="Tutup modal pembayaran"><X size={18} /></Button>
@@ -107,7 +102,7 @@ export function PaymentModal({
           {methods.map((method) => {
             const MethodIcon = method.icon;
             return (
-              <button key={method.id} type="button" className={paymentMethod === method.id ? "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500 border-primary bg-primary-light/10 text-primary-dark" : "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500"} onClick={() => onPaymentMethodChange(method.id)}>
+              <button key={method.id} type="button" className={paymentMethod === method.id ? "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500 border-primary bg-primary-light/10 text-primary-dark" : "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500"} onClick={() => onPaymentMethodChange(method.id)} aria-pressed={paymentMethod === method.id}>
                 <MethodIcon size={22} />
                 <strong>{method.label}</strong>
                 <small>{method.hint}</small>
@@ -152,7 +147,6 @@ export function PaymentModal({
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={() => onConfirm(paymentMethod === "cash" ? cashReceivedNumber : undefined)} disabled={!canConfirm}>{saving ? "Menyimpan..." : "Simpan Transaksi"}</Button>
         </div>
-      </section>
-    </div>
+    </Modal>
   );
 }

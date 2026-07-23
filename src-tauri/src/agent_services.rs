@@ -44,21 +44,6 @@ pub struct FeeTierPayload {
     pub provider_cost: Option<f64>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct AgentTransactionPayload {
-    pub service_name: String,
-    pub customer_name: Option<String>,
-    pub amount: f64,
-    pub fee: f64,
-    pub provider_cost: Option<f64>,
-    pub account_id: Option<i64>,
-    pub cash_effect: f64,
-    pub bank_effect: f64,
-    pub notes: Option<String>,
-}
-
-
-
 #[tauri::command]
 pub fn list_agent_services(
     app: AppHandle,

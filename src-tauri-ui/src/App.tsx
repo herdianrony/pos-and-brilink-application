@@ -82,7 +82,6 @@ export default function App() {
     submitUser,
     logout,
   } = auth;
-  const [posStep, setPosStep] = useState<1 | 2 | 3>(1);
   const [posCategoryFilter, setPosCategoryFilter] = useState("all");
   const posCart = usePosCart({ onMessage: setMessage, onRefresh: refreshData });
   const {
@@ -199,7 +198,6 @@ export default function App() {
 
   const settlementAccounts = accounts.filter((account) => account.code !== "cash");
   const totalCash = accounts.reduce((sum, account) => sum + account.balance, 0);
-  const todayTransactions = transactions.length;
   const lowStockCount = products.filter((product) => product.stock <= product.min_stock).length;
   const filteredProducts = posCategoryFilter === "all"
     ? products
@@ -253,22 +251,19 @@ export default function App() {
 
   function addToCart(product: ProductRow) {
     setActiveView("pos");
-    setPosStep(2);
     addProductToCart(product);
   }
 
   function clearCart() {
     clearPosCart();
-    setPosStep(1);
   }
 
   function holdCart() {
     holdPosCart();
-    setPosStep(1);
   }
 
   async function submitCheckout(cashReceived?: number) {
-    await submitPosCheckout({ saving, setSaving, resetStep: () => setPosStep(1), cashReceived });
+    await submitPosCheckout({ saving, setSaving, cashReceived });
   }
 
   if (setupNeeded) {

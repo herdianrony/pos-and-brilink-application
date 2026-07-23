@@ -75,12 +75,10 @@ export function usePosCart({
   async function submitCheckout({
     saving,
     setSaving,
-    resetStep,
     cashReceived,
   }: {
     saving: boolean;
     setSaving: (value: boolean) => void;
-    resetStep: () => void;
     cashReceived?: number;
   }) {
     if (saving) return;
@@ -114,7 +112,6 @@ export function usePosCart({
         items: receiptItems,
       });
       setCart([]);
-      resetStep();
       await onRefresh();
       onMessage(`Checkout berhasil: ${result.invoice_no} • ${formatRupiah(result.total_amount)}`);
     } catch (error) {

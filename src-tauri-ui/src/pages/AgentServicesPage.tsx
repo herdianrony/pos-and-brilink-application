@@ -158,6 +158,7 @@ export function AgentServicesPage({
                       onApplyPreset(service.key);
                       onAgentStepChange(1);
                     }}
+                    aria-pressed={isSelected}
                     className={`relative grid min-h-[120px] content-center justify-items-center gap-1.5 rounded-2xl border-2 p-4 text-center transition-all duration-200 ${
                       isSelected
                         ? "border-primary bg-primary-light/10 text-primary-dark shadow-[0_8px_22px_rgba(4,120,87,.12)]"

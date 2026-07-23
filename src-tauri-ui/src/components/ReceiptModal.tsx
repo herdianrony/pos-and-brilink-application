@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReceiptState } from "../types";
 import { formatRupiah, paymentLabel } from "../lib/format";
 import { Button, CardHeader } from "./ui";
+import { Modal } from "./ui/Modal";
 import { printThermalReceipt } from "../api";
 
 export function ReceiptModal({
@@ -54,8 +55,7 @@ export function ReceiptModal({
   }
 
   return (
-    <div className="absolute inset-0 z-[80] grid min-h-[calc(100vh-64px)] place-items-center bg-slate-900/55 p-6 print:bg-white print:p-0">
-      <section className="max-h-[calc(100vh-48px)] w-[min(520px,100%)] overflow-auto rounded-3xl bg-white p-5.5 shadow-[0_30px_90px_rgba(15,23,42,.35)] print:max-h-none print:w-auto print:overflow-visible print:rounded-none print:p-0 print:shadow-none" role="dialog" aria-modal="true" aria-label="Struk Penjualan">
+    <Modal open={!!receipt} onClose={onClose} size="md" eyebrow="Struk Penjualan">
         <CardHeader>
           <div><p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-primary">Transaksi Berhasil</p><h2>Struk Penjualan</h2></div>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
@@ -98,14 +98,17 @@ export function ReceiptModal({
               <input className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15" value={printerPort} onChange={(event) => setPrinterPort(event.target.value)} placeholder="9100" />
             </label>
           </div>
-          {printStatus && <div className="mt-5 rounded-2xl bg-emerald-50 px-3.5 py-3 font-extrabold text-emerald-800">{printStatus}</div>}
+          {printStatus && (
+            <div className={`mt-5 rounded-2xl px-3.5 py-3 font-extrabold ${printStatus.toLowerCase().includes("berhasil") ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>
+              {printStatus}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2.5 print:hidden">
           <Button onClick={printThermal}>Print Thermal</Button>
           <Button variant="secondary" onClick={() => window.print()}>Print Sistem</Button>
           <Button variant="secondary" onClick={() => navigator.clipboard.writeText(`CatatAgen ${currentReceipt.invoice_no}\nTotal: ${formatRupiah(currentReceipt.total_amount)}\nBayar: ${paymentLabel(currentReceipt.payment_method)}`)}>Salin Ringkasan</Button>
         </div>
-      </section>
-    </div>
+    </Modal>
   );
 }

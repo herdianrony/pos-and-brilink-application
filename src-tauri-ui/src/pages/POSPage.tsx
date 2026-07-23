@@ -64,6 +64,7 @@ export function POSPage({
     cash_effect: number;
     bank_effect: number;
     notes?: string;
+    quantity: number;
   }) => void;
   onUpdateQty: (productId: number, quantity: number) => void;
   onPaymentMethodChange: (method: "cash" | "transfer" | "qris") => void;
@@ -149,6 +150,7 @@ export function POSPage({
           <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => onCategoryFilterChange("all")}
+              aria-pressed={posCategoryFilter === "all"}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
                 posCategoryFilter === "all"
@@ -162,6 +164,7 @@ export function POSPage({
               <button
                 key={c.id}
                 onClick={() => onCategoryFilterChange(String(c.id))}
+                aria-pressed={posCategoryFilter === String(c.id)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
                   posCategoryFilter === String(c.id)
@@ -189,6 +192,7 @@ export function POSPage({
                       key={product.id}
                       onClick={() => onAddToCart(product)}
                       disabled={product.stock <= 0}
+                      aria-label={`Tambah ${product.name} ke keranjang`}
                       className={cn(
                         "p-3.5 rounded-2xl text-left transition-all duration-200 border-2 group relative overflow-hidden",
                         inCart
@@ -293,6 +297,7 @@ export function POSPage({
                             onUpdateQty(item.product.id, item.quantity - 1)
                           }
                           className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
+                          aria-label={`Kurangi ${item.product.name}`}
                         >
                           <Minus size={13} />
                         </button>
@@ -304,6 +309,7 @@ export function POSPage({
                             onUpdateQty(item.product.id, item.quantity + 1)
                           }
                           className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-success-light/30 hover:border-success-light hover:text-success transition-colors"
+                          aria-label={`Tambah ${item.product.name}`}
                         >
                           <Plus size={13} />
                         </button>
@@ -324,6 +330,7 @@ export function POSPage({
                       <button
                         onClick={() => onUpdateQty(item.product.id, 0)}
                         className="p-2.5 text-gray-300 hover:text-red-500 transition-colors"
+                        aria-label={`Hapus ${item.product.name}`}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -368,6 +375,7 @@ export function POSPage({
                           fee: preset.fee,
                         })
                       }
+                      aria-pressed={serviceForm.service_name === preset.label}
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
                         serviceForm.service_name === preset.label
@@ -437,6 +445,7 @@ export function POSPage({
                         cash_effect: 0,
                         bank_effect: 0,
                         notes: serviceForm.notes,
+                        quantity: 1,
                       });
                       setShowServiceForm(false);
                     }}
