@@ -81,6 +81,7 @@ export default function App() {
     submitLogin,
     submitUser,
     logout,
+    restoreSession,
   } = auth;
   const [posCategoryFilter, setPosCategoryFilter] = useState("all");
   const posCart = usePosCart({ onMessage: setMessage, onRefresh: refreshData });
@@ -206,7 +207,15 @@ export default function App() {
   const filteredDebts = debts;
 
   useEffect(() => {
-    bootstrap();
+    (async () => {
+      await bootstrap();
+      // Try to restore session from localStorage
+      try {
+        await restoreSession();
+      } catch {
+        // No valid session — user will see login screen
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

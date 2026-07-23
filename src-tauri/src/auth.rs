@@ -8,7 +8,7 @@ use tauri::{AppHandle, State};
 
 use crate::common::{get_db, DbConn, record_app_log};
 use crate::session::PublicUser;
-use crate::session::SessionState;
+use crate::session::{SessionState, persist_session, load_persisted_session};
 
 /// In-memory rate limiter: username -> (attempt_count, first_attempt_timestamp)
 pub struct LoginRateLimiter(pub Mutex<HashMap<String, (u32, i64)>>);
@@ -158,6 +158,7 @@ pub fn create_admin(
         .0
         .lock()
         .map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
+    let _ = persist_session(&app, &Some(user.clone()));
     Ok(user)
 }
 
@@ -319,6 +320,7 @@ pub fn login(
         .0
         .lock()
         .map_err(|_| "Session tidak valid".to_string())? = Some(public_user.clone());
+    let _ = persist_session(&app, &Some(public_user.clone()));
     record_app_log(
         &conn,
         "INFO",
@@ -343,11 +345,12 @@ fn record_failed_attempt(rate_limiter: &State<'_, LoginRateLimiter>, username: &
 }
 
 #[tauri::command]
-pub fn logout(session: State<'_, SessionState>) -> Result<bool, String> {
+pub fn logout(app: AppHandle, session: State<'_, SessionState>) -> Result<bool, String> {
     *session
         .0
         .lock()
         .map_err(|_| "Session tidak valid".to_string())? = None;
+    let _ = persist_session(&app, &None);
     Ok(true)
 }
 
@@ -460,8 +463,19 @@ pub fn deactivate_user(
 }
 
 #[tauri::command]
-pub fn get_me(session: State<'_, SessionState>) -> Result<PublicUser, String> {
-    require_auth(&session)
+pub fn get_me(app: AppHandle, session: State<'_, SessionState>) -> Result<PublicUser, String> {
+    // Try in-memory first
+    let in_memory = session.0.lock().map_err(|_| "Session tidak valid".to_string())?.clone();
+    if let Some(user) = in_memory {
+        return Ok(user);
+    }
+    // Try loading from persisted file (survives app restart)
+    if let Some(user) = load_persisted_session(&app) {
+        // Restore to in-memory
+        *session.0.lock().map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
+        return Ok(user);
+    }
+    Err("Sesi login tidak aktif. Silakan login ulang.".to_string())
 }
 
 fn validate_password(password: &str) -> Result<(), String> {

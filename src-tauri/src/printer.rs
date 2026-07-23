@@ -1,10 +1,49 @@
 use serde::Deserialize;
 use std::io::Write;
-use std::net::TcpStream;
+use std::net::{IpAddr, TcpStream};
 use std::time::Duration;
 use tauri::State;
 
 use crate::{auth::require_auth, session::SessionState};
+
+/// Validate printer host to prevent SSRF attacks.
+/// Only allows private/local network IPs and simple hostnames.
+fn validate_printer_host(host: &str) -> Result<(), String> {
+    if host.is_empty() {
+        return Err("IP/host printer wajib diisi".into());
+    }
+    // Block scheme injection (http://, https://, file://, etc.)
+    if host.contains("://") || host.contains('/') || host.contains('@') {
+        return Err("Format host printer tidak valid".into());
+    }
+    // If it's an IP address, validate it's a private/local address
+    if let Ok(ip) = host.parse::<IpAddr>() {
+        match ip {
+            IpAddr::V4(v4) => {
+                if v4.is_loopback() || v4.is_private() || v4.is_link_local() {
+                    return Ok(());
+                }
+                return Err("Printer harus berada di jaringan lokal (private IP)".into());
+            }
+            IpAddr::V6(v6) => {
+                if v6.is_loopback() {
+                    return Ok(());
+                }
+                return Err("Printer harus berada di jaringan lokal (IPv4 private)".into());
+            }
+        }
+    }
+    // Simple hostname validation — allow alphanumeric, dots, hyphens
+    if host
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+        && !host.starts_with('-')
+        && !host.ends_with('-')
+    {
+        return Ok(());
+    }
+    Err("Format host printer tidak valid".into())
+}
 
 #[derive(Debug, Deserialize)]
 pub struct PrintReceiptItemPayload {
@@ -39,9 +78,7 @@ pub fn print_thermal_receipt(
 ) -> Result<bool, String> {
     let _user = require_auth(&session)?;
     let host = payload.host.trim();
-    if host.is_empty() {
-        return Err("IP/host printer wajib diisi".into());
-    }
+    validate_printer_host(host)?;
     let port = payload.port.unwrap_or(9100);
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&[0x1b, 0x40]);

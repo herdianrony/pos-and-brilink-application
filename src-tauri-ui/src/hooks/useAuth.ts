@@ -1,6 +1,8 @@
-import { useState, type FormEvent } from "react";
-import { createAdmin, createUser, login, logoutSession, type PublicUser } from "../api";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { createAdmin, createUser, login, logoutSession, getMe, type PublicUser } from "../api";
 import type { ViewKey } from "../types";
+
+const SESSION_KEY = "catatagen.session.user";
 
 export function useAuth({
   saving,
@@ -23,6 +25,33 @@ export function useAuth({
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [userForm, setUserForm] = useState({ name: "", username: "", password: "", role: "kasir" as "admin" | "kasir" });
 
+  // Persist user to localStorage
+  function persistUser(u: PublicUser | null) {
+    if (u) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }
+
+  // Restore session on mount — validate with backend
+  const restoreSession = useCallback(async () => {
+    try {
+      const stored = localStorage.getItem(SESSION_KEY);
+      if (!stored) return null;
+      const parsed = JSON.parse(stored) as PublicUser;
+      // Validate with backend
+      const validated = await getMe();
+      setUser(validated);
+      persistUser(validated);
+      return validated;
+    } catch {
+      // Backend session expired or invalid — clear stored
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+  }, []);
+
   async function submitSetup(event: FormEvent) {
     event.preventDefault();
     if (saving) return;
@@ -30,6 +59,7 @@ export function useAuth({
     try {
       const admin = await createAdmin(setupForm);
       setUser(admin);
+      persistUser(admin);
       onSetupComplete();
       await onRefresh();
       onMessage("Setup admin berhasil");
@@ -47,6 +77,7 @@ export function useAuth({
     try {
       const result = await login(loginForm);
       setUser(result.user);
+      persistUser(result.user);
       onNavigate("dashboard");
       await onRefresh();
       onMessage(`Selamat datang, ${result.user.name}`);
@@ -80,6 +111,7 @@ export function useAuth({
       // Local UI logout must still proceed even if the backend session is already cleared.
     }
     setUser(null);
+    persistUser(null);
     onNavigate("dashboard");
   }
 
@@ -98,5 +130,6 @@ export function useAuth({
     submitLogin,
     submitUser,
     logout,
+    restoreSession,
   };
 }

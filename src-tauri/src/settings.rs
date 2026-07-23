@@ -5,6 +5,25 @@ use tauri::{AppHandle, State};
 
 use crate::{auth::require_admin, auth::require_auth, common::get_db, common::DbConn, session::SessionState};
 
+/// Whitelist of allowed settings keys that can be updated via the API.
+const ALLOWED_KEYS: &[&str] = &[
+    "app_name",
+    "store_name",
+    "store_owner_name",
+    "store_phone",
+    "store_address",
+    "business_type",
+    "max_discount_percent",
+    "max_discount_amount",
+    "discount_admin_pin",
+    "printer_host",
+    "printer_port",
+    "printer_paper_width",
+    "receipt_footer",
+    "whatsapp_owner_number",
+    "kas_only",
+];
+
 #[derive(Debug, Deserialize)]
 pub struct SettingsUpdatePayload {
     pub settings: HashMap<String, String>,
@@ -49,6 +68,12 @@ pub fn update_settings(
     payload: SettingsUpdatePayload,
 ) -> Result<bool, String> {
     let _user = require_admin(&session)?;
+    // Validate all keys against whitelist
+    for key in payload.settings.keys() {
+        if !ALLOWED_KEYS.contains(&key.as_str()) {
+            return Err(format!("Pengaturan '{}' tidak diizinkan", key));
+        }
+    }
     let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
