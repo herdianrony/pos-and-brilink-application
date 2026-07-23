@@ -85,7 +85,6 @@ pub fn checkout_pos_cash(
         chrono::Utc::now().format("%Y%m%d%H%M%S"),
         chrono::Utc::now().timestamp_subsec_millis()
     );
-    let mut total_amount = 0.0;
     let mut total_profit = 0.0;
     let mut product_subtotal = 0.0;
 
@@ -101,7 +100,6 @@ pub fn checkout_pos_cash(
         let subtotal = round_money(product.2 * item.quantity as f64);
         let profit = round_money((product.2 - product.1) * item.quantity as f64);
         product_subtotal += subtotal;
-        total_amount += subtotal;
         total_profit += profit;
 
         tx.execute(
@@ -124,9 +122,9 @@ pub fn checkout_pos_cash(
         0.0
     };
     product_subtotal = round_money(product_subtotal - discount_amount).max(0.0);
-    total_amount = product_subtotal;
 
     // ── Agent items (added AFTER discount, not affected by discount) ──
+    let mut total_amount = product_subtotal;
     for agent in &payload.agent_items {
         let fee = round_money(agent.fee);
         let provider_cost = round_money(agent.provider_cost.unwrap_or(0.0));

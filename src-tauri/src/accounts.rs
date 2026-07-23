@@ -142,8 +142,8 @@ pub fn create_account(
     let mut conn = get_db(&db)?;
     let code = crate::common::normalize_code(&payload.code);
     let name = payload.name.trim().to_string();
-    let initial_balance = payload.initial_balance.map_err(|e| format!("Query error: {e}"))?;
-    let min_balance = payload.min_balance.map_err(|e| format!("Query error: {e}"))?;
+    let initial_balance = payload.initial_balance.unwrap_or(0.0);
+    let min_balance = payload.min_balance.unwrap_or(0.0);
     if code.is_empty() || name.is_empty() {
         return Err("Kode dan nama rekening wajib diisi".into());
     }
