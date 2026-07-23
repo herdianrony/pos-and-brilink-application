@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import type { AccountRow, ProductRow, TransactionRow } from "../api";
+import { getDashboard } from "../api";
 import { Card, StatCard, Badge, Spinner, EmptyState } from "../components/ui";
 import { formatRupiah, paymentLabel, formatDate, formatDateShort } from "../lib/format";
 import {
@@ -102,6 +103,12 @@ function DashboardChartTooltip({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+type DashboardData = Awaited<ReturnType<typeof getDashboard>>;
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -122,70 +129,65 @@ export function DashboardPage({
   loading: boolean;
   onRefresh: () => void;
 }) {
-  /* ---- Derived data ---- */
+  const [dashData, setDashData] = useState<DashboardData | null>(null);
 
-  const todayTransactions = useMemo(
-    () => transactions.filter((t) => isToday(t.created_at)),
-    [transactions],
-  );
+  // Fetch dashboard data from backend on mount
+  useEffect(() => {
+    let cancelled = false;
+    getDashboard()
+      .then((data) => { if (!cancelled) setDashData(data); })
+      .catch(() => { /* fallback to client-side computation */ });
+    return () => { cancelled = true; };
+  }, [loading]); // refetch when loading changes (i.e. after refresh)
 
-  const posToday = useMemo(
-    () => todayTransactions.filter((t) => t.transaction_type === "pos"),
-    [todayTransactions],
-  );
-  const agentToday = useMemo(
-    () => todayTransactions.filter((t) => t.transaction_type === "agent"),
-    [todayTransactions],
-  );
+  /* ---- Use backend data when available, fallback to client-side ---- */
 
-  const todayRevenue = todayTransactions.reduce(
-    (s, t) => s + Math.max(t.total_amount, 0),
-    0,
-  );
-  const todayProfit = todayTransactions.reduce(
-    (s, t) => s + Math.max(t.profit, 0),
-    0,
-  );
-  const posRevenue = posToday.reduce(
-    (s, t) => s + Math.max(t.total_amount, 0),
-    0,
-  );
-  const posProfit = posToday.reduce(
-    (s, t) => s + Math.max(t.profit, 0),
-    0,
-  );
-  const agentRevenue = agentToday.reduce(
-    (s, t) => s + Math.max(t.total_amount, 0),
-    0,
-  );
-  const agentProfit = agentToday.reduce(
-    (s, t) => s + Math.max(t.profit, 0),
-    0,
-  );
+  const todayTransactions = dashData
+    ? transactions.filter((t) => isToday(t.created_at))
+    : transactions.filter((t) => isToday(t.created_at));
 
-  const lowStockProducts = useMemo(
-    () =>
-      products
+  const posToday = dashData
+    ? todayTransactions.filter((t) => t.transaction_type === "pos")
+    : todayTransactions.filter((t) => t.transaction_type === "pos");
+  const agentToday = dashData
+    ? todayTransactions.filter((t) => t.transaction_type === "brilink")
+    : todayTransactions.filter((t) => t.transaction_type === "agent");
+
+  // Use backend aggregation for accurate stats
+  const todayRevenue = dashData ? dashData.today_all.revenue : todayTransactions.reduce((s, t) => s + Math.max(t.total_amount, 0), 0);
+  const todayProfit = dashData ? dashData.today_all.profit : todayTransactions.reduce((s, t) => s + Math.max(t.profit, 0), 0);
+  const posRevenue = dashData ? dashData.today_pos.revenue : posToday.reduce((s, t) => s + Math.max(t.total_amount, 0), 0);
+  const posProfit = dashData ? dashData.today_pos.profit : posToday.reduce((s, t) => s + Math.max(t.profit, 0), 0);
+  const agentRevenue = dashData ? dashData.today_brilink.revenue : agentToday.reduce((s, t) => s + Math.max(t.total_amount, 0), 0);
+  const agentProfit = dashData ? dashData.today_brilink.profit : agentToday.reduce((s, t) => s + Math.max(t.profit, 0), 0);
+  const pendingCount = dashData ? dashData.pending_count : transactions.filter((t) => t.status === "pending").length;
+
+  const lowStockProducts = dashData?.low_stock?.length
+    ? dashData.low_stock.map((p) => ({ id: p.id, name: p.name, stock: p.stock, minStock: p.min_stock, unit: "pcs" }))
+    : products
         .filter((p) => p.stock <= p.min_stock)
         .slice(0, 10)
-        .map((p) => ({
-          id: p.id,
-          name: p.name,
-          stock: p.stock,
-          minStock: p.min_stock,
-          unit: p.unit,
-        })),
-    [products],
-  );
+        .map((p) => ({ id: p.id, name: p.name, stock: p.stock, minStock: p.min_stock, unit: p.unit }));
 
-  const lowBalanceAccounts = useMemo(
-    () => accounts.filter((a) => a.balance < a.min_balance),
-    [accounts],
-  );
+  const lowBalanceAccounts = dashData?.accounts
+    ? dashData.accounts.filter((a) => a.balance < 0).length > 0
+      ? accounts.filter((a) => a.balance < a.min_balance)
+      : []
+    : accounts.filter((a) => a.balance < a.min_balance);
 
-  /* ---- 7-day chart data ---- */
+  /* ---- 7-day chart data (prefer backend, fallback client-side) ---- */
 
-  const chartData = useMemo(() => {
+  const chartData = (() => {
+    if (dashData?.last_7_days?.length) {
+      return dashData.last_7_days.map((d) => ({
+        label: new Date(d.date).toLocaleDateString("id-ID", { weekday: "short" }),
+        date: formatDateShort(new Date(d.date)),
+        revenue: d.revenue,
+        profit: d.profit,
+        count: 0,
+      }));
+    }
+    // Fallback: client-side from transactions
     const today = new Date();
     const rows = Array.from({ length: 7 }, (_, index) => {
       const date = new Date(today);
@@ -209,7 +211,7 @@ export function DashboardPage({
       row.count += 1;
     }
     return rows.map(({ key: _key, ...row }) => row);
-  }, [transactions]);
+  })();
 
   const chartHasActivity = chartData.some(
     (d) => d.revenue > 0 || d.profit > 0 || d.count > 0,
@@ -341,10 +343,6 @@ export function DashboardPage({
 
       {/* ── 4. Action Required ── */}
       {(() => {
-        const pendingCount = transactions.filter(
-          (t) => t.status === "pending",
-        ).length;
-
         const actions: Array<{
           icon: typeof AlertTriangle;
           label: string;
