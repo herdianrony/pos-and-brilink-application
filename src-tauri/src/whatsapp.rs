@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::io::Write;
-use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager, State};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Manager, State};
 
 use crate::{
     auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
@@ -32,6 +32,9 @@ pub struct WaSidecarState {
     pub qr_data_url: Mutex<Option<String>>,
     pub last_error: Mutex<Option<String>>,
 }
+
+// Wrapper so we can clone the Arc and pass it into 'static closures
+pub type SharedWaState = Arc<WaSidecarState>;
 
 impl WaSidecarState {
     pub fn new() -> Self {
@@ -115,7 +118,7 @@ pub fn whatsapp_status(
     db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
-    let sc = app.state::<WaSidecarState>();
+    let sc = app.state::<std::sync::Arc<WaSidecarState>>();
     let conn = get_db(&db)?;
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
     let status = sc.status.lock().map(|s| s.clone()).unwrap_or_default();
@@ -144,7 +147,7 @@ pub fn whatsapp_start(
     db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
-    let sc = app.state::<WaSidecarState>();
+    let sc = app.state::<std::sync::Arc<WaSidecarState>>();
 
     // Kill existing sidecar if any
     kill_sidecar(&sc);
@@ -213,7 +216,7 @@ pub fn whatsapp_start(
         "whatsapp",
         "WhatsApp sidecar dimulai",
     );
-
+    drop(conn); // Release borrow before passing db
     whatsapp_status(app, session, db)
 }
 
@@ -224,7 +227,7 @@ pub fn whatsapp_restart(
     db: State<'_, DbConn>,
 ) -> Result<WhatsAppSidecarStatus, String> {
     let _user = require_admin(&session)?;
-    let sc = app.state::<WaSidecarState>();
+    let sc = app.state::<std::sync::Arc<WaSidecarState>>();
     kill_sidecar(&sc);
     *sc.status.lock().map_err(|_| "lock error".to_string())? = "idle".into();
     *sc.qr_data_url
@@ -238,13 +241,14 @@ pub fn whatsapp_restart(
         "whatsapp",
         "WhatsApp sidecar di-restart",
     );
+    drop(conn);
     whatsapp_status(app, session, db)
 }
 
 #[tauri::command]
 pub fn whatsapp_logout(app: AppHandle, session: State<'_, SessionState>, db: State<'_, DbConn>) -> Result<bool, String> {
     let _user = require_admin(&session)?;
-    let sc = app.state::<WaSidecarState>();
+    let sc = app.state::<std::sync::Arc<WaSidecarState>>();
 
     // Send logout command before killing
     let _ = send_sidecar_command(&sc, "logout", &serde_json::json!({}));
@@ -268,7 +272,7 @@ pub fn whatsapp_notify(
     transaction_id: i64,
 ) -> Result<WaNotifyResponse, String> {
     let _user = require_admin(&session)?;
-    let sc = app.state::<WaSidecarState>();
+    let sc = app.state::<std::sync::Arc<WaSidecarState>>();
     let conn = get_db(&db)?;
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
 
@@ -351,27 +355,23 @@ pub fn whatsapp_notify(
 /// - Kills sidecar on window close (prevents zombie processes)
 /// - Sends periodic heartbeat to check sidecar health
 pub fn setup_whatsapp_lifecycle(app: &AppHandle) {
-    let app_handle = app.clone();
-
-    // Kill sidecar on window close
-    let app_for_close = app_handle.clone();
-    if let Some(window) = app_for_close.get_webview_window("main") {
-        let sc = app_for_close.state::<WaSidecarState>().inner().clone();
+    // Kill sidecar on window close (prevents zombie processes)
+    let sc_close = app.state::<std::sync::Arc<WaSidecarState>>().inner().clone();
+    if let Some(window) = app.get_webview_window("main") {
         window.on_window_event(move |event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                kill_sidecar(&sc);
+                kill_sidecar(&sc_close);
             }
         });
     }
 
     // Periodic heartbeat: ping sidecar every 30 seconds
-    let app_for_heartbeat = app_handle.clone();
+    let sc_heartbeat = app.state::<std::sync::Arc<WaSidecarState>>().inner().clone();
     std::thread::spawn(move || loop {
         std::thread::sleep(std::time::Duration::from_secs(30));
-        let sc = app_for_heartbeat.state::<WaSidecarState>();
-        let has_child = sc.child.lock().ok().map(|c| c.is_some()).unwrap_or(false);
+        let has_child = sc_heartbeat.child.lock().ok().map(|c| c.is_some()).unwrap_or(false);
         if has_child {
-            let _ = send_sidecar_command(&sc, "ping", &serde_json::json!({}));
+            let _ = send_sidecar_command(&sc_heartbeat, "ping", &serde_json::json!({}));
         }
     });
 }

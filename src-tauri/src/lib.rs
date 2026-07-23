@@ -66,7 +66,7 @@ pub fn run() {
             Ok(())
         })
         .manage(SessionState(std::sync::Mutex::new(None)))
-        .manage(WaSidecarState::new())
+        .manage(std::sync::Arc::new(WaSidecarState::new()))
         .manage(LoginRateLimiter::new())
         .invoke_handler(tauri::generate_handler![
             // Health & Setup
