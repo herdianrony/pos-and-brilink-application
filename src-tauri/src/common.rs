@@ -323,12 +323,12 @@ pub fn product_image_data_url(
 
 /// Build a dynamic SQL query with optional filters.
 /// Returns (sql_string, boxed_params) ready for prepared statement.
-pub fn build_query(
-    base_sql: &str,
-    filters: &[(&str, Option<&str>)],
-    suffix: &str,
-    extra_params: &[&dyn rusqlite::types::ToSql],
-) -> (String, Vec<Box<dyn rusqlite::types::ToSql + '_>>) {
+pub fn build_query<'a>(
+    base_sql: &'a str,
+    filters: &'a [(&'a str, Option<&'a str>)],
+    suffix: &'a str,
+    extra_params: &'a [&'a dyn rusqlite::types::ToSql],
+) -> (String, Vec<Box<dyn rusqlite::types::ToSql + 'a>>) {
     let mut sql = String::from(base_sql);
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
     for (col_op, value) in filters {
