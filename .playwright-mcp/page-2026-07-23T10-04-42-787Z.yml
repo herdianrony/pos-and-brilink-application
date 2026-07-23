@@ -1,0 +1,30 @@
+- generic [ref=f1e62]:
+  - link "Langsung ke konten utama" [ref=f1e63] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f1e64]:
+    - navigation [ref=f1e70]:
+      - button "Dashboard" [ref=f1e71]
+      - button "Kasir POS" [ref=f1e77]
+      - button "Layanan Agen" [ref=f1e82]
+      - button "Transaksi" [ref=f1e85]
+      - button "Keuangan" [ref=f1e89]
+      - button "Pengaturan" [ref=f1e93]
+    - generic [ref=f1e97]:
+      - button "Tentang" [ref=f1e99]
+      - button "Support" [ref=f1e102]
+      - generic [ref=f1e106]: A
+      - button "Keluar" [ref=f1e108]
+  - main [ref=f1e112]:
+    - generic [ref=f1e114]:
+      - strong [ref=f1e115]: Halaman mengalami kendala
+      - paragraph [ref=f1e116]: ShoppingCart is not defined
+      - button "Muat Ulang Halaman" [ref=f1e118]
+  - generic:
+    - generic [ref=f1e119]:
+      - generic [ref=f1e120]: ✓
+      - paragraph [ref=f1e123]: CatatAgen Local siap (mock-tauri)
+      - button "Tutup notifikasi" [ref=f1e124]
+    - generic [ref=f1e128]:
+      - generic [ref=f1e129]: ✓
+      - paragraph [ref=f1e132]: Selamat datang, Admin
+      - button "Tutup notifikasi" [ref=f1e133]

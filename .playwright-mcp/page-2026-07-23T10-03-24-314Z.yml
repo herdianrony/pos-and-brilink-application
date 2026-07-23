@@ -1,0 +1,39 @@
+- main [ref=e3]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: CA
+      - generic [ref=e8]:
+        - heading "CatatAgen" [level=1] [ref=e9]
+        - paragraph [ref=e10]: POS Retail & Pencatatan Agen Mikro
+    - generic [ref=e11]:
+      - paragraph [ref=e12]: Aplikasi Lokal Desktop
+      - heading "Selamat datang kembali" [level=2] [ref=e13]
+      - paragraph [ref=e14]: Kelola kasir POS, layanan agen non-API, saldo virtual, stok produk, dan buku utang dalam satu aplikasi ringan.
+    - generic [ref=e15]:
+      - generic [ref=e16]: Transaksi cepat untuk kasir harian
+      - generic [ref=e20]: Data tersimpan lokal di perangkat
+      - generic [ref=e25]: Kas, rekening, QRIS, dan utang tercatat rapi
+  - generic [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]: CA
+      - generic [ref=e33]:
+        - strong [ref=e34]: CatatAgen
+        - generic [ref=e35]: Local Edition
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - paragraph [ref=e38]: Masuk
+        - heading "Masuk ke Aplikasi" [level=2] [ref=e39]
+        - paragraph [ref=e40]: Gunakan akun owner atau kasir yang sudah dibuat.
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - text: Username
+          - textbox "Username" [ref=e47]:
+            - /placeholder: Masukkan username
+        - generic [ref=e48]:
+          - text: Password
+          - generic [ref=e49]:
+            - textbox "Password Lihat password" [ref=e53]:
+              - /placeholder: Masukkan password
+            - button "Lihat password" [ref=e54]
+        - button "Masuk" [ref=e58]
+      - generic [ref=e61]: CatatAgen Local siap (mock-tauri)

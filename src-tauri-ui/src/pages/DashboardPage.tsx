@@ -3,7 +3,7 @@ import type { AccountRow, ProductRow, TransactionRow } from "../api";
 import { getDashboard } from "../api";
 import { Card, Badge, Spinner, EmptyState } from "../components/ui";
 import { formatRupiah, formatDateShort } from "../lib/format";
-import { TrendingUp, Wallet, AlertTriangle, Landmark, CheckCircle2 } from "lucide-react";
+import { TrendingUp, Wallet, AlertTriangle, Landmark, CheckCircle2, ShoppingCart } from "lucide-react";
 import { DashboardChart } from "./dashboard/DashboardChart";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboard>>;
