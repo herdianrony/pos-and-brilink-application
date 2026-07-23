@@ -34,7 +34,7 @@ fn undo_transaction(
             "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, (SELECT balance FROM accounts WHERE id = ?1) + ?3, ?4, ?5, ?6)",
             params![acc_id, format!("{}_{}", mtype, action_label), neg_amt, format!("{}: {}", action_label, reason), trx_id, now],
         ).map_err(|e| e.to_string())?;
-        tx.execute("UPDATE accounts SET balance = balance + ?1 WHERE id = ?2", params![neg_amt, acc_id])
+        tx.execute("UPDATE accounts SET balance = balance + ?1 WHERE id = ?2 AND balance + ?1 >= 0", params![neg_amt, acc_id])
             .map_err(|e| e.to_string())?;
     }
 

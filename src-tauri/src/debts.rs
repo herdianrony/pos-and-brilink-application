@@ -138,27 +138,43 @@ pub fn add_debt_payment(
     if debt.5 == "paid" {
         return Err("Utang sudah lunas".into());
     }
-    let paid_amount = round_money((debt.4 + amount).min(debt.3));
-    let status = if paid_amount >= debt.3 {
-        "paid"
-    } else {
-        "open"
-    };
+    let payment_amount = round_money(amount.min(debt.3 - debt.4)); // actual payment (capped at outstanding)
+    let paid_amount = round_money(debt.4 + payment_amount);
+    let status = if paid_amount >= debt.3 { "paid" } else { "open" };
+
+    // Update debt record
     tx.execute(
         "UPDATE debts SET paid_amount = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
         params![paid_amount, status, now, debt.0],
-    )
-    .map_err(|e| e.to_string())?;
+    ).map_err(|e| e.to_string())?;
+
+    // Record payment
     tx.execute(
         "INSERT INTO debt_payments (debt_id, amount, notes, created_at) VALUES (?1, ?2, ?3, ?4)",
-        params![
-            debt.0,
-            amount,
-            crate::common::trim_optional(payload.notes),
-            now
-        ],
-    )
-    .map_err(|e| e.to_string())?;
+        params![debt.0, payment_amount, crate::common::trim_optional(payload.notes), now],
+    ).map_err(|e| e.to_string())?;
+
+    // K-1 fix: record cash inflow from debt payment
+    if payment_amount > 0.0 {
+        if let Ok(cash_id) = tx.query_row(
+            "SELECT id FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
+            [], |r| r.get::<_, i64>(0),
+        ) {
+            let affected = tx.execute(
+                "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+                params![payment_amount, now, cash_id],
+            ).map_err(|e| e.to_string())?;
+            if affected > 0 {
+                let new_bal: f64 = tx.query_row(
+                    "SELECT balance FROM accounts WHERE id = ?1", params![cash_id], |r| r.get(0),
+                ).unwrap_or(0.0);
+                tx.execute(
+                    "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'debt_payment', ?2, ?3, ?4, ?5, ?6)",
+                    params![cash_id, payment_amount, new_bal, format!("Pembayaran hutang: {}", debt.1), debt.0, now],
+                ).map_err(|e| e.to_string())?;
+            }
+        }
+    }
     tx.commit().map_err(|e| e.to_string())?;
     Ok(DebtRow {
         id: debt.0,

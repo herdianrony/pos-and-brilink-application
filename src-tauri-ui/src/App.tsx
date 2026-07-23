@@ -7,7 +7,6 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AgentServicesPage } from "./pages/AgentServicesPage";
 import { POSPage } from "./pages/POSPage";
-import { ProductMasterPage } from "./pages/ProductMasterPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { KeuanganPage } from "./pages/KeuanganPage";
 import { useAppData } from "./hooks/useAppData";
@@ -102,7 +101,7 @@ export default function App() {
     setSaving,
     onRefresh: refreshData,
     onMessage: setMessage,
-    onNavigateProducts: () => setActiveView("products"),
+    onNavigateProducts: () => setActiveView("settings"),
   });
   const {
     showProductModal,
@@ -372,17 +371,6 @@ export default function App() {
             onAgentStepChange={setAgentStep}
             onApplyPreset={applyAgentPreset}
             onSubmitAgentTransaction={submitAgentTransaction}
-          />
-        );
-      case "products":
-        return (
-          <ProductMasterPage
-            categories={categories}
-            products={filteredProducts}
-            onAddCategory={() => setShowCategoryModal(true)}
-            onAddProduct={openAddProduct}
-            onEditProduct={startEditProduct}
-            onRemoveProduct={removeProduct}
           />
         );
       case "history":
