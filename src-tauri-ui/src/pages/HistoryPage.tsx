@@ -165,7 +165,7 @@ export function HistoryPage({
             <table className="w-full text-sm">
               <caption className="sr-only">Riwayat Transaksi</caption>
               <thead>
-                <tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                <tr className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50/80">
                   <th className="text-left p-3 font-medium">Invoice</th>
                   <th className="text-left p-3 font-medium">Tipe</th>
                   <th className="text-left p-3 font-medium">Pelanggan</th>
@@ -224,7 +224,7 @@ export function HistoryPage({
                     <td className="p-3 text-right font-semibold text-emerald-600">
                       {formatRupiah(transaction.profit)}
                     </td>
-                    <td className="p-3 text-slate-400 text-xs whitespace-nowrap">
+                    <td className="p-3 text-slate-500 text-xs whitespace-nowrap">
                       {transaction.created_at}
                     </td>
                     <td className="p-3 text-center">
@@ -271,7 +271,7 @@ export function HistoryPage({
                   <h3 className="text-lg font-extrabold text-slate-800">
                     Detail Transaksi
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">
+                  <p className="text-xs text-slate-500 font-mono">
                     {selectedTransaction.invoice_no}
                   </p>
                 </div>
@@ -286,13 +286,13 @@ export function HistoryPage({
             {/* Info grid */}
             <div className="bg-slate-50 rounded-xl p-3 grid grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-slate-400 block">Tanggal</span>
+                <span className="text-slate-500 block">Tanggal</span>
                 <span className="font-medium text-slate-700">
                   {selectedTransaction.created_at}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Tipe</span>
+                <span className="text-slate-500 block">Tipe</span>
                 <span className="font-medium text-slate-700">
                   {selectedTransaction.transaction_type === "pos"
                     ? "POS"
@@ -300,13 +300,13 @@ export function HistoryPage({
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Pelanggan</span>
+                <span className="text-slate-500 block">Pelanggan</span>
                 <span className="font-medium text-slate-700">
                   {selectedTransaction.customer_name || "-"}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Pembayaran</span>
+                <span className="text-slate-500 block">Pembayaran</span>
                 <span className="font-medium text-slate-700">
                   {paymentLabel(selectedTransaction.payment_method)}
                 </span>
@@ -324,7 +324,7 @@ export function HistoryPage({
                   >
                     <div>
                       <span className="font-medium">{item.product_name}</span>
-                      <span className="text-slate-400 ml-1">
+                      <span className="text-slate-500 ml-1">
                         \u00d7 {item.quantity}
                       </span>
                     </div>
@@ -332,7 +332,7 @@ export function HistoryPage({
                       <div className="font-semibold">
                         {formatRupiah(item.subtotal)}
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-[10px] text-slate-500">
                         {formatRupiah(item.unit_price)} / pcs
                       </div>
                     </div>
@@ -358,7 +358,7 @@ export function HistoryPage({
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Keuntungan</span>
+                <span className="text-slate-500">Keuntungan</span>
                 <span className="text-emerald-600 font-bold">
                   {formatRupiah(selectedTransaction.profit)}
                 </span>

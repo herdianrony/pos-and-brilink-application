@@ -18,7 +18,7 @@ export function Input({
         className={cn(
           "w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-slate-50/50",
           "focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary",
-          "transition-all text-sm font-medium placeholder:text-slate-400",
+          "transition-all text-sm font-medium placeholder:text-slate-500",
           "hover:border-slate-300",
           className,
         )}

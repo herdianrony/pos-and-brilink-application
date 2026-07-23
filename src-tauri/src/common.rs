@@ -359,3 +359,22 @@ pub fn validate_money(value: f64, field_name: &str) -> Result<f64, String> {
     }
     Ok(round_money(value))
 }
+
+/// Validate password strength: 8-128 chars, at least 2 character categories.
+pub fn validate_password(password: &str) -> Result<(), String> {
+    if password.len() < 8 || password.len() > 128 {
+        return Err(
+            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
+        );
+    }
+    let categories = password.chars().filter(|c| c.is_ascii_uppercase()).count() as u8
+        + password.chars().filter(|c| c.is_ascii_lowercase()).count() as u8
+        + password.chars().filter(|c| c.is_ascii_digit()).count() as u8
+        + password.chars().filter(|c| !c.is_alphanumeric()).count() as u8;
+    if categories < 2 {
+        return Err(
+            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
+        );
+    }
+    Ok(())
+}

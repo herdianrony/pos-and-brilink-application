@@ -56,14 +56,14 @@ export function ProductMasterPage({
       <div className="relative">
         <Search
           size={18}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
         />
         <input
           type="text"
           placeholder="Cari produk, kategori, atau barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
+          className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-500 transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
         />
       </div>
 
@@ -108,7 +108,7 @@ export function ProductMasterPage({
                       {/* Kategori */}
                       <td className="px-5 py-4 text-slate-600 whitespace-nowrap">
                         {product.category_name ?? (
-                          <span className="text-slate-400">Tanpa kategori</span>
+                          <span className="text-slate-500">Tanpa kategori</span>
                         )}
                       </td>
                       {/* Harga Beli */}

@@ -21,7 +21,7 @@ export function StatCard({
       ? "text-emerald-600"
       : trend === "down"
         ? "text-red-500"
-        : "text-slate-400";
+        : "text-slate-500";
   return (
     <div className="bg-white rounded-3xl border border-slate-200/60 shadow-card hover:shadow-pop hover:border-slate-300/60 transition-all duration-300 p-5 animate-fadeIn group">
       <div className="flex items-start gap-4">
@@ -34,7 +34,7 @@ export function StatCard({
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             {label}
           </p>
           <p className="text-xl font-extrabold text-slate-900 mt-1 truncate">
@@ -44,7 +44,7 @@ export function StatCard({
             <p
               className={cn(
                 "text-xs mt-1 font-semibold",
-                trend ? trendColor : "text-slate-400",
+                trend ? trendColor : "text-slate-500",
               )}
             >
               {sub}

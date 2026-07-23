@@ -188,7 +188,7 @@ export function StatementPage({
                     <td className="px-5 py-3.5">
                       <div className="font-bold text-slate-900">{m.created_at}</div>
                       {m.notes && (
-                        <div className="text-xs text-slate-400 mt-0.5">
+                        <div className="text-xs text-slate-500 mt-0.5">
                           {m.notes}
                         </div>
                       )}

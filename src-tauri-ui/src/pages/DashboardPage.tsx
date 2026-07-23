@@ -142,16 +142,10 @@ export function DashboardPage({
 
   /* ---- Use backend data when available, fallback to client-side ---- */
 
-  const todayTransactions = dashData
-    ? transactions.filter((t) => isToday(t.created_at))
-    : transactions.filter((t) => isToday(t.created_at));
+  const todayTransactions = transactions.filter((t) => isToday(t.created_at));
 
-  const posToday = dashData
-    ? todayTransactions.filter((t) => t.transaction_type === "pos")
-    : todayTransactions.filter((t) => t.transaction_type === "pos");
-  const agentToday = dashData
-    ? todayTransactions.filter((t) => t.transaction_type === "brilink")
-    : todayTransactions.filter((t) => t.transaction_type === "agent");
+  const posToday = todayTransactions.filter((t) => t.transaction_type === "pos");
+  const agentToday = todayTransactions.filter((t) => t.transaction_type === "brilink" || t.transaction_type === "agent");
 
   // Use backend aggregation for accurate stats
   const todayRevenue = dashData ? dashData.today_all.revenue : todayTransactions.reduce((s, t) => s + Math.max(t.total_amount, 0), 0);
@@ -472,7 +466,7 @@ export function DashboardPage({
           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
             Saldo Rekening
           </h3>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {accounts.length} akun
           </span>
         </div>
@@ -506,7 +500,7 @@ export function DashboardPage({
                 <p className="text-base font-extrabold text-slate-900">
                   {formatRupiah(acc.balance)}
                 </p>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
                   {acc.code === "cash" ? "Kas Tunai" : "Rekening"}
                 </p>
               </div>
@@ -525,7 +519,7 @@ export function DashboardPage({
                 <TrendingUp size={16} className="text-primary" /> Pendapatan
                 7 Hari
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {showProfit
                   ? "Omzet, profit, dan jumlah transaksi harian."
                   : "Omzet dan jumlah transaksi harian."}
@@ -720,7 +714,7 @@ export function DashboardPage({
             <table className="w-full text-sm">
               <caption className="sr-only">Transaksi Terbaru</caption>
               <thead>
-                <tr className="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-100">
                   <th className="text-left p-3 font-medium">Invoice</th>
                   <th className="text-left p-3 font-medium">Tipe</th>
                   <th className="text-left p-3 font-medium">Pelanggan</th>
@@ -766,7 +760,7 @@ export function DashboardPage({
                         {formatRupiah(t.profit)}
                       </td>
                     )}
-                    <td className="p-3 text-slate-400 text-xs">
+                    <td className="p-3 text-slate-500 text-xs">
                       {formatDate(t.created_at)}
                     </td>
                   </tr>

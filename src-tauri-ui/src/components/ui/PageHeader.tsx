@@ -19,7 +19,7 @@ export function PageHeader({
       <div>
         {eyebrow && <p className="m-0 mb-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-600">{eyebrow}</p>}
         <h1 className="text-2xl font-black tracking-tight text-slate-950">{title}</h1>
-        {description && <p className="m-0 text-sm font-semibold text-slate-400">{description}</p>}
+        {description && <p className="m-0 text-sm font-semibold text-slate-500">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center justify-end gap-2.5">{actions}</div>}
     </div>

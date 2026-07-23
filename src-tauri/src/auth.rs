@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use crate::common::{get_db, DbConn, record_app_log};
+use crate::common::{get_db, validate_password, DbConn, record_app_log};
 use crate::session::PublicUser;
 use crate::session::{SessionState, persist_session, load_persisted_session};
 
@@ -478,20 +478,4 @@ pub fn get_me(app: AppHandle, session: State<'_, SessionState>) -> Result<Public
     Err("Sesi login tidak aktif. Silakan login ulang.".to_string())
 }
 
-fn validate_password(password: &str) -> Result<(), String> {
-    if password.len() < 8 || password.len() > 128 {
-        return Err(
-            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
-        );
-    }
-    let categories = password.chars().filter(|c| c.is_ascii_uppercase()).count() as u8
-        + password.chars().filter(|c| c.is_ascii_lowercase()).count() as u8
-        + password.chars().filter(|c| c.is_ascii_digit()).count() as u8
-        + password.chars().filter(|c| !c.is_alphanumeric()).count() as u8;
-    if categories < 2 {
-        return Err(
-            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
-        );
-    }
-    Ok(())
-}
+// validate_password moved to common.rs to avoid duplication

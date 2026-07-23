@@ -33,7 +33,7 @@ export function DataTable({
         <thead>
           <tr>
             {columns.map((column, index) => (
-              <th key={index} scope="col" className="border-b border-slate-200 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+              <th key={index} scope="col" className="border-b border-slate-200 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
                 {column}
               </th>
             ))}

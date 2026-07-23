@@ -135,7 +135,7 @@ export function POSPage({
           <div className="relative mb-3">
             <Search
               size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
             />
             <input
               type="text"
@@ -259,7 +259,7 @@ export function POSPage({
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-300">
                 <ShoppingBag size={48} strokeWidth={1} />
-                <p className="text-sm mt-3 text-slate-400">
+                <p className="text-sm mt-3 text-slate-500">
                   Keranjang masih kosong
                 </p>
                 <p className="text-xs text-gray-300">
@@ -283,7 +283,7 @@ export function POSPage({
                           ? item.product.name
                           : item.service_name}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500">
                         {item.type === "product"
                           ? `${formatRupiah(item.product.sell_price)} / ${item.product.unit}`
                           : `Layanan agen • admin ${formatRupiah(item.fee)}`}

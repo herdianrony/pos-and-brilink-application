@@ -47,14 +47,14 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
                   ? "gradient-primary text-white shadow-glow-primary scale-110"
                   : current > num
                     ? "bg-success-light/30 text-success"
-                    : "bg-slate-100 text-slate-400"
+                    : "bg-slate-100 text-slate-500"
               }`}
             >
               {current > num ? <CheckCircle size={18} /> : num}
             </div>
             <span
               className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
-                current === num ? "text-slate-800" : "text-slate-400"
+                current === num ? "text-slate-800" : "text-slate-500"
               }`}
             >
               {labels[i]}
@@ -268,7 +268,7 @@ export function AgentServicesPage({
             {/* Quick summary */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <span className="block text-xs font-black uppercase tracking-wide text-slate-400">Total Bayar Pelanggan</span>
+                <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Total Bayar Pelanggan</span>
                 <strong className="text-lg font-black text-slate-950">{formatRupiah(totalCustomerPay)}</strong>
               </div>
               <div className="rounded-2xl border border-success-light/50 bg-success-light/10 p-4">
@@ -313,7 +313,7 @@ export function AgentServicesPage({
                 </span>
                 <div>
                   <h3 className="text-lg font-extrabold text-slate-800">{agentForm.service_name || "—"}</h3>
-                  <p className="text-xs text-slate-400">Review detail transaksi</p>
+                  <p className="text-xs text-slate-500">Review detail transaksi</p>
                 </div>
               </div>
               <Badge variant="primary">{servicePresets.find((s) => s.name === agentForm.service_name)?.fee ?? "—"}</Badge>

@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 
 use crate::{
     auth::require_admin, auth::require_auth, common::get_db, common::round_money,
-    common::DbConn, common::record_app_log,
+    common::validate_password, common::DbConn, common::record_app_log,
     common::trim_optional, session::PublicUser, session::SessionState,
 };
 
@@ -196,23 +196,7 @@ pub struct SetupCompleteResponse {
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-fn validate_password(password: &str) -> Result<(), String> {
-    if password.len() < 8 || password.len() > 128 {
-        return Err(
-            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
-        );
-    }
-    let categories = password.chars().filter(|c| c.is_ascii_uppercase()).count() as u8
-        + password.chars().filter(|c| c.is_ascii_lowercase()).count() as u8
-        + password.chars().filter(|c| c.is_ascii_digit()).count() as u8
-        + password.chars().filter(|c| !c.is_alphanumeric()).count() as u8;
-    if categories < 2 {
-        return Err(
-            "Password 8-128 karakter, minimal 2 kategori (huruf besar/kecil/angka/simbol)".into(),
-        );
-    }
-    Ok(())
-}
+// validate_password moved to common.rs to avoid duplication
 
 fn get_setting(conn: &Connection, key: &str) -> Result<String, String> {
     conn.query_row(
@@ -245,7 +229,7 @@ fn enforce_discount_policy(
     let max_disc = (total_amount * max_pct / 100.0).min(max_amt);
 
     if discount > max_disc + 0.01 {
-        // Exceeded cap — require admin PIN
+        // Exceeded cap — require admin PIN to bypass
         let stored_pin = get_setting(conn, "discount_admin_pin")?;
         if stored_pin.is_empty() {
             return Err(format!(
@@ -261,12 +245,15 @@ fn enforce_discount_policy(
             .as_deref()
             .filter(|p| !p.is_empty())
             .ok_or("PIN admin diperlukan untuk diskon melebihi batas")?;
-        bcrypt::verify(provided_pin, &stored_pin)
-            .map_err(|_| "Gagal verifikasi PIN".to_string())?
-            .then_some(())
-            .ok_or("PIN admin salah")?;
+        let pin_valid = bcrypt::verify(provided_pin, &stored_pin)
+            .map_err(|_| "Gagal verifikasi PIN".to_string())?;
+        if !pin_valid {
+            return Err("PIN admin salah".into());
+        }
+        // PIN valid — allow discount above cap
+        return Ok(round_money(discount));
     }
-    Ok(discount.min(max_disc))
+    Ok(round_money(discount.min(max_disc)))
 }
 
 // ── POS Checkout ───────────────────────────────────────────────────
@@ -385,52 +372,64 @@ pub fn checkout_pos_cash(
         ).map_err(|e| e.to_string())?;
     }
 
-    // ── Payment → account mutation ──
-    // Determine target account: for cash use cash account, for transfer/qris use settlement account
-    let (target_account_id, target_account_balance, mut_type) =
+    // ── Payment → account mutation (atomic balance update) ──
+    let (target_account_id, mut_type) =
         match payment_method.as_str() {
             "transfer" | "qris" => {
-                // Use the settlement_account_id provided by frontend
                 let settlement_id = payload.settlement_account_id.ok_or_else(|| {
                     "Akun settlement wajib dipilih untuk pembayaran transfer/QRIS".to_string()
                 })?;
-                let acc: (i64, f64) = tx
+                // Verify account exists and is active
+                let exists: i64 = tx
                     .query_row(
-                        "SELECT id, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
+                        "SELECT COUNT(*) FROM accounts WHERE id = ?1 AND is_active = 1",
                         params![settlement_id],
-                        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)),
+                        |r| r.get(0),
                     )
                     .map_err(|_| format!("Akun settlement ID {} tidak ditemukan", settlement_id))?;
+                if exists == 0 {
+                    return Err(format!("Akun settlement ID {} tidak ditemukan", settlement_id));
+                }
                 let mtype = if payment_method == "transfer" {
                     "pos_transfer_in"
                 } else {
                     "pos_qris_in"
                 };
-                (acc.0, acc.1, mtype.to_string())
+                (settlement_id, mtype.to_string())
             }
             _ => {
                 // Cash payment → use cash account
-                let cash_acc: (i64, f64) = tx
+                let cash_id: i64 = tx
                     .query_row(
-                        "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
+                        "SELECT id FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
                         [],
-                        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, f64>(1)?)),
+                        |r| r.get(0),
                     )
                     .map_err(|_| "Akun Kas tidak ditemukan".to_string())?;
-                (cash_acc.0, cash_acc.1, "pos_in".to_string())
+                (cash_id, "pos_in".to_string())
             }
         };
 
-    let new_bal = target_account_balance + total_amount;
+    // Atomic balance update — no TOCTOU
+    let affected = tx.execute(
+        "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+        params![total_amount, now, target_account_id],
+    ).map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Gagal update saldo akun".to_string());
+    }
+    // Read the new balance AFTER the atomic update for mutation record
+    let new_bal: f64 = tx
+        .query_row(
+            "SELECT balance FROM accounts WHERE id = ?1",
+            params![target_account_id],
+            |r| r.get(0),
+        )
+        .map_err(|e| e.to_string())?;
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![target_account_id, mut_type, total_amount, new_bal, format!("POS {}", invoice_no), trx_id, now],
     ).map_err(|e| e.to_string())?;
-    tx.execute(
-        "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-        params![new_bal, now, target_account_id],
-    )
-    .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
     record_app_log(
@@ -493,51 +492,40 @@ pub fn create_agent_transaction(
     ).map_err(|e| e.to_string())?;
     let trx_id = tx.last_insert_rowid();
 
-    // Cash effect
+    // Cash effect (atomic balance update)
     if payload.cash_effect != 0.0 {
-        let cash_acc: Option<(i64, f64)> = tx
+        let cash_id: Option<i64> = tx
             .query_row(
-                "SELECT id, balance FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
+                "SELECT id FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| r.get(0),
             )
             .ok();
-        if let Some((cid, cbal)) = cash_acc {
-            let nb = cbal + payload.cash_effect;
-            let mtype = if payload.cash_effect > 0.0 {
-                "brilink_in"
-            } else {
-                "brilink_out"
-            };
-            tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                params![cid, mtype, payload.cash_effect, nb, format!("{} {}", service_name, invoice_no), trx_id, now]).map_err(|e| e.to_string())?;
-            tx.execute(
-                "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-                params![nb, now, cid],
-            )
-            .map_err(|e| e.to_string())?;
+        if let Some(cid) = cash_id {
+            let mtype = if payload.cash_effect > 0.0 { "brilink_in" } else { "brilink_out" };
+            let affected = tx.execute(
+                "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+                params![payload.cash_effect, now, cid],
+            ).map_err(|e| e.to_string())?;
+            if affected > 0 {
+                let nb: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cid], |r| r.get(0)).unwrap_or(0.0);
+                tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                    params![cid, mtype, payload.cash_effect, nb, format!("{} {}", service_name, invoice_no), trx_id, now]).map_err(|e| e.to_string())?;
+            }
         }
     }
 
-    // Bank effect
+    // Bank effect (atomic balance update)
     if payload.bank_effect != 0.0 {
         if let Some(aid) = payload.account_id {
-            let bank_acc: Option<(i64, f64)> = tx
-                .query_row(
-                    "SELECT id, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
-                    params![aid],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )
-                .ok();
-            if let Some((bid, bbal)) = bank_acc {
-                let nb = bbal + payload.bank_effect;
+            let affected = tx.execute(
+                "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
+                params![payload.bank_effect, now, aid],
+            ).map_err(|e| e.to_string())?;
+            if affected > 0 {
+                let nb: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![aid], |r| r.get(0)).unwrap_or(0.0);
                 tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'agent_bank_effect', ?2, ?3, ?4, ?5, ?6)",
-                    params![bid, payload.bank_effect, nb, format!("{} {}", service_name, invoice_no), trx_id, now]).map_err(|e| e.to_string())?;
-                tx.execute(
-                    "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE id = ?3",
-                    params![nb, now, bid],
-                )
-                .map_err(|e| e.to_string())?;
+                    params![aid, payload.bank_effect, nb, format!("{} {}", service_name, invoice_no), trx_id, now]).map_err(|e| e.to_string())?;
             }
         }
     }
@@ -1000,7 +988,7 @@ pub fn setup_complete(
     session: State<'_, SessionState>,
     db: State<'_, DbConn>,
 ) -> Result<SetupCompleteResponse, String> {
-    let conn = get_db(&db)?;
+    let mut conn = get_db(&db)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
         .map_err(|e| e.to_string())?;
@@ -1020,42 +1008,44 @@ pub fn setup_complete(
         bcrypt::hash(&payload.admin_password, bcrypt::DEFAULT_COST).map_err(|e| e.to_string())?;
     let kas_only = payload.kas_only.unwrap_or(false);
 
-    // Insert admin
-    conn.execute(
+    // Wrap all DB operations in a transaction for atomicity
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+    tx.execute(
         "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 'admin', 1, ?4, ?4)",
         params![admin_name, admin_username, password_hash, now],
     ).map_err(|e| e.to_string())?;
-    let user_id = conn.last_insert_rowid();
+    let user_id = tx.last_insert_rowid();
 
-    // Store settings
     if let Some(ref name) = payload.store_name {
-        let _ = conn.execute(
+        let _ = tx.execute(
             "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('store_name', ?1, ?2)",
             params![name.trim(), now],
         );
     }
     if let Some(ref owner) = payload.store_owner_name {
-        let _ = conn.execute("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('store_owner_name', ?1, ?2)", params![owner.trim(), now]);
+        let _ = tx.execute("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('store_owner_name', ?1, ?2)", params![owner.trim(), now]);
     }
 
-    // Cash opening balance
-    let cash_opening = payload.cash_opening_balance.unwrap_or(0.0).max(0.0);
+    let cash_opening = round_money(payload.cash_opening_balance.unwrap_or(0.0).max(0.0));
     if cash_opening > 0.0 {
-        let cash_account_id: i64 = conn.query_row(
+        let cash_account_id: i64 = tx.query_row(
             "SELECT id FROM accounts WHERE code = 'cash' LIMIT 1",
             [],
             |r| r.get(0),
         ).map_err(|e| format!("Cash account not found: {e}"))?;
-        conn.execute(
-            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (?1, 'opening', ?2, ?2, 'Saldo awal dari Setup Wizard', ?3)",
-            params![cash_account_id, cash_opening, now],
+        tx.execute(
+            "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3",
+            params![cash_opening, now, cash_account_id],
         ).map_err(|e| e.to_string())?;
-        conn.execute(
-            "UPDATE accounts SET balance = ?1, updated_at = ?2 WHERE code = 'cash'",
-            params![cash_opening, now],
-        )
-        .map_err(|e| e.to_string())?;
+        let new_bal: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cash_account_id], |r| r.get(0)).unwrap_or(0.0);
+        tx.execute(
+            "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (?1, 'opening', ?2, ?3, 'Saldo awal dari Setup Wizard', ?4)",
+            params![cash_account_id, cash_opening, new_bal, now],
+        ).map_err(|e| e.to_string())?;
     }
+
+    tx.commit().map_err(|e| e.to_string())?;
 
     let public_user = PublicUser {
         id: user_id,

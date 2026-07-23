@@ -371,7 +371,7 @@ export function SettingsPage({
                   </tbody>
                 </table>
                 {products.length > 50 && (
-                  <p className="text-xs text-slate-400 text-center pt-3">
+                  <p className="text-xs text-slate-500 text-center pt-3">
                     Menampilkan 50 dari {products.length} produk
                   </p>
                 )}
@@ -479,7 +479,7 @@ export function SettingsPage({
                   </tbody>
                 </table>
                 {transactions.length > 50 && (
-                  <p className="text-xs text-slate-400 text-center pt-3">
+                  <p className="text-xs text-slate-500 text-center pt-3">
                     Menampilkan 50 dari {transactions.length} transaksi
                   </p>
                 )}
@@ -581,7 +581,7 @@ export function SettingsPage({
                   </tbody>
                 </table>
                 {debts.length > 50 && (
-                  <p className="text-xs text-slate-400 text-center pt-3">
+                  <p className="text-xs text-slate-500 text-center pt-3">
                     Menampilkan 50 dari {debts.length} utang
                   </p>
                 )}
@@ -605,7 +605,7 @@ export function SettingsPage({
                   <h3 className="text-base font-extrabold text-slate-900">
                     Cadangkan & Pulihkan Data
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Cadangan disimpan di folder data aplikasi. Sebelum memulihkan, cadangan otomatis dibuat.
                   </p>
                 </div>
@@ -631,7 +631,7 @@ export function SettingsPage({
                   >
                     <div className="min-w-0 grid gap-0.5">
                       <p className="font-bold text-slate-900 truncate">{b.name}</p>
-                      <p className="text-xs text-slate-400 truncate">{b.path}</p>
+                      <p className="text-xs text-slate-500 truncate">{b.path}</p>
                       <p className="text-xs text-slate-500">{Math.ceil(b.size / 1024)} KB &middot; {b.created_at}</p>
                     </div>
                     <Button
@@ -811,13 +811,13 @@ export function SettingsPage({
                         <td className="py-3 pr-4">{logLevelBadge(log.level)}</td>
                         <td className="py-3 pr-4 text-slate-600">{log.source}</td>
                         <td className="py-3 pr-4 font-semibold text-slate-900">{log.message}</td>
-                        <td className="py-3 text-right text-xs text-slate-400 whitespace-nowrap">{log.created_at}</td>
+                        <td className="py-3 text-right text-xs text-slate-500 whitespace-nowrap">{log.created_at}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {logs.length > 20 && (
-                  <p className="text-xs text-slate-400 text-center pt-3">
+                  <p className="text-xs text-slate-500 text-center pt-3">
                     Menampilkan 20 dari {logs.length} log
                   </p>
                 )}

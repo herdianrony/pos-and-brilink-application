@@ -108,21 +108,21 @@ export function CashBalancePage({
             <Card className="flex items-center gap-3 p-5">
               <Wallet size={20} className="text-emerald-600 shrink-0" />
               <div>
-                <span className="block text-xs font-black uppercase tracking-wide text-slate-400">Kas Tunai</span>
+                <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Kas Tunai</span>
                 <strong className="block text-lg font-black text-slate-950">{formatRupiah(cashAccount?.balance || 0)}</strong>
               </div>
             </Card>
             <Card className="flex items-center gap-3 p-5">
               <Plus size={20} className="text-emerald-600 shrink-0" />
               <div>
-                <span className="block text-xs font-black uppercase tracking-wide text-slate-400">Mutasi Masuk</span>
+                <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Mutasi Masuk</span>
                 <strong className="block text-lg font-black text-slate-950">{formatRupiah(incomingTotal)}</strong>
               </div>
             </Card>
             <Card className="flex items-center gap-3 p-5">
               <ReceiptText size={20} className="text-emerald-600 shrink-0" />
               <div>
-                <span className="block text-xs font-black uppercase tracking-wide text-slate-400">Mutasi Keluar</span>
+                <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Mutasi Keluar</span>
                 <strong className="block text-lg font-black text-slate-950">{formatRupiah(outgoingTotal)}</strong>
               </div>
             </Card>
@@ -132,9 +132,9 @@ export function CashBalancePage({
           <div className="flex items-center justify-between">
             <div>
               <strong className="block text-sm font-black uppercase tracking-wide text-slate-600">Saldo Rekening</strong>
-              <span className="text-xs font-semibold text-slate-400">Gunakan tombol di kartu untuk aksi saldo.</span>
+              <span className="text-xs font-semibold text-slate-500">Gunakan tombol di kartu untuk aksi saldo.</span>
             </div>
-            <span className="text-xs font-semibold text-slate-400">{accounts.length} akun</span>
+            <span className="text-xs font-semibold text-slate-500">{accounts.length} akun</span>
           </div>
 
           {/* Account Balance Cards */}
@@ -192,7 +192,7 @@ export function CashBalancePage({
       {activeTab === "mutations" && (
         <Card className="overflow-hidden" role="tabpanel" aria-label="Mutasi">
           <div className="p-4 border-b border-slate-50 flex items-center gap-2">
-            <Clock size={16} className="text-slate-400" />
+            <Clock size={16} className="text-slate-500" />
             <h3 className="font-extrabold text-slate-700">Riwayat Mutasi</h3>
           </div>
           {mutations.length === 0 ? (
@@ -202,7 +202,7 @@ export function CashBalancePage({
               <table className="w-full text-sm">
                 <caption className="sr-only">Riwayat Mutasi Rekening</caption>
                 <thead className="sticky top-0 bg-white">
-                  <tr className="text-xs text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                  <tr className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50/80">
                     <th className="text-left p-3 font-medium">Waktu</th>
                     <th className="text-left p-3 font-medium">Akun</th>
                     <th className="text-left p-3 font-medium">Tipe</th>
@@ -216,7 +216,7 @@ export function CashBalancePage({
                     const isPositive = m.amount >= 0;
                     return (
                       <tr key={m.id} className="border-t border-slate-50 hover:bg-success-light/10">
-                        <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{m.created_at}</td>
+                        <td className="p-3 text-slate-500 text-xs whitespace-nowrap">{m.created_at}</td>
                         <td className="p-3 text-slate-600 text-xs truncate max-w-[100px]">{m.account_name}</td>
                         <td className="p-3">
                           <Badge variant={mutationBadgeColor(m.mutation_type)}>
@@ -255,7 +255,7 @@ export function CashBalancePage({
                 <Card key={account.id} className="flex items-center justify-between p-4">
                   <div>
                     <strong className="block text-sm text-slate-800">{account.name}</strong>
-                    <span className="text-xs text-slate-400">{formatRupiah(account.balance)}</span>
+                    <span className="text-xs text-slate-500">{formatRupiah(account.balance)}</span>
                   </div>
                   <Button
                     variant="danger"
@@ -291,7 +291,7 @@ export function CashBalancePage({
                   <Card key={account.id} className="flex items-center justify-between p-4">
                     <div>
                       <strong className="block text-sm text-slate-800">{account.name}</strong>
-                      <span className="text-xs text-slate-400">{formatRupiah(account.balance)}</span>
+                      <span className="text-xs text-slate-500">{formatRupiah(account.balance)}</span>
                     </div>
                     <Button
                       variant="danger"
