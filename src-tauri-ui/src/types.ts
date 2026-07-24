@@ -32,7 +32,7 @@ export type ViewKey =
   | "pos"
   | "brilink"
   | "history"
-  | "keuangan"
+  | "finance"
   | "settings";
 
 export type IconName =
@@ -41,7 +41,7 @@ export type IconName =
   | "brilink"
   | "history"
   | "cash"
-  | "keuangan"
+  | "finance"
   | "settings"
   | "search";
 

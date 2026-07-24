@@ -541,6 +541,7 @@ export function AppShell({
             onClick={showAbout}
             className="group relative w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90"
             title="Tentang"
+            aria-label="Tentang aplikasi"
           >
             <Info size={18} />
             <NavTooltip label="Tentang" />
@@ -551,6 +552,7 @@ export function AppShell({
             onClick={showSupport}
             className="group relative w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90"
             title="Support"
+            aria-label="Bantuan dan dukungan"
           >
             <Heart size={16} className="fill-current" />
             <NavTooltip label="Support" />
@@ -596,11 +598,17 @@ export function AppShell({
         onSupport={showSupport}
       />
 
-      {/* About/Support modal */}
+      {/* About/Support modal (accessible dialog with focus trap) */}
       {shellNotice && (
         <div
           className="fixed inset-0 z-80 flex items-center justify-center p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={shellNotice.title}
           onClick={() => setShellNotice(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setShellNotice(null);
+          }}
         >
           <div className="absolute inset-0 bg-slate-950/50 animate-fadeIn" />
           <div className="relative bg-white rounded-3xl shadow-float w-full max-w-md animate-bounceIn border border-slate-200/50 p-7">
@@ -619,6 +627,7 @@ export function AppShell({
               <button
                 className="text-slate-400 hover:text-slate-600"
                 onClick={() => setShellNotice(null)}
+                aria-label="Tutup"
               >
                 <X size={18} />
               </button>

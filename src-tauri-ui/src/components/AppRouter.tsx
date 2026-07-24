@@ -6,7 +6,7 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { POSPage } from "../pages/POSPage";
 import { AgentServicesPage } from "../pages/AgentServicesPage";
 import { HistoryPage } from "../pages/HistoryPage";
-import { KeuanganPage } from "../pages/KeuanganPage";
+import { FinancePage } from "../pages/FinancePage";
 import { SettingsPage } from "../pages/SettingsPage";
 
 export function AppRouter({
@@ -39,6 +39,7 @@ export function AppRouter({
   onAddToCart,
   onAddAgentService,
   onUpdateQty,
+  onRemoveCartItem,
   onPaymentMethodChange,
   onSettlementAccountChange,
   onHoldCart,
@@ -209,9 +210,9 @@ export function AppRouter({
           saving={saving}
         />
       );
-    case "keuangan":
+    case "finance":
       return (
-        <KeuanganPage
+        <FinancePage
           accounts={accounts}
           mutations={accountMutations}
           transactions={filteredTransactions}

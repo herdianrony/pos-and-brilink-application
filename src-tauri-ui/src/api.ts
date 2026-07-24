@@ -429,3 +429,119 @@ export function transactionAction(payload: {
 
 // ── Restock (stock receiving) ─────────────────────────────────────
 
+export function restockProduct(payload: {
+  product_id: number;
+  quantity: number;
+  notes?: string;
+  cost_price?: number;
+}) {
+  return invokeCommand<ProductRow>("restock_product", { payload });
+}
+
+// ── Account CRUD (update + deactivate) ───────────────────────────
+
+export function updateAccount(payload: {
+  id: number;
+  name?: string;
+  icon?: string;
+  color?: string;
+  min_balance?: number;
+  is_active?: boolean;
+}) {
+  return invokeCommand<boolean>("update_account", { payload });
+}
+
+export function deactivateAccount(accountId: number) {
+  return invokeCommand<boolean>("deactivate_account", { account_id: accountId });
+}
+
+// ── Category CRUD (update + deactivate) ──────────────────────────
+
+export function updateCategory(payload: {
+  id: number;
+  name?: string;
+  icon?: string;
+  color?: string;
+}) {
+  return invokeCommand<boolean>("update_category", { payload });
+}
+
+export function deactivateCategory(payload: { category_id: number }) {
+  return invokeCommand<boolean>("deactivate_category", { payload });
+}
+
+// ── Transaction detail (single) ───────────────────────────────────
+
+export function getTransaction(id: number) {
+  return invokeCommand<TransactionRow>("get_transaction", { id });
+}
+
+// ── Mutation summary ──────────────────────────────────────────────
+
+export interface AccountMutationSummary {
+  total_in: number;
+  total_out: number;
+  net: number;
+  count: number;
+  opening_balance: number;
+  closing_balance: number;
+}
+
+export function getMutationSummary(options: {
+  account_id?: number;
+  start_date?: string;
+  end_date?: string;
+} = {}) {
+  return invokeCommand<AccountMutationSummary>("get_mutation_summary", { payload: options });
+}
+
+// ── Agent Services CRUD ──────────────────────────────────────────
+
+export function listAgentServices(options: { limit?: number } = {}) {
+  return invokeCommand<AgentServiceRow[]>("list_agent_services", { payload: options.limit || null });
+}
+
+export function createAgentService(payload: {
+  name: string;
+  category?: string;
+  default_fee: number;
+  provider_cost?: number;
+}) {
+  return invokeCommand<AgentServiceRow>("create_agent_service", { payload });
+}
+
+export function listFeeTiers(serviceId: number) {
+  return invokeCommand<FeeTierRow[]>("list_fee_tiers", { service_id: serviceId });
+}
+
+export function createFeeTier(payload: {
+  service_id: number;
+  min_amount: number;
+  max_amount?: number;
+  fee: number;
+  provider_cost?: number;
+}) {
+  return invokeCommand<FeeTierRow>("create_fee_tier", { payload });
+}
+
+// ── Settings ────────────────────────────────────────────────────
+
+export function getSettings() {
+  return invokeCommand<Record<string, string>>("get_settings");
+}
+
+export function updateSettings(settings: Record<string, string>) {
+  return invokeCommand<boolean>("update_settings", { payload: { settings } });
+}
+
+// ── WhatsApp Notify ───────────────────────────────────────────────
+
+export interface WaNotifyResponse {
+  sent: boolean;
+  reason?: string | null;
+  id?: string | null;
+}
+
+export function whatsappNotify(transactionId: number) {
+  return invokeCommand<WaNotifyResponse>("whatsapp_notify", { transaction_id: transactionId });
+}

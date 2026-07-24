@@ -62,7 +62,6 @@ pub fn checkout_pos_cash(
     payload: PosCheckoutPayload,
 ) -> Result<PosCheckoutResponse, String> {
     let user = require_auth(&session)?;
-    let is_admin = user.role == "admin";
     if payload.items.is_empty() && payload.agent_items.is_empty() {
         return Err("Keranjang masih kosong".into());
     }
@@ -211,7 +210,7 @@ pub fn checkout_pos_cash(
         transaction_id: trx_id,
         invoice_no,
         total_amount,
-        profit: if is_admin { total_profit } else { 0.0 },
+        profit: total_profit,
         discount_amount,
         settlement_account_id: Some(target_account_id),
         settlement_balance: Some(new_bal),

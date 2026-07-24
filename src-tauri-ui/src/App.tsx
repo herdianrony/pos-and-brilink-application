@@ -21,7 +21,7 @@ import { formatRupiah } from "./lib/format";
 import { exportCsvFile } from "./lib/csv";
 import type { ViewKey } from "./types";
 
-const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["keuangan", "settings"]);
+const ADMIN_ONLY_VIEWS = new Set<ViewKey>(["finance", "settings"]);
 
 function canAccess(view: ViewKey, role: string) {
   if (!ADMIN_ONLY_VIEWS.has(view)) return true;

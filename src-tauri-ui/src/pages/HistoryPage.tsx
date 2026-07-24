@@ -263,6 +263,7 @@ export function HistoryPage({
                         <button
                           className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                           title="Lihat detail"
+                          aria-label="Lihat detail transaksi"
                           onClick={() => onOpenDetail(transaction)}
                         >
                           <Eye size={14} />
@@ -272,6 +273,7 @@ export function HistoryPage({
                             <button
                               className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                               title="Batalkan (Void)"
+                              aria-label="Batalkan transaksi"
                               onClick={() => openActionDialog(transaction, "void")}
                             >
                               <Ban size={14} />
@@ -279,6 +281,7 @@ export function HistoryPage({
                             <button
                               className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                               title="Selesaikan"
+                              aria-label="Selesaikan transaksi"
                               onClick={() => openActionDialog(transaction, "complete")}
                             >
                               <CheckCircle size={14} />
@@ -289,6 +292,7 @@ export function HistoryPage({
                           <button
                             className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                             title="Reverse Transaksi"
+                            aria-label="Reverse transaksi"
                             onClick={() => openActionDialog(transaction, "reverse")}
                           >
                             <RotateCcw size={14} />

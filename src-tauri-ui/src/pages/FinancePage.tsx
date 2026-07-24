@@ -5,17 +5,16 @@ import { CashBalancePage } from "./CashBalancePage";
 import { StatementPage } from "./StatementPage";
 import { ReportsPage } from "./ReportsPage";
 import type { TransactionRow } from "../api";
-import type { BackupRow } from "../api";
 
 const FINANCE_TABS = [
-  { id: "cash", label: "Kas & Saldo" },
-  { id: "statement", label: "Rekening Koran" },
-  { id: "reports", label: "Laporan" },
+  { id: "cash", label: "Cash & Balance" },
+  { id: "statement", label: "Account Statement" },
+  { id: "reports", label: "Reports" },
 ] as const;
 
 type FinanceTabId = (typeof FINANCE_TABS)[number]["id"];
 
-export function KeuanganPage({
+export function FinancePage({
   accounts,
   mutations,
   transactions,
@@ -43,16 +42,16 @@ export function KeuanganPage({
   return (
     <div className="space-y-5 animate-fadeIn">
       <PageHeader
-        eyebrow="Keuangan"
-        title="Keuangan"
-        description="Kelola kas, rekening koran, dan laporan keuangan."
+        eyebrow="Finance"
+        title="Finance"
+        description="Manage cash balances, account statements, and financial reports."
       />
 
       <Tabs
         items={[...FINANCE_TABS]}
         active={activeTab}
         onChange={(id) => setActiveTab(id as FinanceTabId)}
-        ariaLabel="Tab keuangan"
+        ariaLabel="Finance tabs"
       />
 
       {activeTab === "cash" && (

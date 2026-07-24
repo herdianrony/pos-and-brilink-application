@@ -16,7 +16,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   brilink: Landmark,
   history: ClipboardList,
   cash: Wallet,
-  keuangan: Wallet,
+  finance: Wallet,
   settings: Settings,
   search: Search,
 };

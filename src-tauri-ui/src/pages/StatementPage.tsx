@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Download, Scale, ScrollText, Wallet } from "lucide-react";
 import type { AccountMutationRow, AccountRow } from "../api";
 import { formatRupiah, mutationLabel } from "../lib/format";
+import { cn } from "../lib/cn";
 import { Badge, Button, Card, ChipTabs, EmptyState, PageHeader, StatCard } from "../components/ui";
 
 type Preset = "all" | "today" | "week" | "month";
@@ -66,7 +67,7 @@ export function StatementPage({
       : 0;
 
   return (
-    <div className={embedded ? "grid gap-6" : "grid gap-6 animate-fadeIn"} role="tabpanel" aria-label="Rekening Koran">
+    <div className={cn("grid gap-6", !embedded && "animate-fadeIn")} role="tabpanel" aria-label="Rekening Koran">
       {!embedded && (
         <PageHeader
           eyebrow="Keuangan"

@@ -5,6 +5,6 @@ export const navItems: Array<{ id: ViewKey; label: string; icon: IconName; admin
   { id: "pos", label: "Kasir POS", icon: "pos" },
   { id: "brilink", label: "Layanan Agen", icon: "brilink" },
   { id: "history", label: "Transaksi", icon: "history" },
-  { id: "keuangan", label: "Keuangan", icon: "cash", adminOnly: true },
+  { id: "finance", label: "Finance", icon: "cash", adminOnly: true },
   { id: "settings", label: "Pengaturan", icon: "settings", adminOnly: true },
 ];

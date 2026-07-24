@@ -39,7 +39,7 @@ const mutations: AccountMutationRow[] = [];
 const debts: DebtRow[] = [];
 const backups: BackupRow[] = [];
 const logs: AppLogRow[] = [];
-const agentServices = [
+const agentServices: Array<{ id: number; name: string; category: string | null; default_fee: number; provider_cost: number; is_active: boolean }> = [
   { id: 1, name: "Tarik Tunai", category: "Tunai", default_fee: 5000, provider_cost: 0, is_active: true },
   { id: 2, name: "Transfer", category: "Transfer", default_fee: 5000, provider_cost: 0, is_active: true },
 ];
@@ -71,7 +71,8 @@ function publicUser(username: string) {
 }
 
 export async function mockInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
-  const payload = (args?.payload || {}) as Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload = (args?.payload || {}) as Record<string, any>;
   switch (command) {
     case "health_check":
       return { ok: true, app: "CatatAgen Local", backend: "mock-tauri", timestamp: now() } as T;
@@ -178,7 +179,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       const index = products.findIndex((product) => product.id === payload.id);
       if (index < 0) throw new Error("Produk tidak ditemukan");
       const category = categories.find((item) => item.id === payload.category_id);
-      products[index] = { ...products[index], ...payload, image_path: payload.remove_image ? null : payload.image_data_url || products[index].image_path, category_name: category?.name || null };
+      products[index] = { ...products[index], ...payload, image_path: payload.remove_image ? null : (payload.image_data_url as string) || products[index].image_path, category_name: category?.name || null };
       return products[index] as T;
     }
     case "get_product_image": {
@@ -197,7 +198,7 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       let total = 0;
       let profit = 0;
       const trxId = transactionId++;
-      for (const item of payload.items || []) {
+      for (const item of (payload.items || []) as Array<{product_id: number; quantity: number}>) {
         const product = products.find((row) => row.id === item.product_id);
         if (!product) throw new Error("Produk tidak ditemukan");
         product.stock -= item.quantity;
@@ -206,11 +207,11 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
         profit += (product.sell_price - product.buy_price) * item.quantity;
         transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: product.id, product_name: product.name, quantity: item.quantity, unit_price: product.sell_price, subtotal });
       }
-      for (const service of payload.agent_items || []) {
+      for (const service of (payload.agent_items || []) as Array<{amount?: number; fee?: number; provider_cost?: number; service_name?: string}>) {
         const subtotal = Number(service.amount || 0) + Number(service.fee || 0);
         total += subtotal;
         profit += Number(service.fee || 0) - Number(service.provider_cost || 0);
-        transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: null, product_name: `Layanan: ${service.service_name}`, quantity: 1, unit_price: subtotal, subtotal });
+        transactionItems.push({ id: transactionItemId++, transaction_id: trxId, product_id: null, product_name: `Layanan: ${service.service_name ?? ""}`, quantity: 1, unit_price: subtotal, subtotal });
       }
       const invoice = `POS-MOCK-${trxId}`;
       transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "pos", customer_name: null, total_amount: total, profit, payment_method: method, status: "completed", notes: null, created_at: now(), user_id: 1 });
@@ -221,14 +222,14 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
     case "list_agent_services":
       return [...agentServices] as T;
     case "create_agent_service": {
-      const row = { id: agentServiceId++, name: payload.name, category: payload.category || null, default_fee: Number(payload.default_fee || 0), provider_cost: Number(payload.provider_cost || 0), is_active: true };
+      const row = { id: agentServiceId++, name: payload.name as string, category: (payload.category as string) || null, default_fee: Number(payload.default_fee || 0), provider_cost: Number(payload.provider_cost || 0), is_active: true };
       agentServices.push(row);
       return row as T;
     }
     case "list_fee_tiers":
       return feeTiers.filter((row) => row.service_id === (payload.service_id || args?.service_id || args?.serviceId)) as T;
     case "create_fee_tier": {
-      const row = { id: feeTierId++, service_id: Number(payload.service_id), min_amount: Number(payload.min_amount || 0), max_amount: payload.max_amount ?? null, fee: Number(payload.fee || 0), provider_cost: Number(payload.provider_cost || 0) };
+      const row = { id: feeTierId++, service_id: Number(payload.service_id), min_amount: Number(payload.min_amount || 0), max_amount: (payload.max_amount as number) ?? null, fee: Number(payload.fee || 0), provider_cost: Number(payload.provider_cost || 0) };
       feeTiers.push(row);
       return row as T;
     }
@@ -244,16 +245,16 @@ export async function mockInvoke<T>(command: string, args?: Record<string, unkno
       const providerCost = Number(payload.provider_cost || 0);
       const total = Number(payload.amount || 0) + fee;
       const invoice = `AGN-MOCK-${trxId}`;
-      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "agent", customer_name: payload.customer_name || null, total_amount: total, profit: fee - providerCost, payment_method: "mixed", status: "completed", notes: payload.service_name, created_at: now(), user_id: 1 });
-      if (payload.cash_effect) addMutation(accounts[0], "agent_cash_effect", Number(payload.cash_effect), payload.service_name, trxId);
+      transactions.unshift({ id: trxId, invoice_no: invoice, transaction_type: "agent", customer_name: (payload.customer_name as string) || null, total_amount: total, profit: fee - providerCost, payment_method: "mixed", status: "completed", notes: payload.service_name as string, created_at: now(), user_id: 1 });
+      if (payload.cash_effect) addMutation(accounts[0], "agent_cash_effect", Number(payload.cash_effect), payload.service_name as string, trxId);
       const account = accounts.find((item) => item.id === payload.account_id);
-      if (account && payload.bank_effect) addMutation(account, "agent_bank_effect", Number(payload.bank_effect), payload.service_name, trxId);
+      if (account && payload.bank_effect) addMutation(account, "agent_bank_effect", Number(payload.bank_effect), payload.service_name as string, trxId);
       return transactions[0] as T;
     }
     case "list_debts":
       return debts.slice(0, Number(payload || 100)) as T;
     case "create_debt": {
-      const row = { id: debtId++, customer_name: payload.customer_name, phone: payload.phone || null, amount: Number(payload.amount || 0), paid_amount: 0, outstanding: Number(payload.amount || 0), status: "open", notes: payload.notes || null, created_at: now(), updated_at: now() };
+      const row = { id: debtId++, customer_name: payload.customer_name as string, phone: (payload.phone as string) || null, amount: Number(payload.amount || 0), paid_amount: 0, outstanding: Number(payload.amount || 0), status: "open", notes: (payload.notes as string) || null, created_at: now(), updated_at: now() };
       debts.unshift(row);
       return row as T;
     }

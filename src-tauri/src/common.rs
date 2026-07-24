@@ -124,7 +124,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
           is_active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
-          FOREIGN KEY(category_id) REFERENCES product_categories(id)
+          FOREIGN KEY(category_id) REFERENCES product_categories(id) ON DELETE SET NULL
         );
 
         CREATE TABLE IF NOT EXISTS account_mutations (
@@ -136,7 +136,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
           notes TEXT,
           reference_id INTEGER,
           created_at TEXT NOT NULL,
-          FOREIGN KEY(account_id) REFERENCES accounts(id)
+          FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS agent_service_templates (
@@ -182,8 +182,8 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
           quantity INTEGER NOT NULL,
           unit_price REAL NOT NULL,
           subtotal REAL NOT NULL,
-          FOREIGN KEY(transaction_id) REFERENCES transactions(id),
-          FOREIGN KEY(product_id) REFERENCES products(id)
+          FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+          FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL
         );
 
         CREATE TABLE IF NOT EXISTS debts (
@@ -203,7 +203,8 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
           debt_id INTEGER NOT NULL,
           amount REAL NOT NULL,
           notes TEXT,
-          created_at TEXT NOT NULL
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(debt_id) REFERENCES debts(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS app_logs (
@@ -224,7 +225,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
         [],
     )
     .ok();
-    // Add foreign key for debt_payments.debt_id → debts(id)
+    // Add foreign key for debt_payments.debt_id → debts(id) (schema-level FK added in migration above)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id)",
         [],

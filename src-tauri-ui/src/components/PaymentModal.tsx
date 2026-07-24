@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Banknote, CheckCircle2, CreditCard, Keyboard, QrCode, X } from "lucide-react";
 import type { AccountRow } from "../api";
 import { formatRupiah } from "../lib/format";
+import { cn } from "../lib/cn";
 import { Button, CardHeader } from "./ui";
 import { Modal } from "./ui/Modal";
 import { CurrencyInput } from "./CurrencyInput";
@@ -102,7 +103,7 @@ export function PaymentModal({
           {methods.map((method) => {
             const MethodIcon = method.icon;
             return (
-              <button key={method.id} type="button" className={paymentMethod === method.id ? "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500 border-primary bg-primary-light/10 text-primary-dark" : "grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500"} onClick={() => onPaymentMethodChange(method.id)} aria-pressed={paymentMethod === method.id}>
+              <button key={method.id} type="button" className={cn("grid min-h-[96px] content-center justify-items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-3 text-center text-slate-800 shadow-none hover:border-primary-light/30 hover:bg-primary-light/10 hover:translate-y-0 [&_svg]:text-primary [&_strong]:font-black [&_small]:rounded-full [&_small]:bg-slate-100 [&_small]:px-2 [&_small]:py-0.5 [&_small]:text-[10px] [&_small]:font-black [&_small]:text-slate-500", paymentMethod === method.id && "border-primary bg-primary-light/10 text-primary-dark")} onClick={() => onPaymentMethodChange(method.id)} aria-pressed={paymentMethod === method.id}>
                 <MethodIcon size={22} />
                 <strong>{method.label}</strong>
                 <small>{method.hint}</small>
@@ -121,7 +122,7 @@ export function PaymentModal({
                 <button key={amount} type="button" className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-[13px] text-slate-700 shadow-none hover:bg-slate-100" onClick={() => setCashReceived(String(amount))}>{amount === total ? "Uang Pas" : formatRupiah(amount)}</button>
               ))}
             </div>
-            <div className={changeAmount >= 0 ? "flex items-center justify-between gap-3 rounded-2xl border p-4 [&_span]:text-sm [&_span]:font-black [&_strong]:text-2xl [&_strong]:font-black border-emerald-200 bg-emerald-50 text-emerald-800" : "flex items-center justify-between gap-3 rounded-2xl border p-4 [&_span]:text-sm [&_span]:font-black [&_strong]:text-2xl [&_strong]:font-black bg-amber-50 text-amber-700"}> 
+            <div className={cn("flex items-center justify-between gap-3 rounded-2xl border p-4 [&_span]:text-sm [&_span]:font-black [&_strong]:text-2xl [&_strong]:font-black", changeAmount >= 0 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-700")}> 
               <span className="flex items-center gap-2">{changeAmount >= 0 ? <><CheckCircle2 size={16} className="text-success" /> Kembalian</> : <><AlertTriangle size={16} className="text-amber-500" /> Uang Kurang</>}</span>
               <strong>{formatRupiah(Math.abs(changeAmount))}</strong>
             </div>

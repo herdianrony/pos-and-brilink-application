@@ -3,6 +3,7 @@ import { ArrowRightLeft, Clock, HandCoins, Plus, ReceiptText, Wallet } from "luc
 import type { AccountMutationRow, AccountRow } from "../api";
 import { Badge, Button, Card, EmptyState, PageHeader, Tabs } from "../components/ui";
 import { formatRupiah, mutationLabel } from "../lib/format";
+import { cn } from "../lib/cn";
 
 const tabItems = [
   { id: "balance", label: "Kas & Saldo" },
@@ -66,7 +67,7 @@ export function CashBalancePage({
   );
 
   return (
-    <div className={embedded ? "space-y-5" : "space-y-5 animate-fadeIn"}>
+    <div className={cn("space-y-5", !embedded && "animate-fadeIn")}>
       {!embedded && (
         <PageHeader
           eyebrow="Keuangan"
