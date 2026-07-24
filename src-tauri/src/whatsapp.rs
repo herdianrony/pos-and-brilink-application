@@ -82,11 +82,20 @@ fn get_whatsapp_settings(conn: &rusqlite::Connection) -> (bool, bool, String) {
     (enabled, auto_notify, owner_number)
 }
 
+/// Shared ureq Agent with 5-second global timeout for sidecar requests.
+fn sidecar_agent() -> ureq::Agent {
+    ureq::Agent::new_with_config(
+        ureq::Agent::config_builder()
+            .timeout_global(Some(std::time::Duration::from_secs(5)))
+            .build(),
+    )
+}
+
 /// Make an HTTP GET request to the sidecar
 fn http_get<T: for<'de> Deserialize<'de>>(path: &str) -> Result<T, String> {
     let url = format!("{}{}", sidecar_base_url(), path);
-    let resp = ureq::get(&url)
-        .timeout(std::time::Duration::from_secs(5))
+    let resp = sidecar_agent()
+        .get(&url)
         .call()
         .map_err(|e| format!("Sidecar GET {} gagal: {}", path, e))?;
     resp.body_json::<T>()
@@ -96,8 +105,8 @@ fn http_get<T: for<'de> Deserialize<'de>>(path: &str) -> Result<T, String> {
 /// Make an HTTP POST request to the sidecar
 fn http_post<T: for<'de> Deserialize<'de>>(path: &str, body: &serde_json::Value) -> Result<T, String> {
     let url = format!("{}{}", sidecar_base_url(), path);
-    let resp = ureq::post(&url)
-        .timeout(std::time::Duration::from_secs(10))
+    let resp = sidecar_agent()
+        .post(&url)
         .send_json(body)
         .map_err(|e| format!("Sidecar POST {} gagal: {}", path, e))?;
     resp.body_json::<T>()
