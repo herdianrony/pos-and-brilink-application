@@ -7,6 +7,7 @@ use crate::{
     auth::require_auth, common::get_db, common::round_money, common::trim_optional,
     common::DbConn, common::record_app_log, session::SessionState,
 };
+use crate::common::log_error;
 
 use super::types::*;
 
@@ -77,7 +78,11 @@ pub fn checkout_pos_cash(
     }
 
     let mut conn = get_db(&db)?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "checkout", &msg);
+        msg
+    })?;
     let now = chrono::Utc::now().to_rfc3339();
     let invoice_no = format!(
         "POS-{}-{}",
@@ -95,7 +100,11 @@ pub fn checkout_pos_cash(
                 params![item.product_id],
                 |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?, row.get::<_, i64>(3)?)),
             )
-            .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
+            .map_err(|_| {
+                let msg = format!("Produk ID {} tidak ditemukan", item.product_id);
+                log_error(&db, "checkout", &msg);
+                msg
+            })?;
         let subtotal = round_money(product.2 * item.quantity as f64);
         let profit = round_money((product.2 - product.1) * item.quantity as f64);
         product_subtotal += subtotal;
@@ -105,7 +114,11 @@ pub fn checkout_pos_cash(
             "UPDATE products SET stock = stock - ?1, updated_at = ?2 WHERE id = ?3 AND stock >= ?1",
             params![item.quantity as i64, now, item.product_id],
         )
-        .map_err(|_| format!("Stok {} tidak cukup", product.0))?;
+        .map_err(|_| {
+            let msg = format!("Stok {} tidak cukup", product.0);
+            log_error(&db, "checkout", &msg);
+            msg
+        })?;
     }
 
     // ── Discount (only on product subtotal, NOT agent fees) ──
@@ -138,21 +151,37 @@ pub fn checkout_pos_cash(
     tx.execute(
         "INSERT INTO transactions (invoice_no, type, customer_name, total_amount, profit, payment_method, status, notes, created_at, user_id) VALUES (?1, 'pos', NULL, ?2, ?3, ?4, 'completed', ?5, ?6, ?7)",
         params![invoice_no, total_amount, total_profit, payment_method, trim_optional(payload.notes).unwrap_or_default(), now, user.id],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "checkout", &msg);
+        msg
+    })?;
     let trx_id = tx.last_insert_rowid();
 
     // ── Transaction items ──
     for item in &payload.items {
         let product_name: String = tx
             .query_row("SELECT name FROM products WHERE id = ?1", params![item.product_id], |r| r.get(0))
-            .map_err(|_| format!("Produk ID {} tidak ditemukan", item.product_id))?;
+            .map_err(|_| {
+                let msg = format!("Produk ID {} tidak ditemukan", item.product_id);
+                log_error(&db, "checkout", &msg);
+                msg
+            })?;
         let unit_price: f64 = tx
             .query_row("SELECT sell_price FROM products WHERE id = ?1", params![item.product_id], |r| r.get(0))
-            .map_err(|_| format!("Harga produk ID {} tidak ditemukan", item.product_id))?;
+            .map_err(|_| {
+                let msg = format!("Harga produk ID {} tidak ditemukan", item.product_id);
+                log_error(&db, "checkout", &msg);
+                msg
+            })?;
         tx.execute(
             "INSERT INTO transaction_items (transaction_id, product_id, product_name, quantity, unit_price, subtotal) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![trx_id, item.product_id, product_name, item.quantity, unit_price, unit_price * item.quantity as f64],
-        ).map_err(|e| e.to_string())?;
+        ).map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "checkout", &msg);
+            msg
+        })?;
     }
 
     // ── Payment → account mutation (atomic balance update) ──
@@ -167,7 +196,11 @@ pub fn checkout_pos_cash(
                     params![settlement_id],
                     |r| r.get(0),
                 )
-                .map_err(|_| format!("Akun settlement ID {} tidak ditemukan", settlement_id))?;
+                .map_err(|_| {
+                    let msg = format!("Akun settlement ID {} tidak ditemukan", settlement_id);
+                    log_error(&db, "checkout", &msg);
+                    msg
+                })?;
             if exists == 0 {
                 return Err(format!("Akun settlement ID {} tidak ditemukan", settlement_id));
             }
@@ -177,7 +210,11 @@ pub fn checkout_pos_cash(
         _ => {
             let cash_id: i64 = tx
                 .query_row("SELECT id FROM accounts WHERE code = 'cash' AND is_active = 1 LIMIT 1", [], |r| r.get(0))
-                .map_err(|_| "Akun Kas tidak ditemukan".to_string())?;
+                .map_err(|_| {
+                    let msg = "Akun Kas tidak ditemukan".to_string();
+                    log_error(&db, "checkout", &msg);
+                    msg
+                })?;
             (cash_id, "pos_in".to_string())
         }
     };
@@ -185,19 +222,35 @@ pub fn checkout_pos_cash(
     let affected = tx.execute(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
         params![total_amount, now, target_account_id],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "checkout", &msg);
+        msg
+    })?;
     if affected == 0 {
         return Err("Gagal update saldo akun".to_string());
     }
     let new_bal: f64 = tx
         .query_row("SELECT balance FROM accounts WHERE id = ?1", params![target_account_id], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "checkout", &msg);
+            msg
+        })?;
     tx.execute(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![target_account_id, mut_type, total_amount, new_bal, format!("POS {}", invoice_no), trx_id, now],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "checkout", &msg);
+        msg
+    })?;
 
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "checkout", &msg);
+        msg
+    })?;
     record_app_log(
         &conn,
         "INFO",

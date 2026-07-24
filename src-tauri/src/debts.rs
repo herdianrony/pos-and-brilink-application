@@ -6,6 +6,7 @@ use crate::{
     auth::require_auth, common::bounded_limit, common::get_db, common::round_money, common::DbConn,
     session::SessionState,
 };
+use crate::common::log_error;
 
 #[derive(Debug, Serialize)]
 pub struct DebtRow {
@@ -51,7 +52,11 @@ pub fn list_debts(
     let _user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 100, 500);
     let conn = get_db(&db)?;
-    let mut stmt = conn.prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT ?1").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at FROM debts ORDER BY status ASC, id DESC LIMIT ?1").map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
     let rows = stmt
         .query_map(params![limit], |row| {
             let amount = row.get::<_, f64>(3)?;
@@ -69,10 +74,18 @@ pub fn list_debts(
                 updated_at: row.get(8)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "debts", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "debts", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -100,7 +113,11 @@ pub fn create_debt(
     conn.execute(
         "INSERT INTO debts (customer_name, phone, amount, paid_amount, status, notes, created_at, updated_at) VALUES (?1, ?2, ?3, 0, 'open', ?4, ?5, ?5)",
         params![customer_name, phone, amount, notes, now],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
     Ok(DebtRow {
         id: conn.last_insert_rowid(),
         customer_name,
@@ -129,12 +146,20 @@ pub fn add_debt_payment(
     }
     let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
     let debt = tx.query_row(
         "SELECT id, customer_name, phone, amount, paid_amount, status, notes, created_at FROM debts WHERE id = ?1 LIMIT 1",
         params![payload.debt_id],
         |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, Option<String>>(2)?, row.get::<_, f64>(3)?, row.get::<_, f64>(4)?, row.get::<_, String>(5)?, row.get::<_, Option<String>>(6)?, row.get::<_, String>(7)?)),
-    ).map_err(|_| "Data utang tidak ditemukan".to_string())?;
+    ).map_err(|_| {
+        let msg = "Data utang tidak ditemukan".to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
     if debt.5 == "paid" {
         return Err("Utang sudah lunas".into());
     }
@@ -146,13 +171,21 @@ pub fn add_debt_payment(
     tx.execute(
         "UPDATE debts SET paid_amount = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
         params![paid_amount, status, now, debt.0],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
 
     // Record payment
     tx.execute(
         "INSERT INTO debt_payments (debt_id, amount, notes, created_at) VALUES (?1, ?2, ?3, ?4)",
         params![debt.0, payment_amount, crate::common::trim_optional(payload.notes), now],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
 
     // K-1 fix: record cash inflow from debt payment
     if payment_amount > 0.0 {
@@ -163,19 +196,35 @@ pub fn add_debt_payment(
             let affected = tx.execute(
                 "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
                 params![payment_amount, now, cash_id],
-            ).map_err(|e| e.to_string())?;
+            ).map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "debts", &msg);
+                msg
+            })?;
             if affected > 0 {
                 let new_bal: f64 = tx.query_row(
                     "SELECT balance FROM accounts WHERE id = ?1", params![cash_id], |r| r.get(0),
-                ).map_err(|e| e.to_string())?;
+                ).map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "debts", &msg);
+                    msg
+                })?;
                 tx.execute(
                     "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'debt_payment', ?2, ?3, ?4, ?5, ?6)",
                     params![cash_id, payment_amount, new_bal, format!("Pembayaran hutang: {}", debt.1), debt.0, now],
-                ).map_err(|e| e.to_string())?;
+                ).map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "debts", &msg);
+                    msg
+                })?;
             }
         }
     }
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "debts", &msg);
+        msg
+    })?;
     Ok(DebtRow {
         id: debt.0,
         customer_name: debt.1,
@@ -212,7 +261,11 @@ pub fn build_debt_reminder(
                 ))
             },
         )
-        .map_err(|_| "Data utang tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Data utang tidak ditemukan".to_string();
+            log_error(&db, "debts", &msg);
+            msg
+        })?;
     let outstanding = (debt.1 - debt.2).max(0.0);
     Ok(format!(
         "Halo {}, kami ingin mengingatkan sisa utang sebesar Rp{:.0}. Mohon dibayarkan jika sudah memungkinkan. Catatan: {}. Terima kasih.",

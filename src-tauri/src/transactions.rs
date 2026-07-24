@@ -6,6 +6,7 @@ use crate::{
     auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db,
     common::record_app_log, common::DbConn, session::SessionState,
 };
+use crate::common::log_error;
 
 #[derive(Debug, Serialize)]
 pub struct TransactionRow {
@@ -121,7 +122,11 @@ pub fn list_transactions(
     sql.push_str(" ORDER BY id DESC LIMIT ?");
     params_vec.push(Box::new(limit));
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare(&sql).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
@@ -141,10 +146,18 @@ pub fn list_transactions(
                 user_id: row.get(10)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -158,7 +171,11 @@ pub fn list_transaction_items(
 ) -> Result<Vec<TransactionItemRow>, String> {
     let _user = require_auth(&session)?;
     let conn = get_db(&db)?;
-    let mut stmt = conn.prepare("SELECT id, transaction_id, product_id, product_name, quantity, unit_price, subtotal FROM transaction_items WHERE transaction_id = ?1 ORDER BY id ASC").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, transaction_id, product_id, product_name, quantity, unit_price, subtotal FROM transaction_items WHERE transaction_id = ?1 ORDER BY id ASC").map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     let rows = stmt
         .query_map(params![payload.transaction_id], |row| {
             Ok(TransactionItemRow {
@@ -171,10 +188,18 @@ pub fn list_transaction_items(
                 subtotal: row.get(6)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -193,7 +218,11 @@ pub fn list_app_logs(
         .prepare(
             "SELECT id, level, source, message, created_at FROM app_logs ORDER BY id DESC LIMIT ?1",
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map(params![limit], |row| {
             Ok(AppLogRow {
@@ -204,10 +233,18 @@ pub fn list_app_logs(
                 created_at: row.get(4)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -233,8 +270,16 @@ pub fn create_database_backup(
         chrono::Utc::now().format("%Y%m%d-%H%M%S")
     );
     let target = dir.join(&name);
-    std::fs::copy(&source, &target).map_err(|e| format!("Gagal membuat backup: {e}"))?;
-    let metadata = std::fs::metadata(&target).map_err(|e| e.to_string())?;
+    std::fs::copy(&source, &target).map_err(|e| {
+        let msg = format!("Gagal membuat backup: {e}");
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
+    let metadata = std::fs::metadata(&target).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     let conn = get_db(&db)?;
     record_app_log(&conn, "INFO", "backup", &format!("Backup dibuat: {name}"));
     Ok(BackupRow {
@@ -254,13 +299,25 @@ pub fn list_database_backups(
     let _user = require_admin(&session)?;
     let dir = crate::common::backup_dir(&app)?;
     let mut backups = Vec::new();
-    for entry in std::fs::read_dir(dir).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
+    for entry in std::fs::read_dir(dir).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&_db, "transactions", &msg);
+        msg
+    })? {
+        let entry = entry.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&_db, "transactions", &msg);
+            msg
+        })?;
         let path = entry.path();
         if path.extension().and_then(|ext| ext.to_str()) != Some("db") {
             continue;
         }
-        let metadata = std::fs::metadata(&path).map_err(|e| e.to_string())?;
+        let metadata = std::fs::metadata(&path).map_err(|e| {
+            let msg = e.to_string();
+            log_error(&_db, "transactions", &msg);
+            msg
+        })?;
         let created_at = metadata
             .modified()
             .ok()
@@ -291,8 +348,16 @@ pub fn restore_database_backup(
     }
     let allowed_dir = crate::common::backup_dir(&app)?
         .canonicalize()
-        .map_err(|e| e.to_string())?;
-    let canonical_backup = backup_path.canonicalize().map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
+    let canonical_backup = backup_path.canonicalize().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     if !canonical_backup.starts_with(&allowed_dir) {
         return Err("File backup tidak valid".into());
     }
@@ -304,14 +369,22 @@ pub fn restore_database_backup(
             chrono::Utc::now().format("%Y%m%d-%H%M%S")
         ));
         std::fs::copy(&target, pre_restore)
-            .map_err(|e| format!("Gagal membuat backup sebelum restore: {e}"))?;
+            .map_err(|e| {
+                let msg = format!("Gagal membuat backup sebelum restore: {e}");
+                log_error(&db, "transactions", &msg);
+                msg
+            })?;
     }
     let wal = target.with_extension("db-wal");
     let shm = target.with_extension("db-shm");
     let _ = std::fs::remove_file(&wal);
     let _ = std::fs::remove_file(&shm);
     std::fs::copy(&canonical_backup, &target)
-        .map_err(|e| format!("Gagal restore database: {e}"))?;
+        .map_err(|e| {
+            let msg = format!("Gagal restore database: {e}");
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
     let conn = get_db(&db)?;
     record_app_log(
         &conn,

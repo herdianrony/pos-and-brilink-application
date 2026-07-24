@@ -300,6 +300,14 @@ pub fn record_app_log(conn: &Connection, level: &str, source: &str, message: &st
     );
 }
 
+/// Convenience: log an error to app_logs using DbConn (acquires lock briefly).
+/// Silently ignores failures so it never interferes with the caller's error path.
+pub fn log_error(db: &DbConn, source: &str, message: &str) {
+    if let Ok(conn) = db.lock() {
+        record_app_log(&conn, "ERROR", source, message);
+    }
+}
+
 pub fn normalize_code(value: &str) -> String {
     value
         .trim()

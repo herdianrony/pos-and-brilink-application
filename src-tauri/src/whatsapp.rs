@@ -5,6 +5,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::{
     auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
 };
+use crate::common::log_error;
 use rusqlite::params;
 
 const SIDECAR_PORT: u16 = 17532;
@@ -198,7 +199,11 @@ pub fn whatsapp_start(
             std::process::Command::new(path)
                 .env("WA_SESSION_DIR", &session_dir)
                 .spawn()
-                .map_err(|e| format!("Gagal spawn sidecar: {e}"))?
+                .map_err(|e| {
+                    let msg = format!("Gagal spawn sidecar: {e}");
+                    log_error(&db, "whatsapp", &msg);
+                    msg
+                })?
         }
         None => {
             // Dev fallback: node wa-service/index.mjs
@@ -214,11 +219,19 @@ pub fn whatsapp_start(
                 .arg(&wa_entry)
                 .env("WA_SESSION_DIR", &session_dir)
                 .spawn()
-                .map_err(|e| format!("Gagal spawn wa-service: {e}"))?
+                .map_err(|e| {
+                    let msg = format!("Gagal spawn wa-service: {e}");
+                    log_error(&db, "whatsapp", &msg);
+                    msg
+                })?
         }
     };
 
-    *sc.child.lock().map_err(|_| "lock error".to_string())? = Some(child);
+    *sc.child.lock().map_err(|_| {
+        let msg = "lock error".to_string();
+        log_error(&db, "whatsapp", &msg);
+        msg
+    })? = Some(child);
 
     // Wait briefly for sidecar to start
     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -311,7 +324,11 @@ pub fn whatsapp_notify(
                 row.get::<_, Option<String>>(3)?, row.get::<_, String>(4)?, row.get::<_, String>(5)?,
             )),
         )
-        .map_err(|_| "Transaksi tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Transaksi tidak ditemukan".to_string();
+            log_error(&db, "whatsapp", &msg);
+            msg
+        })?;
 
     let message = build_notification_message(&trx.1, &trx.0, trx.2, &trx.3, &trx.4, &trx.5);
 

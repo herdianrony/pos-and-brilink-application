@@ -7,6 +7,7 @@ use crate::{
     common::get_db, common::round_money, common::validate_password, common::DbConn,
     common::record_app_log, session::PublicUser, session::SessionState,
 };
+use crate::common::log_error;
 
 use super::types::*;
 
@@ -20,7 +21,11 @@ pub fn setup_complete(
     let mut conn = get_db(&db)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "setup", &msg);
+            msg
+        })?;
     if existing > 0 {
         return Err("Setup sudah selesai".into());
     }
@@ -34,16 +39,28 @@ pub fn setup_complete(
 
     let now = chrono::Utc::now().to_rfc3339();
     let password_hash =
-        bcrypt::hash(&payload.admin_password, bcrypt::DEFAULT_COST).map_err(|e| e.to_string())?;
+        bcrypt::hash(&payload.admin_password, bcrypt::DEFAULT_COST).map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "setup", &msg);
+            msg
+        })?;
     let kas_only = payload.kas_only.unwrap_or(false);
 
     // Wrap all DB operations in a transaction for atomicity
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "setup", &msg);
+        msg
+    })?;
 
     tx.execute(
         "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 'admin', 1, ?4, ?4)",
         params![admin_name, admin_username, password_hash, now],
-    ).map_err(|e| e.to_string())?;
+    ).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "setup", &msg);
+        msg
+    })?;
     let user_id = tx.last_insert_rowid();
 
     if let Some(ref name) = payload.store_name {
@@ -57,15 +74,35 @@ pub fn setup_complete(
     if cash_opening > 0.0 {
         let cash_account_id: i64 = tx
             .query_row("SELECT id FROM accounts WHERE code = 'cash' LIMIT 1", [], |r| r.get(0))
-            .map_err(|e| format!("Cash account not found: {e}"))?;
+            .map_err(|e| {
+                let msg = format!("Cash account not found: {e}");
+                log_error(&db, "setup", &msg);
+                msg
+            })?;
         tx.execute("UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3", params![cash_opening, now, cash_account_id])
-            .map_err(|e| e.to_string())?;
-        let new_bal: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cash_account_id], |r| r.get(0)).map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "setup", &msg);
+                msg
+            })?;
+        let new_bal: f64 = tx.query_row("SELECT balance FROM accounts WHERE id = ?1", params![cash_account_id], |r| r.get(0)).map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "setup", &msg);
+            msg
+        })?;
         tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, created_at) VALUES (?1, 'opening', ?2, ?3, 'Saldo awal dari Setup Wizard', ?4)", params![cash_account_id, cash_opening, new_bal, now])
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "setup", &msg);
+                msg
+            })?;
     }
 
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "setup", &msg);
+        msg
+    })?;
 
     let public_user = PublicUser {
         id: user_id,
@@ -73,7 +110,11 @@ pub fn setup_complete(
         username: admin_username,
         role: "admin".into(),
     };
-    *session.0.lock().map_err(|_| "Session error".to_string())? = Some(public_user.clone());
+    *session.0.lock().map_err(|_| {
+        let msg = "Session error".to_string();
+        log_error(&db, "setup", &msg);
+        msg
+    })? = Some(public_user.clone());
 
     record_app_log(&conn, "INFO", "setup", "Setup wizard selesai");
     Ok(SetupCompleteResponse {

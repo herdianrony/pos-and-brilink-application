@@ -7,6 +7,7 @@ use crate::{
     auth::require_admin, common::get_db, common::record_app_log, common::DbConn,
     session::SessionState,
 };
+use crate::common::log_error;
 
 #[derive(Debug, Serialize)]
 pub struct SeedResult {
@@ -50,7 +51,11 @@ pub fn seed_system(
     let conn = get_db(&db)?;
     let user_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     // Jika sudah ada user, wajib admin
     if user_count > 0 {
@@ -66,7 +71,11 @@ pub fn seed_system(
             [],
             |r| r.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     if existing == 0 {
         let now = chrono::Utc::now().to_rfc3339();
@@ -98,7 +107,11 @@ pub fn seed_system(
                 "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)",
                 params![*key, *value, now],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         }
         stats.insert("settings".into(), settings.len() as i64);
     } else {
@@ -108,7 +121,11 @@ pub fn seed_system(
     // ── 2. ACCOUNTS ──
     let existing_accounts: i64 = conn
         .query_row("SELECT COUNT(*) FROM accounts", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     if existing_accounts == 0 {
         let now = chrono::Utc::now().to_rfc3339();
@@ -153,7 +170,11 @@ pub fn seed_system(
             conn.execute(
                 "INSERT OR IGNORE INTO accounts (code, name, icon, color, balance, min_balance, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 0, 0, ?5, ?6, ?6)",
                 params![code, name, icon, color, is_active, now],
-            ).map_err(|e| e.to_string())?;
+            ).map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         }
         stats.insert("accounts".into(), accounts.len() as i64);
     } else {
@@ -190,7 +211,11 @@ pub fn setup_templates(
     // Security: hanya accessible jika belum ada user
     let user_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     if user_count > 0 {
         return Err("Setup sudah selesai. Endpoint ini tidak tersedia.".into());
     }
@@ -200,7 +225,11 @@ pub fn setup_templates(
         .prepare(
             "SELECT id, code, name, icon, color, is_active, balance FROM accounts WHERE code != 'cash' ORDER BY id ASC",
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map([], |row| {
             Ok(AccountTemplateRow {
@@ -213,10 +242,18 @@ pub fn setup_templates(
                 balance: row.get(6)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     let mut templates = Vec::new();
     for row in rows {
-        templates.push(row.map_err(|e| e.to_string())?);
+        templates.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?);
     }
 
     // Cash account info
@@ -266,7 +303,11 @@ pub fn seed_demo(
             [DEMO],
             |r| r.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     if existing_demo_cats == 0 {
         let cats: Vec<(&str, &str, &str)> = vec![
@@ -286,7 +327,11 @@ pub fn seed_demo(
                 "INSERT INTO product_categories (name, icon, color, is_active, created_at) VALUES (?1, ?2, ?3, 1, ?4)",
                 params![format!("{DEMO} {name}"), *icon, *color, now],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         }
         stats.insert("categories".into(), cats.len() as i64);
     } else {
@@ -300,7 +345,11 @@ pub fn seed_demo(
             [DEMO],
             |r| r.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     if existing_demo_products == 0 {
         // First get category IDs for demo categories
@@ -308,12 +357,24 @@ pub fn seed_demo(
             .prepare(
                 "SELECT id, name FROM product_categories WHERE name LIKE ? || '%' ORDER BY id ASC",
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         let cat_rows: Vec<(i64, String)> = cat_stmt
             .query_map(params![DEMO], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| e.to_string())?
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
 
         // Helper: find cat id by name suffix
         let find_cat_id = |name_suffix: &str| -> Option<i64> {
@@ -659,7 +720,11 @@ pub fn seed_demo(
                     now
                 ],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         }
         stats.insert("products".into(), products.len() as i64);
     } else {
@@ -669,7 +734,11 @@ pub fn seed_demo(
     // ── Fee Tiers for existing agent services ──
     let existing_fee_tiers: i64 = conn
         .query_row("SELECT COUNT(*) FROM agent_fee_tiers", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
 
     if existing_fee_tiers == 0 {
         // Get service IDs
@@ -677,12 +746,24 @@ pub fn seed_demo(
             .prepare(
                 "SELECT id, name FROM agent_service_templates WHERE is_active = 1 ORDER BY id ASC",
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
         let services: Vec<(i64, String)> = svc_stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| e.to_string())?
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "seed", &msg);
+                msg
+            })?;
 
         // Fee tiers: (service_name_contains, min, max, fee, provider_cost)
         let fee_data: Vec<(&str, f64, Option<f64>, f64, f64)> = vec![
@@ -706,7 +787,11 @@ pub fn seed_demo(
                     "INSERT INTO agent_fee_tiers (service_id, min_amount, max_amount, fee, provider_cost, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                     params![svc_id, min_amt, max_amt, fee, pcost, now],
                 )
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "seed", &msg);
+                    msg
+                })?;
             }
         }
         stats.insert("fee_tiers".into(), fee_data.len() as i64);
@@ -743,9 +828,17 @@ pub fn clear_demo(
             [DEMO],
             |r| r.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     conn.execute("DELETE FROM products WHERE name LIKE ? || '%'", [DEMO])
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     stats.insert("products_removed".into(), demo_product_count);
 
     // Delete categories with [DEMO] prefix
@@ -755,20 +848,36 @@ pub fn clear_demo(
             [DEMO],
             |r| r.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     conn.execute(
         "DELETE FROM product_categories WHERE name LIKE ? || '%'",
         [DEMO],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "seed", &msg);
+        msg
+    })?;
     stats.insert("categories_removed".into(), demo_cat_count);
 
     // Fee tiers — clear all (they were seeded as part of demo)
     let fee_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM agent_fee_tiers", [], |r| r.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     conn.execute("DELETE FROM agent_fee_tiers", [])
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "seed", &msg);
+            msg
+        })?;
     stats.insert("fee_tiers_removed".into(), fee_count);
 
     record_app_log(&conn, "INFO", "seed", "Demo data cleared");
