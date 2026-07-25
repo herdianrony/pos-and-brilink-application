@@ -2,10 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, State};
 
-use crate::{
-    auth::require_admin, common::get_db, common::DbConn, common::record_app_log, session::SessionState,
-};
 use crate::common::log_error;
+use crate::{
+    auth::require_admin, common::get_db, common::record_app_log, common::DbConn,
+    session::SessionState,
+};
 use rusqlite::params;
 
 const SIDECAR_PORT: u16 = 17532;
@@ -84,24 +85,37 @@ fn get_whatsapp_settings(conn: &rusqlite::Connection) -> (bool, bool, String) {
 }
 
 /// Make an HTTP GET request to the sidecar
-fn http_get<T: for<'de> Deserialize<'de>>(path: &str) -> Result<T, String> {
+fn http_get<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, String> {
     let url = format!("{}{}", sidecar_base_url(), path);
-    let resp = ureq::get(&url)
-        .timeout(std::time::Duration::from_secs(5))
+    let config = ureq::config::Config::builder()
+        .timeout_global(Some(std::time::Duration::from_secs(5)))
+        .build();
+    let agent = ureq::Agent::new_with_config(config);
+    let resp = agent
+        .get(&url)
         .call()
         .map_err(|e| format!("Sidecar GET {} gagal: {}", path, e))?;
-    resp.body_json::<T>()
+    resp.into_body()
+        .read_json::<T>()
         .map_err(|e| format!("Parse response gagal: {}", e))
 }
 
 /// Make an HTTP POST request to the sidecar
-fn http_post<T: for<'de> Deserialize<'de>>(path: &str, body: &serde_json::Value) -> Result<T, String> {
+fn http_post<T: serde::de::DeserializeOwned>(
+    path: &str,
+    body: &serde_json::Value,
+) -> Result<T, String> {
     let url = format!("{}{}", sidecar_base_url(), path);
-    let resp = ureq::post(&url)
-        .timeout(std::time::Duration::from_secs(10))
+    let config = ureq::config::Config::builder()
+        .timeout_global(Some(std::time::Duration::from_secs(10)))
+        .build();
+    let agent = ureq::Agent::new_with_config(config);
+    let resp = agent
+        .post(&url)
         .send_json(body)
         .map_err(|e| format!("Sidecar POST {} gagal: {}", path, e))?;
-    resp.body_json::<T>()
+    resp.into_body()
+        .read_json::<T>()
         .map_err(|e| format!("Parse response gagal: {}", e))
 }
 
@@ -136,7 +150,11 @@ pub fn whatsapp_status(
     let (sidecar_status, has_client, last_error) = if is_sidecar_running(&sc) {
         match http_get::<SidecarStatus>("/status") {
             Ok(s) => (s.status, s.has_client.unwrap_or(true), s.last_error),
-            Err(_) => ("unreachable".into(), false, Some("Sidecar tidak merespon".into())),
+            Err(_) => (
+                "unreachable".into(),
+                false,
+                Some("Sidecar tidak merespon".into()),
+            ),
         }
     } else {
         ("stopped".into(), false, None)
@@ -156,7 +174,11 @@ pub fn whatsapp_status(
         has_client,
         enabled,
         auto_notify_owner: auto_notify,
-        owner_number: if owner_number.is_empty() { None } else { Some(owner_number) },
+        owner_number: if owner_number.is_empty() {
+            None
+        } else {
+            Some(owner_number)
+        },
     })
 }
 
@@ -285,15 +307,27 @@ pub fn whatsapp_notify(
     let (enabled, auto_notify, owner_number) = get_whatsapp_settings(&conn);
 
     if !enabled || !auto_notify {
-        return Ok(WaNotifyResponse { sent: false, reason: Some("disabled".into()), id: None });
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("disabled".into()),
+            id: None,
+        });
     }
     if owner_number.is_empty() {
-        return Ok(WaNotifyResponse { sent: false, reason: Some("missing_owner_number".into()), id: None });
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("missing_owner_number".into()),
+            id: None,
+        });
     }
 
     // Check sidecar is running
     if !is_sidecar_running(&sc) {
-        return Ok(WaNotifyResponse { sent: false, reason: Some("sidecar_not_running".into()), id: None });
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("sidecar_not_running".into()),
+            id: None,
+        });
     }
 
     // Check sidecar status via HTTP
@@ -302,7 +336,11 @@ pub fn whatsapp_notify(
         .unwrap_or(false);
 
     if !sidecar_ok {
-        return Ok(WaNotifyResponse { sent: false, reason: Some("sidecar_not_ready".into()), id: None });
+        return Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some("sidecar_not_ready".into()),
+            id: None,
+        });
     }
 
     // Build notification message
@@ -329,10 +367,23 @@ pub fn whatsapp_notify(
         &serde_json::json!({ "phone": owner_number, "message": message }),
     ) {
         Ok(_) => {
-            record_app_log(&conn, "INFO", "whatsapp", &format!("WA notif dikirim untuk trx #{}", transaction_id));
-            Ok(WaNotifyResponse { sent: true, reason: None, id: None })
+            record_app_log(
+                &conn,
+                "INFO",
+                "whatsapp",
+                &format!("WA notif dikirim untuk trx #{}", transaction_id),
+            );
+            Ok(WaNotifyResponse {
+                sent: true,
+                reason: None,
+                id: None,
+            })
         }
-        Err(e) => Ok(WaNotifyResponse { sent: false, reason: Some(format!("send_failed: {}", e)), id: None }),
+        Err(e) => Ok(WaNotifyResponse {
+            sent: false,
+            reason: Some(format!("send_failed: {}", e)),
+            id: None,
+        }),
     }
 }
 
