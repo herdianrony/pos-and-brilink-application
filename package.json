@@ -2,7 +2,7 @@
   "name": "pos-and-brilink-application",
   "private": true,
   "version": "1.0.0",
-  "description": "Aplikasi POS dan BRILink — Tauri + Vite + React + Rust",
+  "description": "Aplikasi POS dan BRILink — Express.js + React + Tauri WebView Shell",
   "author": {
     "name": "herdianrony",
     "email": "herdianrony@gmail.com"
@@ -12,20 +12,19 @@
     "node": ">=22.12.0"
   },
   "workspaces": [
-    "src-tauri-ui"
+    "src-tauri-ui",
+    "src"
   ],
   "scripts": {
-    "dev:tauri-ui": "cd src-tauri-ui && vite --host 127.0.0.1",
-    "build:tauri-ui": "cd src-tauri-ui && vite build",
+    "dev:backend": "cd src && npm run dev",
+    "dev:ui": "cd src-tauri-ui && vite build --watch",
+    "build:ui": "cd src-tauri-ui && vite build",
+    "build:backend": "cd src && npm install",
+    "dev": "npm run dev:backend & npm run dev:ui",
     "dev:tauri": "tauri dev",
-    "build:tauri": "tauri build",
+    "build:tauri": "npm run build:ui && tauri build",
     "lint": "eslint .",
     "test:e2e:tauri": "playwright test -c playwright.tauri.config.ts"
-  },
-  "dependencies": {
-    "tailwind-merge": "^3.6.0",
-    "whatsapp-web.js": "^1.34.7",
-    "wwebjs-electron": "^1.34.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

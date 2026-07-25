@@ -1,7 +1,7 @@
 [package]
 name = "catatagen-local"
-version = "0.1.0"
-description = "CatatAgen Local - eksperimen Tauri full tanpa Next server"
+version = "1.0.0"
+description = "CatatAgen Local - Tauri WebView Shell for Express.js backend"
 authors = ["herdianrony"]
 edition = "2021"
 rust-version = "1.77"
@@ -21,10 +21,3 @@ tauri-plugin-log = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-rusqlite = { version = "0.32", features = ["bundled"] }
-bcrypt = "0.15"
-chrono = { version = "0.4", features = ["serde"] }
-base64 = "0.22"
-ureq = { version = "3", features = ["json"] }

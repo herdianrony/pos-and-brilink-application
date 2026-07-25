@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "CatatAgen Local",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.herdianrony.catatagenlocal",
   "build": {
-    "beforeDevCommand": "npm run dev:tauri-ui",
-    "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "npm run build:tauri-ui",
-    "frontendDist": "../src-tauri-ui/dist"
+    "beforeDevCommand": "npm run dev:backend",
+    "beforeBuildCommand": "npm run build:ui",
+    "frontendDist": "../src-tauri-ui/dist",
+    "devUrl": "http://127.0.0.1:3000"
   },
   "app": {
     "windows": [
@@ -22,15 +22,15 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'"
+      "csp": "default-src 'self' http://127.0.0.1:3000; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; script-src 'self' http://127.0.0.1:3000; connect-src 'self' http://127.0.0.1:3000"
     }
   },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
     "category": "Business",
-    "shortDescription": "POS dan layanan agen ringan berbasis Tauri",
-    "longDescription": "Eksperimen CatatAgen Local berbasis Tauri full tanpa Next.js server lokal.",
+    "shortDescription": "POS dan layanan agen ringan berbasis Express.js",
+    "longDescription": "CatatAgen Local - Aplikasi Point of Sales dan layanan BRILink. Backend Express.js dengan React frontend.",
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

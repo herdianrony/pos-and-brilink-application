@@ -1,0 +1,19 @@
+{
+  "name": "catatagen-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.6",
+    "express": "^4.21.0",
+    "qrcode": "^1.5.4",
+    "uuid": "^11.0.0"
+  }
+}
