@@ -5,7 +5,7 @@ use tauri::{AppHandle, State};
 
 use crate::auth::{require_admin, require_auth};
 use crate::common::{
-    get_db, product_images_dir, record_app_log, round_money, trim_optional, DbConn,
+    get_db, log_error, product_images_dir, record_app_log, round_money, trim_optional, DbConn,
 };
 use crate::session::SessionState;
 
@@ -103,7 +103,11 @@ pub fn list_categories(
     let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, icon, color, is_active FROM product_categories WHERE is_active = 1 ORDER BY name ASC")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map([], |row| {
             Ok(CategoryRow {
@@ -114,10 +118,18 @@ pub fn list_categories(
                 is_active: row.get::<_, i64>(4)? == 1,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -142,7 +154,11 @@ pub fn create_category(
         "INSERT INTO product_categories (name, icon, color, is_active, created_at) VALUES (?1, ?2, ?3, 1, ?4)",
         params![name, icon, color, now],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     Ok(CategoryRow {
         id: conn.last_insert_rowid(),
         name,
@@ -190,7 +206,11 @@ pub fn update_category(
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     conn.execute(&sql, param_refs.as_slice())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     Ok(true)
 }
 
@@ -207,7 +227,11 @@ pub fn deactivate_category(
         "UPDATE product_categories SET is_active = 0 WHERE id = ?1",
         params![payload.category_id],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     Ok(true)
 }
 
@@ -244,7 +268,11 @@ pub fn list_products(
         params_vec.push(Box::new(cid));
     }
     sql.push_str(" ORDER BY p.name ASC");
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare(&sql).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
@@ -264,10 +292,18 @@ pub fn list_products(
                 is_active: row.get::<_, i64>(11)? == 1,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -310,7 +346,11 @@ pub fn create_product(
             now
         ],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     let id = conn.last_insert_rowid();
     let image_path = save_product_image(&app, id, payload.image_data_url)?;
     if image_path.is_some() {
@@ -318,7 +358,11 @@ pub fn create_product(
             "UPDATE products SET image_path = ?1 WHERE id = ?2",
             params![&image_path, id],
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     }
     let category_name = if let Some(category_id) = payload.category_id {
         conn.query_row(
@@ -401,7 +445,11 @@ pub fn update_product(
             payload.id
         ],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     if conn.changes() == 0 {
         return Err("Produk tidak ditemukan".into());
     }
@@ -445,7 +493,11 @@ pub fn deactivate_product(
         "UPDATE products SET is_active = 0, updated_at = ?1 WHERE id = ?2",
         params![now, payload.id],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "products", &msg);
+        msg
+    })?;
     Ok(conn.changes() > 0)
 }
 
@@ -537,7 +589,11 @@ pub fn restock_product(
             params![payload.product_id],
             |r| r.get(0),
         )
-        .map_err(|_| format!("Produk ID {} tidak ditemukan", payload.product_id))?;
+        .map_err(|_| {
+            let msg = format!("Produk ID {} tidak ditemukan", payload.product_id);
+            log_error(&db, "products", &msg);
+            msg
+        })?;
 
     // Optionally update buy_price if provided
     if let Some(cost) = payload.cost_price {
@@ -546,7 +602,11 @@ pub fn restock_product(
                 "UPDATE products SET buy_price = ?1, updated_at = ?2 WHERE id = ?3",
                 params![cost, now, payload.product_id],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "products", &msg);
+                msg
+            })?;
         }
     }
 
@@ -556,7 +616,11 @@ pub fn restock_product(
             "UPDATE products SET stock = stock + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
             params![payload.quantity, now, payload.product_id],
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "products", &msg);
+            msg
+        })?;
     if affected == 0 {
         return Err("Gagal menambah stok produk".into());
     }

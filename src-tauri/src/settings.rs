@@ -6,6 +6,7 @@ use tauri::{AppHandle, State};
 use crate::{
     auth::require_admin, auth::require_auth, common::get_db, common::DbConn, session::SessionState,
 };
+use crate::common::log_error;
 
 /// Whitelist of allowed settings keys that can be updated via the API.
 const ALLOWED_KEYS: &[&str] = &[
@@ -41,15 +42,27 @@ pub fn get_settings(
     let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT key, value FROM settings")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "settings", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "settings", &msg);
+            msg
+        })?;
     let mut map = HashMap::new();
     for row in rows {
-        let (key, value) = row.map_err(|e| e.to_string())?;
+        let (key, value) = row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "settings", &msg);
+            msg
+        })?;
         if key == "discount_admin_pin" {
             map.insert(
                 "discount_admin_pin_set".to_string(),
@@ -78,13 +91,21 @@ pub fn update_settings(
     }
     let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "settings", &msg);
+        msg
+    })?;
     for (key, value) in &payload.settings {
         if key == "discount_admin_pin" && (value == "****" || value.is_empty()) {
             continue;
         }
         let processed_value = if key == "discount_admin_pin" {
-            bcrypt::hash(value, bcrypt::DEFAULT_COST).map_err(|e| e.to_string())?
+            bcrypt::hash(value, bcrypt::DEFAULT_COST).map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "settings", &msg);
+                msg
+            })?
         } else {
             value.clone()
         };
@@ -94,21 +115,37 @@ pub fn update_settings(
                 params![key],
                 |row| row.get(0),
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "settings", &msg);
+                msg
+            })?;
         if exists > 0 {
             tx.execute(
                 "UPDATE settings SET value = ?1, updated_at = ?2 WHERE key = ?3",
                 params![processed_value, now, key],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "settings", &msg);
+                msg
+            })?;
         } else {
             tx.execute(
                 "INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)",
                 params![key, processed_value, now],
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "settings", &msg);
+                msg
+            })?;
         }
     }
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "settings", &msg);
+        msg
+    })?;
     Ok(true)
 }

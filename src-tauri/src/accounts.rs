@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use crate::auth::require_admin;
-use crate::common::{get_db, round_money, DbConn};
+use crate::common::{get_db, round_money, DbConn, log_error};
 use crate::session::SessionState;
 
 #[derive(Debug, Serialize)]
@@ -108,7 +108,11 @@ pub fn list_accounts(
     let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE is_active = 1 ORDER BY id ASC")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map([], |row| {
             Ok(AccountRow {
@@ -122,11 +126,19 @@ pub fn list_accounts(
                 is_active: row.get::<_, i64>(7)? == 1,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
 
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -156,21 +168,37 @@ pub fn create_account(
     let icon = crate::common::trim_optional(payload.icon).or_else(|| Some("bank".to_string()));
     let color = crate::common::trim_optional(payload.color).or_else(|| Some("#2563eb".to_string()));
     let now = chrono::Utc::now().to_rfc3339();
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     tx.execute(
         "INSERT INTO accounts (code, name, icon, color, balance, min_balance, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)",
         params![code, name, icon, color, initial_balance, min_balance, now],
     )
-    .map_err(|e| format!("Gagal membuat rekening: {e}"))?;
+    .map_err(|e| {
+        let msg = format!("Gagal membuat rekening: {e}");
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     let id = tx.last_insert_rowid();
     if initial_balance > 0.0 {
         tx.execute(
             "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'initial_balance', ?2, ?2, 'Saldo awal', NULL, ?3)",
             params![id, initial_balance, now],
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     }
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     Ok(AccountRow {
         id,
         code,
@@ -197,7 +225,11 @@ pub fn adjust_account_balance(
     }
     let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     let account = tx
         .query_row(
             "SELECT id, code, name, icon, color, balance, min_balance, is_active FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
@@ -208,13 +240,21 @@ pub fn adjust_account_balance(
                 row.get::<_, f64>(6)?, row.get::<_, i64>(7)?,
             )),
         )
-        .map_err(|_| "Rekening tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Rekening tidak ditemukan".to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     // Race-safe: use conditional WHERE to prevent TOCTOU
     let affected = tx.execute(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND balance + ?1 >= 0 AND is_active = 1",
         params![amount, now, account.0],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     if affected == 0 {
         return Err("Saldo tidak cukup".into());
     }
@@ -223,8 +263,16 @@ pub fn adjust_account_balance(
         "INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'adjustment', ?2, ?3, ?4, NULL, ?5)",
         params![account.0, amount, next_balance, crate::common::trim_optional(payload.notes).unwrap_or_else(|| "Penyesuaian saldo".to_string()), now],
     )
-    .map_err(|e| e.to_string())?;
-    tx.commit().map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     Ok(account_row_from_tuple(account, next_balance))
 }
 
@@ -245,7 +293,11 @@ pub fn transfer_accounts(
     }
     let mut conn = get_db(&db)?;
     let now = chrono::Utc::now().to_rfc3339();
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     let from = tx
         .query_row(
             "SELECT id, name, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
@@ -258,7 +310,11 @@ pub fn transfer_accounts(
                 ))
             },
         )
-        .map_err(|_| "Rekening asal tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Rekening asal tidak ditemukan".to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     let to = tx
         .query_row(
             "SELECT id, name, balance FROM accounts WHERE id = ?1 AND is_active = 1 LIMIT 1",
@@ -271,13 +327,21 @@ pub fn transfer_accounts(
                 ))
             },
         )
-        .map_err(|_| "Rekening tujuan tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Rekening tujuan tidak ditemukan".to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     // Race-safe: conditional WHERE ensures balance can't go negative
     let from_affected = tx.execute(
         "UPDATE accounts SET balance = balance - ?1, updated_at = ?2 WHERE id = ?3 AND balance >= ?1 AND is_active = 1",
         params![amount, now, from.0],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     if from_affected == 0 {
         return Err("Saldo rekening asal tidak cukup atau akun tidak aktif".into());
     }
@@ -285,16 +349,32 @@ pub fn transfer_accounts(
         "UPDATE accounts SET balance = balance + ?1, updated_at = ?2 WHERE id = ?3 AND is_active = 1",
         params![amount, now, to.0],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     // Recalculate balances for mutations
     let from_balance = round_money(from.2 - amount);
     let to_balance = round_money(to.2 + amount);
     let note = crate::common::trim_optional(payload.notes)
         .unwrap_or_else(|| format!("Transfer {} ke {}", from.1, to.1));
-    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -amount, from_balance, note, now]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_out', ?2, ?3, ?4, NULL, ?5)", params![from.0, -amount, from_balance, note, now]).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     let note_in = format!("Transfer dari {}", from.1);
-    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_in', ?2, ?3, ?4, NULL, ?5)", params![to.0, amount, to_balance, note_in, now]).map_err(|e| e.to_string())?;
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO account_mutations (account_id, type, amount, balance_after, notes, reference_id, created_at) VALUES (?1, 'transfer_in', ?2, ?3, ?4, NULL, ?5)", params![to.0, amount, to_balance, note_in, now]).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     Ok(true)
 }
 
@@ -365,7 +445,11 @@ pub fn list_account_mutations(
     sql.push_str(" ORDER BY m.id DESC LIMIT ?");
     params_vec.push(Box::new(limit));
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare(&sql).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "accounts", &msg);
+        msg
+    })?;
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     let rows = stmt
@@ -382,10 +466,18 @@ pub fn list_account_mutations(
                 created_at: row.get(8)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -448,7 +540,11 @@ pub fn get_mutation_summary(
         opening_params.iter().map(|b| b.as_ref()).collect();
     let opening_balance: f64 = conn
         .query_row(&opening_sql, opening_refs.as_slice(), |row| row.get(0))
-        .map_err(|e| format!("Query error: {e}"))?;
+        .map_err(|e| {
+            let msg = format!("Query error: {e}");
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
 
     let summary = conn
         .query_row(&sql, param_refs.as_slice(), |row| {
@@ -464,7 +560,11 @@ pub fn get_mutation_summary(
                 opening_balance,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     Ok(summary)
 }
 
@@ -581,7 +681,11 @@ pub fn update_account(
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     conn.execute(&sql, param_refs.as_slice())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     Ok(true)
 }
 
@@ -600,7 +704,11 @@ pub fn deactivate_account(
             params![account_id],
             |r| r.get(0),
         )
-        .map_err(|_| format!("Akun ID {} tidak ditemukan atau sudah nonaktif", account_id))?;
+        .map_err(|_| {
+            let msg = format!("Akun ID {} tidak ditemukan atau sudah nonaktif", account_id);
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     if code == "cash" {
         return Err("Akun Kas tidak bisa dinonaktifkan".into());
     }
@@ -610,7 +718,11 @@ pub fn deactivate_account(
             "UPDATE accounts SET is_active = 0, updated_at = ?1 WHERE id = ?2 AND is_active = 1 AND ABS(balance) <= 0.01",
             params![chrono::Utc::now().to_rfc3339(), account_id],
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "accounts", &msg);
+            msg
+        })?;
     if affected == 0 {
         return Err("Akun dengan saldo tidak bisa dinonaktifkan, atau sudah nonaktif".into());
     }

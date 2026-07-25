@@ -6,6 +6,7 @@ use crate::{
     auth::require_admin, auth::require_auth, common::bounded_limit, common::get_db,
     common::trim_optional, common::DbConn, session::SessionState,
 };
+use crate::common::log_error;
 
 #[derive(Debug, Serialize)]
 pub struct AgentServiceRow {
@@ -54,7 +55,11 @@ pub fn list_agent_services(
     let _user = require_auth(&session)?;
     let limit = bounded_limit(payload.as_ref(), 100, 500);
     let conn = get_db(&db)?;
-    let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC LIMIT ?1").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, name, category, default_fee, provider_cost, is_active FROM agent_service_templates WHERE is_active = 1 ORDER BY name ASC LIMIT ?1").map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "agent_services", &msg);
+        msg
+    })?;
     let rows = stmt
         .query_map(params![limit], |row| {
             Ok(AgentServiceRow {
@@ -66,10 +71,18 @@ pub fn list_agent_services(
                 is_active: row.get::<_, i64>(5)? == 1,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "agent_services", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "agent_services", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -93,7 +106,11 @@ pub fn create_agent_service(
     let now = chrono::Utc::now().to_rfc3339();
     let category = trim_optional(payload.category);
     let provider_cost = payload.provider_cost.unwrap_or(0.0);
-    conn.execute("INSERT INTO agent_service_templates (name, category, default_fee, provider_cost, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)", params![name, category, payload.default_fee, provider_cost, now]).map_err(|e| format!("Gagal membuat layanan: {e}"))?;
+    conn.execute("INSERT INTO agent_service_templates (name, category, default_fee, provider_cost, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)", params![name, category, payload.default_fee, provider_cost, now]).map_err(|e| {
+        let msg = format!("Gagal membuat layanan: {e}");
+        log_error(&db, "agent_services", &msg);
+        msg
+    })?;
     Ok(AgentServiceRow {
         id: conn.last_insert_rowid(),
         name,
@@ -113,7 +130,11 @@ pub fn list_fee_tiers(
 ) -> Result<Vec<FeeTierRow>, String> {
     let _user = require_auth(&session)?;
     let conn = get_db(&db)?;
-    let mut stmt = conn.prepare("SELECT id, service_id, min_amount, max_amount, fee, provider_cost FROM agent_fee_tiers WHERE service_id = ?1 ORDER BY min_amount ASC").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, service_id, min_amount, max_amount, fee, provider_cost FROM agent_fee_tiers WHERE service_id = ?1 ORDER BY min_amount ASC").map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "agent_services", &msg);
+        msg
+    })?;
     let rows = stmt
         .query_map(params![service_id], |row| {
             Ok(FeeTierRow {
@@ -125,10 +146,18 @@ pub fn list_fee_tiers(
                 provider_cost: row.get(5)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "agent_services", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "agent_services", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -156,13 +185,21 @@ pub fn create_fee_tier(
             params![payload.service_id],
             |row| row.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "agent_services", &msg);
+            msg
+        })?;
     if exists == 0 {
         return Err("Layanan tidak ditemukan".into());
     }
     let provider_cost = payload.provider_cost.unwrap_or(0.0);
     let now = chrono::Utc::now().to_rfc3339();
-    conn.execute("INSERT INTO agent_fee_tiers (service_id, min_amount, max_amount, fee, provider_cost, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", params![payload.service_id, payload.min_amount, payload.max_amount, payload.fee, provider_cost, now]).map_err(|e| e.to_string())?;
+    conn.execute("INSERT INTO agent_fee_tiers (service_id, min_amount, max_amount, fee, provider_cost, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", params![payload.service_id, payload.min_amount, payload.max_amount, payload.fee, provider_cost, now]).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "agent_services", &msg);
+        msg
+    })?;
     Ok(FeeTierRow {
         id: conn.last_insert_rowid(),
         service_id: payload.service_id,

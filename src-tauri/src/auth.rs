@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use crate::common::{get_db, record_app_log, validate_password, DbConn};
+use crate::common::{get_db, record_app_log, validate_password, DbConn, log_error};
 use crate::session::PublicUser;
 use crate::session::{load_persisted_session, persist_session, SessionState};
 
@@ -114,7 +114,11 @@ pub fn setup_status(_app: AppHandle, db: State<'_, DbConn>) -> Result<SetupStatu
     let conn = get_db(&db)?;
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     Ok(SetupStatus {
         setup_needed: count == 0,
         user_count: count,
@@ -131,7 +135,11 @@ pub fn create_admin(
     let conn = get_db(&db)?;
     let existing: i64 = conn
         .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     if existing > 0 {
         return Err("Setup sudah selesai".into());
     }
@@ -141,12 +149,20 @@ pub fn create_admin(
     let name = payload.name.trim().to_string();
     let username = payload.username.trim().to_string();
     let now = Utc::now().to_rfc3339();
-    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "auth", &msg);
+        msg
+    })?;
     conn.execute(
         "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, 'admin', 1, ?4, ?4)",
         params![name, username, password_hash, now],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "auth", &msg);
+        msg
+    })?;
     let id = conn.last_insert_rowid();
     let user = PublicUser {
         id,
@@ -157,7 +173,11 @@ pub fn create_admin(
     *session
         .0
         .lock()
-        .map_err(|_| "Session tidak valid".to_string())? = Some(user.clone());
+        .map_err(|_| {
+            let msg = "Session tidak valid".to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })? = Some(user.clone());
     let _ = persist_session(&app, &Some(user.clone()));
     Ok(user)
 }
@@ -172,7 +192,11 @@ pub fn list_users(
     let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, role FROM users WHERE is_active = 1 ORDER BY id ASC")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     let rows = stmt
         .query_map([], |row| {
             Ok(PublicUser {
@@ -182,10 +206,18 @@ pub fn list_users(
                 role: row.get(3)?,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     let mut out = Vec::new();
     for row in rows {
-        out.push(row.map_err(|e| e.to_string())?);
+        out.push(row.map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?);
     }
     Ok(out)
 }
@@ -214,17 +246,29 @@ pub fn create_user(
             params![&username],
             |row| row.get(0),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     if existing_username > 0 {
         return Err("Username sudah digunakan".into());
     }
     let now = Utc::now().to_rfc3339();
-    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    let password_hash = hash(payload.password, DEFAULT_COST).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "auth", &msg);
+        msg
+    })?;
     conn.execute(
         "INSERT INTO users (name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)",
         params![name, username, password_hash, role, now],
     )
-    .map_err(|e| format!("Gagal membuat user: {e}"))?;
+    .map_err(|e| {
+        let msg = format!("Gagal membuat user: {e}");
+        log_error(&db, "auth", &msg);
+        msg
+    })?;
     record_app_log(&conn, "INFO", "users", &format!("User dibuat: {username}"));
     Ok(PublicUser {
         id: conn.last_insert_rowid(),
@@ -253,7 +297,11 @@ pub fn login(
         let mut map = rate_limiter
             .0
             .lock()
-            .map_err(|_| "Rate limiter error".to_string())?;
+            .map_err(|_| {
+                let msg = "Rate limiter error".to_string();
+                log_error(&db, "auth", &msg);
+                msg
+            })?;
         if let Some((attempts, first_ts)) = map.get(&username) {
             if *attempts >= MAX_LOGIN_ATTEMPTS {
                 let elapsed = now_ts - first_ts;
@@ -273,7 +321,11 @@ pub fn login(
     let conn = get_db(&db)?;
     let mut stmt = conn
         .prepare("SELECT id, name, username, password_hash, role FROM users WHERE username = ?1 AND is_active = 1 LIMIT 1")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     let user = stmt
         .query_row(params![&username], |row| {
             Ok((
@@ -290,7 +342,11 @@ pub fn login(
             "Username atau password salah".to_string()
         })?;
 
-    if !verify(payload.password, &user.3).map_err(|e| e.to_string())? {
+    if !verify(payload.password, &user.3).map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "auth", &msg);
+        msg
+    })? {
         record_failed_attempt(&rate_limiter, &username, now_ts);
         record_app_log(
             &conn,
@@ -306,7 +362,11 @@ pub fn login(
         let mut map = rate_limiter
             .0
             .lock()
-            .map_err(|_| "Rate limiter error".to_string())?;
+            .map_err(|_| {
+                let msg = "Rate limiter error".to_string();
+                log_error(&db, "auth", &msg);
+                msg
+            })?;
         map.remove(&username);
     }
 
@@ -319,7 +379,11 @@ pub fn login(
     *session
         .0
         .lock()
-        .map_err(|_| "Session tidak valid".to_string())? = Some(public_user.clone());
+        .map_err(|_| {
+            let msg = "Session tidak valid".to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })? = Some(public_user.clone());
     let _ = persist_session(&app, &Some(public_user.clone()));
     record_app_log(
         &conn,
@@ -401,7 +465,11 @@ pub fn update_user(
     if let Some(ref p) = payload.password {
         if !p.is_empty() {
             validate_password(p)?;
-            let h = hash(p, DEFAULT_COST).map_err(|e| e.to_string())?;
+            let h = hash(p, DEFAULT_COST).map_err(|e| {
+                let msg = e.to_string();
+                log_error(&db, "auth", &msg);
+                msg
+            })?;
             sets.push("password_hash = ?");
             params_vec.push(Box::new(h));
         }
@@ -417,7 +485,11 @@ pub fn update_user(
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|b| b.as_ref()).collect();
     conn.execute(&sql, param_refs.as_slice())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     let user = conn
         .query_row(
             "SELECT id, name, username, role FROM users WHERE id = ?1",
@@ -431,7 +503,11 @@ pub fn update_user(
                 })
             },
         )
-        .map_err(|_| "User tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "User tidak ditemukan".to_string();
+            log_error(&db, "auth", &msg);
+            msg
+        })?;
     record_app_log(
         &conn,
         "INFO",
@@ -458,7 +534,11 @@ pub fn deactivate_user(
         "UPDATE users SET is_active = 0, updated_at = ?1 WHERE id = ?2",
         params![now, user_id],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "auth", &msg);
+        msg
+    })?;
     Ok(true)
 }
 

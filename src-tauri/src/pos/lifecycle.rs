@@ -7,6 +7,7 @@ use crate::{
     auth::require_admin, auth::require_auth, common::get_db, common::DbConn,
     common::record_app_log, session::SessionState,
 };
+use crate::common::log_error;
 
 use super::types::*;
 
@@ -77,14 +78,22 @@ pub fn transaction_action(
     }
 
     let mut conn = get_db(&db)?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     let now = chrono::Utc::now().to_rfc3339();
 
     let trx: (String, String) = tx
         .query_row("SELECT type, status FROM transactions WHERE id = ?1", params![payload.id], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })
-        .map_err(|_| "Transaksi tidak ditemukan".to_string())?;
+        .map_err(|_| {
+            let msg = "Transaksi tidak ditemukan".to_string();
+            log_error(&db, "transactions", &msg);
+            msg
+        })?;
 
     match payload.action.as_str() {
         "void" => {
@@ -92,7 +101,11 @@ pub fn transaction_action(
                 return Err("Hanya transaksi pending yang bisa dibatalkan".into());
             }
             tx.execute("UPDATE transactions SET status = 'void' WHERE id = ?1", params![payload.id])
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "transactions", &msg);
+                    msg
+                })?;
             undo_transaction(&tx, payload.id, &trx.0, "void", reason.trim(), &now)?;
         }
         "reverse" => {
@@ -100,7 +113,11 @@ pub fn transaction_action(
                 return Err("Hanya transaksi completed yang bisa di-reverse".into());
             }
             tx.execute("UPDATE transactions SET status = 'reversed' WHERE id = ?1", params![payload.id])
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "transactions", &msg);
+                    msg
+                })?;
             undo_transaction(&tx, payload.id, &trx.0, "reversal", reason.trim(), &now)?;
         }
         "complete" => {
@@ -111,22 +128,38 @@ pub fn transaction_action(
                 tx.execute(
                     "UPDATE transactions SET status = 'completed', notes = COALESCE(notes || ' | ', '') || ?1 WHERE id = ?2",
                     params![format!("Ref: {}", rno), payload.id],
-                ).map_err(|e| e.to_string())?;
+                ).map_err(|e| {
+                    let msg = e.to_string();
+                    log_error(&db, "transactions", &msg);
+                    msg
+                })?;
             } else {
                 tx.execute("UPDATE transactions SET status = 'completed' WHERE id = ?1", params![payload.id])
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| {
+                        let msg = e.to_string();
+                        log_error(&db, "transactions", &msg);
+                        msg
+                    })?;
             }
         }
         _ => return Err(format!("Aksi tidak dikenal: {}", payload.action)),
     }
 
-    tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| {
+        let msg = e.to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     let conn = get_db(&db)?;
     let row = conn.query_row(
         &format!("SELECT {} FROM transactions WHERE id = ?1", TRANSACTION_COLUMNS),
         params![payload.id],
         |row| row_to_detail(row, false),
-    ).map_err(|_| "Transaksi tidak ditemukan".to_string())?;
+    ).map_err(|_| {
+        let msg = "Transaksi tidak ditemukan".to_string();
+        log_error(&db, "transactions", &msg);
+        msg
+    })?;
     record_app_log(&conn, "WARN", "transactions", &format!("Transaction #{} {}", payload.id, payload.action));
     Ok(row)
 }
