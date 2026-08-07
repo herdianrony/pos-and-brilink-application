@@ -1,13 +1,14 @@
 # POS & Agen Bisnis
 
-Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplikasi ini mendukung transaksi kasir, layanan agen seperti transfer/tarik/setor tunai, manajemen produk, multi-rekening, laporan transaksi, printer thermal, barcode scanner, serta mode desktop berbasis Electron.
+Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplikasi ini mendukung transaksi kasir, layanan agen seperti transfer/tarik/setor tunai, manajemen produk, multi-rekening, laporan transaksi, printer thermal, barcode scanner, serta mode desktop berbasis Tauri.
 
-> **Status dokumentasi:** README ini disesuaikan dengan konfigurasi project saat ini: Next.js 16, React 19, Node.js >= 22.12.0, Electron 43, dan build desktop Windows x64.
+> **Status dokumentasi:** README ini disesuaikan dengan konfigurasi project saat ini: React 19, TypeScript 7, Node.js >= 22.12.0, Tauri 2, dan build desktop Windows x64.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)
-![Next.js](https://img.shields.io/badge/Next.js-16.2.6-black.svg)
-![Electron](https://img.shields.io/badge/Electron-43.1.0-blue.svg)
+![React](https://img.shields.io/badge/React-19.2.8-61DAFB.svg)
+![Tauri](https://img.shields.io/badge/Tauri-2.9.0-24C8DC.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6.svg)
 
 ## Daftar Isi
 
@@ -95,14 +96,35 @@ Aplikasi Point of Sale (POS) dan layanan agen bisnis untuk UMKM Indonesia. Aplik
 - Setup wizard saat first run.
 - Session cookie `httpOnly`.
 
-### Desktop App
+### Desktop App (Tauri)
 
-- Desktop app berbasis Electron.
-- Build saat ini menargetkan Windows x64.
-- Next.js standalone server dijalankan secara lokal di dalam aplikasi desktop.
-- Database SQLite lokal/offline-first.
-- Single instance lock.
-- Auto-update via GitHub Releases.
+- **Tauri 2.9.0** untuk desktop application
+- **WebView2** (Windows) atau WebKit (macOS/Linux) untuk rendering
+- React + Vite untuk UI components
+- Express.js sebagai embedded backend server
+- Database SQLite lokal/offline-first
+- Single instance lock
+- Auto-update via GitHub Releases
+
+### Cara Menjalankan Desktop App
+
+```bash
+npm run dev:tauri
+```
+
+Command ini akan:
+1. Install dependencies (jika belum)
+2. Build backend TypeScript
+3. Build UI dengan Vite
+4. Launch Tauri development window dengan hot-reload
+
+Untuk production build:
+
+```bash
+npm run build:tauri
+```
+
+Build akan menghasilkan file di `src-tauri/target/release/` dan dapat di-upload sebagai release.
 
 ## Batasan Penting
 
@@ -132,28 +154,34 @@ Jika aplikasi ini membantu usaha Anda, Anda boleh memberi dukungan sukarela. Duk
 
 ### Frontend
 
-- **Next.js 16.2.10** dengan App Router.
-- **React 19.2.7**.
-- **TypeScript 5.9.3**.
-- **Tailwind CSS 4.3.2**.
-- **Lucide React** untuk icon.
-- **Recharts** untuk grafik.
+- **React 19.2.8** dengan shadcn/ui (Radix UI primitives)
+- **TypeScript 7.0.2**
+- **Vite 8.1.5** untuk build dan development server
+- **Tailwind CSS 4.3.3**
+- **Chart.js 4.5.1** untuk grafik
+- **Lucide React** untuk icon
 
 ### Backend
 
-- **Next.js API Routes**.
-- **Drizzle ORM 0.45.2**.
-- **libSQL/SQLite**.
-- **JWT** menggunakan `jose`.
-- **bcryptjs** untuk password hashing.
+- **Express.js** API server
+- **Drizzle ORM 0.45.2**
+- **libSQL/SQLite**
+- **JWT** menggunakan `jose`
+- **bcryptjs** untuk password hashing
 
-### Desktop
+### Desktop (Tauri)
 
-- **Electron 43.1.1**.
-- **electron-builder** untuk packaging.
-- **electron-updater** untuk auto-update.
-- **node-thermal-printer** untuk printer thermal.
-- **wwebjs-electron** di mode desktop dan **whatsapp-web.js** sebagai fallback Web/LAN untuk notifikasi WhatsApp Owner opsional.
+- **Tauri 2.9.0** untuk desktop application
+- **WebView2** (Windows) atau WebKit (macOS/Linux)
+- **React 19.2.8** + **Vite** untuk UI
+- **Express.js** sebagai embedded backend server
+- **Database SQLite** lokal/offline-first
+- **Single instance lock**
+- **Auto-update** via GitHub Releases
+
+### Desktop (Lama - Electron)
+
+⚠️ **Deprecated**: Project ini sudah beralih dari Electron ke Tauri. Electron version ada di branch lama atau history commit sebelum migration.
 
 ## Persyaratan Sistem
 
@@ -161,26 +189,34 @@ Jika aplikasi ini membantu usaha Anda, Anda boleh memberi dukungan sukarela. Duk
 
 - **Node.js >= 22.12.0**.
 - npm sesuai bawaan Node.js 22.
-- Windows, macOS, atau Linux.
+- **Rust 1.70+** untuk build Tauri (jika ada Rust tidak installed, install toolchain akan otomatis).
+- **Python 3.6+** (optional, untuk native module builds).
+- **WebView2 Runtime** (Windows 10/11 sudah include, tapi perlu terinstall di Windows 7/8).
 
 > Project ini mendefinisikan engine Node di `package.json` sebagai `>=22.12.0`. CI juga berjalan dengan Node.js 22.
 
-### Runtime Desktop
+### Runtime Desktop (Tauri)
 
-Konfigurasi desktop saat ini menggunakan Electron 43 dan target build Windows x64.
+Konfigurasi desktop saat ini menggunakan Tauri 2 dan target build Windows x64.
 
 - **Didukung:** Windows 10/11 64-bit.
-- **Tidak didukung:** Windows 7, Windows 8/8.1, Windows 32-bit/ia32.
+- **Tidak didukung:** Windows 7, Windows 8/8.1, Windows 32-bit/ia32, ARM.
 - RAM minimal 2GB, direkomendasikan 4GB.
 - Disk space minimal sekitar 500MB setelah install.
 - Printer thermal opsional.
 - Barcode scanner USB opsional.
 
-> **Catatan penting:** Windows 7/8 tidak didukung karena Electron/Chromium modern dan Node.js 22 sudah tidak realistis untuk OS tersebut. Jika perangkat masih Windows 7, gunakan Web/LAN mode dari server/PC yang lebih modern, atau upgrade minimal ke Windows 10 64-bit.
+### Cara Install WebView2 Runtime (Windows)
+
+Jika WebView2 tidak terinstall, download dari:
+
+- [WebView2 Runtime Download Page](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+
+> **Catatan penting:** Windows 10/11 sudah include WebView2. Windows 7/8 tidak didukung karena Tauri 2 membutuhkan WebView2 runtime yang hanya support Windows 10+. Jika perangkat masih Windows 7/8, gunakan Web/LAN mode dari server/PC yang lebih modern, atau upgrade minimal ke Windows 10 64-bit.
 
 ### Catatan untuk PC Lama / Core 2 Duo
 
-Banyak usaha masih memakai PC lama seperti Core 2 Duo. Aplikasi masih bisa dicoba jika perangkat tersebut sudah memenuhi syarat berikut:
+Banyak usaha masih memakai PC lama seperti Core 2 Duo. Aplikasi Tauri masih bisa berjalan jika perangkat tersebut sudah memenuhi syarat berikut:
 
 | Komponen | Rekomendasi                                      |
 | -------- | ------------------------------------------------ |
@@ -189,13 +225,13 @@ Banyak usaha masih memakai PC lama seperti Core 2 Duo. Aplikasi masih bisa dicob
 | Storage  | SSD sangat disarankan                            |
 | OS       | Windows 10 64-bit                                |
 
-Jika PC masih memakai **Windows 7 32-bit**, installer desktop tidak didukung. Solusi yang disarankan adalah menjalankan aplikasi di PC/server yang lebih baru, lalu PC lama mengakses lewat browser dalam mode Web/LAN.
+Jika PC masih memakai **Windows 7/8 32-bit**, desktop application tidak didukung. Solusi yang disarankan adalah menjalankan aplikasi di PC/server yang lebih baru, lalu PC lama mengakses lewat browser dalam mode Web/LAN.
 
 Contoh skenario Web/LAN:
 
 ```txt
 PC/server utama Windows 10/11 atau Linux menjalankan aplikasi
-PC Core 2 Duo lama membuka http://IP-SERVER:3000 dari browser
+PC lama membuka http://IP-SERVER:3000 dari browser
 ```
 
 ## Instalasi
@@ -209,10 +245,10 @@ cd pos-and-brilink-application
 
 ### Install Dependencies
 
-Gunakan Node.js 22 LTS sesuai `.nvmrc` (`22.12.0`). Node 25 tidak direkomendasikan untuk build produksi Electron.
+Gunakan Node.js 22 LTS sesuai `.nvmrc` (`22.12.0`). Node 25 tidak direkomendasikan.
 
 ```bash
-npm ci
+npm install
 ```
 
 ## Konfigurasi Environment
@@ -220,7 +256,7 @@ npm ci
 Salin file contoh environment:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 Isi utama:
@@ -233,8 +269,7 @@ DATABASE_URL=file:./data.db
 ### `AUTH_SECRET`
 
 - Development/test: boleh kosong; aplikasi membuat random secret per proses, tanpa fixed secret di source code.
-- Production web/server: wajib diisi, minimal 32 karakter.
-- Production Electron: dibuat otomatis saat first run dan disimpan di `userData/.auth-secret`.
+- Production: wajib diisi, minimal 32 karakter.
 
 Generate secret manual:
 
@@ -250,46 +285,49 @@ Default development:
 DATABASE_URL=file:./data.db
 ```
 
-Pada mode Electron packaged, `DATABASE_URL` otomatis diarahkan ke database di folder `userData` aplikasi.
+Pada mode Tauri packaged, `DATABASE_URL` otomatis diarahkan ke database di folder `userData` aplikasi.
 
 ## Pengembangan
 
-### Mode Web
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-Akses aplikasi di:
-
-```text
-http://localhost:3000
-```
-
-### Mode Desktop Electron
-
-```bash
-npm run dev:electron
-```
-
 Command ini akan:
 
-1. Compile TypeScript untuk Electron.
-2. Menjalankan Next.js dev server di port 3000.
-3. Membuka window Electron yang memuat `http://localhost:3000`.
+1. Build backend TypeScript
+2. Start Express.js server di port 3001
+3. Build UI dengan Vite di port 3000
+4. Launch Tauri development window dengan hot-reload
+
+Aplikasi akan tersedia di port 3000 (UI) dan backend API di port 3001.
 
 ### Typecheck
 
 ```bash
-npm run typecheck
-npm run typecheck:electron
+npx tsc --noEmit
 ```
 
 ### Lint
 
 ```bash
-npm run lint
+npx eslint src-tauri-ui/src --ext .ts,.tsx
 ```
+
+### Build Production
+
+```bash
+npm run build:tauri
+```
+
+Build process:
+1. Install dependencies (jika belum)
+2. Build backend TypeScript
+3. Build UI dengan Vite
+4. Build Tauri application
+5. Output di `src-tauri/target/release/`
 
 ## Testing
 
@@ -623,35 +661,112 @@ npm install
 npm run dev
 ```
 
-### Electron dev tidak membuka aplikasi
+### Tauri dev tidak membuka aplikasi
 
-Pastikan port 3000 tidak dipakai aplikasi lain. Jalankan:
+Pastikan port 3000 (UI) dan 3001 (API) tidak dipakai aplikasi lain. Jalankan:
 
 ```bash
-npm run dev:electron
+npm run dev:tauri
 ```
 
 Jika masih gagal, coba jalankan terpisah:
 
 ```bash
-npm run dev
-npm run compile:electron
-npx electron .
+# Terminal 1: Start backend
+npm run dev:backend
+
+# Terminal 2: Start UI
+npm run dev:ui
+
+# Terminal 3: Start Tauri
+npm run dev:tauri
 ```
 
-### Next.js standalone server tidak ditemukan
+### Build Tauri gagal
 
-Untuk build desktop, gunakan command resmi:
+Jika build Tauri error:
 
-```bash
-npm run build:electron
-```
+1. **Cek Rust**:
+   ```bash
+   rustc --version
+   cargo --version
+   ```
+   - Pastikan Rust >= 1.70 terinstall.
+   - Install Rust dari [rustup.rs](https://rustup.rs/).
 
-Jangan menjalankan `electron .` sebagai production build tanpa menjalankan build web/standalone terlebih dahulu.
+2. **Cek npm dependencies**:
+   ```bash
+   npm install
+   npm run build:ui
+   ```
 
-### Port 43219 sudah dipakai
+3. **Reinstall node_modules**:
+   ```bash
+   cd src-tauri-ui
+   rm -rf node_modules
+   rm package-lock.json
+   npm install
+   ```
 
-Aplikasi Electron production memakai port internal `43219`. Tutup aplikasi lain yang memakai port tersebut, lalu jalankan ulang aplikasi.
+4. **Clean Tauri cache**:
+   ```bash
+   npm run tauri dev -- --reload
+   ```
+
+### UI Hot-Reload tidak berjalan
+
+Jika UI tidak hot-reload saat dev:
+
+1. **Restart Vite dev server**:
+   ```bash
+   cd src-tauri-ui
+   npm run dev:ui
+   ```
+
+2. **Check Vite proxy**:
+   - Pastikan API server berjalan di port 3001.
+   - Pastikan `vite.config.ts` proxy config benar (`/api` → `http://127.0.0.1:3001`).
+
+3. **Clear Vite cache**:
+   ```bash
+   cd src-tauri-ui
+   rm -rf node_modules/.vite
+   npm run dev:ui
+   ```
+
+### Database Error
+
+Jika muncul error database:
+
+1. **Check backend logs**: Pastikan `npm run dev:backend` sukses berjalan.
+2. **Cek SQLite database**:
+   ```bash
+   # Backend folder
+   cd src
+   # Cek database file
+   ls db/
+   ```
+3. **Rebuild database**:
+   ```bash
+   cd src
+   npm run db:generate  # generate schema jika ada
+   npm run db:migrate   # run migrations
+   ```
+
+### Module Not Found / Import Error
+
+Jika muncul error import tidak ditemukan:
+
+1. **Reinstall node_modules**:
+   ```bash
+   npm install
+   ```
+
+2. **Check TypeScript config**:
+   - Pastikan `tsconfig.json` alias valid (`@/*` → `./src/*`).
+
+3. **Check vite.config.ts**:
+   - Pastikan `resolve.alias` benar.
 
 ### Printer thermal tidak terdeteksi
 
@@ -665,93 +780,95 @@ Aplikasi Electron production memakai port internal `43219`. Tutup aplikasi lain 
 Jika masih development dan ingin reset total, hapus database development:
 
 ```bash
+# Web mode
 rm data.db
+
+# Tauri mode (userData folder)
+# Windows: Cek di %APPDATA%/catatagen-local
+# macOS: Cek di ~/Library/Application Support/catatagen-local
+# Linux: Cek di ~/.config/catatagen-local
 ```
 
-Untuk production Electron, backup dulu data penting sebelum menghapus database di folder `userData`.
+Untuk production Tauri, backup dulu data penting sebelum menghapus database di folder `userData`.
 
-### Build gagal karena file `.next/dev/types` atau validator rusak
+### Auto-Update tidak berjalan
 
-Build production sekarang otomatis menjalankan `scripts/pre-build.js` untuk membersihkan `.next`. Jika masih gagal setelah menjalankan dev server, hapus manual:
-
-```bash
-rm -rf .next
-```
-
-Windows CMD:
-
-```bat
-rmdir /s /q .next
-```
-
-### Build gagal karena `.whatsapp-session` terkunci
-
-Folder session WhatsApp lama di root project dapat mengganggu build. Tutup proses Chrome/Chromium/Node/Electron yang terkait WhatsApp, lalu hapus folder lama:
-
-```bat
-rmdir /s /q .whatsapp-session
-```
-
-Session produksi Electron sekarang disimpan di `userData/whatsapp-session`.
-
-### Auto-update tidak berjalan
-
-1. Pastikan aplikasi adalah hasil build/publish, bukan dev mode.
-2. Pastikan koneksi internet tersedia.
-3. Pastikan GitHub Releases berisi artifact update yang valid.
-4. Pastikan konfigurasi `publish` di `electron-builder.yml` benar.
+1. **Pastikan aplikasi adalah hasil build**, bukan dev mode.
+2. **Pastikan koneksi internet tersedia**.
+3. **Pastikan GitHub Releases berisi artifact update yang valid**.
+4. **Cek Tauri config**: Pastikan `tauri.conf.json` memiliki `allowUpdater: true`.
+5. **Check update manifest**: Pastikan Tauri dapat mengakses GitHub Releases API.
 
 ## Scripts
 
 | Command                           | Deskripsi                                    |
 | --------------------------------- | -------------------------------------------- |
-| `npm run dev`                     | Menjalankan Next.js dev server               |
-| `npm run dev:web`                 | Alias mode web dev                           |
-| `npm run dev:electron`            | Menjalankan Electron + Next.js dev server    |
-| `npm run build`                   | Build Next.js                                |
-| `npm run build:web`               | Build Next.js standalone + post-build script |
-| `npm run build:electron`          | Build desktop Windows NSIS + portable        |
-| `npm run build:electron:portable` | Build desktop portable saja                  |
-| `npm run build:electron:publish`  | Build dan publish ke GitHub Releases         |
-| `npm run dist`                    | Alias build Electron                         |
-| `npm run lint`                    | ESLint                                       |
-| `npm run typecheck`               | TypeScript check untuk web                   |
-| `npm run typecheck:electron`      | TypeScript check untuk Electron              |
-| `npm run compile:electron`        | Compile Electron TypeScript dan copy preload |
-| `npm test`                        | Menjalankan Vitest                           |
-| `npm run test:watch`              | Vitest watch mode                            |
-| `npm run test:coverage`           | Vitest dengan coverage                       |
-| `npm run test:e2e`                | Playwright E2E test                          |
-| `npm run test:e2e:ui`             | Playwright E2E UI mode                       |
+| `npm run dev`                     | Menjalankan backend + UI dengan hot-reload   |
+| `npm run build:tauri`             | Build aplikasi desktop produksi              |
+| `npm run build:ui`                | Build UI saja                                 |
+| `npm run build:backend`           | Build backend TypeScript saja                 |
+| `npm run lint`                    | ESLint pada UI code                          |
+| `npm run test:e2e:tauri`          | Playwright E2E test untuk Tauri              |
+| `npm run typecheck`               | TypeScript check untuk UI code               |
 
 ## Struktur Project
 
 ```text
 pos-and-brilink-application/
 ├── .github/workflows/        # CI workflow
-├── drizzle/                  # Drizzle migrations dan metadata
-├── e2e/                      # Playwright E2E tests
-├── electron/                 # Electron main/preload/printer/updater
-│   ├── main.ts
-│   ├── preload.ts
-│   ├── printer.ts
-│   ├── updater.ts
-│   └── db-path.ts
-├── scripts/                  # Build helper scripts
-├── src/
-│   ├── app/                  # Next.js App Router dan API routes
-│   ├── components/           # React components
+├── src/                      # Express.js backend
+│   ├── routes/               # API routes
 │   ├── db/                   # Drizzle client dan schema
-│   ├── lib/                  # Auth, utility, hardware hook, settings
-│   └── types/                # Type declarations
-├── tests/                    # Vitest tests
-├── electron-builder.yml      # Konfigurasi desktop build
-├── next.config.ts            # Konfigurasi Next.js
-├── package.json
-├── playwright.config.ts
-├── tsconfig.json
-├── tsconfig.electron.json
-└── vitest.config.ts
+│   ├── lib/                  # Utility functions, auth, settings
+│   ├── types/                # Type declarations
+│   └── package.json          # Backend dependencies
+├── src-tauri-ui/             # React + Vite + Tauri UI
+│   ├── src/
+│   │   ├── components/       # React components (shadcn/ui)
+│   │   ├── pages/            # Page components
+│   │   ├── hooks/            # React hooks (useAuth, useAppData, dll)
+│   │   ├── api.ts            # API client
+│   │   ├── mockApi.ts        # Mock API untuk development
+│   │   ├── types.ts          # UI types
+│   │   ├── styles.css        # Global styles
+│   │   ├── App.tsx           # App root component
+│   │   └── main.tsx          # Entry point
+│   ├── package.json          # UI dependencies
+│   ├── vite.config.ts        # Vite configuration
+│   ├── tsconfig.json         # TypeScript configuration
+│   └── index.html            # HTML entry
+├── src-tauri/                # Tauri Rust backend
+│   ├── src/                  # Rust source code
+│   │   ├── lib.rs            # Library entry
+│   │   ├── main.rs           # Tauri command handlers
+│   │   ├── auth.rs           # Authentication
+│   │   ├── pos/              # POS module
+│   │   ├── products.rs       # Products
+│   │   ├── transactions.rs   # Transactions
+│   │   ├── accounts.rs       # Accounts management
+│   │   ├── agent_services.rs # Agent services
+│   │   ├── debts.rs          # Debt management
+│   │   ├── settings.rs       # Settings
+│   │   ├── whatsapp.rs       # WhatsApp integration
+│   │   ├── printer.rs        # Printer integration
+│   │   ├── seed.rs           # Database seeding
+│   │   └── ...               # Other modules
+│   ├── Cargo.toml            # Rust dependencies
+│   ├── Cargo.lock            # Lock file untuk deterministic builds
+│   ├── tauri.conf.json       # Tauri configuration
+│   └── build.rs              # Build scripts
+├── docs/                     # Documentation
+│   ├── tauri-feature-parity.md
+│   ├── tauri-plugin-plan.md
+│   └── ...
+├── e2e-tauri/                # Playwright E2E tests untuk Tauri
+│   ├── fixtures/             # Test fixtures
+│   └── *.spec.ts             # Test files
+├── package.json              # Root package dengan workspaces
+├── package-lock.json
+├── .nvmrc                    # Node.js version
+├── tsconfig.json             # Root TypeScript configuration
+└── vite.config.ts            # Root Vite configuration
 ```
 
 ## Lisensi
