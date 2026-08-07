@@ -10,6 +10,7 @@ export default defineConfig({
   clearScreen: false,
   resolve: {
     alias: {
+      "@": path.resolve(__dirname, "src"),
       "tailwind-merge": path.resolve(rootNm, "tailwind-merge"),
       "clsx": path.resolve(rootNm, "clsx"),
       "recharts": path.resolve(rootNm, "recharts"),

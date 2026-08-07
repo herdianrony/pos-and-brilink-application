@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
-import { cn } from "../../lib/cn";
+/* ── Modal (compatibility wrapper around Radix Dialog) ──
+ * 
+ * Preserves the original Modal API: { open, onClose, size, eyebrow, children }
+ * Internally delegates to @radix-ui/react-dialog.
+ * All existing consumer code works without changes.
+ */
+import { useCallback, type ReactNode } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogEyebrow, type DialogSize } from "./shadcn/dialog";
 
-/* ------------------------------------------------------------------ */
-/*  Focus-trappable dialog                                              */
-/* ------------------------------------------------------------------ */
-
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+/* Re-export Dialog primitives for consumers that want to migrate incrementally */
+export { DialogContent, DialogEyebrow, Dialog, DialogTitle, DialogDescription } from "./shadcn/dialog";
 
 export function Modal({
   open,
@@ -18,95 +20,29 @@ export function Modal({
   open: boolean;
   onClose: () => void;
   children: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: DialogSize;
   eyebrow?: string;
 }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  const w = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
-    xl: "max-w-6xl",
-  }[size];
-
-  /* ── Focus trapping ── */
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-          FOCUSABLE_SELECTOR,
-        );
-        if (focusable.length === 0) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      }
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (!isOpen) onClose();
     },
     [onClose],
   );
 
-  useEffect(() => {
-    if (!open) return;
-
-    // Move focus into modal
-    const focusable = dialogRef.current?.querySelector<HTMLElement>(
-      FOCUSABLE_SELECTOR,
-    );
-    if (focusable) focusable.focus();
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [open, handleKeyDown]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={eyebrow ?? "Dialog"}
-    >
-      <div
-        className="absolute inset-0 bg-slate-950/50 animate-fadeIn"
-        aria-hidden="true"
-      />
-      <div
-        ref={dialogRef}
-        className={cn(
-          "relative bg-white rounded-3xl shadow-float w-full max-h-[92vh] overflow-y-auto animate-bounceIn border border-slate-200/50",
-          w,
-        )}
-        onClick={(e) => e.stopPropagation()}
-        tabIndex={-1}
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        size={size}
+        hideClose
+        className="!p-0"
+        /* Radix requires a Title for accessibility. Use sr-only so it doesn't 
+           break existing layouts that render their own titles inside CardHeader. */
       >
+        <DialogTitle className="sr-only">{eyebrow ?? "Dialog"}</DialogTitle>
+        {eyebrow && <DialogEyebrow className="px-6 pt-5 block text-center">{eyebrow}</DialogEyebrow>}
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

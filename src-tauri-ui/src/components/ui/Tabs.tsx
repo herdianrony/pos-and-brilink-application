@@ -9,7 +9,10 @@ type TabItem<T extends string> = {
   disabled?: boolean;
 };
 
-/** Matches Electron Tabs: slate-100/80 pill, active=white+shadow-pop */
+/** Matches Electron Tabs: slate-100/80 pill, active=white+shadow-pop
+ *  This is the legacy data-driven API — kept for backward compatibility.
+ *  For new code, prefer shadcn Tabs (TabsList + TabsTrigger + TabsContent) from ./shadcn/tabs.
+ */
 export function Tabs<T extends string>({
   items,
   active,
